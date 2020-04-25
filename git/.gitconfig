@@ -1,0 +1,153 @@
+[user]
+  # Name
+  name = Gustavo Franco
+
+  # E-mail
+  email = gufranco@users.noreply.github.com
+
+  # Require setting user.name and email per-repo
+  useConfigOnly = true
+
+  # GPG key ID
+  signingkey = F0D1290BDE08BBF6
+
+[credential]
+  # Cache credentials for 2 hours
+  helper = cache --timeout 7200
+
+[core]
+  # Global ignore
+  excludesfile = ~/.dotfiles/git/.gitignore_global
+
+  # Don't convert line break to CRLF. Keep CR
+  autocrlf = input
+
+  # Paginate results
+  pager = less -FRSX
+
+  # Remove whitespaces, use CR and indent using spaces
+  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+
+  # Default text editor
+  editor = vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72'
+
+[commit]
+  # Sign all commits by default
+  gpgsign = true
+
+  # Template
+  template = ~/.dotfiles/git/.gitmessage
+
+[github]
+  user = gufranco
+
+[url "git@github.com:"]
+  insteadOf = https://github.com/
+
+[color]
+  ui = auto
+
+[color "status"]
+  added = green
+  changed = yellow
+  untracked = red
+
+[color "branch"]
+  current = magenta
+  local = yellow
+  remote = green
+
+[color "diff"]
+  meta = yellow
+  frag = magenta
+  old = red
+  new = green
+
+[branch]
+  # Always merge using rebase
+  autosetuprebase = always
+
+[rerere]
+  # Reuse recorded resolution
+  enabled = true
+
+[push]
+  # Only push current branch
+  default = current
+
+[help]
+  # Suggest the correct command
+  autocorrect = 1
+
+[alias]
+  # Who am I? IT'S A ME, MARIO! :)
+  me = config user.name
+
+  # Less verbose status
+  st = status -sb
+
+  # Checkout
+  co = checkout
+
+  # Checkout master
+  cm = checkout master
+
+  # Checkout staging
+  cs = checkout staging
+
+  # Checkout development
+  cd = checkout development
+
+  # Push master
+  pm = !(git push -u origin master)
+
+  # Push staging
+  ps = !(git push -u origin staging)
+
+  # Push development
+  pd = !(git push -u origin development)
+
+  # Syncronize local branchs with remote
+  fe = fetch origin
+
+  # Fork a branch
+  fork = checkout -b
+
+  # Complete pull (with submodules)
+  pull-sub = !(git pull && git submodule foreach git pull origin master)
+
+  # Pretty log
+  lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+
+  # Remote commits ahead of mine
+  incoming = !(git fetch --quiet && git log --pretty=format:'%C(yellow)%h %C(white)- %C(red)%an %C(white)- %C(cyan)%d%Creset %s %C(white)- %ar%Creset' ..@{u})
+
+  # Remote commits ahead of local
+  outgoing = !(git fetch --quiet && git log --pretty=format:'%C(yellow)%h %C(white)- %C(red)%an %C(white)- %C(cyan)%d%Creset %s %C(white)- %ar%Creset' @{u}..)
+
+  # The missing command <3
+  unstage = reset HEAD --
+
+  # Undo modifications to a file
+  undo = checkout --
+
+  # Last 24 hours commits
+  standup = !(git log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --since yesterday --author "$(git me)")
+
+  # Review commits before pushing
+  ready = rebase -i @{u}
+
+  # Branchs hier
+  hier = log --all --graph --decorate --oneline --simplify-by-decoration
+
+  # Create a package
+  package = !(GZIP=-9 tar --exclude=".git/" -zcvf ../$(basename "$PWD")_$(date +"%Y-%m-%d_%H-%M-%S").tar.gz *)
+
+  # Resolve conflict using ours
+  resolve-ours = !(grep -lr '<<<<<<<' . | xargs git checkout --ours)
+
+  # Resolve conflict using theirs
+  resolve-theirs = !(grep -lr '<<<<<<<' . | xargs git checkout --theirs)
+
+  # List committers
+  committers = !(git log | grep Author | sort | uniq -c | sort -n -r)

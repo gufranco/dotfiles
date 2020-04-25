@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+
+################################################################################
+# System specific functions
+################################################################################
+case "$(uname)" in
+  Linux)
+    ############################################################################
+    # Open the current directory, otherwise open the given location
+    ############################################################################
+    function open() {
+      if [ $# -eq 0 ]; then
+        xdg-open . > /dev/null 2>&1;
+      else
+        xdg-open "$@" > /dev/null 2>&1;
+      fi;
+    }
+
+    function systemupgrade() {
+      sudo apt update -y
+      sudo apt dist-upgrade -y
+      sudo apt autoremove -y
+      sudo apt clean all -y
+    }
+
+  ;;
+  Darwin)
+    function systemupgrade() {
+      brew update
+      brew upgrade
+      brew cu --all --yes --cleanup
+      brew cleanup -s
+      mas upgrade
+      sudo softwareupdate -i -a
+    }
+
+  ;;
+esac
+
+################################################################################
+# Update and upgrade everything
+################################################################################
+function f5() {
+  CURRENT_DIR=$(pwd)
+
+  sudo -v
+  while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+  # Update and upgrade system
+  systemupgrade
+
+  # Dotfiles
+  cd ~/.dotfiles || exit 1
+  git pull-sub
+  git submodule update --recursive --remote
+
+  # Node.js
+  npm install -g npm@latest
+  npm update -g
+
+  # Flutter
+  cd ~/.flutter-sdk || exit 1
+  git checkout stable
+  git pull
+
+  # Vim
+  vim +PlugUpgrade +PlugUpdate +qall
+
+  # Oh-my-zsh
+  cd ~/.oh-my-zsh || exit 1
+  git checkout master
+  git pull
+
+  # Spaceship theme
+  cd ~/.oh-my-zsh/custom/themes/spaceship-prompt || exit 1
+  git checkout master
+  git pull
+
+  # Reload shell
+  source ~/.zshrc
+
+  cd $CURRENT_DIR
+}
+
+################################################################################
+# MongoDB
+################################################################################
+function mongodb-init() {
+  mkdir -p ~/Docker/Databases/MongoDB/Data
+  mkdir -p ~/Docker/Databases/MongoDB/Dump
+
+  docker run \
+    --detach \
+    --name mongodb \
+    --restart unless-stopped \
+    --env "MONGO_INITDB_ROOT_USERNAME=root" \
+    --env "MONGO_INITDB_ROOT_PASSWORD=root" \
+    -v "$HOME/Docker/Databases/MongoDB/Data:/data/db" \
+    -v "$HOME/Docker/Databases/MongoDB/Dump:/dump" \
+    --publish 27017:27017 \
+    mongo:4
+}
+
+function mongodb-start() {
+  docker run mongodb
+}
+
+function mongodb-stop() {
+  docker stop mongodb
+}
+
+function mongodb-purge() {
+  mongodb-stop
+  docker rm mongodb
+
+  sudo rm -rf ~/Docker/Databases/MongoDB/Data
+}
+
+function mongodb-terminal() {
+  docker exec -it mongodb /bin/bash
+}
+
+################################################################################
+# MySQL
+################################################################################
+function mysql-init() {
+  mkdir -p ~/Docker/Databases/MySQL/Data
+  mkdir -p ~/Docker/Databases/MySQL/Dump
+
+  docker run \
+    --detach \
+    --name mysql \
+    --restart unless-stopped \
+    --env "MYSQL_ROOT_PASSWORD=root" \
+    -v "$HOME/Docker/Databases/MySQL/Data:/var/lib/mysql" \
+    -v "$HOME/Docker/Databases/MySQL/Dump:/dump" \
+    --publish 3306:3306 \
+    mysql:5
+}
+
+function mysql-start() {
+  docker run mysql
+}
+
+function mysql-stop() {
+  docker stop mysql
+}
+
+function mysql-purge() {
+  mysql-stop
+  docker rm mysql
+
+  sudo rm -rf ~/Docker/Databases/MySQL/Data
+}
+
+function mysql-terminal() {
+  docker exec -it mysql /bin/bash
+}
+
+################################################################################
+# PostgreSQL
+################################################################################
+function postgresql-init() {
+  mkdir -p ~/Docker/Databases/PostgreSQL/Data
+  mkdir -p ~/Docker/Databases/PostgreSQL/Dump
+
+  docker run \
+    --detach \
+    --name postgresql \
+    --restart unless-stopped \
+    --env "POSTGRES_USER=root" \
+    --env "POSTGRES_PASSWORD=root" \
+    -v "$HOME/Docker/Databases/PostgreSQL/Data:/var/lib/postgresql/data" \
+    -v "$HOME/Docker/Databases/PostgreSQL/Dump:/dump" \
+    --publish 5432:5432 \
+    postgres:12
+}
+
+function postgresql-start() {
+  docker run postgresql
+}
+
+function postgresql-stop() {
+  docker stop postgresql
+}
+
+function postgresql-purge() {
+  postgresql-stop
+  docker rm postgresql
+
+  sudo rm -rf ~/Docker/Databases/PostgreSQL/Data
+}
+
+function postgresql-terminal() {
+  docker exec -it postgresql /bin/bash
+}
+
+################################################################################
+# Couchbase
+################################################################################
+function couchbase-init() {
+  mkdir -p ~/Docker/Databases/Couchbase/Data
+  mkdir -p ~/Docker/Databases/Couchbase/Dump
+
+  docker run \
+    --detach \
+    --name couchbase \
+    --restart unless-stopped \
+    -v "$HOME/Docker/Databases/Couchbase/Data:/opt/couchbase/var" \
+    -v "$HOME/Docker/Databases/Couchbase/Dump:/dump" \
+    --publish 8091-8094:8091-8094 \
+    --publish 11210:11210 \
+    couchbase:community-6.0.0
+}
+
+function couchbase-start() {
+  docker run couchbase
+}
+
+function couchbase-stop() {
+  docker stop couchbase
+}
+
+function couchbase-purge() {
+  couchbase-stop
+  docker rm couchbase
+
+  sudo rm -rf ~/Docker/Databases/Couchbase/Data
+}
+
+function couchbase-terminal() {
+  docker exec -it couchbase /bin/bash
+}

@@ -1,0 +1,108 @@
+# -*- muttrc -*-
+
+# Account
+folder-hook "account.com.gmail.gustavocfranco" "~/.mutt/account/config"
+source ~/.mutt/account/config
+
+# Editor
+set charset = "utf-8"
+set editor = "vim -u NONE -c 'set nocompatible tw=72 ft=mail noautoindent fo=aw cursorline number colorcolumn=72'"
+
+# Status bar
+set status_chars  = " *%A"
+set status_format = "───[ Folder: %f ]───[%r%m messages%?n? (%n new)?%?d? (%d to delete)?%?t? (%t tagged)? ]───%>─%?p?( %p postponed )?───"
+
+# Sidebar
+set sidebar_format = "%B%?F? [%F]?%* %?N?%N/?%S"
+set sidebar_new_mail_only = no
+set sidebar_sort_method = "name"
+set sidebar_visible = yes
+set sidebar_width = 35
+
+# Aliases
+bind index,pager H sidebar-toggle-visible       # H to toggle visibility of the sidebar
+bind index,pager J sidebar-next                 # J to select next folder
+bind index,pager K sidebar-prev                 # K to select previous folder
+bind index,pager L sidebar-open                 # L to open selected folder
+bind index,pager G imap-fetch-mail              # Fetch new mails
+
+# Tell Mutt which MIME types to auto-view
+auto_view application/msword
+auto_view application/octet-stream
+auto_view application/RTF
+auto_view application/x-gunzip
+auto_view application/x-gzip
+auto_view application/x-perl
+auto_view application/x-sh
+auto_view application/x-tar-gz
+auto_view application/x-tcl
+auto_view application/x-zip-compressed
+auto_view application/zip
+auto_view image/tiff
+auto_view text/html
+auto_view text/x-vcard
+
+# Sanely handle multi-part messages
+alternative_order text/enriched text/plain text text/html
+
+# Headers
+ignore *
+unignore From: To: CC: Date: Subject:
+unhdr_order *
+hdr_order From: To: CC: Date: Subject:
+
+# Hide warning "GPGME: CMS protocol not available"
+set crypt_use_gpgme = no
+
+# Avoid weird line breaks
+set text_flowed = yes
+
+# Put signatures on top of the message
+set sig_on_top = yes
+
+# Dont save local copies of sent mails
+set record = no
+
+# Index view
+set date_format = "%d/%m/%y"
+set index_format = "[%Z]  %D  %-20.20F  %s"
+set reply_regexp = "^(([Rr][Ee]?(\[[0-9]+\])?: *)?(\[[^]]+\] *)?)*"
+set sort = threads
+set sort_aux = reverse-last-date-received
+set sort_re = yes
+set uncollapse_jump = yes
+
+# Pager view
+set markers = no
+set menu_scroll = yes
+set pager_context = 3
+set pager_index_lines = 10
+set pager_stop = yes
+set tilde = yes
+
+# Do not duplicate sent emails
+set copy = no
+
+# From header
+set use_from = yes
+set envelope_from = yes
+
+# Mail check
+set mail_check = 60
+set mail_check_stats = yes
+
+# Theme
+source ~/.mutt/themes/dracula.muttrc
+
+# Display version on startup
+push <show-version>
+
+# Faster, Mutt. Faster!
+set sleep_time = 0
+
+# Shut the fuck up, Mutt
+set beep = no
+set wait_key = no
+
+# Set the color of the progress bar
+color progress white red

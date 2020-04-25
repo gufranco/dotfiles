@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+################################################################################
+# System specific settings
+################################################################################
+case "$(uname)" in
+  Linux)
+
+  ;;
+  Darwin)
+
+  ;;
+esac
+
+################################################################################
+# Shell
+################################################################################
+# Ignore duplicated entries
+export HISTCONTROL=ignoredups
+
+# Ignore some commands
+export HISTIGNORE="cd:ls:[bf]g:clear:exit"
+
+# Set language
+export LANG=pt_BR.UTF-8
+
+################################################################################
+# Oh-my-zsh
+################################################################################
+export ZSH=~/.oh-my-zsh
+ZSH_THEME="spaceship"
+DISABLE_AUTO_UPDATE="true"
+HIST_STAMPS="dd/mm/yyyy"
+plugins=(
+  docker
+  docker-compose
+  git
+  gpg-agent
+  iterm2
+  node
+  npm
+  osx
+  ripgrep
+  ssh-agent
+  sublime
+  sudo
+  tmux
+  ubuntu
+  vagrant
+  vscode
+  xcode
+)
+
+################################################################################
+# Spaceship
+################################################################################
+SPACESHIP_PROMPT_ORDER=(
+  user          # Username section
+  dir           # Current directory section
+  host          # Hostname section
+  git           # Git section (git_branch + git_status)
+  hg            # Mercurial section (hg_branch  + hg_status)
+  line_sep      # Line break
+  vi_mode       # Vi-mode indicator
+  jobs          # Background jobs indicator
+  char          # Prompt character
+)
+SPACESHIP_USER_SHOW=always
+SPACESHIP_PROMPT_ADD_NEWLINE=false
+SPACESHIP_CHAR_SYMBOL="❯"
+SPACESHIP_CHAR_SUFFIX=" "

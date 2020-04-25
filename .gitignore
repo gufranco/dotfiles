@@ -1,0 +1,34 @@
+# SSH
+ssh/*
+!ssh/config
+!ssh/id_rsa
+!ssh/id_rsa.pub
+!ssh/id_ed25519
+!ssh/id_ed25519.pub
+
+# Mutt
+mutt/account/certificates
+mutt/account/cache/headers
+mutt/account/cache/bodies/*
+!mutt/account/cache/bodies/.gitkeep
+
+# GPG
+gnupg/crls.d/
+gnupg/gpg-agent.conf
+gnupg/openpgp-revocs.d/
+gnupg/private-keys-v1.d/
+gnupg/pubring.kbx
+gnupg/random_seed
+gnupg/sshcontrol
+gnupg/tofu.db
+gnupg/trustdb.gpg
+
+# Tmux
+tmux/plugins/*
+!tmux/plugins/tpm
+
+# Vim
+.tern-port
+.netrwhist
+plug.vim*
+vim/plugged/

@@ -1,0 +1,22 @@
+Host *
+  IdentityFile ~/.ssh/id_ed25519
+  Compression yes
+  ForwardAgent yes
+  LogLevel INFO
+  ServerAliveInterval 120
+  StrictHostKeyChecking ask
+  TCPKeepAlive yes
+
+################################################################################
+# House
+################################################################################
+Host house-router
+  HostName 192.168.1.1
+  User root
+
+################################################################################
+# Linode
+################################################################################
+  Host linode-heisenberg
+    HostName 96.126.113.242
+    User root

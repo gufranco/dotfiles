@@ -22,21 +22,16 @@ case "$(uname)" in
     ############################################################################
     sudo apt purge -y \
       apport \
-      chromium-* \
       cmdtest \
-      laptop-mode-tools \
-      ubuntu-web-launchers
-
-    ############################################################################
-    # Privacy
-    ############################################################################
-    ubuntu-report -f send no
+      laptop-mode-tools
 
     ############################################################################
     # Basic packages
     ############################################################################
     sudo apt install -y \
       apt-transport-https \
+      build-essential \
+      cmake \
       curl \
       git \
       snapd \
@@ -85,11 +80,15 @@ case "$(uname)" in
     ############################################################################
     # Docker
     ############################################################################
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-    sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-    sudo apt update
+    # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    # sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    # sudo apt update
+    # sudo apt install -y \
+    #   docker-ce
+    # sudo usermod -a -G docker "$USER"
     sudo apt install -y \
-      docker-ce
+      docker.io
+    sudo systemctl enable --now docker
     sudo usermod -a -G docker "$USER"
 
     ############################################################################
@@ -99,26 +98,6 @@ case "$(uname)" in
     sudo apt update
     sudo apt install -y \
       nodejs
-
-    ############################################################################
-    # Erlang / Elixir
-    ############################################################################
-    curl -fsSL https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc | sudo apt-key add -
-    sudo add-apt-repository -y "deb [arch=amd64] https://packages.erlang-solutions.com/ubuntu $(lsb_release -cs) contrib"
-    sudo apt update
-    sudo apt install -y \
-      elixir \
-      erlang
-
-    ############################################################################
-    # Golang
-    ############################################################################
-    sudo add-apt-repository -y ppa:longsleep/golang-backports
-    sudo add-apt-repository -y ppa:gophers/archive
-    sudo apt update
-    sudo apt install -y \
-      golang-go \
-      godep
 
     ############################################################################
     # Java
@@ -160,54 +139,15 @@ case "$(uname)" in
       google-chrome-stable
 
     ############################################################################
-    # Firefox
-    ############################################################################
-    sudo apt install -y \
-      firefox
-
-    ############################################################################
-    # Tor Browser
-    ############################################################################
-    sudo add-apt-repository -y ppa:micahflee/ppa
-    sudo apt update
-    sudo apt install -y \
-      torbrowser-launcher
-
-    ############################################################################
-    # Thunderbird
-    ############################################################################
-    sudo apt install -y \
-      thunderbird
-
-    ############################################################################
     # Skype
     ############################################################################
     sudo snap install skype --classic
 
     ############################################################################
-    # VirtualBox
-    ############################################################################
-    curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
-    curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
-    sudo add-apt-repository -y "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-    sudo apt update
-    sudo apt install -y \
-      virtualbox-6.0
-    sudo adduser "$USER" vboxusers
-
-    ############################################################################
-    # Vagrant
-    ############################################################################
-    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key AD319E0F7CFFA38B4D9F6E55CE3F3DE92099F7A4
-    echo -e "deb [arch=amd64] https://vagrant-deb.linestarve.com/ any main" | sudo tee /etc/apt/sources.list.d/vagrant.list
-    sudo apt update
-    sudo apt install -y \
-      vagrant
-
-    ############################################################################
     # DBeaver
     ############################################################################
-    sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce
+    curl -fsSL https://dbeaver.io/debs/dbeaver.gpg.key | sudo apt-key add -
+    echo -e "deb [arch=amd64] https://dbeaver.io/debs/dbeaver-ce /" | sudo tee /etc/apt/sources.list.d/dbeaver.list
     sudo apt update
     sudo apt install -y \
       dbeaver-ce
@@ -218,38 +158,28 @@ case "$(uname)" in
     sudo snap install robo3t-snap
 
     ############################################################################
-    # Vim, gVim and nVim
+    # Vim / gVim
     ############################################################################
     sudo add-apt-repository -y ppa:jonathonf/vim
-    sudo add-apt-repository -y ppa:neovim-ppa/stable
     sudo apt update
     sudo apt install -y \
-      build-essential \
-      cmake \
-      neovim \
-      python-dev \
-      python-pip \
       python3-dev \
-      python3-dev \
-      python3-pip \
       vim \
       vim-gnome
 
     ############################################################################
     # Ripgrep
     ############################################################################
-    sudo add-apt-repository -y ppa:x4121/ripgrep
-    sudo apt update
     sudo apt install -y \
       ripgrep
 
     ############################################################################
     # Universal ctags
     ############################################################################
-    sudo add-apt-repository -y ppa:hnakamur/universal-ctags
-    sudo apt update
-    sudo apt install -y \
-      universal-ctags
+    # sudo add-apt-repository -y ppa:hnakamur/universal-ctags
+    # sudo apt update
+    # sudo apt install -y \
+    #   universal-ctags
 
     ############################################################################
     # Sublime Text 3
@@ -325,8 +255,7 @@ case "$(uname)" in
     # Dropbox
     ############################################################################
     sudo apt install -y \
-      nautilus-dropbox \
-      python-gpg
+      nautilus-dropbox
 
     ############################################################################
     # Hack Nerd Font
@@ -411,31 +340,6 @@ case "$(uname)" in
       /tmp/keybase.deb
 
     ############################################################################
-    # Etcher
-    ############################################################################
-    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 379CE192D401AB61
-    echo -e "deb [arch=amd64] https://deb.etcher.io stable etcher" | sudo tee /etc/apt/sources.list.d/balena-etcher.list
-    sudo apt update
-    sudo apt install -y \
-      balena-etcher-electron
-
-    ############################################################################
-    # WoeUSB
-    ############################################################################
-    sudo add-apt-repository -y ppa:nilarimogard/webupd8
-    sudo apt update
-    sudo apt install -y \
-      woeusb
-
-    ############################################################################
-    # Albert
-    ############################################################################
-    sudo add-apt-repository -y ppa:nilarimogard/webupd8
-    sudo apt update
-    sudo apt install -y \
-      albert
-
-    ############################################################################
     # Drivers
     ############################################################################
     sudo add-apt-repository -y ppa:oibaf/graphics-drivers
@@ -446,19 +350,11 @@ case "$(uname)" in
       vulkan-utils
 
     ############################################################################
-    # Prime Indicator Plus
-    ############################################################################
-    sudo add-apt-repository -y ppa:nilarimogard/webupd8
-    sudo apt update
-    sudo apt install -y \
-      prime-indicator-plus
-
-    ############################################################################
     # Fstrim
     ############################################################################
     echo -e "#\!/bin/sh\n" | sudo tee /etc/cron.hourly/fstrim
     echo -e "/sbin/fstrim --all || exit 1" | sudo tee -a /etc/cron.hourly/fstrim
-    sudo chmod +x /etc/cron.daily/fstrim
+    sudo chmod +x /etc/cron.hourly/fstrim
 
     ;;
   Darwin)

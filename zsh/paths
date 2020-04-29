@@ -1,17 +1,27 @@
 #!/usr/bin/env bash
 
 ################################################################################
+# General paths
+################################################################################
+# Flutter
+export PATH="$HOME/.flutter-sdk/bin:$PATH"
+
+# Node.js
+export PATH="$HOME/.global-modules/bin:$PATH"
+
+################################################################################
 # System specific paths
 ################################################################################
 case "$(uname)" in
   Linux)
-    # Flutter
-    export PATH="$HOME/.flutter-sdk/bin:$PATH"
 
   ;;
   Darwin)
+    # Homebrew's sbin
+    export PATH="/usr/local/sbin:$PATH"
+
     # coreutils
-    export PATH="$(brew --prefix coreutils)/libexec/gnubin:$PATH"
+    export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 
     # findutils
     export PATH="/usr/local/opt/findutils/libexec/gnubin:$PATH"
@@ -22,13 +32,7 @@ case "$(uname)" in
     # OpenSSL
     export PATH="/usr/local/opt/openssl/bin:$PATH"
 
-    # Python
-    export PATH="$HOME/Library/Python/3.7/bin:$PATH"
-
     # Ruby
     export PATH="/usr/local/opt/ruby/bin:$PATH"
   ;;
 esac
-
-# Node.js
-export PATH="$HOME/.global-modules/bin:$PATH"

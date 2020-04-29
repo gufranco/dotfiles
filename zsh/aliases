@@ -33,7 +33,7 @@ alias egrep="egrep --color=auto"
 alias zgrep="zgrep --color=auto"
 
 # Always create parent folders if needed
-alias mkdir="mkdir --parents --verbose"
+alias mkdir="mkdir -p -v"
 
 # Stop after sending 5 packets
 alias ping="ping -c 5"
@@ -59,19 +59,6 @@ if [ -x "$(command -v neomutt)" ]; then
   alias mutt="neomutt"
 fi
 
-# Use npq when available
-if [ -x "$(command -v npq-hero)" ]; then
-  # npm
-  if [ -x "$(command -v npm)" ]; then
-    alias npm="npq-hero"
-  fi
-
-  # Yarn
-  if [ -x "$(command -v yarn)" ]; then
-    alias yarn="NPQ_PKG_MGR=yarn npq-hero"
-  fi
-fi
-
 # Use npx when available
 if [ -x "$(command -v npx)" ]; then
   alias eslint="npx eslint"
@@ -88,7 +75,7 @@ case "$(uname)" in
   Linux)
     # Use docker-compose as container when binary isn't available
     if ! [ -x "$(command -v docker-compose)" ]; then
-      alias docker-compose="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v \"$PWD:/rootfs/$PWD\" -w=\"/rootfs/$PWD\" docker/compose:1.24.0"
+      alias docker-compose="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v \"$PWD:/rootfs/$PWD\" -w=\"/rootfs/$PWD\" docker/compose:alpine-1.25.5"
     fi
 
     # Lock the screen (when going AFK)

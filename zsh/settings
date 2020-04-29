@@ -8,6 +8,8 @@ case "$(uname)" in
 
   ;;
   Darwin)
+  # Fix insecure completion-dependent directories
+  export ZSH_DISABLE_COMPFIX=true
 
   ;;
 esac

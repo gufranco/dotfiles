@@ -116,11 +116,6 @@ case "$(uname)" in
       android-studio
 
     ############################################################################
-    # Flutter
-    ############################################################################
-    git clone https://github.com/flutter/flutter.git -b stable ~/.flutter-sdk
-
-    ############################################################################
     # Spotify
     ############################################################################
     curl -fsSL https://download.spotify.com/debian/pubkey.gpg | sudo apt-key add -
@@ -202,8 +197,8 @@ case "$(uname)" in
     ############################################################################
     # Insomnia
     ############################################################################
-    echo "deb [arch=amd64] https://dl.bintray.com/getinsomnia/Insomnia /" | sudo tee -a /etc/apt/sources.list.d/insomnia.list
     curl -fsSL https://insomnia.rest/keys/debian-public.key.asc | sudo apt-key add -
+    echo "deb [arch=amd64] https://dl.bintray.com/getinsomnia/Insomnia /" | sudo tee /etc/apt/sources.list.d/insomnia.list
     sudo apt update
     sudo apt install -y \
       insomnia
@@ -374,23 +369,21 @@ case "$(uname)" in
     # Taps
     ############################################################################
     brew tap buo/cask-upgrade
-    brew tap caskroom/drivers
-    brew tap caskroom/fonts
+    brew tap homebrew/cask-drivers
+    brew tap homebrew/cask-fonts
     brew tap neomutt/homebrew-neomutt
     brew tap universal-ctags/universal-ctags
-    brew tap weaveworks/tap
 
     ############################################################################
     # Bottles
     ############################################################################
     brew install \
       asciinema \
+      awscli \
       bash \
       cmake \
       coreutils \
       curl \
-      elixir \
-      erlang \
       findutils \
       git \
       gpg \
@@ -421,19 +414,24 @@ case "$(uname)" in
     # Casks
     ############################################################################
     brew cask install \
+      android-studio \
       authy \
       balenaetcher \
       bartender \
+      cleanmymac \
       cloudapp \
       coconutbattery \
       dbeaver-community \
       docker \
       dropbox \
+      evolv-escribe-suite \
       firefox \
       flixtools \
       folx \
       font-hack-nerd-font \
+      google-backup-and-sync \
       google-chrome \
+      graalvm-ce-java11 \
       insomnia \
       intel-power-gadget \
       istat-menus \
@@ -450,13 +448,11 @@ case "$(uname)" in
       skype \
       slack \
       spotify \
+      station \
       steam \
       sublime-text \
-      tor-browser \
       transmission \
-      vagrant \
-      virtualbox \
-      virtualbox-extension-pack \
+      tunnelblick \
       visual-studio-code \
       vlc
 
@@ -487,6 +483,49 @@ case "$(uname)" in
     sudo scutil --set LocalHostName macbook
     sudo scutil --set ComputerName macbook
 
+    ############################################################################
+    # Battery
+    ############################################################################
+    sudo pmset -b standbydelaylow 300
+    sudo pmset -b standby 1
+    sudo pmset -b halfdim 1
+    sudo pmset -b sms 0
+    sudo pmset -b disksleep 10
+    sudo pmset -b standbydelayhigh 600
+    sudo pmset -b sleep 10
+    sudo pmset -b autopoweroffdelay 40000
+    sudo pmset -b hibernatemode 25
+    sudo pmset -b autopoweroff 1
+    sudo pmset -b ttyskeepawake 0
+    sudo pmset -b womp 0
+    sudo pmset -b tcpkeepalive 0
+    sudo pmset -b displaysleep 2
+    sudo pmset -b highstandbythreshold 80
+    sudo pmset -b acwake 0
+    sudo pmset -b lidwake 1
+
+    ############################################################################
+    # AC
+    ############################################################################
+    sudo pmset -c standbydelaylow 900
+    sudo pmset -c standby 1
+    sudo pmset -c halfdim 1
+    sudo pmset -c sms 0
+    sudo pmset -c networkoversleep 0
+    sudo pmset -c disksleep 10
+    sudo pmset -c standbydelayhigh 1200
+    sudo pmset -c sleep 10
+    sudo pmset -c autopoweroffdelay 20000
+    sudo pmset -c hibernatemode 3
+    sudo pmset -c autopoweroff 1
+    sudo pmset -c womp 0
+    sudo pmset -c tcpkeepalive 0
+    sudo pmset -c ttyskeepawake 0
+    sudo pmset -c displaysleep 10
+    sudo pmset -c highstandbythreshold 50
+    sudo pmset -c acwake 0
+    sudo pmset -c lidwake 1
+
     ;;
   *)
     echo -e "Invalid system."
@@ -496,7 +535,12 @@ case "$(uname)" in
 esac
 
 ################################################################################
-# Install dotfiles
+# Flutter
+################################################################################
+git clone --depth=1 https://github.com/flutter/flutter.git -b stable ~/.flutter-sdk
+
+################################################################################
+# dotfiles
 ################################################################################
 if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
   mv ~/.dotfiles /tmp/dotfiles-old
@@ -608,7 +652,6 @@ if [ -d ~/.ssh ] || [ -h ~/.ssh ]; then
   mv ~/.ssh /tmp/ssh-old
 fi
 ln -s ~/.dotfiles/ssh ~/.ssh
-
 chmod 400 ~/.ssh/id_*
 
 ################################################################################

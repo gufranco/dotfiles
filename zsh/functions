@@ -64,6 +64,9 @@ function f5() {
   git pull
 
   # Vim
+  if [[ "$(uname)" == "Darwin" ]]; then
+    brew link --overwrite vim
+  fi
   vim +PlugUpgrade +PlugUpdate +qall
 
   # Oh-my-zsh

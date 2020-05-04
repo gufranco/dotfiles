@@ -94,7 +94,7 @@ case "$(uname)" in
     ############################################################################
     # Node.js
     ############################################################################
-    curl -fsSL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+    curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
     sudo apt update
     sudo apt install -y \
       nodejs
@@ -245,12 +245,6 @@ case "$(uname)" in
     ############################################################################
     sudo apt install -y \
       shellcheck
-
-    ############################################################################
-    # Dropbox
-    ############################################################################
-    sudo apt install -y \
-      nautilus-dropbox
 
     ############################################################################
     # Hack Nerd Font
@@ -419,19 +413,15 @@ case "$(uname)" in
       balenaetcher \
       bartender \
       cleanmymac \
-      cloudapp \
       coconutbattery \
       dbeaver-community \
       docker \
-      dropbox \
       evolv-escribe-suite \
       firefox \
       flixtools \
       folx \
       font-hack-nerd-font \
-      google-backup-and-sync \
       google-chrome \
-      graalvm-ce-java11 \
       insomnia \
       intel-power-gadget \
       istat-menus \
@@ -446,11 +436,10 @@ case "$(uname)" in
       robo-3t \
       sizeup \
       skype \
-      slack \
       spotify \
       station \
-      steam \
       sublime-text \
+      tor-browser \
       transmission \
       tunnelblick \
       visual-studio-code \

@@ -65,6 +65,7 @@ if [ -x "$(command -v npx)" ]; then
   alias ngrok="npx ngrok"
   alias npq="npx npq"
   alias snyk="npx snyk"
+  alias tsc="npx tsc"
   alias vtop="npx vtop"
 fi
 

@@ -65,6 +65,7 @@ function f5() {
 
   # Vim
   if [[ "$(uname)" == "Darwin" ]]; then
+    brew unlink vim
     brew link --overwrite vim
   fi
   vim +PlugUpgrade +PlugUpdate +qall

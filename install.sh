@@ -329,6 +329,14 @@ case "$(uname)" in
       /tmp/keybase.deb
 
     ############################################################################
+    # Pcsx2
+    ############################################################################
+    sudo add-apt-repository -y ppa:gregory-hainaut/pcsx2.official.ppa
+    sudo apt update
+    sudo apt install -y \
+      pcsx2
+
+    ############################################################################
     # Drivers
     ############################################################################
     sudo add-apt-repository -y ppa:oibaf/graphics-drivers

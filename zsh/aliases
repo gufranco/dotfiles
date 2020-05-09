@@ -134,5 +134,8 @@ case "$(uname)" in
     # Lock the screen (when going AFK)
     alias afk="/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend"
 
+    # Reset launchpad layout
+    alias resetlaunchpad="defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock"
+
   ;;
 esac

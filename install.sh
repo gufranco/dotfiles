@@ -337,6 +337,15 @@ case "$(uname)" in
       pcsx2
 
     ############################################################################
+    # Handbrake
+    ############################################################################
+    sudo add-apt-repository -y ppa:stebbins/handbrake-releases
+    sudo apt update
+    sudo apt install -y \
+      handbrake-cli \
+      handbrake-gtk
+
+    ############################################################################
     # Drivers
     ############################################################################
     sudo add-apt-repository -y ppa:oibaf/graphics-drivers
@@ -430,6 +439,7 @@ case "$(uname)" in
       folx \
       font-hack-nerd-font \
       google-chrome \
+      handbrake \
       insomnia \
       intel-power-gadget \
       istat-menus \

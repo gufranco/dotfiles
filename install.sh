@@ -100,6 +100,12 @@ case "$(uname)" in
       nodejs
 
     ############################################################################
+    # Dropbox
+    ############################################################################
+    sudo apt install -y \
+      nautilus-dropbox
+
+    ############################################################################
     # Java
     ############################################################################
     sudo add-apt-repository -y ppa:linuxuprising/java
@@ -433,6 +439,7 @@ case "$(uname)" in
       coconutbattery \
       dbeaver-community \
       docker \
+      dropbox \
       evolv-escribe-suite \
       firefox \
       flixtools \

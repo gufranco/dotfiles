@@ -383,92 +383,9 @@ case "$(uname)" in
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
     ############################################################################
-    # Taps
+    # Homebrew bundle
     ############################################################################
-    brew tap buo/cask-upgrade
-    brew tap homebrew/cask-drivers
-    brew tap homebrew/cask-fonts
-    brew tap neomutt/homebrew-neomutt
-    brew tap universal-ctags/universal-ctags
-
-    ############################################################################
-    # Bottles
-    ############################################################################
-    brew install \
-      asciinema \
-      awscli \
-      bash \
-      cmake \
-      coreutils \
-      curl \
-      findutils \
-      git \
-      gpg \
-      htop \
-      lynx \
-      mas \
-      moreutils \
-      neofetch \
-      neovim \
-      nodejs \
-      openssl \
-      python3 \
-      readline \
-      reattach-to-user-namespace \
-      ripgrep \
-      ruby \
-      shellcheck \
-      tmux \
-      urlview \
-      vim \
-      wget \
-      zlib \
-      zsh
-
-    brew install --HEAD universal-ctags
-
-    ############################################################################
-    # Casks
-    ############################################################################
-    brew cask install \
-      android-studio \
-      authy \
-      balenaetcher \
-      bartender \
-      cleanmymac \
-      coconutbattery \
-      dbeaver-community \
-      docker \
-      dropbox \
-      evolv-escribe-suite \
-      firefox \
-      flixtools \
-      folx \
-      font-hack-nerd-font \
-      google-chrome \
-      handbrake \
-      insomnia \
-      intel-power-gadget \
-      istat-menus \
-      itau \
-      iterm2 \
-      java \
-      keka \
-      keybase \
-      lastpass \
-      macvim \
-      plex-media-server \
-      robo-3t \
-      sizeup \
-      skype \
-      spotify \
-      station \
-      sublime-text \
-      tor-browser \
-      transmission \
-      tunnelblick \
-      visual-studio-code \
-      vlc
+    brew bundle
 
     ############################################################################
     # iTerm 2
@@ -479,18 +396,6 @@ case "$(uname)" in
     open "/tmp/Dracula.itermcolors"
 
     ############################################################################
-    # App Store
-    ############################################################################
-    # Amphetamine
-    mas install 937984704
-
-    # Clean My Drive 2
-    mas install 523620159
-
-    # Todoist
-    mas install 585829637
-
-    ############################################################################
     # Hostname
     ############################################################################
     sudo scutil --set HostName macbook
@@ -498,7 +403,7 @@ case "$(uname)" in
     sudo scutil --set ComputerName macbook
 
     ############################################################################
-    # Battery
+    # Battery config
     ############################################################################
     sudo pmset -b standbydelaylow 300
     sudo pmset -b standby 1
@@ -519,7 +424,7 @@ case "$(uname)" in
     sudo pmset -b lidwake 1
 
     ############################################################################
-    # AC
+    # AC config
     ############################################################################
     sudo pmset -c standbydelaylow 900
     sudo pmset -c standby 1

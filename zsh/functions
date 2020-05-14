@@ -30,6 +30,7 @@ case "$(uname)" in
       brew upgrade
       brew cu --all --yes --cleanup
       brew cleanup -s
+      cd ~/.dotfiles && brew bundle --force cleanup
       mas upgrade
       sudo softwareupdate -i -a
     }

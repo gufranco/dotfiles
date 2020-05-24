@@ -136,9 +136,6 @@ if has('gui_macvim')
   augroup END
 endif
 
-" Avoid clear screen at exit
-set t_ti= t_te=
-
 " Use ripgrep over grep if avaiable
 if executable('rg')
   set grepprg=rg\ --color=never
@@ -308,21 +305,14 @@ let g:ale_lint_on_enter = 1
 " Compatible linters
 let g:ale_linters = {
   \ 'javascript': ['eslint'],
-  \ 'python': ['flake8', 'pylint'],
-  \ 'typescript': ['tslint'],
+  \ 'typescript': ['eslint'],
   \ 'vim': ['vint'],
 \ }
 
 " Compatible fixers
 let g:ale_fixers = {
-  \ 'css': ['prettier'],
-  \ 'html': ['prettier'],
   \ 'javascript': ['prettier', 'eslint'],
-  \ 'php': ['prettier'],
-  \ 'python': ['black'],
-  \ 'ruby': ['prettier'],
-  \ 'scss': ['prettier'],
-  \ 'typescript': ['prettier', 'tslint'],
+  \ 'typescript': ['prettier', 'eslint'],
 \ }
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

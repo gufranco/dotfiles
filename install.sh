@@ -332,6 +332,14 @@ case "$(uname)" in
       steam
 
     ############################################################################
+    # Lutris
+    ############################################################################
+    sudo add-apt-repository -y ppa:lutris-team/lutris
+    sudo apt update
+    sudo apt install -y \
+      lutris
+
+    ############################################################################
     # Keybase
     ############################################################################
     curl -fLo \
@@ -343,8 +351,6 @@ case "$(uname)" in
     ############################################################################
     # Pcsx2
     ############################################################################
-    sudo add-apt-repository -y ppa:gregory-hainaut/pcsx2.official.ppa
-    sudo apt update
     sudo apt install -y \
       pcsx2
 
@@ -373,6 +379,17 @@ case "$(uname)" in
     echo -e "#\!/bin/sh\n" | sudo tee /etc/cron.hourly/fstrim
     echo -e "/sbin/fstrim --all || exit 1" | sudo tee -a /etc/cron.hourly/fstrim
     sudo chmod +x /etc/cron.hourly/fstrim
+
+    ############################################################################
+    # Dock
+    ############################################################################
+    gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
+    gsettings set org.gnome.shell.extensions.dash-to-dock dock-position BOTTOM
+    gsettings set org.gnome.shell.extensions.dash-to-dock transparency-mode FIXED
+    gsettings set org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 30
+    gsettings set org.gnome.shell.extensions.dash-to-dock unity-backlit-items true
+    gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed false
+    gsettings set org.gnome.shell.extensions.dash-to-dock autohide true
 
     ;;
   Darwin)

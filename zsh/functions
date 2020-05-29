@@ -100,8 +100,8 @@ function mongodb-init() {
     --restart unless-stopped \
     --env "MONGO_INITDB_ROOT_USERNAME=root" \
     --env "MONGO_INITDB_ROOT_PASSWORD=root" \
-    -v "$HOME/Docker/Databases/MongoDB/Data:/data/db" \
-    -v "$HOME/Docker/Databases/MongoDB/Dump:/dump" \
+    --mount type=bind,source="$HOME"/Docker/Databases/MongoDB/Data,target=/data/db \
+    --mount type=bind,source="$HOME"/Docker/Databases/MongoDB/Dump,target=/dump \
     --publish 27017:27017 \
     mongo:4
 }
@@ -137,8 +137,8 @@ function mysql-init() {
     --name mysql \
     --restart unless-stopped \
     --env "MYSQL_ROOT_PASSWORD=root" \
-    -v "$HOME/Docker/Databases/MySQL/Data:/var/lib/mysql" \
-    -v "$HOME/Docker/Databases/MySQL/Dump:/dump" \
+    --mount type=bind,source="$HOME"/Docker/Databases/MySQL/Data,target=/var/lib/mysql \
+    --mount type=bind,source="$HOME"/Docker/Databases/MySQL/Dump,target=/dump \
     --publish 3306:3306 \
     mysql:5
 }
@@ -175,10 +175,10 @@ function postgresql-init() {
     --restart unless-stopped \
     --env "POSTGRES_USER=root" \
     --env "POSTGRES_PASSWORD=root" \
-    -v "$HOME/Docker/Databases/PostgreSQL/Data:/var/lib/postgresql/data" \
-    -v "$HOME/Docker/Databases/PostgreSQL/Dump:/dump" \
+    --mount type=bind,source="$HOME"/Docker/Databases/PostgreSQL/Data,target=/var/lib/postgresql/data \
+    --mount type=bind,source="$HOME"/Docker/Databases/PostgreSQL/Dump,target=/dump \
     --publish 5432:5432 \
-    postgres:12
+    postgres:12-alpine
 }
 
 function postgresql-start() {
@@ -211,8 +211,8 @@ function couchbase-init() {
     --detach \
     --name couchbase \
     --restart unless-stopped \
-    -v "$HOME/Docker/Databases/Couchbase/Data:/opt/couchbase/var" \
-    -v "$HOME/Docker/Databases/Couchbase/Dump:/dump" \
+    --mount type=bind,source="$HOME"/Docker/Databases/Couchbase/Data,target=/dump/opt/couchbase/var \
+    --mount type=bind,source="$HOME"/Docker/Databases/Couchbase/Dump,target=/dump \
     --publish 8091-8094:8091-8094 \
     --publish 11210:11210 \
     couchbase:community-6.0.0

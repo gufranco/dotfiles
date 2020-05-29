@@ -34,5 +34,8 @@ case "$(uname)" in
 
     # Ruby
     export PATH="/usr/local/opt/ruby/bin:$PATH"
+
+    # Python
+    export PATH="/usr/local/opt/python@3.8/bin:$PATH"
   ;;
 esac

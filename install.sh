@@ -147,8 +147,7 @@ case "$(uname)" in
     ############################################################################
     # DBeaver
     ############################################################################
-    curl -fsSL https://dbeaver.io/debs/dbeaver.gpg.key | sudo apt-key add -
-    echo -e "deb [arch=amd64] https://dbeaver.io/debs/dbeaver-ce /" | sudo tee /etc/apt/sources.list.d/dbeaver.list
+    sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce
     sudo apt update
     sudo apt install -y \
       dbeaver-ce
@@ -177,10 +176,8 @@ case "$(uname)" in
     ############################################################################
     # Universal ctags
     ############################################################################
-    # sudo add-apt-repository -y ppa:hnakamur/universal-ctags
-    # sudo apt update
-    # sudo apt install -y \
-    #   universal-ctags
+    sudo apt install -y \
+      universal-ctags
 
     ############################################################################
     # Sublime Text 3

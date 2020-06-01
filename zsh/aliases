@@ -62,9 +62,8 @@ fi
 # Use npx when available
 if [ -x "$(command -v npx)" ]; then
   alias eslint="npx eslint"
+  alias jest="npx jest"
   alias ngrok="npx ngrok"
-  alias npq="npx npq"
-  alias snyk="npx snyk"
   alias tsc="npx tsc"
   alias vtop="npx vtop"
 fi

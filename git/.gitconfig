@@ -1,41 +1,18 @@
 [user]
-  # Name
   name = Gustavo Franco
-
-  # E-mail
   email = gufranco@users.noreply.github.com
-
-  # Require setting user.name and email per-repo
   useConfigOnly = true
-
-  # GPG key ID
   signingkey = F0D1290BDE08BBF6
 
-[credential]
-  # Cache credentials for 2 hours
-  helper = cache --timeout 7200
-
 [core]
-  # Global ignore
   excludesfile = ~/.dotfiles/git/.gitignore_global
-
-  # Don't convert line break to CRLF. Keep CR
   autocrlf = input
-
-  # Paginate results
   pager = less -FRSX
-
-  # Remove whitespaces, use CR and indent using spaces
   whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
-
-  # Default text editor
   editor = vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72'
 
 [commit]
-  # Sign all commits by default
   gpgsign = true
-
-  # Template
   template = ~/.dotfiles/git/.gitmessage
 
 [github]
@@ -63,20 +40,19 @@
   old = red
   new = green
 
+[pull]
+  rebase = true
+
 [branch]
-  # Always merge using rebase
   autosetuprebase = always
 
 [rerere]
-  # Reuse recorded resolution
   enabled = true
 
 [push]
-  # Only push current branch
   default = current
 
 [help]
-  # Suggest the correct command
   autocorrect = 1
 
 [alias]

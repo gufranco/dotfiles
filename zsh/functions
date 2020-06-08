@@ -91,7 +91,6 @@ function f5() {
 # MongoDB
 ################################################################################
 function mongodb-init() {
-  mkdir -p ~/Docker/Databases/MongoDB/Data
   mkdir -p ~/Docker/Databases/MongoDB/Dump
 
   docker run \
@@ -101,9 +100,8 @@ function mongodb-init() {
     --restart unless-stopped \
     --env "MONGO_INITDB_ROOT_USERNAME=root" \
     --env "MONGO_INITDB_ROOT_PASSWORD=root" \
-    --mount type=bind,source="$HOME"/Docker/Databases/MongoDB/Data,target=/data/db \
     --mount type=bind,source="$HOME"/Docker/Databases/MongoDB/Dump,target=/dump \
-    --publish 27017:27017 \
+    --publish 127.0.0.1:27017:27017 \
     mongo:4
 }
 
@@ -118,8 +116,6 @@ function mongodb-stop() {
 function mongodb-purge() {
   mongodb-stop
   docker rm mongodb
-
-  sudo rm -rf ~/Docker/Databases/MongoDB/Data
 }
 
 function mongodb-terminal() {
@@ -130,7 +126,6 @@ function mongodb-terminal() {
 # MySQL
 ################################################################################
 function mysql-init() {
-  mkdir -p ~/Docker/Databases/MySQL/Data
   mkdir -p ~/Docker/Databases/MySQL/Dump
 
   docker run \
@@ -139,9 +134,8 @@ function mysql-init() {
     --name mysql \
     --restart unless-stopped \
     --env "MYSQL_ROOT_PASSWORD=root" \
-    --mount type=bind,source="$HOME"/Docker/Databases/MySQL/Data,target=/var/lib/mysql \
     --mount type=bind,source="$HOME"/Docker/Databases/MySQL/Dump,target=/dump \
-    --publish 3306:3306 \
+    --publish 127.0.0.1:3306:3306 \
     mysql:5
 }
 
@@ -156,8 +150,6 @@ function mysql-stop() {
 function mysql-purge() {
   mysql-stop
   docker rm mysql
-
-  sudo rm -rf ~/Docker/Databases/MySQL/Data
 }
 
 function mysql-terminal() {
@@ -168,7 +160,6 @@ function mysql-terminal() {
 # PostgreSQL
 ################################################################################
 function postgresql-init() {
-  mkdir -p ~/Docker/Databases/PostgreSQL/Data
   mkdir -p ~/Docker/Databases/PostgreSQL/Dump
 
   docker run \
@@ -178,9 +169,8 @@ function postgresql-init() {
     --restart unless-stopped \
     --env "POSTGRES_USER=root" \
     --env "POSTGRES_PASSWORD=root" \
-    --mount type=bind,source="$HOME"/Docker/Databases/PostgreSQL/Data,target=/var/lib/postgresql/data \
     --mount type=bind,source="$HOME"/Docker/Databases/PostgreSQL/Dump,target=/dump \
-    --publish 5432:5432 \
+    --publish 127.0.0.1:5432:5432 \
     postgres:12-alpine
 }
 
@@ -195,19 +185,16 @@ function postgresql-stop() {
 function postgresql-purge() {
   postgresql-stop
   docker rm postgresql
-
-  sudo rm -rf ~/Docker/Databases/PostgreSQL/Data
 }
 
 function postgresql-terminal() {
-  docker exec -it postgresql /bin/bash
+  docker exec -it postgresql /bin/sh
 }
 
 ################################################################################
 # Couchbase
 ################################################################################
 function couchbase-init() {
-  mkdir -p ~/Docker/Databases/Couchbase/Data
   mkdir -p ~/Docker/Databases/Couchbase/Dump
 
   docker run \
@@ -215,10 +202,9 @@ function couchbase-init() {
     --hostname couchbase \
     --name couchbase \
     --restart unless-stopped \
-    --mount type=bind,source="$HOME"/Docker/Databases/Couchbase/Data,target=/dump/opt/couchbase/var \
     --mount type=bind,source="$HOME"/Docker/Databases/Couchbase/Dump,target=/dump \
-    --publish 8091-8094:8091-8094 \
-    --publish 11210:11210 \
+    --publish 127.0.0.1:8091-8094:8091-8094 \
+    --publish 127.0.0.1:11210:11210 \
     couchbase:community-6.0.0
 }
 
@@ -233,8 +219,6 @@ function couchbase-stop() {
 function couchbase-purge() {
   couchbase-stop
   docker rm couchbase
-
-  sudo rm -rf ~/Docker/Databases/Couchbase/Data
 }
 
 function couchbase-terminal() {
@@ -245,15 +229,12 @@ function couchbase-terminal() {
 # Redis
 ################################################################################
 function redis-init() {
-  mkdir -p ~/Docker/Databases/Redis/Data
-
   docker run \
     --detach \
     --hostname redis \
     --name redis \
     --restart unless-stopped \
-    --mount type=bind,source="$HOME"/Docker/Databases/Redis/Data,target=/data \
-    --publish 6379:6379 \
+    --publish 127.0.0.1:6379:6379 \
     redis:6-alpine
 }
 
@@ -268,30 +249,25 @@ function redis-stop() {
 function redis-purge() {
   redis-stop
   docker rm redis
-
-  sudo rm -rf ~/Docker/Databases/Redis/Data
 }
 
 function redis-terminal() {
-  docker exec -it redis /bin/bash
+  docker exec -it redis /bin/sh
 }
 
 ################################################################################
 # RabbitMQ
 ################################################################################
 function rabbitmq-init() {
-  mkdir -p ~/Docker/Brokers/RabbitMQ/Data
-
   docker run \
     --detach \
     --hostname rabbitmq \
     --name rabbitmq \
     --restart unless-stopped \
-    --mount type=bind,source="$HOME"/Docker/Brokers/RabbitMQ/Data,target=/var/lib/rabbitmq \
     --env "RABBITMQ_DEFAULT_USER=root" \
     --env "RABBITMQ_DEFAULT_PASS=root" \
-    --publish 5672:5672 \
-    --publish 15672:15672 \
+    --publish 127.0.0.1:5672:5672 \
+    --publish 127.0.0.1:15672:15672 \
     rabbitmq:3-management-alpine
 }
 
@@ -306,10 +282,8 @@ function rabbitmq-stop() {
 function rabbitmq-purge() {
   rabbitmq-stop
   docker rm rabbitmq
-
-  sudo rm -rf ~/Docker/Brokers/RabbitMQ/Data
 }
 
 function rabbitmq-terminal() {
-  docker exec -it rabbitmq /bin/bash
+  docker exec -it rabbitmq /bin/sh
 }

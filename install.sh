@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
 set -ex
+
+# Ask for the root password upfront
 sudo -v
+
+# Keep-alive
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 case "$(uname)" in
@@ -361,6 +365,13 @@ case "$(uname)" in
       handbrake-gtk
 
     ############################################################################
+    # Piper
+    ############################################################################
+    sudo apt-add-repository -y ppa:libratbag-piper/piper-libratbag-git
+    sudo apt install -y \
+      piper
+
+    ############################################################################
     # Drivers
     ############################################################################
     sudo add-apt-repository -y ppa:oibaf/graphics-drivers
@@ -369,13 +380,6 @@ case "$(uname)" in
     sudo apt install -y \
       mesa-vulkan-drivers \
       vulkan-utils
-
-    ############################################################################
-    # Fstrim
-    ############################################################################
-    echo -e "#\!/bin/sh\n" | sudo tee /etc/cron.hourly/fstrim
-    echo -e "/sbin/fstrim --all || exit 1" | sudo tee -a /etc/cron.hourly/fstrim
-    sudo chmod +x /etc/cron.hourly/fstrim
 
     ############################################################################
     # Dock
@@ -387,6 +391,11 @@ case "$(uname)" in
     gsettings set org.gnome.shell.extensions.dash-to-dock unity-backlit-items true
     gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed false
     gsettings set org.gnome.shell.extensions.dash-to-dock autohide true
+
+    ############################################################################
+    # Clock
+    ############################################################################
+    # sudo timedatectl set-local-rtc 1
 
     ;;
   Darwin)
@@ -418,52 +427,279 @@ case "$(uname)" in
     ############################################################################
     # Hostname
     ############################################################################
-    sudo scutil --set HostName macbook
-    sudo scutil --set LocalHostName macbook
-    sudo scutil --set ComputerName macbook
+    sudo scutil --set HostName "macbook"
+    sudo scutil --set LocalHostName "macbook"
+    sudo scutil --set ComputerName "macbook"
+    sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbook"
 
     ############################################################################
-    # Battery config
+    # Always show scrollbars
     ############################################################################
-    sudo pmset -b standbydelaylow 300
-    sudo pmset -b standby 1
-    sudo pmset -b halfdim 1
-    sudo pmset -b sms 0
-    sudo pmset -b disksleep 10
-    sudo pmset -b standbydelayhigh 600
-    sudo pmset -b sleep 10
-    sudo pmset -b autopoweroffdelay 40000
-    sudo pmset -b hibernatemode 25
-    sudo pmset -b autopoweroff 1
-    sudo pmset -b ttyskeepawake 0
-    sudo pmset -b womp 0
-    sudo pmset -b tcpkeepalive 0
-    sudo pmset -b displaysleep 2
-    sudo pmset -b highstandbythreshold 80
-    sudo pmset -b acwake 0
-    sudo pmset -b lidwake 1
+    defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
 
     ############################################################################
-    # AC config
+    # Expand save panel by default
     ############################################################################
-    sudo pmset -c standbydelaylow 900
-    sudo pmset -c standby 1
-    sudo pmset -c halfdim 1
-    sudo pmset -c sms 0
-    sudo pmset -c networkoversleep 0
-    sudo pmset -c disksleep 10
-    sudo pmset -c standbydelayhigh 1200
-    sudo pmset -c sleep 10
-    sudo pmset -c autopoweroffdelay 20000
-    sudo pmset -c hibernatemode 3
-    sudo pmset -c autopoweroff 1
-    sudo pmset -c womp 0
-    sudo pmset -c tcpkeepalive 0
-    sudo pmset -c ttyskeepawake 0
-    sudo pmset -c displaysleep 10
-    sudo pmset -c highstandbythreshold 50
-    sudo pmset -c acwake 0
-    sudo pmset -c lidwake 1
+    defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
+    defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
+
+    ############################################################################
+    # Expand print panel by default
+    ############################################################################
+    defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
+    defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
+
+    ############################################################################
+    # Automatically quit printer app once the print jobs complete
+    ############################################################################
+    defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
+
+    ############################################################################
+    # Display ASCII control characters using caret notation in standard text views
+    ############################################################################
+    defaults write NSGlobalDomain NSTextShowsControlCharacters -bool true
+
+    ############################################################################
+    # Disable Resume system-wide
+    ############################################################################
+    defaults write com.apple.systempreferences NSQuitAlwaysKeepsWindows -bool false
+
+    ############################################################################
+    # Set Help Viewer windows to non-floating mode
+    ############################################################################
+    defaults write com.apple.helpviewer DevMode -bool true
+
+    ############################################################################
+    # Reveal IP address, hostname, OS version, etc. when clicking the clock
+    ############################################################################
+    sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
+
+    ############################################################################
+    # Disable automatic capitalization, smart dashes, period substitution, smart
+    # quotes and auto-correct
+    ############################################################################
+    defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
+    defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
+    defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+    defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
+    defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
+
+    ############################################################################
+    # Enable tap to click
+    ############################################################################
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+    defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+    defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+
+    ############################################################################
+    # Increase sound quality for Bluetooth headphones/headsets
+    ############################################################################
+    defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
+
+    ############################################################################
+    # Enable full keyboard access for all controls
+    ############################################################################
+    defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
+
+    ############################################################################
+    # Use scroll gesture with the Ctrl (^) modifier key to zoom
+    ############################################################################
+    defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
+    defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
+
+    ############################################################################
+    # Follow the keyboard focus while zoomed in
+    ############################################################################
+    defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
+
+    ############################################################################
+    # Disable press-and-hold for keys in favor of key repeat
+    ############################################################################
+    defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+
+    ############################################################################
+    # Set a blazingly fast keyboard repeat rate
+    ############################################################################
+    defaults write NSGlobalDomain KeyRepeat -int 1
+    defaults write NSGlobalDomain InitialKeyRepeat -int 10
+
+    ############################################################################
+    # Show language menu in the top right corner of the boot screen
+    ############################################################################
+    sudo defaults write /Library/Preferences/com.apple.loginwindow showInputMenu -bool true
+
+    ############################################################################
+    # Energy saving
+    ############################################################################
+    sudo pmset -a lidwake 1
+    sudo pmset -a autorestart 1
+    sudo systemsetup -setrestartfreeze on
+    sudo pmset -a displaysleep 15
+    sudo pmset -c sleep 0
+    sudo pmset -b sleep 5
+    sudo pmset -a standbydelay 86400
+    sudo systemsetup -setcomputersleep Off > /dev/null
+    sudo pmset -a hibernatemode 0
+    sudo rm /private/var/vm/sleepimage
+    sudo touch /private/var/vm/sleepimage
+    sudo chflags uchg /private/var/vm/sleepimage
+
+    ############################################################################
+    # Require password immediately after sleep or screen saver begins
+    ############################################################################
+    defaults write com.apple.screensaver askForPassword -int 1
+    defaults write com.apple.screensaver askForPasswordDelay -int 0
+
+    ############################################################################
+    # Save screenshots to the desktop
+    ############################################################################
+    defaults write com.apple.screencapture location -string "${HOME}/Desktop"
+
+    ############################################################################
+    # Save screenshots in PNG format
+    ############################################################################
+    defaults write com.apple.screencapture type -string "png"
+
+    ############################################################################
+    # Disable shadow in screenshots
+    ############################################################################
+    defaults write com.apple.screencapture disable-shadow -bool true
+
+    ############################################################################
+    # Enable subpixel font rendering on non-Apple LCDs
+    ############################################################################
+    defaults write NSGlobalDomain AppleFontSmoothing -int 1
+
+    ############################################################################
+    # Enable HiDPI display modes
+    ############################################################################
+    sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
+
+    ############################################################################
+    # Disable window animations and Get Info animations
+    ############################################################################
+    defaults write com.apple.finder DisableAllAnimations -bool true
+
+    ############################################################################
+    # Show all filename extensions
+    ############################################################################
+    defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+
+    ############################################################################
+    # Show status and path bar
+    ############################################################################
+    defaults write com.apple.finder ShowStatusBar -bool true
+    defaults write com.apple.finder ShowPathbar -bool true
+
+    ############################################################################
+    # Keep folders on top when sorting by name
+    ############################################################################
+    defaults write com.apple.finder _FXSortFoldersFirst -bool true
+
+    ############################################################################
+    # When performing a search, search the current folder by default
+    ############################################################################
+    defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+
+    ############################################################################
+    # Disable the warning when changing a file extension
+    ############################################################################
+    defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+
+    ############################################################################
+    # Enable spring loading for directories
+    ############################################################################
+    defaults write NSGlobalDomain com.apple.springing.enabled -bool true
+
+    ############################################################################
+    # Remove the spring loading delay for directories
+    ############################################################################
+    defaults write NSGlobalDomain com.apple.springing.delay -float 0
+
+    ############################################################################
+    # Avoid creating .DS_Store files on network or USB volumes
+    ############################################################################
+    defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+    defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
+    ############################################################################
+    # Use list view in all Finder windows by default
+    ############################################################################
+    defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+
+    ############################################################################
+    # Enable AirDrop over Ethernet and on unsupported Macs running Lion
+    ############################################################################
+    defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
+
+    ############################################################################
+    # Disable send and reply animations in Mail.app
+    ############################################################################
+    defaults write com.apple.mail DisableReplyAnimations -bool true
+    defaults write com.apple.mail DisableSendAnimations -bool true
+
+    ############################################################################
+    # Copy email addresses as `foo@example.com` in Mail.app
+    ############################################################################
+    defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
+
+    ############################################################################
+    # Display emails in threaded mode in Mail.app
+    ############################################################################
+    defaults write com.apple.mail DraftsViewerAttributes -dict-add "DisplayInThreadedMode" -string "yes"
+    defaults write com.apple.mail DraftsViewerAttributes -dict-add "SortedDescending" -string "yes"
+    defaults write com.apple.mail DraftsViewerAttributes -dict-add "SortOrder" -string "received-date"
+
+    ############################################################################
+    # Disable inline attachments in Mail.app
+    ############################################################################
+    defaults write com.apple.mail DisableInlineAttachmentViewing -bool true
+
+    ############################################################################
+    # Only use UTF-8 in Terminal.app
+    ############################################################################
+    defaults write com.apple.terminal StringEncodings -array 4
+
+    ############################################################################
+    # Prevent Time Machine from prompting to use new hard drives as backup
+    ############################################################################
+    defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
+
+    ############################################################################
+    # Show the main window when launching Activity Monitor
+    ############################################################################
+    defaults write com.apple.ActivityMonitor OpenMainWindow -bool true
+
+    ############################################################################
+    # Visualize CPU usage in the Activity Monitor Dock icon
+    ############################################################################
+    defaults write com.apple.ActivityMonitor IconType -int 5
+
+    ############################################################################
+    # Show all processes in Activity Monitor
+    ############################################################################
+    defaults write com.apple.ActivityMonitor ShowCategory -int 0
+
+    ############################################################################
+    # Sort Activity Monitor results by CPU usage
+    ############################################################################
+    defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
+    defaults write com.apple.ActivityMonitor SortDirection -int 0
+
+    ############################################################################
+    # Disable automatic emoji substitution in Messages.app
+    ############################################################################
+    defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticEmojiSubstitutionEnablediMessage" -bool false
+
+    ############################################################################
+    # Disable smart quotes in Messages.app
+    ############################################################################
+    defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticQuoteSubstitutionEnabled" -bool false
+
+    ############################################################################
+    # Disable continuous spell checking in Messages.app
+    ############################################################################
+    defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "continuousSpellCheckingEnabled" -bool false
 
     ;;
   *)

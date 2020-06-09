@@ -84,15 +84,11 @@ case "$(uname)" in
     ############################################################################
     # Docker
     ############################################################################
-    # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-    # sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-    # sudo apt update
-    # sudo apt install -y \
-    #   docker-ce
-    # sudo usermod -a -G docker "$USER"
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    sudo apt update
     sudo apt install -y \
-      docker.io
-    sudo systemctl enable --now docker
+      docker-ce
     sudo usermod -a -G docker "$USER"
 
     ############################################################################
@@ -701,7 +697,7 @@ case "$(uname)" in
     ############################################################################
     defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "continuousSpellCheckingEnabled" -bool false
 
-    ;;
+      ;;
   *)
     echo -e "Invalid system."
     exit 1

@@ -48,6 +48,16 @@ case "$(uname)" in
       zsh
 
     ############################################################################
+    # dotfiles
+    ############################################################################
+    if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
+      mv ~/.dotfiles /tmp/dotfiles-old
+    fi
+    git clone --recursive  --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
+    cd ~/.dotfiles || exit 1
+    git remote set-url origin git@github.com:gufranco/dotfiles.git
+
+    ############################################################################
     # Enable universe repository
     ############################################################################
     sudo add-apt-repository universe
@@ -405,12 +415,22 @@ case "$(uname)" in
     ############################################################################
     # Homebrew
     ############################################################################
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+
+    ############################################################################
+    # dotfiles
+    ############################################################################
+    if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
+      mv ~/.dotfiles /tmp/dotfiles-old
+    fi
+    git clone --recursive  --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
+    cd ~/.dotfiles || exit 1
+    git remote set-url origin git@github.com:gufranco/dotfiles.git
 
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    brew bundle
+    brew bundle --file ~/.dotfiles/Brewfile
 
     ############################################################################
     # iTerm 2
@@ -709,16 +729,6 @@ esac
 # Flutter
 ################################################################################
 git clone --depth=1 https://github.com/flutter/flutter.git -b stable ~/.flutter-sdk
-
-################################################################################
-# dotfiles
-################################################################################
-if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
-  mv ~/.dotfiles /tmp/dotfiles-old
-fi
-git clone --recursive  --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
-cd ~/.dotfiles || exit 1
-git remote set-url origin git@github.com:gufranco/dotfiles.git
 
 ################################################################################
 # Node.js config

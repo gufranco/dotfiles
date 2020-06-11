@@ -916,7 +916,6 @@ case "$(uname)" in
   Darwin)
     # Clean the mess
     brew cleanup -s
-    brew prune
 
     # Enable TRIM and reboot
     sudo trimforce enable

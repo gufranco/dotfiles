@@ -53,7 +53,7 @@ case "$(uname)" in
     if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
       mv ~/.dotfiles /tmp/dotfiles-old
     fi
-    git clone --recursive  --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
+    git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
     cd ~/.dotfiles || exit 1
     git remote set-url origin git@github.com:gufranco/dotfiles.git
 
@@ -193,7 +193,7 @@ case "$(uname)" in
     # Sublime Text 3
     ############################################################################
     curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
-    echo "deb [arch=amd64] https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
+    echo -e "deb [arch=amd64] https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
     sudo apt-get update
     sudo apt-get install -y \
       sublime-text
@@ -211,7 +211,7 @@ case "$(uname)" in
     # Insomnia
     ############################################################################
     curl -fsSL https://insomnia.rest/keys/debian-public.key.asc | sudo apt-key add -
-    echo "deb [arch=amd64] https://dl.bintray.com/getinsomnia/Insomnia /" | sudo tee /etc/apt/sources.list.d/insomnia.list
+    echo -e "deb [arch=amd64] https://dl.bintray.com/getinsomnia/Insomnia /" | sudo tee /etc/apt/sources.list.d/insomnia.list
     sudo apt update
     sudo apt install -y \
       insomnia
@@ -398,12 +398,7 @@ case "$(uname)" in
     gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed false
     gsettings set org.gnome.shell.extensions.dash-to-dock autohide true
 
-    ############################################################################
-    # Clock
-    ############################################################################
-    # sudo timedatectl set-local-rtc 1
-
-    ;;
+  ;;
   Darwin)
     ############################################################################
     # xCode
@@ -423,14 +418,14 @@ case "$(uname)" in
     if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
       mv ~/.dotfiles /tmp/dotfiles-old
     fi
-    git clone --recursive  --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
+    git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
     cd ~/.dotfiles || exit 1
     git remote set-url origin git@github.com:gufranco/dotfiles.git
 
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    brew bundle --file ~/.dotfiles/Brewfile
+    brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
     ############################################################################
     # iTerm 2
@@ -486,11 +481,6 @@ case "$(uname)" in
     defaults write com.apple.helpviewer DevMode -bool true
 
     ############################################################################
-    # Reveal IP address, hostname, OS version, etc. when clicking the clock
-    ############################################################################
-    sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
-
-    ############################################################################
     # Disable automatic capitalization, smart dashes, period substitution, smart
     # quotes and auto-correct
     ############################################################################
@@ -518,47 +508,9 @@ case "$(uname)" in
     defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
     ############################################################################
-    # Use scroll gesture with the Ctrl (^) modifier key to zoom
-    ############################################################################
-    defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
-    defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
-
-    ############################################################################
-    # Follow the keyboard focus while zoomed in
-    ############################################################################
-    defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
-
-    ############################################################################
     # Disable press-and-hold for keys in favor of key repeat
     ############################################################################
     defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-
-    ############################################################################
-    # Set a blazingly fast keyboard repeat rate
-    ############################################################################
-    defaults write NSGlobalDomain KeyRepeat -int 1
-    defaults write NSGlobalDomain InitialKeyRepeat -int 10
-
-    ############################################################################
-    # Show language menu in the top right corner of the boot screen
-    ############################################################################
-    sudo defaults write /Library/Preferences/com.apple.loginwindow showInputMenu -bool true
-
-    ############################################################################
-    # Energy saving
-    ############################################################################
-    sudo pmset -a lidwake 1
-    sudo pmset -a autorestart 1
-    sudo systemsetup -setrestartfreeze on
-    sudo pmset -a displaysleep 15
-    sudo pmset -c sleep 0
-    sudo pmset -b sleep 5
-    sudo pmset -a standbydelay 86400
-    sudo systemsetup -setcomputersleep Off > /dev/null
-    sudo pmset -a hibernatemode 0
-    sudo rm /private/var/vm/sleepimage
-    sudo touch /private/var/vm/sleepimage
-    sudo chflags uchg /private/var/vm/sleepimage
 
     ############################################################################
     # Require password immediately after sleep or screen saver begins
@@ -567,13 +519,9 @@ case "$(uname)" in
     defaults write com.apple.screensaver askForPasswordDelay -int 0
 
     ############################################################################
-    # Save screenshots to the desktop
+    # Save screenshots to the desktop in PNG format
     ############################################################################
     defaults write com.apple.screencapture location -string "${HOME}/Desktop"
-
-    ############################################################################
-    # Save screenshots in PNG format
-    ############################################################################
     defaults write com.apple.screencapture type -string "png"
 
     ############################################################################
@@ -592,45 +540,20 @@ case "$(uname)" in
     sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
 
     ############################################################################
-    # Disable window animations and Get Info animations
-    ############################################################################
-    defaults write com.apple.finder DisableAllAnimations -bool true
-
-    ############################################################################
-    # Show all filename extensions
-    ############################################################################
-    defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-
-    ############################################################################
-    # Show status and path bar
+    # Show status and path bar in Finder
     ############################################################################
     defaults write com.apple.finder ShowStatusBar -bool true
     defaults write com.apple.finder ShowPathbar -bool true
 
     ############################################################################
-    # Keep folders on top when sorting by name
+    # Keep folders on top when sorting by name in Finder
     ############################################################################
     defaults write com.apple.finder _FXSortFoldersFirst -bool true
 
     ############################################################################
-    # When performing a search, search the current folder by default
+    # When performing a search, search the current folder by default in Finder
     ############################################################################
     defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
-
-    ############################################################################
-    # Disable the warning when changing a file extension
-    ############################################################################
-    defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
-
-    ############################################################################
-    # Enable spring loading for directories
-    ############################################################################
-    defaults write NSGlobalDomain com.apple.springing.enabled -bool true
-
-    ############################################################################
-    # Remove the spring loading delay for directories
-    ############################################################################
-    defaults write NSGlobalDomain com.apple.springing.delay -float 0
 
     ############################################################################
     # Avoid creating .DS_Store files on network or USB volumes
@@ -639,14 +562,9 @@ case "$(uname)" in
     defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
     ############################################################################
-    # Use list view in all Finder windows by default
+    # Use list view in all Finder windows by default in Finder
     ############################################################################
     defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
-
-    ############################################################################
-    # Enable AirDrop over Ethernet and on unsupported Macs running Lion
-    ############################################################################
-    defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
 
     ############################################################################
     # Disable send and reply animations in Mail.app
@@ -676,53 +594,7 @@ case "$(uname)" in
     ############################################################################
     defaults write com.apple.terminal StringEncodings -array 4
 
-    ############################################################################
-    # Prevent Time Machine from prompting to use new hard drives as backup
-    ############################################################################
-    defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
-
-    ############################################################################
-    # Show the main window when launching Activity Monitor
-    ############################################################################
-    defaults write com.apple.ActivityMonitor OpenMainWindow -bool true
-
-    ############################################################################
-    # Visualize CPU usage in the Activity Monitor Dock icon
-    ############################################################################
-    defaults write com.apple.ActivityMonitor IconType -int 5
-
-    ############################################################################
-    # Show all processes in Activity Monitor
-    ############################################################################
-    defaults write com.apple.ActivityMonitor ShowCategory -int 0
-
-    ############################################################################
-    # Sort Activity Monitor results by CPU usage
-    ############################################################################
-    defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
-    defaults write com.apple.ActivityMonitor SortDirection -int 0
-
-    ############################################################################
-    # Disable automatic emoji substitution in Messages.app
-    ############################################################################
-    defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticEmojiSubstitutionEnablediMessage" -bool false
-
-    ############################################################################
-    # Disable smart quotes in Messages.app
-    ############################################################################
-    defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticQuoteSubstitutionEnabled" -bool false
-
-    ############################################################################
-    # Disable continuous spell checking in Messages.app
-    ############################################################################
-    defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "continuousSpellCheckingEnabled" -bool false
-
-      ;;
-  *)
-    echo -e "Invalid system."
-    exit 1
-
-    ;;
+  ;;
 esac
 
 ################################################################################
@@ -743,7 +615,7 @@ mkdir ~/.global-modules
 # Bash config
 ################################################################################
 if [[ "$(uname)" == "Darwin" ]]; then
-  echo "/usr/local/bin/bash" | sudo tee -a /etc/shells
+  echo -e "/usr/local/bin/bash" | sudo tee -a /etc/shells
 fi
 
 ################################################################################
@@ -759,7 +631,7 @@ if [[ "$(uname)" == "Linux" ]]; then
   sudo sed -i -- 's/auth       required   pam_shells.so/# auth       required   pam_shells.so/g' /etc/pam.d/chsh
   sudo chsh "$USER" -s "$(command -v zsh)"
 elif [[ "$(uname)" == "Darwin" ]]; then
-  echo "/usr/local/bin/zsh" | sudo tee -a /etc/shells
+  echo -e "/usr/local/bin/zsh" | sudo tee -a /etc/shells
   chsh -s "/usr/local/bin/zsh"
 fi
 
@@ -816,9 +688,9 @@ fi
 ln -s ~/.dotfiles/gnupg ~/.gnupg
 
 if [[ "$(uname)" == "Linux" ]]; then
-  echo "pinentry-program /usr/bin/pinentry-curses" > ~/.gnupg/gpg-agent.conf
+  echo -e "pinentry-program /usr/bin/pinentry-curses" > ~/.gnupg/gpg-agent.conf
 elif [[ "$(uname)" == "Darwin" ]]; then
-  echo "pinentry-program /usr/local/bin/pinentry-curses" > ~/.gnupg/gpg-agent.conf
+  echo -e "pinentry-program /usr/local/bin/pinentry-curses" > ~/.gnupg/gpg-agent.conf
 fi
 
 chmod 700 ~/.gnupg

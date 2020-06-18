@@ -1,5 +1,6 @@
 Host *
   IdentityFile ~/.ssh/id_ed25519
+  IdentityFile ~/.ssh/id_rsa
   Compression yes
   ForwardAgent yes
   LogLevel INFO
@@ -17,6 +18,12 @@ Host house-router
 ################################################################################
 # Linode
 ################################################################################
-  Host linode-heisenberg
-    HostName 96.126.113.242
-    User root
+Host linode-heisenberg
+  HostName 96.126.113.242
+  User root
+
+################################################################################
+# Pi Investimentos
+################################################################################
+Host git-codecommit.*.amazonaws.com
+  User APKAXMF7XFHXG2GUQGOC

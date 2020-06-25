@@ -71,6 +71,11 @@ function f5() {
   fi
   vim +PlugUpgrade +PlugUpdate +qall
 
+  # Deno
+  if [[ "$(uname)" == "Linux" ]]; then
+    curl -fsSL https://deno.land/x/install/install.sh | sh
+  fi
+
   # Oh-my-zsh
   cd ~/.oh-my-zsh || exit 1
   git checkout master

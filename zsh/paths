@@ -14,6 +14,8 @@ export PATH="$HOME/.global-modules/bin:$PATH"
 ################################################################################
 case "$(uname)" in
   Linux)
+    # Deno
+    export PATH="$HOME/.deno/bin:$PATH"
 
   ;;
   Darwin)

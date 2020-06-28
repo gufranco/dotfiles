@@ -173,12 +173,14 @@ case "$(uname)" in
     sudo snap install robo3t-snap
 
     ############################################################################
-    # Vim / gVim
+    # Vim / gVim  / nVim
     ############################################################################
     sudo add-apt-repository -y ppa:jonathonf/vim
     sudo apt update
     sudo apt install -y \
+      neovim \
       python3-dev \
+      python3-neovim \
       vim \
       vim-gnome
 

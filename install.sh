@@ -160,6 +160,18 @@ case "$(uname)" in
     sudo snap install skype --classic
 
     ############################################################################
+    # VirtualBox
+    ############################################################################
+    curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
+    curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
+    sudo add-apt-repository -y "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
+    sudo apt update
+    sudo apt install -y \
+      virtualbox-6.1 \
+      virtualbox-ext-pack
+    sudo adduser "$USER" vboxusers
+
+    ############################################################################
     # DBeaver
     ############################################################################
     sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce
@@ -380,7 +392,6 @@ case "$(uname)" in
     ############################################################################
     # Piper
     ############################################################################
-    sudo apt-add-repository -y ppa:libratbag-piper/piper-libratbag-git
     sudo apt install -y \
       piper
 

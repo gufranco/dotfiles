@@ -35,10 +35,10 @@ export LANG=pt_BR.UTF-8
 # Oh-my-zsh
 ################################################################################
 export ZSH=~/.oh-my-zsh
-ZSH_THEME="spaceship"
-DISABLE_AUTO_UPDATE="true"
-HIST_STAMPS="dd/mm/yyyy"
-plugins=(
+export ZSH_THEME="spaceship"
+export DISABLE_AUTO_UPDATE="true"
+export HIST_STAMPS="dd/mm/yyyy"
+export plugins=(
   docker
   docker-compose
   git
@@ -61,7 +61,7 @@ plugins=(
 ################################################################################
 # Spaceship
 ################################################################################
-SPACESHIP_PROMPT_ORDER=(
+export SPACESHIP_PROMPT_ORDER=(
   user          # Username section
   dir           # Current directory section
   host          # Hostname section
@@ -72,7 +72,7 @@ SPACESHIP_PROMPT_ORDER=(
   jobs          # Background jobs indicator
   char          # Prompt character
 )
-SPACESHIP_USER_SHOW=always
-SPACESHIP_PROMPT_ADD_NEWLINE=false
-SPACESHIP_CHAR_SYMBOL="❯"
-SPACESHIP_CHAR_SUFFIX=" "
+export SPACESHIP_USER_SHOW=always
+export SPACESHIP_PROMPT_ADD_NEWLINE=false
+export SPACESHIP_CHAR_SYMBOL="❯"
+export SPACESHIP_CHAR_SUFFIX=" "

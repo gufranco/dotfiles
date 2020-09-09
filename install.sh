@@ -358,29 +358,6 @@ case "$(uname)" in
       steam
 
     ############################################################################
-    # Lutris
-    ############################################################################
-    sudo add-apt-repository -y ppa:lutris-team/lutris
-    sudo apt update
-    sudo apt install -y \
-      lutris
-
-    ############################################################################
-    # Keybase
-    ############################################################################
-    curl -fLo \
-      "/tmp/keybase.deb" \
-      --create-dirs https://prerelease.keybase.io/keybase_amd64.deb
-    sudo apt install -y \
-      /tmp/keybase.deb
-
-    ############################################################################
-    # Pcsx2
-    ############################################################################
-    sudo apt install -y \
-      pcsx2
-
-    ############################################################################
     # Handbrake
     ############################################################################
     sudo add-apt-repository -y ppa:stebbins/handbrake-releases
@@ -404,17 +381,6 @@ case "$(uname)" in
     sudo apt install -y \
       mesa-vulkan-drivers \
       vulkan-utils
-
-    ############################################################################
-    # Dock
-    ############################################################################
-    gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
-    gsettings set org.gnome.shell.extensions.dash-to-dock dock-position BOTTOM
-    gsettings set org.gnome.shell.extensions.dash-to-dock transparency-mode FIXED
-    gsettings set org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 30
-    gsettings set org.gnome.shell.extensions.dash-to-dock unity-backlit-items true
-    gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed false
-    gsettings set org.gnome.shell.extensions.dash-to-dock autohide true
 
   ;;
   Darwin)

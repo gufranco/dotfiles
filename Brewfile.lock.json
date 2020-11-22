@@ -5,19 +5,19 @@
         "revision": "282315ed3c98cb66eba2f01ddcb12b76c6f86483"
       },
       "homebrew/bundle": {
-        "revision": "a8aa5445de31d655508a52223ed20e6c09e121a2"
+        "revision": "d1a530ada501e983aef2748411b947b8c5696ac9"
       },
       "homebrew/cask": {
-        "revision": "6b4ba5383179516e030705ba3079ba9a200b5c91"
+        "revision": "ee4eb1281db5b0600b6de731d20be982dced07f9"
       },
       "homebrew/cask-drivers": {
-        "revision": "d436b61beccff8ebb4926bf1ccc74d82df145afb"
+        "revision": "33bb5f2b77a5754a48bf95b08dbca8e81d656ada"
       },
       "homebrew/cask-fonts": {
-        "revision": "e027edc3b28246a20b38185c312bd796ce33b7b1"
+        "revision": "4773af4e7ab3dc90025fa7d1b780dd190741a286"
       },
       "homebrew/core": {
-        "revision": "525c7093f21627ca2cb17dcb776a7d6f9c5fbcff"
+        "revision": "5a38d3ffa7938a37965b44255d1394ab91c4bb4d"
       },
       "neomutt/neomutt": {
         "revision": "59abfcd8733d316abae88a7ecd0775160a378b96"
@@ -33,6 +33,10 @@
           "cellar": ":any_skip_relocation",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/asciinema-2.0.2_3.big_sur.bottle.tar.gz",
+              "sha256": "0a5101fb3da7411764b53fb8dc6b8ab8a7c4a54ced892f9c832301ecbb9964a0"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/asciinema-2.0.2_3.catalina.bottle.tar.gz",
               "sha256": "caa76523c644cf5916cde300c407d89282509a0291cfa9c4812d888c26ce7f77"
@@ -49,26 +53,22 @@
         }
       },
       "awscli": {
-        "version": "2.1.1",
+        "version": "2.1.1_1",
         "bottle": {
           "cellar": "/usr/local/Cellar",
           "prefix": "/usr/local",
           "files": {
             "big_sur": {
-              "url": "https://homebrew.bintray.com/bottles/awscli-2.1.1.big_sur.bottle.tar.gz",
-              "sha256": "c421b3c811189cb1133e2880fd07336ef7c1871c8376b8fe4b2127f2d05fc386"
+              "url": "https://homebrew.bintray.com/bottles/awscli-2.1.1_1.big_sur.bottle.tar.gz",
+              "sha256": "e41a65e5f3cac43fabde48a474cf2c7d57938f4c5a9aca8ed0f468a78c2ccfcb"
             },
             "catalina": {
-              "url": "https://homebrew.bintray.com/bottles/awscli-2.1.1.catalina.bottle.tar.gz",
-              "sha256": "fcd558b100a42b5401932845ce7588b6f70be411a34684a243355bf5dae8dcc8"
+              "url": "https://homebrew.bintray.com/bottles/awscli-2.1.1_1.catalina.bottle.tar.gz",
+              "sha256": "7176e096b65343c22d6ebe4bb65b5a952a9fa8289bebc3a9e54386b2baabc807"
             },
             "mojave": {
-              "url": "https://homebrew.bintray.com/bottles/awscli-2.1.1.mojave.bottle.tar.gz",
-              "sha256": "4e6ae917c968791d0f8cc4dfce4c4d7ae1782121929497120302638ae2638e11"
-            },
-            "high_sierra": {
-              "url": "https://homebrew.bintray.com/bottles/awscli-2.1.1.high_sierra.bottle.tar.gz",
-              "sha256": "bdfa90c8a378d555a18fd56a35feb8a9458bc7826f51140ad3ddb5d834054773"
+              "url": "https://homebrew.bintray.com/bottles/awscli-2.1.1_1.mojave.bottle.tar.gz",
+              "sha256": "2ad9903ae44387e0b81c257be4680d165f3f935bc1d0bd4e73901ce7453bcc6e"
             }
           }
         }
@@ -99,26 +99,22 @@
         }
       },
       "cmake": {
-        "version": "3.18.4",
+        "version": "3.19.0",
         "bottle": {
           "cellar": ":any_skip_relocation",
           "prefix": "/usr/local",
           "files": {
             "big_sur": {
-              "url": "https://homebrew.bintray.com/bottles/cmake-3.18.4.big_sur.bottle.tar.gz",
-              "sha256": "e812869b03bb867cafd5b71fa36afb795b44a59a907f132f1b6837ea72860a0c"
+              "url": "https://homebrew.bintray.com/bottles/cmake-3.19.0.big_sur.bottle.tar.gz",
+              "sha256": "dbefaa3219729cf9a8ad2bf959f58e3a5e8626839b0b9def2e76e7175fc92ac4"
             },
             "catalina": {
-              "url": "https://homebrew.bintray.com/bottles/cmake-3.18.4.catalina.bottle.tar.gz",
-              "sha256": "c7c42e66c63448e4aee44498b374c9985f477b129fccca5dd9c13530d1e680ef"
+              "url": "https://homebrew.bintray.com/bottles/cmake-3.19.0.catalina.bottle.tar.gz",
+              "sha256": "504c4d8e36da1d87ad14f89595f585d8038f34e9668e2f25af4fbbe3794c4c1c"
             },
             "mojave": {
-              "url": "https://homebrew.bintray.com/bottles/cmake-3.18.4.mojave.bottle.tar.gz",
-              "sha256": "a0b167ad7f2fbf6f6dbcca9d74cb09acbd7822c54873803e940abf04272f8028"
-            },
-            "high_sierra": {
-              "url": "https://homebrew.bintray.com/bottles/cmake-3.18.4.high_sierra.bottle.tar.gz",
-              "sha256": "98704ab50ed76df9214083c01e373277ba02aad43c858182be7ed1466d005326"
+              "url": "https://homebrew.bintray.com/bottles/cmake-3.19.0.mojave.bottle.tar.gz",
+              "sha256": "0e0d838403a56af19548b0994fc265bd81f727f5fb30fda8d7723926bb45d0de"
             }
           }
         }
@@ -228,22 +224,22 @@
         }
       },
       "gnupg": {
-        "version": "2.2.23",
+        "version": "2.2.24",
         "bottle": {
           "cellar": "/usr/local/Cellar",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/gnupg-2.2.24.big_sur.bottle.tar.gz",
+              "sha256": "2f2c92c01d35e37d239864e0ee92e5d197ac5f9859ac89f9b5aa06200b8af388"
+            },
             "catalina": {
-              "url": "https://homebrew.bintray.com/bottles/gnupg-2.2.23.catalina.bottle.tar.gz",
-              "sha256": "f3d7b9b1b344cf3aa2108756d922d1b48214a46b569ae737c604b22f4001b640"
+              "url": "https://homebrew.bintray.com/bottles/gnupg-2.2.24.catalina.bottle.tar.gz",
+              "sha256": "4db5c77dda1d32ba88ddcd87d1ac637b4a231da29bb436bc1f4a62166fd9a629"
             },
             "mojave": {
-              "url": "https://homebrew.bintray.com/bottles/gnupg-2.2.23.mojave.bottle.tar.gz",
-              "sha256": "1587039c4678d1c500fe8a3ba6d25f8070828bbe2159fc9fd12cad534b09dd9a"
-            },
-            "high_sierra": {
-              "url": "https://homebrew.bintray.com/bottles/gnupg-2.2.23.high_sierra.bottle.tar.gz",
-              "sha256": "87b3d4b162e860382a2f5ab4ed468f324a389fca4cfddc5363e544f3ca370125"
+              "url": "https://homebrew.bintray.com/bottles/gnupg-2.2.24.mojave.bottle.tar.gz",
+              "sha256": "74b40cae75b99ac65fea83c5764512eadfa69e41288d0786bf57a307aa788abd"
             }
           }
         }
@@ -279,6 +275,10 @@
           "cellar": "/usr/local/Cellar",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/lynx-2.8.9rel.1_1.big_sur.bottle.tar.gz",
+              "sha256": "a3b88b08c22efa2c898573395a253e1ddcb3fb90888ef963c00f9e5b69cd1aa1"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/lynx-2.8.9rel.1_1.catalina.bottle.tar.gz",
               "sha256": "b7b36f0697736fc1744026c18968bec4d5c1433356678e853d734406f9dc3612"
@@ -304,6 +304,10 @@
           "cellar": ":any",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/mas-1.7.1.big_sur.bottle.tar.gz",
+              "sha256": "432091a534d0a1f753fcf953fb1c20c10ef5762b7f8922cb378c3dcd36898d30"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/mas-1.7.1.catalina.bottle.tar.gz",
               "sha256": "e6de2f98ebd21885a9827664fe1b7eea5516a7fd75d5b7383e3a9b088591a27f"
@@ -321,6 +325,10 @@
           "cellar": ":any_skip_relocation",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/moreutils-0.64.big_sur.bottle.tar.gz",
+              "sha256": "daeab56a9a063d9a81a3b39d3cd8e9c7fa39871b6f9738ced5bd2c780a5e583e"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/moreutils-0.64.catalina.bottle.tar.gz",
               "sha256": "2acce86bfb602b3da4577cf429080a138b7a2e587e394b175889c4d190ef3bae"
@@ -342,6 +350,10 @@
           "cellar": ":any_skip_relocation",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/neofetch-7.1.0.big_sur.bottle.tar.gz",
+              "sha256": "65997eaa4358eba12ea2eaa20d3a7daa3b30acfae81aa447eab47894d808670e"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/neofetch-7.1.0.catalina.bottle.tar.gz",
               "sha256": "9d88c0c07ebdeddaf68a5512a7f4a36cbc52851dfb1c6fc63b446f6a9baaaa01"
@@ -363,6 +375,10 @@
           "cellar": "/usr/local/Cellar",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/neovim-0.4.4.big_sur.bottle.1.tar.gz",
+              "sha256": "83957460b7c664b65f7339c6e37a6b468274ca747ba8f8746616c4cebf97caa9"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/neovim-0.4.4.catalina.bottle.1.tar.gz",
               "sha256": "736260e14d50d9a42562fb0fe2215d5154a9cef3e3227469a961d030b45358fd"
@@ -379,26 +395,22 @@
         }
       },
       "node": {
-        "version": "15.2.0",
+        "version": "15.2.1",
         "bottle": {
           "cellar": ":any",
           "prefix": "/usr/local",
           "files": {
             "big_sur": {
-              "url": "https://homebrew.bintray.com/bottles/node-15.2.0.big_sur.bottle.tar.gz",
-              "sha256": "731998346637bb4c166ab0bb2f3b0fefe2b232925b011550623083d18729b803"
+              "url": "https://homebrew.bintray.com/bottles/node-15.2.1.big_sur.bottle.tar.gz",
+              "sha256": "a1943d277540cea6968b516535df3d81d6295d5997504044c59cb03d8a09d8c6"
             },
             "catalina": {
-              "url": "https://homebrew.bintray.com/bottles/node-15.2.0.catalina.bottle.tar.gz",
-              "sha256": "b6a56cc14a1eb62ccd89005bc84702c7d1d25c1bb5fdeb08e6bc902ae269184b"
+              "url": "https://homebrew.bintray.com/bottles/node-15.2.1.catalina.bottle.tar.gz",
+              "sha256": "84f1c73b336d2bfd35c436f22ac4b7bfc4dfd15530edddfe82624b26f1855799"
             },
             "mojave": {
-              "url": "https://homebrew.bintray.com/bottles/node-15.2.0.mojave.bottle.tar.gz",
-              "sha256": "a829b30b640bdd57df06d37bb7ec2e7553caed410bafef554958c4f73fee76ad"
-            },
-            "high_sierra": {
-              "url": "https://homebrew.bintray.com/bottles/node-15.2.0.high_sierra.bottle.tar.gz",
-              "sha256": "b7e59191cb92b9bd1934ada91862cc4b177a58ddfe113b6d0bb41bbf91e66301"
+              "url": "https://homebrew.bintray.com/bottles/node-15.2.1.mojave.bottle.tar.gz",
+              "sha256": "d78af40b5bc055f46aec59c5d0f1d8b85860a7838ddc0cd187ae6b79a28a2649"
             }
           }
         }
@@ -410,6 +422,10 @@
           "cellar": ":any_skip_relocation",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/reattach-to-user-namespace-2.9.big_sur.bottle.tar.gz",
+              "sha256": "8b715171e1c8ce8f86cddc241340a7a6f4f263e770d912894cf580790f8d8aa4"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/reattach-to-user-namespace-2.9.catalina.bottle.tar.gz",
               "sha256": "8ab11a5fa7512f5d7ef8fe62a5275325f3721e13fde2b0831d1f615e8820c341"
@@ -431,6 +447,10 @@
           "cellar": ":any",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/ripgrep-12.1.1.big_sur.bottle.tar.gz",
+              "sha256": "0ca7397f9a0ccef6cbb8ff0fd8fb18c6fe86219abaef350e3d7ef248d07440fd"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/ripgrep-12.1.1.catalina.bottle.tar.gz",
               "sha256": "60460d422253113af3ed60332104f309638942821c655332211a6bc2213c472c"
@@ -477,6 +497,10 @@
           "cellar": ":any_skip_relocation",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/shellcheck-0.7.1.big_sur.bottle.1.tar.gz",
+              "sha256": "c7bd19ca5bc623c8a958c4cb56b77ab89e652c20a1a66dfbbc0c5d8832b60ada"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/shellcheck-0.7.1.catalina.bottle.1.tar.gz",
               "sha256": "0cd635d2172d5e6617be8cdfb2723b6aa6feb2aa22e36cb3172d8b6fa012f4a0"
@@ -530,6 +554,10 @@
           "cellar": ":any_skip_relocation",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/urlview-0.9-21.big_sur.bottle.tar.gz",
+              "sha256": "20e13c05f4e090cf897ae74480a5bbc2cafb47a7ba7c6b3a569c6bca14b1d0ea"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/urlview-0.9-21.catalina.bottle.tar.gz",
               "sha256": "1a29faf6b64714501b62a1ad36d33bbb133fc23515dfaa352c36b47b47ed8669"
@@ -546,26 +574,22 @@
         }
       },
       "vim": {
-        "version": "8.2.1950",
+        "version": "8.2.2000",
         "bottle": {
           "cellar": "/usr/local/Cellar",
           "prefix": "/usr/local",
           "files": {
             "big_sur": {
-              "url": "https://homebrew.bintray.com/bottles/vim-8.2.1950.big_sur.bottle.tar.gz",
-              "sha256": "c4e613130d076a23ea712619f3ff86b51ee2641b09937fa7c8f7b9c24efa17ec"
+              "url": "https://homebrew.bintray.com/bottles/vim-8.2.2000.big_sur.bottle.tar.gz",
+              "sha256": "01f8c155d4e1a6007cdc4a7684e4d664f391484a2f9c6637b05811eea424a924"
             },
             "catalina": {
-              "url": "https://homebrew.bintray.com/bottles/vim-8.2.1950.catalina.bottle.tar.gz",
-              "sha256": "393531e340196ec71e782cae099280a09a526af7dbd187a0ac22318e01061c2f"
+              "url": "https://homebrew.bintray.com/bottles/vim-8.2.2000.catalina.bottle.tar.gz",
+              "sha256": "34b283b4367a0c6c1215b2c42520a1f070fc4297f08a2893a6718858b33d347f"
             },
             "mojave": {
-              "url": "https://homebrew.bintray.com/bottles/vim-8.2.1950.mojave.bottle.tar.gz",
-              "sha256": "2e85684a8b9c240494cff1fc9d71f94c9582d06e3af8a91d8dd3628573ea5cab"
-            },
-            "high_sierra": {
-              "url": "https://homebrew.bintray.com/bottles/vim-8.2.1950.high_sierra.bottle.tar.gz",
-              "sha256": "cd58db6f12ee17cfc5cf372231733b8ea71be83ecf0c7307bcd413d2ba622f87"
+              "url": "https://homebrew.bintray.com/bottles/vim-8.2.2000.mojave.bottle.tar.gz",
+              "sha256": "74b6645674e1e590a13f43f5e0d8cd614f08de95f0ee5acf9fd2830a6995f221"
             }
           }
         }
@@ -601,6 +625,10 @@
           "cellar": ":any_skip_relocation",
           "prefix": "/usr/local",
           "files": {
+            "big_sur": {
+              "url": "https://homebrew.bintray.com/bottles/whalebrew-0.2.5.big_sur.bottle.tar.gz",
+              "sha256": "5a5c9c6a3132942741bc69ed57081a38570f783f316a5b922d20ee6c16efa4a2"
+            },
             "catalina": {
               "url": "https://homebrew.bintray.com/bottles/whalebrew-0.2.5.catalina.bottle.tar.gz",
               "sha256": "13a6c59ba4c19570fcccef4b187755a4dfcc26038faba5168a3eb33644ade588"
@@ -617,26 +645,26 @@
         }
       },
       "zsh": {
-        "version": "5.8",
+        "version": "5.8_1",
         "bottle": {
           "cellar": "/usr/local/Cellar",
           "prefix": "/usr/local",
           "files": {
             "big_sur": {
-              "url": "https://homebrew.bintray.com/bottles/zsh-5.8.big_sur.bottle.tar.gz",
-              "sha256": "9f26059745a6396e9f6ed641e10fb7eed6659c1a225d0756a58a82f524fbd71d"
+              "url": "https://homebrew.bintray.com/bottles/zsh-5.8_1.big_sur.bottle.tar.gz",
+              "sha256": "a93717bcbb1a41829ac7549f7dea0e2be4bb11985be734f03801150338d6b8e6"
             },
             "catalina": {
-              "url": "https://homebrew.bintray.com/bottles/zsh-5.8.catalina.bottle.tar.gz",
-              "sha256": "209d04a4d62f6162f1b6cf824d2c50b00b52cb812c04c1967e5b376573b5aef0"
+              "url": "https://homebrew.bintray.com/bottles/zsh-5.8_1.catalina.bottle.tar.gz",
+              "sha256": "aaf19f69f79ac2ef80ff31d3b2f0017f400bf40022f8626d5ae046990961a5f5"
             },
             "mojave": {
-              "url": "https://homebrew.bintray.com/bottles/zsh-5.8.mojave.bottle.tar.gz",
-              "sha256": "c5c35657637c97132efbaa0fd8e2add568aaa62adfe66e7d19f961f8e9506da9"
+              "url": "https://homebrew.bintray.com/bottles/zsh-5.8_1.mojave.bottle.tar.gz",
+              "sha256": "a40a54e4b686eb75f04e7dcc57391245a4f6b08a39825f7f6ebc9f76ebcbff46"
             },
             "high_sierra": {
-              "url": "https://homebrew.bintray.com/bottles/zsh-5.8.high_sierra.bottle.tar.gz",
-              "sha256": "029b8c6922f01bfd832dd0f4f940f99328d2495714c37c1dc7ef326d6fb1459e"
+              "url": "https://homebrew.bintray.com/bottles/zsh-5.8_1.high_sierra.bottle.tar.gz",
+              "sha256": "edfbc09a9571fadf351e0f94e545a88aa33763518a3330c0bae497a6a259d63f"
             }
           }
         }
@@ -680,7 +708,7 @@
         }
       },
       "dbeaver-community": {
-        "version": "7.2.4",
+        "version": "7.2.5",
         "options": {
           "full_name": "dbeaver-community"
         }
@@ -864,12 +892,24 @@
         "options": {
           "full_name": "vlc"
         }
+      },
+      "paragon-ntfs": {
+        "version": "15",
+        "options": {
+          "full_name": "paragon-ntfs"
+        }
+      },
+      "google-backup-and-sync": {
+        "version": "latest",
+        "options": {
+          "full_name": "google-backup-and-sync"
+        }
       }
     },
     "mas": {
       "Amphetamine": {
         "id": "937984704",
-        "version": "5.0.3"
+        "version": "5.1"
       },
       "CleanMyDrive 2": {
         "id": "523620159",
@@ -881,7 +921,7 @@
       },
       "Numbers": {
         "id": "409203825",
-        "version": "10.2"
+        "version": "10.3.5"
       },
       "Pages": {
         "id": "409201541",
@@ -893,18 +933,18 @@
       },
       "Xcode": {
         "id": "497799835",
-        "version": "12.1"
+        "version": "12.2"
       }
     }
   },
   "system": {
     "macos": {
       "catalina": {
-        "HOMEBREW_VERSION": "2.5.10",
+        "HOMEBREW_VERSION": "2.5.11",
         "HOMEBREW_PREFIX": "/usr/local",
-        "Homebrew/homebrew-core": "525c7093f21627ca2cb17dcb776a7d6f9c5fbcff",
+        "Homebrew/homebrew-core": "5a38d3ffa7938a37965b44255d1394ab91c4bb4d",
         "CLT": "12.0.32.21",
-        "Xcode": "12.1",
+        "Xcode": "12.2",
         "macOS": "10.15.7"
       }
     }

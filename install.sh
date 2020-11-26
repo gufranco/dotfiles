@@ -110,10 +110,13 @@ case "$(uname)" in
       nodejs
 
     ############################################################################
-    # Dropbox
+    # Insync
     ############################################################################
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ACCAF35C
+    echo -e "deb [arch=amd64] deb http://apt.insync.io/ubuntu $(lsb_release -cs) non-free contrib" | sudo tee /etc/apt/sources.list.d/insync.list
+    sudo apt update
     sudo apt install -y \
-      nautilus-dropbox
+      insync
 
     ############################################################################
     # Java

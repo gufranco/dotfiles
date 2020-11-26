@@ -5,8 +5,6 @@
 ################################################################################
 case "$(uname)" in
   Linux)
-  # Deno
-  export DENO_INSTALL="$HOME/.deno"
 
   ;;
   Darwin)

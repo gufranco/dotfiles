@@ -66,6 +66,13 @@ function f5() {
   fi
   vim +PlugUpgrade +PlugUpdate +qall
 
+  npm install \
+    --global-style \
+    --ignore-scripts \
+    --no-bin-links \
+    --only=prod \
+    --prefix="${HOME}/.dotfiles/coc/extensions"
+
   # Oh-my-zsh
   cd ~/.oh-my-zsh || exit 1
   git checkout master

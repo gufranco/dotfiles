@@ -127,14 +127,6 @@ case "$(uname)" in
       oracle-java14-installer
 
     ############################################################################
-    # Android Studio
-    ############################################################################
-    sudo add-apt-repository -y ppa:maarten-fonville/android-studio
-    sudo apt update
-    sudo apt install -y \
-      android-studio
-
-    ############################################################################
     # Spotify
     ############################################################################
     curl -fsSL https://download.spotify.com/debian/pubkey.gpg | sudo apt-key add -
@@ -296,6 +288,14 @@ case "$(uname)" in
     curl -fLo \
       "$HOME/.config/tilix/schemes/Dracula.json" \
       --create-dirs https://raw.githubusercontent.com/dracula/tilix/master/Dracula.json
+
+    ############################################################################
+    # Alacritty
+    ############################################################################
+    sudo add-apt-repository -y ppa:mmstick76/alacritty
+    sudo apt update
+    sudo apt install -y \
+      alacritty
 
     ############################################################################
     # VLC
@@ -635,6 +635,14 @@ git clone --depth=1 https://github.com/denysdovhan/spaceship-prompt.git ~/.oh-my
 ln -s ~/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme
 
 ################################################################################
+# Alacritty
+################################################################################
+if [ -f ~/.alacritty.yml ] || [ -h ~/.alacritty.yml ]; then
+  mv ~/.alacritty.yml /tmp/alacritty.yml-old
+fi
+ln -s ~/.dotfiles/alacritty/.alacritty.yml ~/.alacritty.yml
+
+################################################################################
 # Git config
 ################################################################################
 if [ -f ~/.gitconfig ] || [ -h ~/.gitconfig ]; then
@@ -643,7 +651,7 @@ fi
 ln -s ~/.dotfiles/git/.gitconfig ~/.gitconfig
 
 ################################################################################
-# Vim / Neovim config
+# Vim / Neovim config / Coc dependencies
 ################################################################################
 if [ -d ~/.vim ] || [ -h ~/.vim ]; then
   mv ~/.vim /tmp/vim-old
@@ -660,6 +668,18 @@ if [ -f ~/.vimrc ] || [ -h ~/.vimrc ]; then
   mv ~/.vimrc /tmp/vimrc-old
 fi
 ln -s ~/.dotfiles/vim/init.vim ~/.vimrc
+
+if [ -f ~/.config/coc ] || [ -h ~/.config/coc ]; then
+  mv ~/.config/coc /tmp/coc-old
+fi
+ln -s ~/.dotfiles/coc ~/.config/coc
+
+npm install \
+  --global-style \
+  --ignore-scripts \
+  --no-bin-links \
+  --only=prod \
+  --prefix="${HOME}/.dotfiles/coc/extensions"
 
 ################################################################################
 # GPG config

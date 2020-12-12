@@ -4,9 +4,18 @@ Host *
   Compression yes
   ForwardAgent yes
   LogLevel INFO
-  ServerAliveInterval 120
+  Protocol 2
+  ServerAliveInterval 20
+  ServerAliveCountMax 10
   StrictHostKeyChecking ask
   TCPKeepAlive yes
+
+################################################################################
+# Github
+################################################################################
+Host github.com
+  ControlMaster auto
+  ControlPersist 120
 
 ################################################################################
 # House

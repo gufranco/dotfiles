@@ -179,9 +179,6 @@ nmap <Leader>s :source $MYVIMRC<CR>
 " Edit vimrc
 nmap <Leader>v :edit $MYVIMRC<CR>
 
-" Fast saving
-nmap <leader>w :w!<cr>
-
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Theme / GUI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -196,7 +193,7 @@ if has('gui_running')
   if s:uname ==# 'Darwin'
     set guifont=Hack\ Regular\ Nerd\ Font\ Complete:h12
   elseif s:uname ==# 'Linux'
-    set guifont=Hack\ 10
+    set guifont=Hack\ 12
   endif
 
   " Remove menu

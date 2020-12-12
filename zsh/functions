@@ -32,7 +32,11 @@ case "$(uname)" in
       brew cleanup -s
       brew bundle --file ~/.dotfiles/Brewfile --force cleanup
       mas upgrade
-      sudo softwareupdate -i -a
+
+      # Don't update if macOS 11 is running on my unsupported MacBook Pro
+      if [[ "$(sysctl -n hw.model)" != "MacBookPro9,2" ]] && [[ ${1-$(sw_vers -productVersion)} != 11.* ]]; then
+        sudo softwareupdate -i -a
+      fi
     }
 
   ;;
@@ -60,10 +64,6 @@ function f5() {
   npm update -g
 
   # Vim
-  if [[ "$(uname)" == "Darwin" ]]; then
-    brew unlink vim
-    brew link --overwrite vim
-  fi
   vim +PlugUpgrade +PlugUpdate +qall
 
   npm install \

@@ -274,7 +274,7 @@ case "$(uname)" in
     sudo apt install -y \
       fonts-hack-ttf
 
-    curl -fLo \
+    curl -#fLo \
       "$HOME/.local/share/fonts/Hack Regular Nerd Font Complete.ttf" \
       --create-dirs https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/Hack/Regular/complete/Hack%20Regular%20Nerd%20Font%20Complete.ttf
     sudo fc-cache -fv
@@ -285,7 +285,7 @@ case "$(uname)" in
     sudo apt install -y \
       tilix
 
-    curl -fLo \
+    curl -#fLo \
       "$HOME/.config/tilix/schemes/Dracula.json" \
       --create-dirs https://raw.githubusercontent.com/dracula/tilix/master/Dracula.json
 
@@ -412,7 +412,7 @@ case "$(uname)" in
     ############################################################################
     # iTerm 2
     ############################################################################
-    curl -fLo \
+    curl -#fLo \
       "/tmp/Dracula.itermcolors" \
       --create-dirs https://raw.githubusercontent.com/dracula/iterm/master/Dracula.itermcolors
     open "/tmp/Dracula.itermcolors"

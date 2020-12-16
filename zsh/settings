@@ -12,7 +12,7 @@ case "$(uname)" in
   export ZSH_DISABLE_COMPFIX=true
 
   # See https://discourse.brew.sh/t/burp-suite-cask-wont-install-curl-ssl-error/7930
-  export HOMEBREW_FORCE_BREWED_CURL=1
+  # export HOMEBREW_FORCE_BREWED_CURL=1
 
   ;;
 esac

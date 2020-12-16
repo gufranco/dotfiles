@@ -16,6 +16,9 @@ case "$(uname)" in
       fi;
     }
 
+    ############################################################################
+    # Update and upgrade Ubuntu
+    ############################################################################
     function systemupgrade() {
       sudo apt update -y
       sudo apt dist-upgrade -y
@@ -25,16 +28,22 @@ case "$(uname)" in
 
   ;;
   Darwin)
+    ############################################################################
+    # Update and upgrade macOS
+    ############################################################################
     function systemupgrade() {
+      # Brew
       brew update
       brew upgrade
       brew cu --all --yes --cleanup
       brew cleanup -s
       brew bundle --file ~/.dotfiles/Brewfile --force cleanup
+
+      # Mac Apple Store
       mas upgrade
 
-      # Don't update if macOS 11 is running on my unsupported MacBook Pro
-      if [[ "$(sysctl -n hw.model)" != "MacBookPro9,2" ]] && [[ ${1-$(sw_vers -productVersion)} != 11.* ]]; then
+      # Update macOS
+      if [[ "$(sysctl -n hw.model)" != "MacBookPro9,2" ]]; then
         sudo softwareupdate -i -a
       fi
     }

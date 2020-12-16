@@ -79,6 +79,7 @@ Plug 'terryma/vim-multiple-cursors'
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-surround'
 Plug 'godlygeek/tabular', { 'on': 'Tabularize' }
+Plug 'tpope/vim-afterimage'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Clipboard
@@ -191,9 +192,9 @@ set background=dark
 
 if has('gui_running')
   if s:uname ==# 'Darwin'
-    set guifont=Hack\ Regular\ Nerd\ Font\ Complete:h12
+    set guifont=Hack\ Nerd\ Font:h12
   elseif s:uname ==# 'Linux'
-    set guifont=Hack\ 12
+    set guifont=Hack\ Nerd\ Font\ 10
   endif
 
   " Remove menu

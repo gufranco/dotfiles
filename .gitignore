@@ -24,6 +24,7 @@ gnupg/tofu.db
 gnupg/trustdb.gpg
 
 # Tmux
+tmux/resurrect/
 tmux/plugins/*
 !tmux/plugins/tpm
 

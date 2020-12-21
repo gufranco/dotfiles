@@ -1,12 +1,12 @@
 # Folder hooks
-folder-hook "com.gmail.gustavocfranco" "source ~/.mutt/accounts/com.gmail.gustavocfranco/config"
-folder-hook "com.live.gufranco" "source ~/.mutt/accounts/com.live.gufranco/config"
-folder-hook "com.icloud.gufranco" "source ~/.mutt/accounts/com.icloud.gufranco/config"
+folder-hook "com.gmail.gustavocfranco" "source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc"
+folder-hook "com.live.gufranco" "source ~/.mutt/accounts/com.live.gufranco/config.muttrc"
+folder-hook "com.icloud.gufranco" "source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc"
 
 # Macros for switching accounts
-macro index <f2> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.gmail.gustavocfranco/config<enter><change-folder>!<enter>"
-macro index <f3> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.live.gufranco/config<enter><change-folder>!<enter>"
-macro index <f4> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.icloud.gufranco/config<enter><change-folder>!<enter>"
+macro index <f2> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc<enter><change-folder>!<enter>"
+macro index <f3> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.live.gufranco/config.muttrc<enter><change-folder>!<enter>"
+macro index <f4> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc<enter><change-folder>!<enter>"
 
 # Editor
 set charset = "utf-8"
@@ -69,7 +69,7 @@ set sig_on_top = yes
 set record = no
 
 # Index view
-set date_format = "%y-%m-%d  %I:%M:%p"
+set date_format = "%Y-%m-%d  %H:%M:%S"
 set index_format = "[%Z]  %D  %-20.20F  %s"
 set reply_regexp = "^(([Rr][Ee]?(\[[0-9]+\])?: *)?(\[[^]]+\] *)?)*"
 set sort = threads
@@ -111,4 +111,4 @@ set beep = no
 set wait_key = no
 
 # Load default account
-source ~/.mutt/accounts/com.gmail.gustavocfranco/config
+source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc

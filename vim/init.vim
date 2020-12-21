@@ -38,7 +38,7 @@ Plug 'itchyny/lightline.vim'
 Plug 'jszakmeister/vim-togglecursor'
 Plug 'lilydjwg/colorizer'
 Plug 'maximbaz/lightline-ale'
-Plug 'dracula/vim', { 'as': 'dracula' }
+Plug 'morhetz/gruvbox'
 Plug 'myusuf3/numbers.vim'
 Plug 'ryanoasis/vim-devicons'
 Plug 'vim-scripts/CursorLineCurrentWindow'
@@ -184,7 +184,7 @@ nmap <Leader>v :edit $MYVIMRC<CR>
 " Theme / GUI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 try
-  colorscheme dracula
+  colorscheme gruvbox
 catch
   colorscheme desert
 endtry
@@ -243,7 +243,7 @@ let g:NERDTreeIgnore = [
 " Lightline
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-  \ 'colorscheme': 'dracula',
+  \ 'colorscheme': 'gruvbox',
   \ 'active': {
   \   'left': [
   \     [ 'mode', 'paste' ],

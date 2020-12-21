@@ -39,9 +39,6 @@ mailboxes +INBOX \
           +Junk \
           +Sent\ Messages
 
-# Certificate
-set certificate_file = "~/.mutt/accounts/com.icloud.gufranco/certificate"
-
 # Cache
 set header_cache = "~/.mutt/accounts/com.icloud.gufranco/cache/headers"
 set message_cachedir = "~/.mutt/accounts/com.icloud.gufranco/cache/bodies"

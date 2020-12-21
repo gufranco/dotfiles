@@ -33,9 +33,6 @@ set postponed = "+Drafts"
 set trash = "+Deleted"
 set record = "+Sent"
 
-# Certificate
-set certificate_file = "~/.mutt/accounts/com.live.gufranco/certificate"
-
 # Cache
 set header_cache = "~/.mutt/accounts/com.live.gufranco/cache/headers"
 set message_cachedir = "~/.mutt/accounts/com.live.gufranco/cache/bodies"

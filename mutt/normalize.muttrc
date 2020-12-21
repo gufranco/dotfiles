@@ -1,5 +1,4 @@
 unmailboxes *
-reset certificate_file
 reset folder
 reset from
 reset header_cache

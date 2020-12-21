@@ -35,9 +35,6 @@ set postponed = "+[Gmail]/Rascunhos"
 set trash = "+[Gmail]/Lixeira"
 set record = "+[Gmail]/E-mails enviados"
 
-# Certificate
-set certificate_file = "~/.mutt/accounts/com.gmail.gustavocfranco/certificate"
-
 # Cache
 set header_cache = "~/.mutt/accounts/com.gmail.gustavocfranco/cache/headers"
 set message_cachedir = "~/.mutt/accounts/com.gmail.gustavocfranco/cache/bodies"

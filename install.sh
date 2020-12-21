@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -Eeuo pipefail
 
 # Ask for the root password upfront
 sudo -v
@@ -145,6 +145,15 @@ case "$(uname)" in
       google-chrome-stable
 
     ############################################################################
+    # Brave
+    ############################################################################
+    curl -fsSL https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key add -
+    echo -e "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+    sudo apt update
+    sudo apt install -y \
+      brave-browser
+
+    ############################################################################
     # Skype
     ############################################################################
     sudo snap install skype --classic
@@ -285,9 +294,9 @@ case "$(uname)" in
     sudo apt install -y \
       tilix
 
-    curl -#fLo \
-      "$HOME/.config/tilix/schemes/Dracula.json" \
-      --create-dirs https://raw.githubusercontent.com/dracula/tilix/master/Dracula.json
+    curl -fLo \
+      "$HOME/.config/tilix/schemes/gruvbox-dark-medium.json" \
+      --create-dirs https://raw.githubusercontent.com/MichaelThessel/tilix-gruvbox/master/gruvbox-dark-medium.json
 
     ############################################################################
     # Alacritty
@@ -412,169 +421,10 @@ case "$(uname)" in
     ############################################################################
     # iTerm 2
     ############################################################################
-    curl -#fLo \
-      "/tmp/Dracula.itermcolors" \
-      --create-dirs https://raw.githubusercontent.com/dracula/iterm/master/Dracula.itermcolors
-    open "/tmp/Dracula.itermcolors"
-
-    ############################################################################
-    # Hostname
-    ############################################################################
-    sudo scutil --set HostName "macbook"
-    sudo scutil --set LocalHostName "macbook"
-    sudo scutil --set ComputerName "macbook"
-    sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbook"
-
-    ############################################################################
-    # Always show scrollbars
-    ############################################################################
-    defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
-
-    ############################################################################
-    # Expand save panel by default
-    ############################################################################
-    defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
-    defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
-
-    ############################################################################
-    # Expand print panel by default
-    ############################################################################
-    defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
-    defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
-
-    ############################################################################
-    # Automatically quit printer app once the print jobs complete
-    ############################################################################
-    defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
-
-    ############################################################################
-    # Display ASCII control characters using caret notation in standard text views
-    ############################################################################
-    defaults write NSGlobalDomain NSTextShowsControlCharacters -bool true
-
-    ############################################################################
-    # Disable Resume system-wide
-    ############################################################################
-    defaults write com.apple.systempreferences NSQuitAlwaysKeepsWindows -bool false
-
-    ############################################################################
-    # Set Help Viewer windows to non-floating mode
-    ############################################################################
-    defaults write com.apple.helpviewer DevMode -bool true
-
-    ############################################################################
-    # Disable automatic capitalization, smart dashes, period substitution, smart
-    # quotes and auto-correct
-    ############################################################################
-    defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
-    defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
-    defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
-    defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
-    defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
-
-    ############################################################################
-    # Enable tap to click
-    ############################################################################
-    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
-    defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
-    defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
-
-    ############################################################################
-    # Increase sound quality for Bluetooth headphones/headsets
-    ############################################################################
-    defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
-
-    ############################################################################
-    # Enable full keyboard access for all controls
-    ############################################################################
-    defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
-
-    ############################################################################
-    # Disable press-and-hold for keys in favor of key repeat
-    ############################################################################
-    defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-
-    ############################################################################
-    # Require password immediately after sleep or screen saver begins
-    ############################################################################
-    defaults write com.apple.screensaver askForPassword -int 1
-    defaults write com.apple.screensaver askForPasswordDelay -int 0
-
-    ############################################################################
-    # Save screenshots to the desktop in PNG format
-    ############################################################################
-    defaults write com.apple.screencapture location -string "${HOME}/Desktop"
-    defaults write com.apple.screencapture type -string "png"
-
-    ############################################################################
-    # Disable shadow in screenshots
-    ############################################################################
-    defaults write com.apple.screencapture disable-shadow -bool true
-
-    ############################################################################
-    # Enable subpixel font rendering on non-Apple LCDs
-    ############################################################################
-    defaults write NSGlobalDomain AppleFontSmoothing -int 1
-
-    ############################################################################
-    # Enable HiDPI display modes
-    ############################################################################
-    sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
-
-    ############################################################################
-    # Show status and path bar in Finder
-    ############################################################################
-    defaults write com.apple.finder ShowStatusBar -bool true
-    defaults write com.apple.finder ShowPathbar -bool true
-
-    ############################################################################
-    # Keep folders on top when sorting by name in Finder
-    ############################################################################
-    defaults write com.apple.finder _FXSortFoldersFirst -bool true
-
-    ############################################################################
-    # When performing a search, search the current folder by default in Finder
-    ############################################################################
-    defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
-
-    ############################################################################
-    # Avoid creating .DS_Store files on network or USB volumes
-    ############################################################################
-    defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
-    defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
-
-    ############################################################################
-    # Use list view in all Finder windows by default in Finder
-    ############################################################################
-    defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
-
-    ############################################################################
-    # Disable send and reply animations in Mail.app
-    ############################################################################
-    defaults write com.apple.mail DisableReplyAnimations -bool true
-    defaults write com.apple.mail DisableSendAnimations -bool true
-
-    ############################################################################
-    # Copy email addresses as `foo@example.com` in Mail.app
-    ############################################################################
-    defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
-
-    ############################################################################
-    # Display emails in threaded mode in Mail.app
-    ############################################################################
-    defaults write com.apple.mail DraftsViewerAttributes -dict-add "DisplayInThreadedMode" -string "yes"
-    defaults write com.apple.mail DraftsViewerAttributes -dict-add "SortedDescending" -string "yes"
-    defaults write com.apple.mail DraftsViewerAttributes -dict-add "SortOrder" -string "received-date"
-
-    ############################################################################
-    # Disable inline attachments in Mail.app
-    ############################################################################
-    defaults write com.apple.mail DisableInlineAttachmentViewing -bool true
-
-    ############################################################################
-    # Only use UTF-8 in Terminal.app
-    ############################################################################
-    defaults write com.apple.terminal StringEncodings -array 4
+    curl -fLo \
+      "/tmp/gruvbox-dark.itermcolors" \
+      --create-dirs https://raw.githubusercontent.com/morhetz/gruvbox-contrib/master/iterm2/gruvbox-dark.itermcolors
+    open "/tmp/gruvbox-dark.itermcolors"
 
   ;;
 esac

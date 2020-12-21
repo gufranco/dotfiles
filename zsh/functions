@@ -43,9 +43,7 @@ case "$(uname)" in
       mas upgrade
 
       # Update macOS
-      if [[ "$(sysctl -n hw.model)" != "MacBookPro9,2" ]]; then
-        sudo softwareupdate -i -a
-      fi
+      sudo softwareupdate -i -a
     }
 
   ;;
@@ -55,7 +53,7 @@ esac
 # Update and upgrade everything
 ################################################################################
 function f5() {
-  CURRENT_DIR=$(pwd)
+  CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
   sudo -v
   while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
@@ -93,9 +91,9 @@ function f5() {
   git pull
 
   # Reload shell
-  source ~/.zshrc
+  source "${HOME}/.zshrc"
 
-  cd $CURRENT_DIR
+  cd "$CURRENT_DIR" || exit 1
 }
 
 ################################################################################

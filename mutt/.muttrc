@@ -1,8 +1,12 @@
-# -*- muttrc -*-
+# Folder hooks
+folder-hook "com.gmail.gustavocfranco" "source ~/.mutt/accounts/com.gmail.gustavocfranco/config"
+folder-hook "com.live.gufranco" "source ~/.mutt/accounts/com.live.gufranco/config"
+folder-hook "com.icloud.gufranco" "source ~/.mutt/accounts/com.icloud.gufranco/config"
 
-# Account
-folder-hook "account.com.gmail.gustavocfranco" "~/.mutt/account/config"
-source ~/.mutt/account/config
+# Macros for switching accounts
+macro index <f2> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.gmail.gustavocfranco/config<enter><change-folder>!<enter>"
+macro index <f3> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.live.gufranco/config<enter><change-folder>!<enter>"
+macro index <f4> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.icloud.gufranco/config<enter><change-folder>!<enter>"
 
 # Editor
 set charset = "utf-8"
@@ -15,16 +19,17 @@ set status_format = "───[ Folder: %f ]───[%r%m messages%?n? (%n new)
 # Sidebar
 set sidebar_format = "%B%?F? [%F]?%* %?N?%N/?%S"
 set sidebar_new_mail_only = no
+set sidebar_next_new_wrap = yes
 set sidebar_sort_method = "name"
 set sidebar_visible = yes
 set sidebar_width = 35
 
 # Aliases
-bind index,pager H sidebar-toggle-visible       # H to toggle visibility of the sidebar
-bind index,pager J sidebar-next                 # J to select next folder
-bind index,pager K sidebar-prev                 # K to select previous folder
-bind index,pager L sidebar-open                 # L to open selected folder
-bind index,pager G imap-fetch-mail              # Fetch new mails
+bind index,pager H sidebar-toggle-visible
+bind index,pager J sidebar-next
+bind index,pager K sidebar-prev
+bind index,pager L sidebar-open
+bind index,pager G imap-fetch-mail
 
 # Tell Mutt which MIME types to auto-view
 auto_view application/msword
@@ -43,7 +48,7 @@ auto_view text/html
 auto_view text/x-vcard
 
 # Sanely handle multi-part messages
-alternative_order text/enriched text/plain text text/html
+alternative_order text/plain text/enriched text/html
 
 # Headers
 ignore *
@@ -64,7 +69,7 @@ set sig_on_top = yes
 set record = no
 
 # Index view
-set date_format = "%d/%m/%y"
+set date_format = "%y-%m-%d  %I:%M:%p"
 set index_format = "[%Z]  %D  %-20.20F  %s"
 set reply_regexp = "^(([Rr][Ee]?(\[[0-9]+\])?: *)?(\[[^]]+\] *)?)*"
 set sort = threads
@@ -92,7 +97,8 @@ set mail_check = 60
 set mail_check_stats = yes
 
 # Theme
-source ~/.mutt/themes/dracula.muttrc
+source ~/.mutt/themes/gruvbox.muttrc
+source ~/.mutt/themes/gruvbox-extended.muttrc
 
 # Display version on startup
 push <show-version>
@@ -100,9 +106,9 @@ push <show-version>
 # Faster, Mutt. Faster!
 set sleep_time = 0
 
-# Shut the fuck up, Mutt
+# Shut up, Mutt
 set beep = no
 set wait_key = no
 
-# Set the color of the progress bar
-color progress white red
+# Load default account
+source ~/.mutt/accounts/com.gmail.gustavocfranco/config

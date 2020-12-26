@@ -6,10 +6,10 @@ set realname = "Gustavo Franco"
 set from = "gufranco@icloud.com"
 
 # IMAP / SMTP
-# set imap_check_subscribed = yes
-set imap_idle = yes
+# set imap_check_subscribed
+set imap_idle
 set imap_keepalive = 60
-set imap_list_subscribed = yes
+set imap_list_subscribed
 set imap_pipeline_depth = 0
 set imap_user = "gufranco@icloud.com"
 set smtp_url = "smtp://gufranco@smtp.mail.me.com:587/"
@@ -18,14 +18,14 @@ set smtp_url = "smtp://gufranco@smtp.mail.me.com:587/"
 source "gpg -d ~/.mutt/accounts/com.icloud.gufranco/password.gpg |"
 
 # Security
-set ssl_force_tls = yes
-set ssl_starttls = yes
-set ssl_use_sslv3 = no
-set ssl_use_tlsv1 = no
-set ssl_use_tlsv1_1 = no
-set ssl_use_tlsv1_2 = yes
-set ssl_verify_dates = yes
-set ssl_verify_host = yes
+set ssl_force_tls
+set ssl_starttls
+unset ssl_use_sslv3 = no
+unset ssl_use_tlsv1 = no
+unset ssl_use_tlsv1_1 = no
+set ssl_use_tlsv1_2
+set ssl_verify_dates
+set ssl_verify_host
 
 # Folders
 set folder = "imaps://gufranco@imap.mail.me.com/"

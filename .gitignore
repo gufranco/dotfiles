@@ -7,11 +7,8 @@ ssh/*
 !ssh/id_ed25519.pub
 
 # Mutt
-mutt/accounts/*/certificates
-mutt/accounts/*/cache/headers/*
-!mutt/accounts/*/cache/headers/.gitkeep
-mutt/accounts/*/cache/bodies/*
-!mutt/accounts/*/cache/bodies/.gitkeep
+mutt/accounts/*/cache/*
+!mutt/accounts/*/cache/.gitkeep
 
 # GPG
 gnupg/crls.d/

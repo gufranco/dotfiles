@@ -10,7 +10,7 @@ macro index <f4> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/
 
 # Editor
 set charset = "utf-8"
-set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup tw=72 ft=mail noautoindent fo=aw cursorline number colorcolumn=72'"
+set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup tw=72 ft=mail noautoindent fo=watqc cursorline number colorcolumn=72 nojs nosmartindent list listchars=trail:•'"
 
 # Status bar
 set status_chars  = " *%A"
@@ -18,10 +18,10 @@ set status_format = "───[ Folder: %f ]───[%r%m messages%?n? (%n new)
 
 # Sidebar
 set sidebar_format = "%B%?F? [%F]?%* %?N?%N/?%S"
-set sidebar_new_mail_only = no
-set sidebar_next_new_wrap = yes
+unset sidebar_new_mail_only
+set sidebar_next_new_wrap
 set sidebar_sort_method = "name"
-set sidebar_visible = yes
+set sidebar_visible
 set sidebar_width = 35
 
 # Aliases
@@ -57,16 +57,16 @@ unhdr_order *
 hdr_order From: To: CC: Date: Subject:
 
 # Hide warning "GPGME: CMS protocol not available"
-set crypt_use_gpgme = no
+unset crypt_use_gpgme
 
 # Avoid weird line breaks
-set text_flowed = yes
+set text_flowed
 
 # Put signatures on top of the message
-set sig_on_top = yes
+set sig_on_top
 
 # Dont save local copies of sent mails
-set record = no
+unset record
 
 # Index view
 set date_format = "%Y-%m-%d  %H:%M:%S"
@@ -74,27 +74,27 @@ set index_format = "[%Z]  %D  %-20.20F  %s"
 set reply_regexp = "^(([Rr][Ee]?(\[[0-9]+\])?: *)?(\[[^]]+\] *)?)*"
 set sort = threads
 set sort_aux = reverse-last-date-received
-set sort_re = yes
-set uncollapse_jump = yes
+set sort_re
+set uncollapse_jump
 
 # Pager view
-set markers = no
-set menu_scroll = yes
+unset markers
+set menu_scroll
 set pager_context = 3
 set pager_index_lines = 10
-set pager_stop = yes
-set tilde = yes
+set pager_stop
+set tilde
 
 # Do not duplicate sent emails
-set copy = no
+unset copy
 
 # From header
-set use_from = yes
-set envelope_from = yes
+set use_from
+set envelope_from
 
 # Mail check
 set mail_check = 60
-set mail_check_stats = yes
+set mail_check_stats
 
 # Theme
 source ~/.mutt/themes/gruvbox.muttrc
@@ -107,8 +107,34 @@ push <show-version>
 set sleep_time = 0
 
 # Shut up, Mutt
-set beep = no
-set wait_key = no
+unset beep
+unset wait_key
+
+# GPG
+set crypt_autosign
+set crypt_replyencrypt
+set pgp_clearsign_command="gpg --no-verbose --batch --output - --passphrase-fd 0 --armor --textmode --clearsign %?a?-u %a? %f"
+set pgp_decode_command="gpg %?p?--passphrase-fd 0? --no-verbose --batch --output - %f"
+set pgp_decrypt_command="gpg --passphrase-fd 0 --no-verbose --batch --output - %f"
+set pgp_encrypt_only_command="pgpewrap gpg --batch --quiet --no-verbose --output - --encrypt --textmode --armor --always-trust --encrypt-to CD580758160759A9 -- -r %r -- %f"
+set pgp_encrypt_sign_command="pgpewrap gpg --passphrase-fd 0 --batch --quiet --no-verbose --textmode --output - --encrypt --sign %?a?-u %a? --armor --always-trust --encrypt-to CD580758160759A9 -- -r %r -- %f"
+set pgp_export_command="gpg --no-verbose --export --armor %r"
+set pgp_import_command="gpg --no-verbose --import -v %f"
+set pgp_list_pubring_command="gpg --no-verbose --batch --with-colons --list-keys %r"
+set pgp_list_secring_command="gpg --no-verbose --batch --with-colons --list-secret-keys %r"
+set pgp_replyencrypt
+set pgp_replysign
+set pgp_replysignencrypted
+unset pgp_show_unusable
+set pgp_sign_as = CD580758160759A9
+set pgp_sign_command="gpg --no-verbose --batch --output - --passphrase-fd 0 --armor --detach-sign --textmode %?a?-u %a? %f"
+set pgp_timeout = 3600
+set pgp_use_gpg_agent
+set pgp_verify_command="gpg --no-verbose --batch --output - --verify %s %f"
+set pgp_verify_key_command="gpg --no-verbose --batch --fingerprint --check-sigs %r"
+
+# Mark emails from these addresses as sent by you
+alternates gustavocfranco@gmail.com gufranco@live.com gufranco@icloud.com gufranco@protonmail.ch
 
 # Load default account
 source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc

@@ -416,7 +416,8 @@ case "$(uname)" in
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    brew bundle --file "${HOME}/.dotfiles/Brewfile"
+    export PATH="/usr/local/sbin:$PATH"
+    HOMEBREW_FORCE_BREWED_CURL=1 brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
     ############################################################################
     # iTerm 2

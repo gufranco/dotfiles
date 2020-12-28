@@ -33,3 +33,6 @@ plug.vim*
 vim/plugged/
 coc/extensions/node_modules/
 coc/memos.json
+
+# Brew
+Brewfile.lock.json

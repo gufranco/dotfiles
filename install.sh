@@ -419,16 +419,15 @@ case "$(uname)" in
     export PATH="/usr/local/sbin:$PATH"
     HOMEBREW_FORCE_BREWED_CURL=1 brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
-    ############################################################################
-    # iTerm 2
-    ############################################################################
-    curl -fLo \
-      "/tmp/gruvbox-dark.itermcolors" \
-      --create-dirs https://raw.githubusercontent.com/morhetz/gruvbox-contrib/master/iterm2/gruvbox-dark.itermcolors
-    open "/tmp/gruvbox-dark.itermcolors"
-
   ;;
 esac
+
+################################################################################
+# Config folder
+################################################################################
+if [ ! -d ~/.config ] && [ ! -h ~/.config ]; then
+  mkdir ~/.config
+fi
 
 ################################################################################
 # Node.js config
@@ -494,6 +493,16 @@ fi
 ln -s ~/.dotfiles/alacritty/.alacritty.yml ~/.alacritty.yml
 
 ################################################################################
+# iTerm 2
+################################################################################
+if [[ "$(uname)" == "Darwin" ]]; then
+  curl -fLo \
+    "/tmp/gruvbox-dark.itermcolors" \
+    --create-dirs https://raw.githubusercontent.com/morhetz/gruvbox-contrib/master/iterm2/gruvbox-dark.itermcolors
+  open "/tmp/gruvbox-dark.itermcolors"
+fi
+
+################################################################################
 # Git config
 ################################################################################
 if [ -f ~/.gitconfig ] || [ -h ~/.gitconfig ]; then
@@ -502,7 +511,7 @@ fi
 ln -s ~/.dotfiles/git/.gitconfig ~/.gitconfig
 
 ################################################################################
-# Vim / Neovim config / Coc dependencies
+# Vim / Neovim / Coc
 ################################################################################
 if [ -d ~/.vim ] || [ -h ~/.vim ]; then
   mv ~/.vim /tmp/vim-old
@@ -512,7 +521,6 @@ ln -s ~/.dotfiles/vim ~/.vim
 if [ -d ~/.config/nvim ] || [ -h ~/.config/nvim ]; then
   mv ~/.config/nvim /tmp/nvim-old
 fi
-mkdir ~/.config
 ln -s ~/.dotfiles/vim ~/.config/nvim
 
 if [ -f ~/.vimrc ] || [ -h ~/.vimrc ]; then

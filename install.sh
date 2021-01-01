@@ -189,9 +189,7 @@ case "$(uname)" in
     sudo add-apt-repository -y ppa:jonathonf/vim
     sudo apt update
     sudo apt install -y \
-      neovim \
       python3-dev \
-      python3-neovim \
       vim \
       vim-gnome
 
@@ -439,11 +437,6 @@ ln -s ~/.dotfiles/nodejs/.npmrc ~/.npmrc
 mkdir ~/.global-modules
 
 ################################################################################
-# Python 3
-################################################################################
-python3 -m pip install --upgrade pynvim
-
-################################################################################
 # Bash config
 ################################################################################
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -498,16 +491,6 @@ else
 fi
 
 ################################################################################
-# iTerm 2
-################################################################################
-if [[ "$(uname)" == "Darwin" ]]; then
-  curl -fLo \
-    "/tmp/gruvbox-dark.itermcolors" \
-    --create-dirs https://raw.githubusercontent.com/morhetz/gruvbox-contrib/master/iterm2/gruvbox-dark.itermcolors
-  open "/tmp/gruvbox-dark.itermcolors"
-fi
-
-################################################################################
 # Git config
 ################################################################################
 if [ -f ~/.gitconfig ] || [ -h ~/.gitconfig ]; then
@@ -516,7 +499,7 @@ fi
 ln -s ~/.dotfiles/git/.gitconfig ~/.gitconfig
 
 ################################################################################
-# Vim / Neovim / Coc
+# Vim
 ################################################################################
 if [ -d ~/.vim ] || [ -h ~/.vim ]; then
   mv ~/.vim /tmp/vim-old

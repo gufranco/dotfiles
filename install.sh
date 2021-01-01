@@ -490,7 +490,12 @@ ln -s ~/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme ~/.oh-my-z
 if [ -f ~/.alacritty.yml ] || [ -h ~/.alacritty.yml ]; then
   mv ~/.alacritty.yml /tmp/alacritty.yml-old
 fi
-ln -s ~/.dotfiles/alacritty/.alacritty.yml ~/.alacritty.yml
+
+if [[ "$(uname)" == "Darwin" ]]; then
+  ln -s ~/.dotfiles/alacritty/macos.yml ~/.alacritty.yml
+else
+  ln -s ~/.dotfiles/alacritty/linux.yml ~/.alacritty.yml
+fi
 
 ################################################################################
 # iTerm 2

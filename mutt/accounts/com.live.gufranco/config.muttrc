@@ -1,11 +1,17 @@
+################################################################################
 # Normalize settings
+################################################################################
 source "~/.mutt/normalize.muttrc"
 
+################################################################################
 # E-mail
+################################################################################
 set realname = "Gustavo Franco"
 set from = "gufranco@live.com"
 
+################################################################################
 # IMAP / SMTP
+################################################################################
 set imap_check_subscribed
 set imap_idle
 set imap_keepalive = 60
@@ -13,10 +19,14 @@ set imap_list_subscribed
 set imap_user = "gufranco@live.com"
 set smtp_url = "smtp://gufranco@live.com@smtp-mail.outlook.com:587"
 
+################################################################################
 # Password
+################################################################################
 source "gpg -d ~/.mutt/accounts/com.live.gufranco/password.gpg |"
 
+################################################################################
 # Security
+################################################################################
 set ssl_force_tls
 set ssl_starttls
 unset ssl_use_sslv3
@@ -26,16 +36,22 @@ set ssl_use_tlsv1_2
 set ssl_verify_dates
 set ssl_verify_host
 
+################################################################################
 # Folders
+################################################################################
 set folder = "imaps://imap-mail.outlook.com:993/"
 set spoolfile = "+INBOX"
 set postponed = "+Drafts"
 set trash = "+Deleted"
 set record = "+Sent"
 
+################################################################################
 # Cache
+################################################################################
 set header_cache = "~/.mutt/accounts/com.live.gufranco/cache/headers"
 set message_cachedir = "~/.mutt/accounts/com.live.gufranco/cache/bodies"
 
+################################################################################
 # Signature
+################################################################################
 set signature = "~/.mutt/signature"

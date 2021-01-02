@@ -71,25 +71,21 @@ case "$(uname)" in
       exfat-utils
 
     ############################################################################
-    # 7Zip
+    # 7Zip / Rar / Zip
     ############################################################################
     sudo apt install -y \
       p7zip-full \
-      p7zip-rar
-
-    ############################################################################
-    # Rar
-    ############################################################################
-    sudo apt install -y \
+      p7zip-rar \
+      rar \
       unrar \
-      rar
-
-    ############################################################################
-    # Zip
-    ############################################################################
-    sudo apt install -y \
       unzip \
       zip
+
+    ############################################################################
+    # Midnight Commander
+    ############################################################################
+    sudo apt install -y \
+      mc
 
     ############################################################################
     # Docker
@@ -184,7 +180,7 @@ case "$(uname)" in
     sudo snap install robo3t-snap
 
     ############################################################################
-    # Vim / gVim  / nVim
+    # Vim
     ############################################################################
     sudo add-apt-repository -y ppa:jonathonf/vim
     sudo apt update
@@ -428,6 +424,19 @@ if [ ! -d ~/.config ] && [ ! -h ~/.config ]; then
 fi
 
 ################################################################################
+# Midnight Commander
+################################################################################
+if [ ! -d ~/.local/share/mc/skins ] && [ ! -h ~/.local/share/mc/skins ]; then
+  mkdir -p ~/.local/share/mc/skins
+fi
+
+if [ -f ~/.local/share/mc/skins ] || [ -h ~/.local/share/mc/skins ]; then
+  mv ~/.local/share/mc/skins/gruvbox256.ini /tmp/gruvbox256.ini-old
+fi
+
+ln -s ~/.dotfiles/mc//gruvbox256.ini ~/.local/share/mc/skins/gruvbox256.ini
+
+################################################################################
 # Node.js config
 ################################################################################
 if [ -f ~/.npmrc ] || [ -h ~/.npmrc ]; then
@@ -536,12 +545,6 @@ if [ -d ~/.gnupg ] || [ -h ~/.gnupg ]; then
 fi
 ln -s ~/.dotfiles/gnupg ~/.gnupg
 
-if [[ "$(uname)" == "Linux" ]]; then
-  echo -e "pinentry-program /usr/bin/pinentry-curses" > ~/.gnupg/gpg-agent.conf
-elif [[ "$(uname)" == "Darwin" ]]; then
-  echo -e "pinentry-program /usr/local/bin/pinentry-curses" > ~/.gnupg/gpg-agent.conf
-fi
-
 chmod 700 ~/.gnupg
 chmod 400 ~/.gnupg/keys/*
 # gpg --import ~/.gnupg/keys/public.pgp
@@ -639,7 +642,7 @@ case "$(uname)" in
     brew cleanup -s
 
     # Enable TRIM and reboot
-    sudo trimforce enable
+    yes | sudo trimforce enable
 
   ;;
 esac

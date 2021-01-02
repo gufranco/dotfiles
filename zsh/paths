@@ -11,16 +11,18 @@ export PATH="$HOME/.global-modules/bin:$PATH"
 ################################################################################
 case "$(uname)" in
   Linux)
+    # Neomutt
+    export PATH="/usr/libexec/neomutt:$PATH"
 
   ;;
   Darwin)
-    # Homebrew's sbin
+    # Homebrew
     export PATH="/usr/local/sbin:$PATH"
 
-    # coreutils
+    # Coreutils
     export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 
-    # findutils
+    # Findutils
     export PATH="/usr/local/opt/findutils/libexec/gnubin:$PATH"
 
     # cURL
@@ -31,5 +33,6 @@ case "$(uname)" in
 
     # Ruby
     export PATH="/usr/local/opt/ruby/bin:$PATH"
+
   ;;
 esac

@@ -12,7 +12,6 @@ mutt/accounts/*/cache/*
 
 # GPG
 gnupg/crls.d/
-gnupg/gpg-agent.conf
 gnupg/openpgp-revocs.d/
 gnupg/private-keys-v1.d/
 gnupg/pubring.kbx

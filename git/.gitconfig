@@ -2,7 +2,7 @@
   name = Gustavo Franco
   email = gufranco@users.noreply.github.com
   useConfigOnly = true
-  signingkey = CD580758160759A9
+  signingkey = 8D7317357C473E2F
 
 [core]
   excludesfile = ~/.dotfiles/git/.gitignore_global

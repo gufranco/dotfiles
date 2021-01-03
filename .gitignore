@@ -8,17 +8,15 @@ ssh/*
 
 # Mutt
 mutt/accounts/*/cache/*
+mutt/accounts/*/password
 !mutt/accounts/*/cache/.gitkeep
 
 # GPG
-gnupg/crls.d/
-gnupg/openpgp-revocs.d/
-gnupg/private-keys-v1.d/
-gnupg/pubring.kbx
-gnupg/random_seed
-gnupg/sshcontrol
-gnupg/tofu.db
-gnupg/trustdb.gpg
+gnupg/*
+!gnupg/keys/
+!gnupg/gpg-agent-linux.conf
+!gnupg/gpg-agent-macos.conf
+!gnupg/gpg.conf
 
 # Tmux
 tmux/resurrect/

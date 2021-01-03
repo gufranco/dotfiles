@@ -543,12 +543,28 @@ npm install \
 if [ -d ~/.gnupg ] || [ -h ~/.gnupg ]; then
   mv ~/.gnupg /tmp/gnupg-old
 fi
+
 ln -s ~/.dotfiles/gnupg ~/.gnupg
+
+if [[ "$(uname)" == "Darwin" ]]; then
+  ln -s ~/.dotfiles/gnupg/gpg-agent-macos.conf ~/.dotfiles/gnupg/gpg-agent.conf
+else
+  ln -s ~/.dotfiles/gnupg/gpg-agent-linux.conf ~/.dotfiles/gnupg/gpg-agent.conf
+fi
 
 chmod 700 ~/.gnupg
 chmod 400 ~/.gnupg/keys/*
-# gpg --import ~/.gnupg/keys/public.pgp
-# gpg --import ~/.gnupg/keys/private.pgp
+
+# gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.private.pgp
+# gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.public.pgp
+# gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.private.pgp
+# gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.public.pgp
+# gpg --import ~/.gnupg/keys/com.gmail.gustavocfranco.private.pgp
+# gpg --import ~/.gnupg/keys/com.gmail.gustavocfranco.public.pgp
+# gpg --import ~/.gnupg/keys/com.icloud.gufranco.private.pgp
+# gpg --import ~/.gnupg/keys/com.icloud.gufranco.public.pgp
+# gpg --import ~/.gnupg/keys/com.live.gufranco.private.pgp
+# gpg --import ~/.gnupg/keys/com.live.gufranco.public.pgp
 
 ################################################################################
 # SSH config

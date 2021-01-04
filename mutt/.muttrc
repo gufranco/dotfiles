@@ -175,7 +175,6 @@ set pgp_good_sign="^\\[GNUPG:\\] GOODSIG"
 set pgp_import_command="gpg --no-verbose --import %f"
 set pgp_list_pubring_command="gpg --no-verbose --batch --quiet --with-colons --list-keys %r"
 set pgp_list_secring_command="gpg --no-verbose --batch --quiet --with-colons --list-secret-keys %r"
-set pgp_sign_as = CD580758160759A9
 set pgp_sign_command="gpg --no-verbose --batch --quiet --output - %?p?--passphrase-fd 0? --armor --detach-sign --textmode %?a?-u %a? %f"
 set pgp_timeout = 3600
 set pgp_use_gpg_agent

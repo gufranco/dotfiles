@@ -11,6 +11,7 @@ reset imap_passive
 reset imap_pipeline_depth
 reset imap_user
 reset message_cachedir
+reset pgp_sign_as
 reset postponed
 reset realname
 reset record

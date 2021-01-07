@@ -283,16 +283,6 @@ case "$(uname)" in
     sudo fc-cache -fv
 
     ############################################################################
-    # Tilix
-    ############################################################################
-    sudo apt install -y \
-      tilix
-
-    curl -fLo \
-      "$HOME/.config/tilix/schemes/gruvbox-dark-medium.json" \
-      --create-dirs https://raw.githubusercontent.com/MichaelThessel/tilix-gruvbox/master/gruvbox-dark-medium.json
-
-    ############################################################################
     # Alacritty
     ############################################################################
     sudo add-apt-repository -y ppa:mmstick76/alacritty
@@ -313,12 +303,10 @@ case "$(uname)" in
       conky-all
 
     ############################################################################
-    # QBittorrent
+    # Transmission
     ############################################################################
-    sudo add-apt-repository -y ppa:qbittorrent-team/qbittorrent-stable
-    sudo apt update
     sudo apt install -y \
-      qbittorrent
+      transmission
 
     ############################################################################
     # Asciinema

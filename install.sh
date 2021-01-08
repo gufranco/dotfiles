@@ -115,14 +115,6 @@ case "$(uname)" in
       insync
 
     ############################################################################
-    # Java
-    ############################################################################
-    sudo add-apt-repository -y ppa:linuxuprising/java
-    sudo apt update
-    sudo apt install -y \
-      oracle-java14-installer
-
-    ############################################################################
     # Spotify
     ############################################################################
     curl -fsSL https://download.spotify.com/debian/pubkey.gpg | sudo apt-key add -
@@ -139,15 +131,6 @@ case "$(uname)" in
     sudo apt update
     sudo apt install -y \
       google-chrome-stable
-
-    ############################################################################
-    # Brave
-    ############################################################################
-    curl -fsSL https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key add -
-    echo -e "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-    sudo apt update
-    sudo apt install -y \
-      brave-browser
 
     ############################################################################
     # Skype
@@ -210,9 +193,9 @@ case "$(uname)" in
     sudo apt-get install -y \
       sublime-text
 
-    ################################################################################
+    ############################################################################
     # Visual Studio Code
-    ################################################################################
+    ############################################################################
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
     echo -e "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list
     sudo apt update
@@ -227,24 +210,6 @@ case "$(uname)" in
     sudo apt update
     sudo apt install -y \
       insomnia
-
-    ############################################################################
-    # Gnome
-    ############################################################################
-    sudo apt install -y \
-      gnome-screensaver \
-      gnome-shell-extensions \
-      gnome-sushi \
-      gnome-tweak-tool \
-      network-manager-openvpn
-
-    ############################################################################
-    # VeraCrypt
-    ############################################################################
-    sudo add-apt-repository -y ppa:unit193/encryption
-    sudo apt update
-    sudo apt install -y \
-      veracrypt
 
     ############################################################################
     # GPG
@@ -274,9 +239,6 @@ case "$(uname)" in
     ############################################################################
     # Hack Nerd Font
     ############################################################################
-    sudo apt install -y \
-      fonts-hack-ttf
-
     curl -#fLo \
       "$HOME/.local/share/fonts/Hack Regular Nerd Font Complete.ttf" \
       --create-dirs https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/Hack/Regular/complete/Hack%20Regular%20Nerd%20Font%20Complete.ttf
@@ -340,37 +302,6 @@ case "$(uname)" in
     sudo apt install -y \
       caffeine
 
-    ############################################################################
-    # Steam
-    ############################################################################
-    sudo apt install -y \
-      steam
-
-    ############################################################################
-    # Handbrake
-    ############################################################################
-    sudo add-apt-repository -y ppa:stebbins/handbrake-releases
-    sudo apt update
-    sudo apt install -y \
-      handbrake-cli \
-      handbrake-gtk
-
-    ############################################################################
-    # Piper
-    ############################################################################
-    sudo apt install -y \
-      piper
-
-    ############################################################################
-    # Drivers
-    ############################################################################
-    sudo add-apt-repository -y ppa:oibaf/graphics-drivers
-    sudo add-apt-repository -y ppa:graphics-drivers/ppa
-    sudo apt update
-    sudo apt install -y \
-      mesa-vulkan-drivers \
-      vulkan-utils
-
   ;;
   Darwin)
     ############################################################################
@@ -425,7 +356,7 @@ fi
 ln -s ~/.dotfiles/mc//gruvbox256.ini ~/.local/share/mc/skins/gruvbox256.ini
 
 ################################################################################
-# Node.js config
+# Node.js
 ################################################################################
 if [ -f ~/.npmrc ] || [ -h ~/.npmrc ]; then
   mv ~/.npmrc /tmp/npmrc-old
@@ -434,14 +365,14 @@ ln -s ~/.dotfiles/nodejs/.npmrc ~/.npmrc
 mkdir ~/.global-modules
 
 ################################################################################
-# Bash config
+# Bash
 ################################################################################
 if [[ "$(uname)" == "Darwin" ]]; then
   echo -e "/usr/local/bin/bash" | sudo tee -a /etc/shells
 fi
 
 ################################################################################
-# Zsh config
+# Zsh
 ################################################################################
 if [ -f ~/.zshrc ] || [ -h ~/.zshrc ]; then
   mv ~/.zshrc /tmp/zshrc-old
@@ -488,7 +419,7 @@ else
 fi
 
 ################################################################################
-# Git config
+# Git
 ################################################################################
 if [ -f ~/.gitconfig ] || [ -h ~/.gitconfig ]; then
   mv ~/.gitconfig /tmp/gitconfig-old
@@ -526,7 +457,7 @@ npm install \
   --prefix="${HOME}/.dotfiles/coc/extensions"
 
 ################################################################################
-# GPG config
+# GPG
 ################################################################################
 if [ -d ~/.gnupg ] || [ -h ~/.gnupg ]; then
   mv ~/.gnupg /tmp/gnupg-old
@@ -541,8 +472,8 @@ else
 fi
 
 chmod 700 ~/.gnupg
-chmod 400 ~/.gnupg/keys/*
 
+# chmod 400 ~/.gnupg/keys/*
 # gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.private.pgp
 # gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.public.pgp
 # gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.private.pgp
@@ -555,7 +486,7 @@ chmod 400 ~/.gnupg/keys/*
 # gpg --import ~/.gnupg/keys/com.live.gufranco.public.pgp
 
 ################################################################################
-# SSH config
+# SSH
 ################################################################################
 if [ -d ~/.ssh ] || [ -h ~/.ssh ]; then
   mv ~/.ssh /tmp/ssh-old
@@ -564,7 +495,7 @@ ln -s ~/.dotfiles/ssh ~/.ssh
 chmod 400 ~/.ssh/id_*
 
 ################################################################################
-# Neomutt config
+# Neomutt
 ################################################################################
 if [ -f ~/.muttrc ] || [ -h ~/.muttrc ]; then
   mv ~/.muttrc /tmp/muttrc-old
@@ -582,7 +513,7 @@ fi
 ln -s ~/.dotfiles/mutt/.mailcap ~/.mailcap
 
 ################################################################################
-# Tmux config
+# Tmux
 ################################################################################
 if [ -f ~/.tmux.conf ] || [ -h ~/.tmux.conf ]; then
   mv ~/.tmux.conf /tmp/tmux.conf-old
@@ -595,7 +526,7 @@ fi
 ln -s ~/.dotfiles/tmux ~/.tmux
 
 ################################################################################
-# Curl config
+# Curl
 ################################################################################
 if [ -f ~/.curlrc ] || [ -h ~/.curlrc ]; then
   mv ~/.curlrc /tmp/curlrc-old
@@ -603,7 +534,7 @@ fi
 ln -s ~/.dotfiles/curl/.curlrc ~/.curlrc
 
 ################################################################################
-# Wget config
+# Wget
 ################################################################################
 if [ -f ~/.wgetrc ] || [ -h ~/.wgetrc ]; then
   mv ~/.wgetrc /tmp/wgetrc-old
@@ -611,7 +542,7 @@ fi
 ln -s ~/.dotfiles/wget/.wgetrc ~/.wgetrc
 
 ################################################################################
-# Readline config
+# Readline
 ################################################################################
 if [ -f ~/.inputrc ] || [ -h ~/.inputrc ]; then
   mv ~/.inputrc /tmp/inputrc-old
@@ -619,7 +550,7 @@ fi
 ln -s ~/.dotfiles/.inputrc ~/.inputrc
 
 ################################################################################
-# Conky config
+# Conky
 ################################################################################
 if [[ "$(uname)" == "Linux" ]]; then
   if [ -f ~/.conkyrc ] || [ -h ~/.conkyrc ]; then

@@ -302,6 +302,16 @@ case "$(uname)" in
     sudo apt install -y \
       caffeine
 
+    ############################################################################
+    # Keybase
+    ############################################################################
+    curl -#fLo \
+      "/tmp/keybase.deb" \
+      --create-dirs https://prerelease.keybase.io/keybase_amd64.deb
+    sudo apt install -y \
+      /tmp/keybase.deb
+    sudo apt install -y -f
+
   ;;
   Darwin)
     ############################################################################

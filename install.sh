@@ -472,18 +472,12 @@ else
 fi
 
 chmod 700 ~/.gnupg
-
-# chmod 400 ~/.gnupg/keys/*
-# gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.private.pgp
-# gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.public.pgp
-# gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.private.pgp
-# gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.public.pgp
-# gpg --import ~/.gnupg/keys/com.gmail.gustavocfranco.private.pgp
-# gpg --import ~/.gnupg/keys/com.gmail.gustavocfranco.public.pgp
-# gpg --import ~/.gnupg/keys/com.icloud.gufranco.private.pgp
-# gpg --import ~/.gnupg/keys/com.icloud.gufranco.public.pgp
-# gpg --import ~/.gnupg/keys/com.live.gufranco.private.pgp
-# gpg --import ~/.gnupg/keys/com.live.gufranco.public.pgp
+chmod 400 ~/.gnupg/keys/*
+gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.public.pgp
+gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.public.pgp
+gpg --import ~/.gnupg/keys/com.gmail.gustavocfranco.public.pgp
+gpg --import ~/.gnupg/keys/com.icloud.gufranco.public.pgp
+gpg --import ~/.gnupg/keys/com.live.gufranco.public.pgp
 
 ################################################################################
 # SSH

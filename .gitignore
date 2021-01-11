@@ -13,7 +13,8 @@ mutt/accounts/*/password
 
 # GPG
 gnupg/*
-!gnupg/keys/.gitkeep
+!gnupg/keys
+!gnupg/keys/*.private.pgp
 !gnupg/gpg-agent-linux.conf
 !gnupg/gpg-agent-macos.conf
 !gnupg/gpg.conf

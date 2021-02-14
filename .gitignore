@@ -29,7 +29,9 @@ tmux/plugins/*
 .netrwhist
 plug.vim*
 vim/plugged/
+coc/extensions/package-lock.json
 coc/extensions/node_modules/
+coc/extensions/db.json
 coc/memos.json
 
 # Brew

@@ -1,0 +1,277 @@
+#!/usr/bin/env bash
+
+
+################################################################################
+# System specific functions
+################################################################################
+case "$(uname)" in
+  Linux)
+    ############################################################################
+    # Open the current directory, otherwise open the given location
+    ############################################################################
+    function open() {
+      if [ $# -eq 0 ]; then
+        xdg-open . > /dev/null 2>&1;
+      else
+        xdg-open "$@" > /dev/null 2>&1;
+      fi;
+    }
+
+  ;;
+  Darwin)
+
+  ;;
+esac
+
+################################################################################
+# Update and upgrade everything
+################################################################################
+function f5() {
+  CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+
+  case "$(uname)" in
+    Linux)
+      sudo apt update -y
+      sudo apt dist-upgrade -y
+      sudo apt autoremove -y
+      sudo apt clean all -y
+
+    ;;
+
+    Darwin)
+      brew update
+      brew upgrade
+      brew cu --all --yes --cleanup
+      brew cleanup -s
+      brew bundle --file ~/.dotfiles/Brewfile
+      brew bundle --file ~/.dotfiles/Brewfile --force cleanup
+      mas upgrade
+      sudo softwareupdate -i -a
+
+    ;;
+  esac
+
+  # Dotfiles
+  cd ~/.dotfiles || exit 1
+  git pull-sub
+  git submodule update --recursive --remote
+
+  # Vim
+  vim +PlugUpgrade +PlugUpdate +qall
+
+  # Oh-my-zsh
+  cd ~/.oh-my-zsh || exit 1
+  git checkout master
+  git pull
+
+  # Spaceship theme
+  cd ~/.oh-my-zsh/custom/themes/spaceship-prompt || exit 1
+  git checkout master
+  git pull
+
+  # Reload shell
+  source "${HOME}/.zshrc"
+
+  cd "$CURRENT_DIR" || exit 1
+}
+
+################################################################################
+# MongoDB
+################################################################################
+function mongodb-init() {
+  mkdir -p ~/Docker/Databases/MongoDB/Dump
+
+  docker run \
+    --detach \
+    --hostname mongodb \
+    --name mongodb \
+    --restart unless-stopped \
+    --env "MONGO_INITDB_ROOT_USERNAME=root" \
+    --env "MONGO_INITDB_ROOT_PASSWORD=root" \
+    --mount type=bind,source="$HOME"/Docker/Databases/MongoDB/Dump,target=/dump \
+    --publish 127.0.0.1:27017:27017 \
+    mongo:4
+}
+
+function mongodb-start() {
+  docker run mongodb
+}
+
+function mongodb-stop() {
+  docker stop mongodb
+}
+
+function mongodb-purge() {
+  mongodb-stop
+  docker rm mongodb
+}
+
+function mongodb-terminal() {
+  docker exec -it mongodb /bin/bash
+}
+
+################################################################################
+# MySQL
+################################################################################
+function mysql-init() {
+  mkdir -p ~/Docker/Databases/MySQL/Dump
+
+  docker run \
+    --detach \
+    --hostname mysql \
+    --name mysql \
+    --restart unless-stopped \
+    --env "MYSQL_ROOT_PASSWORD=root" \
+    --mount type=bind,source="$HOME"/Docker/Databases/MySQL/Dump,target=/dump \
+    --publish 127.0.0.1:3306:3306 \
+    mysql:5
+}
+
+function mysql-start() {
+  docker run mysql
+}
+
+function mysql-stop() {
+  docker stop mysql
+}
+
+function mysql-purge() {
+  mysql-stop
+  docker rm mysql
+}
+
+function mysql-terminal() {
+  docker exec -it mysql /bin/bash
+}
+
+################################################################################
+# PostgreSQL
+################################################################################
+function postgresql-init() {
+  mkdir -p ~/Docker/Databases/PostgreSQL/Dump
+
+  docker run \
+    --detach \
+    --hostname postgresql \
+    --name postgresql \
+    --restart unless-stopped \
+    --env "POSTGRES_USER=root" \
+    --env "POSTGRES_PASSWORD=root" \
+    --mount type=bind,source="$HOME"/Docker/Databases/PostgreSQL/Dump,target=/dump \
+    --publish 127.0.0.1:5432:5432 \
+    postgres:12-alpine
+}
+
+function postgresql-start() {
+  docker run postgresql
+}
+
+function postgresql-stop() {
+  docker stop postgresql
+}
+
+function postgresql-purge() {
+  postgresql-stop
+  docker rm postgresql
+}
+
+function postgresql-terminal() {
+  docker exec -it postgresql /bin/sh
+}
+
+################################################################################
+# Couchbase
+################################################################################
+function couchbase-init() {
+  mkdir -p ~/Docker/Databases/Couchbase/Dump
+
+  docker run \
+    --detach \
+    --hostname couchbase \
+    --name couchbase \
+    --restart unless-stopped \
+    --mount type=bind,source="$HOME"/Docker/Databases/Couchbase/Dump,target=/dump \
+    --publish 127.0.0.1:8091-8094:8091-8094 \
+    --publish 127.0.0.1:11210:11210 \
+    couchbase:community-6.0.0
+}
+
+function couchbase-start() {
+  docker run couchbase
+}
+
+function couchbase-stop() {
+  docker stop couchbase
+}
+
+function couchbase-purge() {
+  couchbase-stop
+  docker rm couchbase
+}
+
+function couchbase-terminal() {
+  docker exec -it couchbase /bin/bash
+}
+
+################################################################################
+# Redis
+################################################################################
+function redis-init() {
+  docker run \
+    --detach \
+    --hostname redis \
+    --name redis \
+    --restart unless-stopped \
+    --publish 127.0.0.1:6379:6379 \
+    redis:6-alpine
+}
+
+function redis-start() {
+  docker run redis
+}
+
+function redis-stop() {
+  docker stop redis
+}
+
+function redis-purge() {
+  redis-stop
+  docker rm redis
+}
+
+function redis-terminal() {
+  docker exec -it redis /bin/sh
+}
+
+################################################################################
+# RabbitMQ
+################################################################################
+function rabbitmq-init() {
+  docker run \
+    --detach \
+    --hostname rabbitmq \
+    --name rabbitmq \
+    --restart unless-stopped \
+    --env "RABBITMQ_DEFAULT_USER=root" \
+    --env "RABBITMQ_DEFAULT_PASS=root" \
+    --publish 127.0.0.1:5672:5672 \
+    --publish 127.0.0.1:15672:15672 \
+    rabbitmq:3-management-alpine
+}
+
+function rabbitmq-start() {
+  docker run rabbitmq
+}
+
+function rabbitmq-stop() {
+  docker stop rabbitmq
+}
+
+function rabbitmq-purge() {
+  rabbitmq-stop
+  docker rm rabbitmq
+}
+
+function rabbitmq-terminal() {
+  docker exec -it rabbitmq /bin/sh
+}

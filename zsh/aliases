@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Normalize
+################################################################################
+# Detect which `ls` flavor is in use
+if ls --color > /dev/null 2>&1; then
+  # GNU `ls`
+  colorflag="--color"
+  export LS_COLORS='no=00:fi=00:di=01;31:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:'
+else
+  # macOS `ls`
+  colorflag="-G"
+  export LSCOLORS='BxBxhxDxfxhxhxhxhxcxcx'
+fi
+
+################################################################################
+# General aliases
+################################################################################
+# Always use color output for `ls`
+alias ls="command ls --color"
+
+# List all files colorized in long format, excluding . and ..
+alias la="ls -lAF ${colorflag}"
+
+# List only directories
+alias ld="ls -lF ${colorflag} | grep --color=never '^d'"
+
+# Always enable colored `grep` output
+alias grep="grep --color=auto"
+alias fgrep="fgrep --color=auto"
+alias egrep="egrep --color=auto"
+alias zgrep="zgrep --color=auto"
+
+# Always create parent folders if needed
+alias mkdir="mkdir -p -v"
+
+# Stop after sending 5 packets
+alias ping="ping -c 5"
+
+# URL-encode strings
+alias urlencode='python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1]);"'
+
+# Pretty print a JSON
+alias jsonpp='python -m json.tool'
+
+# Recursively delete clean up folders
+alias cleanup-node="find . -type d -name \"node_modules\" -exec rm -rf \"{}\" +"
+alias cleanup-git="find . -type d -name \".git\" -exec rm -rf \"{}\" +"
+
+# Print each PATH entry on a separate line
+alias path="sed 's/:/\n/g' <<< \"$PATH\""
+
+# Shred file
+alias shred="shred -zvu -n 10"
+
+# Use neomutt when available
+if [ -x "$(command -v neomutt)" ]; then
+  alias mutt="neomutt"
+fi
+
+# Use npx when available
+if [ -x "$(command -v npx)" ]; then
+  alias eslint="npx eslint"
+  alias jest="npx jest"
+  alias ngrok="npx ngrok"
+  alias tsc="npx tsc"
+  alias vtop="npx vtop"
+fi
+
+################################################################################
+# System specific aliases
+################################################################################
+case "$(uname)" in
+  Linux)
+    # Use docker-compose as container when binary isn't available
+    if ! [ -x "$(command -v docker-compose)" ]; then
+      alias docker-compose="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v \"$PWD:/rootfs/$PWD\" -w=\"/rootfs/$PWD\" docker/compose:alpine-1.25.5"
+    fi
+
+    # Lock the screen (when going AFK)
+    alias afk="gnome-screensaver-command --lock"
+
+    # Browsers
+    alias chrome="/opt/google/chrome/google-chrome"
+
+    # Empty the Trash on all mounted volumes and the main HDD
+    alias emptytrash="trash-empty"
+
+  ;;
+  Darwin)
+    # Clean up LaunchServices to remove duplicates in the “Open With” menu
+    alias lscleanup="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user && killall Finder"
+
+    # Canonical hex dump; some systems have this symlinked
+    command -v hd > /dev/null || alias hd="hexdump -C"
+
+    # macOS has no `md5sum`, so use `md5` as a fallback
+    command -v md5sum > /dev/null || alias md5sum="md5"
+
+    # macOS has no `sha1sum`, so use `shasum` as a fallback
+    command -v sha1sum > /dev/null || alias sha1sum="shasum"
+
+    # macOS has no `shred`, so use `gshred` as a fallback
+    command -v shred > /dev/null || alias shred="gshred"
+
+    # Recursively delete `.DS_Store` files
+    alias cleanup="find . -type f -name '*.DS_Store' -ls -delete"
+
+    # Empty the Trash on all mounted volumes and the main HDD
+    alias emptytrash="sudo rm -rfv /Volumes/*/.Trashes; sudo rm -rfv ~/.Trash; sudo rm -rfv /private/var/log/asl/*.asl; sqlite3 ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV* 'delete from LSQuarantineEvent'"
+
+    # Merge PDF files
+    # Usage: `mergepdf -o output.pdf input{1,2,3}.pdf`
+    alias mergepdf='/System/Library/Automator/Combine\ PDF\ Pages.action/Contents/Resources/join.py'
+
+    # Browsers
+    alias chrome='/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome'
+    alias firefox='/Applications/Firefox.app/Contents/MacOS/Firefox'
+
+    # Show/hide hidden files in Finder
+    alias hidehiddenfiles="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
+    alias showhiddenfiles="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
+
+    # Hide/show all desktop icons (useful when presenting)
+    alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
+    alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
+
+    # Kill all the tabs in Chrome to free up memory
+    # [C] explained: http://www.commandlinefu.com/commands/view/402/exclude-grep-from-your-grepped-output-of-ps-alias-included-in-description
+    alias chromekill="ps ux | grep '[C]hrome Helper --type=renderer' | grep -v extension-process | tr -s ' ' | cut -d ' ' -f2 | xargs kill"
+
+    # Lock the screen (when going AFK)
+    alias afk="/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend"
+
+    # Reset launchpad layout
+    alias resetlaunchpad="defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock"
+
+  ;;
+esac

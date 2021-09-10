@@ -1,0 +1,38 @@
+# SSH
+ssh/*
+!ssh/config
+!ssh/id_rsa
+!ssh/id_rsa.pub
+!ssh/id_ed25519
+!ssh/id_ed25519.pub
+
+# Mutt
+mutt/accounts/*/cache/*
+mutt/accounts/*/password
+!mutt/accounts/*/cache/.gitkeep
+
+# GPG
+gnupg/*
+!gnupg/keys
+gnupg/keys/*.private.pgp
+!gnupg/gpg-agent-linux.conf
+!gnupg/gpg-agent-macos.conf
+!gnupg/gpg.conf
+
+# Tmux
+tmux/resurrect/
+tmux/plugins/*
+!tmux/plugins/tpm
+
+# Vim
+.tern-port
+.netrwhist
+plug.vim*
+vim/plugged/
+coc/extensions/package-lock.json
+coc/extensions/node_modules/
+coc/extensions/db.json
+coc/memos.json
+
+# Brew
+Brewfile.lock.json

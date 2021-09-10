@@ -1,0 +1,73 @@
+[user]
+  name = Gustavo Franco
+  email = gufranco@users.noreply.github.com
+  useConfigOnly = true
+  signingkey = 8D7317357C473E2F
+
+[core]
+  excludesfile = ~/.dotfiles/git/.gitignore_global
+  autocrlf = input
+  pager = less -FRSX
+  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+  editor = vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72'
+
+[init]
+  defaultBranch = main
+
+[commit]
+  gpgsign = true
+  template = ~/.dotfiles/git/.gitmessage
+
+[github]
+  user = gufranco
+
+[color]
+  ui = auto
+
+[color "status"]
+  added = green
+  changed = yellow
+  untracked = red
+
+[color "branch"]
+  current = magenta
+  local = yellow
+  remote = green
+
+[color "diff"]
+  meta = yellow
+  frag = magenta
+  old = red
+  new = green
+
+[pull]
+  rebase = true
+
+[branch]
+  autosetuprebase = always
+
+[rerere]
+  enabled = true
+
+[push]
+  default = current
+
+[help]
+  autocorrect = 1
+
+[alias]
+  me = config user.name
+  st = status -sb
+  co = checkout
+  fe = fetch origin
+  fork = checkout -b
+  pull-sub = !(git pull && git submodule foreach git pull origin master)
+  lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  incoming = !(git fetch --quiet && git log --pretty=format:'%C(yellow)%h %C(white)- %C(red)%an %C(white)- %C(cyan)%d%Creset %s %C(white)- %ar%Creset' ..@{u})
+  outgoing = !(git fetch --quiet && git log --pretty=format:'%C(yellow)%h %C(white)- %C(red)%an %C(white)- %C(cyan)%d%Creset %s %C(white)- %ar%Creset' @{u}..)
+  unstage = reset HEAD --
+  undo = checkout --
+  standup = !(git log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --since yesterday --author "$(git me)")
+  ready = rebase -i @{u}
+  hier = log --all --graph --decorate --oneline --simplify-by-decoration
+  committers = !(git log | grep Author | sort | uniq -c | sort -n -r)

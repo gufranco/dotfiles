@@ -112,37 +112,37 @@ function mongodb-terminal() {
 }
 
 ################################################################################
-# MySQL
+# MariaDB
 ################################################################################
-function mysql-init() {
-  mkdir -p ~/Docker/Databases/MySQL/Dump
+function mariadb-init() {
+  mkdir -p ~/Docker/Databases/MariaDB/Dump
 
   docker run \
     --detach \
-    --hostname mysql \
-    --name mysql \
+    --hostname mariadb \
+    --name mariadb \
     --restart unless-stopped \
-    --env "MYSQL_ROOT_PASSWORD=root" \
-    --mount type=bind,source="$HOME"/Docker/Databases/MySQL/Dump,target=/dump \
+    --env "MARIADB_ROOT_PASSWORD=root" \
+    --mount type=bind,source="$HOME"/Docker/Databases/MariaDB/Dump,target=/dump \
     --publish 127.0.0.1:3306:3306 \
-    mysql:5
+    mariadb:10
 }
 
-function mysql-start() {
-  docker run mysql
+function mariadb-start() {
+  docker run mariadb
 }
 
-function mysql-stop() {
-  docker stop mysql
+function mariadb-stop() {
+  docker stop mariadb
 }
 
-function mysql-purge() {
-  mysql-stop
-  docker rm mysql
+function mariadb-purge() {
+  mariadb-stop
+  docker rm mariadb
 }
 
-function mysql-terminal() {
-  docker exec -it mysql /bin/bash
+function mariadb-terminal() {
+  docker exec -it mariadb /bin/bash
 }
 
 ################################################################################

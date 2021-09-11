@@ -59,15 +59,6 @@ if [ -x "$(command -v neomutt)" ]; then
   alias mutt="neomutt"
 fi
 
-# Use npx when available
-if [ -x "$(command -v npx)" ]; then
-  alias eslint="npx eslint"
-  alias jest="npx jest"
-  alias ngrok="npx ngrok"
-  alias tsc="npx tsc"
-  alias vtop="npx vtop"
-fi
-
 ################################################################################
 # System specific aliases
 ################################################################################

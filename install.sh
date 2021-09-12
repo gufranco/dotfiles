@@ -435,10 +435,19 @@ case "$(uname)" in
     ############################################################################
     # Hostname
     ############################################################################
-    sudo scutil --set HostName "macbook"
-    sudo scutil --set LocalHostName "macbook"
-    sudo scutil --set ComputerName "macbook"
-    sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbook"
+    if [ "$(uname -m)" = "arm64" ]; then
+      # Macbook Air
+      sudo scutil --set HostName "macbookair"
+      sudo scutil --set LocalHostName "macbookair"
+      sudo scutil --set ComputerName "macbookair"
+      sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbookair"
+    else
+      # Macbook Pro
+      sudo scutil --set HostName "macbookpro"
+      sudo scutil --set LocalHostName "macbookpro"
+      sudo scutil --set ComputerName "macbookpro"
+      sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbookpro"
+    fi
 
   ;;
 esac

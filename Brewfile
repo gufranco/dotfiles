@@ -35,11 +35,10 @@ cask "cleanmymac"
 cask "coconutbattery"
 cask "dbeaver-community"
 cask "docker"
-cask "drivedx"
+# cask "drivedx"
 cask "dropbox"
 cask "firefox"
 cask "flixtools"
-cask "folx"
 cask "font-hack-nerd-font"
 cask "google-chrome"
 cask "insomnia"
@@ -48,7 +47,7 @@ cask "iterm2"
 cask "keka"
 # cask "paragon-ntfs"
 cask "robo-3t"
-cask "sizeup"
+# cask "sizeup"
 cask "slack"
 cask "spotify"
 cask "transmission"
@@ -56,12 +55,12 @@ cask "tunnelblick"
 cask "ultimaker-cura"
 cask "visual-studio-code"
 cask "vlc"
+cask "zoom"
 mas "Amphetamine", id: 937984704
 mas "Disk Speed Test", id: 425264550
 mas "Keynote", id: 409183694
+mas "Magnet", id: 441258766
 mas "Numbers", id: 409203825
 mas "Pages", id: 409201541
-mas "Save to Pocket", id: 1477385213
-mas "Tab Suspender", id: 1495356253
 mas "Todoist", id: 585829637
 mas "Xcode", id: 497799835

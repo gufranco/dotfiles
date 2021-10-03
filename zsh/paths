@@ -52,5 +52,11 @@ case "$(uname)" in
     # Ruby
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
 
+    # Sed
+    export PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
+
+    # Binutils
+    export PATH="$(brew --prefix)/opt/binutils/bin:$PATH"
+
   ;;
 esac

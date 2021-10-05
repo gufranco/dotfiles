@@ -42,7 +42,6 @@ function f5() {
       brew upgrade
       brew cu --all --yes --cleanup
       brew cleanup -s
-      brew bundle --file ~/.dotfiles/Brewfile --force cleanup
       brew bundle --file ~/.dotfiles/Brewfile
       brew bundle --file ~/.dotfiles/Brewfile --force cleanup
       mas upgrade

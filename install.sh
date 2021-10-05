@@ -430,7 +430,7 @@ case "$(uname)" in
       "/tmp/gruvbox-dark.itermcolors" \
       --create-dirs https://raw.githubusercontent.com/morhetz/gruvbox-contrib/master/iterm2/gruvbox-dark.itermcolors
 
-    open "/tmp/gruvbox-dark.itermcolors"
+    # open "/tmp/gruvbox-dark.itermcolors"
 
     ############################################################################
     # Hostname
@@ -517,6 +517,7 @@ gpg --import ~/.gnupg/keys/com.live.gufranco.public.pgp
 if [ -d ~/.ssh ] || [ -h ~/.ssh ]; then
   rm -rf ~/.ssh
 fi
+ln -s ~/.dotfiles/ssh ~/.ssh
 chmod 400 ~/.ssh/id_*
 
 ################################################################################
@@ -567,9 +568,11 @@ case "$(uname)" in
     # Clean the mess
     brew cleanup -s
 
-    # Enable TRIM and reboot
+    # Enable TRIM / Reboot
     if [ "$(uname -m)" = "x86_64" ]; then
       yes | sudo trimforce enable
+    else
+      sudo shutdown -r now
     fi
 
   ;;

@@ -95,6 +95,7 @@ cask "virtualbox" if `uname -m`.strip == "x86_64"
 cask "virtualbox-extension-pack" if `uname -m`.strip == "x86_64"
 cask "visual-studio-code"
 cask "vlc"
+cask "zoom"
 mas "Amphetamine", id: 937984704
 mas "Disk Speed Test", id: 425264550
 mas "Keynote", id: 409183694

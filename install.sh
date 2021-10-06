@@ -402,6 +402,9 @@ case "$(uname)" in
       export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:";
       export INFOPATH="/usr/local/share/info:${INFOPATH:-}";
     fi
+
+    export HOMEBREW_NO_ANALYTICS=1
+
     brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
     ############################################################################

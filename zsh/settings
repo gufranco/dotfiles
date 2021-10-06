@@ -11,6 +11,9 @@ case "$(uname)" in
   # Fix insecure completion-dependent directories
   export ZSH_DISABLE_COMPFIX=true
 
+  # Disable Brew analytics
+  export HOMEBREW_NO_ANALYTICS=1
+
   ;;
 esac
 

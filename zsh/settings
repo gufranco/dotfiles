@@ -38,8 +38,6 @@ export DISABLE_AUTO_UPDATE="true"
 export HIST_STAMPS="dd/mm/yyyy"
 export plugins=(
   gpg-agent
-  iterm2
-  ripgrep
   ssh-agent
   tmux
 )

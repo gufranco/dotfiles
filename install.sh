@@ -383,25 +383,28 @@ case "$(uname)" in
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    if [ "$(uname -m)" = "arm64" ]; then
-      # Apple ARM
-      export HOMEBREW_PREFIX="/opt/homebrew";
-      export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
-      export HOMEBREW_REPOSITORY="/opt/homebrew";
-      export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew";
-      export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
-      export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
-      export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
-    else
-      # Intel
-      export HOMEBREW_PREFIX="/usr/local";
-      export HOMEBREW_CELLAR="/usr/local/Cellar";
-      export HOMEBREW_REPOSITORY="/usr/local/Homebrew";
-      export HOMEBREW_SHELLENV_PREFIX="/usr/local";
-      export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}";
-      export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:";
-      export INFOPATH="/usr/local/share/info:${INFOPATH:-}";
-    fi
+    case "$(uname -m)" in
+      arm64)
+        export HOMEBREW_PREFIX="/opt/homebrew"
+        export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
+        export HOMEBREW_REPOSITORY="/opt/homebrew"
+        export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew"
+        export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
+        export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
+        export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
+
+      ;;
+      x86_64)
+        export HOMEBREW_PREFIX="/usr/local"
+        export HOMEBREW_CELLAR="/usr/local/Cellar"
+        export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+        export HOMEBREW_SHELLENV_PREFIX="/usr/local"
+        export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
+        export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
+        export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
+
+      ;;
+    esac
 
     export HOMEBREW_NO_ANALYTICS=1
 
@@ -438,19 +441,22 @@ case "$(uname)" in
     ############################################################################
     # Hostname
     ############################################################################
-    if [ "$(uname -m)" = "arm64" ]; then
-      # Macbook Air
-      sudo scutil --set HostName "macbookair"
-      sudo scutil --set LocalHostName "macbookair"
-      sudo scutil --set ComputerName "macbookair"
-      sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbookair"
-    else
-      # Macbook Pro
-      sudo scutil --set HostName "macbookpro"
-      sudo scutil --set LocalHostName "macbookpro"
-      sudo scutil --set ComputerName "macbookpro"
-      sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbookpro"
-    fi
+    case "$(uname -m)" in
+      arm64)
+        sudo scutil --set HostName "macbookair"
+        sudo scutil --set LocalHostName "macbookair"
+        sudo scutil --set ComputerName "macbookair"
+        sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbookair"
+
+      ;;
+      x86_64)
+        sudo scutil --set HostName "macbookpro"
+        sudo scutil --set LocalHostName "macbookpro"
+        sudo scutil --set ComputerName "macbookpro"
+        sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbookpro"
+
+      ;;
+    esac
 
   ;;
 esac

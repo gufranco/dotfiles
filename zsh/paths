@@ -58,5 +58,8 @@ case "$(uname)" in
     # Binutils
     export PATH="$(brew --prefix)/opt/binutils/bin:$PATH"
 
+    # Node.js
+    export PATH="$(brew --prefix)/opt/node@16/bin:$PATH"
+
   ;;
 esac

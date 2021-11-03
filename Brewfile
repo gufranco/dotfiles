@@ -97,6 +97,7 @@ cask "visual-studio-code"
 cask "vlc"
 cask "zoom"
 mas "Amphetamine", id: 937984704
+mas "CleanMyDrive 2", id: 523620159
 mas "Disk Speed Test", id: 425264550
 mas "Keynote", id: 409183694
 mas "Magnet", id: 441258766

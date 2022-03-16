@@ -91,8 +91,10 @@ case "$(uname)" in
     sudo apt update
     sudo apt install -y \
       docker-ce
-
     sudo usermod -a -G docker "$USER"
+
+    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
 
     ############################################################################
     # Node.js
@@ -185,15 +187,6 @@ case "$(uname)" in
     sudo apt update
     sudo apt install -y \
       code
-
-    ############################################################################
-    # PlatformIO
-    ############################################################################
-    curl -fsSL https://raw.githubusercontent.com/platformio/platformio-core/master/scripts/99-platformio-udev.rules | sudo tee /etc/udev/rules.d/99-platformio-udev.rules
-
-    sudo usermod -a -G tty "$USER"
-    sudo usermod -a -G dialout "$USER"
-    sudo usermod -a -G plugdev "$USER"
 
     ############################################################################
     # Insomnia
@@ -352,13 +345,6 @@ case "$(uname)" in
     sudo apt install -y \
       slack
 
-    ############################################################################
-    # Cura
-    ############################################################################
-    sudo add-apt-repository -y ppa:thopiekar/cura
-    sudo apt install -y \
-      cura
-
   ;;
   Darwin)
     ############################################################################
@@ -406,8 +392,6 @@ case "$(uname)" in
       ;;
     esac
 
-    export HOMEBREW_NO_ANALYTICS=1
-
     brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
     ############################################################################
@@ -437,26 +421,6 @@ case "$(uname)" in
       --create-dirs https://raw.githubusercontent.com/morhetz/gruvbox-contrib/master/iterm2/gruvbox-dark.itermcolors
 
     # open "/tmp/gruvbox-dark.itermcolors"
-
-    ############################################################################
-    # Hostname
-    ############################################################################
-    case "$(uname -m)" in
-      arm64)
-        sudo scutil --set HostName "macbookair"
-        sudo scutil --set LocalHostName "macbookair"
-        sudo scutil --set ComputerName "macbookair"
-        sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbookair"
-
-      ;;
-      x86_64)
-        sudo scutil --set HostName "macbookpro"
-        sudo scutil --set LocalHostName "macbookpro"
-        sudo scutil --set ComputerName "macbookpro"
-        sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "macbookpro"
-
-      ;;
-    esac
 
   ;;
 esac

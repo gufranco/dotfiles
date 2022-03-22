@@ -10,6 +10,8 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 case "$(uname)" in
   Linux)
+    export DEBIAN_FRONTEND=noninteractive
+
     ############################################################################
     # Update / upgrade
     ############################################################################
@@ -191,8 +193,7 @@ case "$(uname)" in
     ############################################################################
     # Insomnia
     ############################################################################
-    curl -fsSL https://insomnia.rest/keys/debian-public.key.asc | sudo apt-key add -
-    echo -e "deb [arch=amd64] https://dl.bintray.com/getinsomnia/Insomnia /" | sudo tee /etc/apt/sources.list.d/insomnia.list
+    echo -e "deb [trusted=yes arch=amd64] https://download.konghq.com/insomnia-ubuntu/ default all" | sudo tee /etc/apt/sources.list.d/insomnia.list
     sudo apt update
     sudo apt install -y \
       insomnia

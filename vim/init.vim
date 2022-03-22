@@ -159,6 +159,9 @@ if has('clipboard')
   set clipboard^=unnamed,unnamedplus
 endif
 
+" Unset the last search pattern register by hitting return
+nnoremap <CR> :nohlsearch<CR><CR>
+
 " Disable modelines
 set nomodeline
 
@@ -338,12 +341,6 @@ else
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" JsDoc
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <leader>j :JsDoc<CR>
-let g:jsdoc_enable_es6 = 1
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Vim Multiple Cursors
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:multi_cursor_quit_key = '<Esc>'
@@ -384,3 +381,8 @@ nmap <leader>t :TagbarToggle<CR>
 " Supertab
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:SuperTabDefaultCompletionType = '<c-n>'
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Coc.vim
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:coc_global_extensions = ['coc-json', 'coc-git', 'coc-pyright']

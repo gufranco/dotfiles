@@ -56,7 +56,7 @@ function f5() {
   git submodule update --recursive --remote
 
   # Vim
-  vim +PlugUpgrade +PlugUpdate +qall
+  vim +PlugUpgrade +PlugUpdate +CocUpdate +qall
 
   # Oh-my-zsh
   cd ~/.oh-my-zsh || exit 1

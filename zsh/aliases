@@ -59,6 +59,11 @@ if [ -x "$(command -v neomutt)" ]; then
   alias mutt="neomutt"
 fi
 
+# Use neovim when available
+if [ -x "$(command -v neovim)" ]; then
+  alias vim="neovim"
+fi
+
 ################################################################################
 # System specific aliases
 ################################################################################

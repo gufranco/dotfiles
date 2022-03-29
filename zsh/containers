@@ -133,8 +133,3 @@ function redis-purge() {
 function redis-terminal() {
   docker exec -it redis /bin/sh
 }
-
-################################################################################
-# AWS CLI
-################################################################################
-alias aws="docker run --rm -ti --mount type=bind,source=\"$HOME\"/.aws,target=/root/.aws amazon/aws-cli"

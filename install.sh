@@ -29,6 +29,8 @@ case "$(uname)" in
     ############################################################################
     # Basic packages
     ############################################################################
+    echo -e "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+
     sudo apt install -y \
       apt-transport-https \
       build-essential \
@@ -39,6 +41,7 @@ case "$(uname)" in
       software-properties-common \
       tmux \
       trash-cli \
+      ttf-mscorefonts-installer \
       ubuntu-restricted-extras \
       wget \
       xsel
@@ -136,15 +139,15 @@ case "$(uname)" in
     ############################################################################
     # VirtualBox
     ############################################################################
-    curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
-    curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
-    sudo add-apt-repository -y "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-    sudo apt update
-    sudo apt install -y \
-      virtualbox-6.1 \
-      virtualbox-ext-pack
+    # curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
+    # curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
+    # sudo add-apt-repository -y "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
+    # sudo apt update
+    # sudo apt install -y \
+    #   virtualbox-6.1 \
+    #   virtualbox-ext-pack
 
-    sudo adduser "$USER" vboxusers
+    # sudo adduser "$USER" vboxusers
 
     ############################################################################
     # DBeaver
@@ -168,6 +171,14 @@ case "$(uname)" in
       python3-dev \
       vim \
       vim-gnome
+
+    ############################################################################
+    # Neovim
+    ############################################################################
+    sudo add-apt-repository -y ppa:neovim-ppa/stable
+    sudo apt update
+    sudo apt install -y \
+      neovim
 
     ############################################################################
     # Ripgrep

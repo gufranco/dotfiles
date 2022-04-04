@@ -41,7 +41,6 @@ case "$(uname)" in
       software-properties-common \
       tmux \
       trash-cli \
-      ttf-mscorefonts-installer \
       ubuntu-restricted-extras \
       wget \
       xsel
@@ -113,6 +112,36 @@ case "$(uname)" in
       nodejs
 
     ############################################################################
+    # Python
+    ############################################################################
+    sudo add-apt-repository -y ppa:deadsnakes/ppa
+    sudo apt update
+    sudo apt install -y \
+      python3.9
+
+    sudo apt install -y \
+      build-essential \
+      curl \
+      git \
+      libbz2-dev \
+      libffi-dev \
+      liblzma-dev \
+      libncurses5-dev \
+      libreadline-dev \
+      libsqlite3-dev \
+      libssl-dev \
+      libxml2-dev \
+      libxmlsec1-dev \
+      llvm \
+      make \
+      tk-dev \
+      wget \
+      xz-utils \
+      zlib1g-dev
+
+    curl -fsSL https://pyenv.run | bash
+
+    ############################################################################
     # Dropbox
     ############################################################################
     sudo apt install -y \
@@ -139,15 +168,15 @@ case "$(uname)" in
     ############################################################################
     # VirtualBox
     ############################################################################
-    # curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
-    # curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
-    # sudo add-apt-repository -y "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-    # sudo apt update
-    # sudo apt install -y \
-    #   virtualbox-6.1 \
-    #   virtualbox-ext-pack
+    wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
+    wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+    sudo add-apt-repository -y "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
+    sudo apt update
+    sudo apt install -y \
+      virtualbox-6.1 \
+      virtualbox-ext-pack
 
-    # sudo adduser "$USER" vboxusers
+    sudo adduser "$USER" vboxusers
 
     ############################################################################
     # DBeaver
@@ -232,10 +261,6 @@ case "$(uname)" in
     sudo apt install -y \
       gpg \
       gnupg-agent
-
-    ln -s ~/.dotfiles/gnupg ~/.gnupg
-    ln -s ~/.dotfiles/gnupg/gpg-agent-linux.conf ~/.dotfiles/gnupg/gpg-agent.conf
-    chmod 700 ~/.gnupg
 
     ############################################################################
     # Neomutt
@@ -419,13 +444,6 @@ case "$(uname)" in
     chsh -s "$(brew --prefix)/bin/zsh"
 
     ############################################################################
-    # GPG
-    ############################################################################
-    ln -s ~/.dotfiles/gnupg ~/.gnupg
-    ln -s ~/.dotfiles/gnupg/gpg-agent-macos.conf ~/.dotfiles/gnupg/gpg-agent.conf
-    chmod 700 ~/.gnupg
-
-    ############################################################################
     # iTerm 2
     ############################################################################
     curl -#fLo \
@@ -483,8 +501,25 @@ fi
 ################################################################################
 # GPG public keys
 ################################################################################
+if [ -d ~/.gnupg ] || [ -h ~/.gnupg ]; then
+  rm -rf ~/.gnupg
+fi
+
+ln -s ~/.dotfiles/gnupg ~/.gnupg
 chmod 700 ~/.gnupg
 chmod 400 ~/.gnupg/keys/*
+
+case "$(uname)" in
+  Linux)
+    ln -s ~/.dotfiles/gnupg/gpg-agent-linux.conf ~/.dotfiles/gnupg/gpg-agent.conf
+
+  ;;
+  Darwin)
+    ln -s ~/.dotfiles/gnupg/gpg-agent-macos.conf ~/.dotfiles/gnupg/gpg-agent.conf
+
+  ;;
+esac
+
 gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.public.pgp
 gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.public.pgp
 gpg --import ~/.gnupg/keys/com.gmail.gustavocfranco.public.pgp
@@ -502,6 +537,7 @@ gpg --import ~/.gnupg/keys/com.live.gufranco.public.pgp
 if [ -d ~/.ssh ] || [ -h ~/.ssh ]; then
   rm -rf ~/.ssh
 fi
+
 ln -s ~/.dotfiles/ssh ~/.ssh
 chmod 400 ~/.ssh/id_*
 

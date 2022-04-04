@@ -36,11 +36,11 @@ Plug 'RRethy/vim-illuminate'
 Plug 'inside/vim-search-pulse'
 Plug 'itchyny/lightline.vim'
 Plug 'jszakmeister/vim-togglecursor'
-Plug 'lilydjwg/colorizer'
 Plug 'maximbaz/lightline-ale'
 Plug 'morhetz/gruvbox'
 Plug 'myusuf3/numbers.vim'
 Plug 'ryanoasis/vim-devicons'
+Plug 'thaerkh/vim-indentguides'
 Plug 'vim-scripts/CursorLineCurrentWindow'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -72,14 +72,12 @@ Plug 'vim-scripts/ZoomWin', { 'on': 'ZoomWin' }
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Editing
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-Plug 'heavenshell/vim-jsdoc', { 'on': 'JsDoc' }
 Plug 'roxma/vim-paste-easy'
 Plug 'sickill/vim-pasta'
 Plug 'terryma/vim-multiple-cursors'
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-surround'
 Plug 'godlygeek/tabular', { 'on': 'Tabularize' }
-Plug 'tpope/vim-afterimage'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Clipboard
@@ -151,6 +149,11 @@ noremap <Down> <NOP>
 noremap <Left> <NOP>
 noremap <Right> <NOP>
 
+" Use utf8 as the standard encoding
+set encoding=utf-8
+set fileencoding=utf-8
+set fileencodings=utf-8
+
 " Use Unix as the standard file type
 set fileformats=unix,dos,mac
 
@@ -174,6 +177,13 @@ set noswapfile
 " Disable persistent undo
 set noundofile
 
+" Shell
+if exists('$SHELL')
+  set shell=$SHELL
+else
+  set shell=/bin/sh
+endif
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Aliases
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -182,6 +192,22 @@ nmap <Leader>s :source $MYVIMRC<CR>
 
 " Edit vimrc
 nmap <Leader>v :edit $MYVIMRC<CR>
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Abbreviations
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+cnoreabbrev W! w!
+cnoreabbrev Q! q!
+cnoreabbrev Qall! qall!
+cnoreabbrev Wq wq
+cnoreabbrev Wa wa
+cnoreabbrev wQ wq
+cnoreabbrev WQ wq
+cnoreabbrev W w
+cnoreabbrev Q q
+cnoreabbrev Qall qall
+cnoreabbrev Wqall wqall
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Theme / GUI
@@ -197,7 +223,7 @@ if has('gui_running')
   if s:uname ==# 'Darwin'
     set guifont=Hack\ Nerd\ Font:h12
   elseif s:uname ==# 'Linux'
-    set guifont=Hack\ Nerd\ Font\ 10
+    set guifont=Hack\ Nerd\ Font\ 12
   endif
 
   " Remove menu

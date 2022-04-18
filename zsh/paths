@@ -14,11 +14,6 @@ case "$(uname)" in
     # Neomutt
     export PATH="/usr/libexec/neomutt:$PATH"
 
-    # Pyenv
-    export PATH="$(HOME)/.pyenv/bin:$PATH"
-    eval "$(pyenv init -)"
-    eval "$(pyenv virtualenv-init -)"
-
   ;;
   Darwin)
     # Homebrew

@@ -25,7 +25,6 @@ brew "neomutt"
 brew "node@16", link: true
 brew "openssl"
 brew "pnpm"
-brew "pyenv"
 brew "python", link: true
 brew "reattach-to-user-namespace"
 brew "rename"

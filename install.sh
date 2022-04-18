@@ -432,6 +432,11 @@ case "$(uname)" in
     brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
     ############################################################################
+    # Accept xCode's license
+    ############################################################################
+    sudo xcodebuild -license accept
+
+    ############################################################################
     # Bash
     ############################################################################
     echo -e "$(brew --prefix)/bin/bash" | sudo tee -a /etc/shells
@@ -583,18 +588,16 @@ case "$(uname)" in
 
   ;;
   Darwin)
-    # Accept xCode's license
-    sudo xcodebuild -license accept
-
     # Clean the mess
     brew cleanup -s
 
-    # Enable TRIM / Reboot
+    # Enable TRIM for macOS x86_64
     if [ "$(uname -m)" = "x86_64" ]; then
       yes | sudo trimforce enable
-    else
-      sudo shutdown -r now
     fi
+
+    # Reboot
+    sudo shutdown -r now
 
   ;;
 esac

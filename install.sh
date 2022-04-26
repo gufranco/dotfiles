@@ -392,10 +392,11 @@ case "$(uname)" in
     ############################################################################
     # Command Line Tools
     ############################################################################
-    # xcode-select --install
-    touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-    softwareupdate -i -a
-    rm /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+    if [ ! -x "$(command -v git)" ]; then
+      touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+      softwareupdate -i -a
+      rm /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+    fi
 
     ############################################################################
     # Homebrew

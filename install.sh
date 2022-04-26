@@ -392,6 +392,7 @@ case "$(uname)" in
     ############################################################################
     # Command Line Tools
     ############################################################################
+    # xcode-select --install
     touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
     softwareupdate -i -a
     rm /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
@@ -437,9 +438,10 @@ case "$(uname)" in
     brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
     ############################################################################
-    # Accept xCode's license
+    # xCode settings / license
     ############################################################################
-    sudo xcodebuild -license accept
+    sudo xcode-select -r
+    sudo softwareupdate --install --agree-to-license
 
     ############################################################################
     # Bash
@@ -593,6 +595,9 @@ case "$(uname)" in
 
   ;;
   Darwin)
+    # Organize Launchpad
+    defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
+
     # Clean the mess
     brew cleanup -s
 

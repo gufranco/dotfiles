@@ -436,6 +436,7 @@ case "$(uname)" in
       ;;
     esac
 
+    brew bundle --file "${HOME}/.dotfiles/Brewfile" --force cleanup
     brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
     ############################################################################

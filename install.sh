@@ -385,20 +385,6 @@ case "$(uname)" in
   ;;
   Darwin)
     ############################################################################
-    # Temporarily disable sleep
-    ############################################################################
-    caffeinate &
-
-    ############################################################################
-    # Command Line Tools
-    ############################################################################
-    if [ ! -x "$(command -v git)" ]; then
-      touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-      softwareupdate -i -a
-      rm /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-    fi
-
-    ############################################################################
     # Homebrew
     ############################################################################
     CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -438,12 +424,6 @@ case "$(uname)" in
 
     brew bundle --file "${HOME}/.dotfiles/Brewfile" --force cleanup
     brew bundle --file "${HOME}/.dotfiles/Brewfile"
-
-    ############################################################################
-    # xCode settings / license
-    ############################################################################
-    sudo xcode-select -r
-    sudo softwareupdate --install --agree-to-license
 
     ############################################################################
     # Bash

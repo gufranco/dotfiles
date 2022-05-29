@@ -1,96 +1,99 @@
-tap "buo/cask-upgrade"
-tap "homebrew/bundle"
-tap "homebrew/cask"
-tap "homebrew/cask-drivers"
-tap "homebrew/cask-fonts"
-tap "homebrew/cask-versions"
-tap "homebrew/core"
-tap "mongodb/brew"
-tap "neomutt/neomutt"
-tap "universal-ctags/universal-ctags"
-brew "ack"
-brew "asciinema"
-brew "awscli"
-brew "bash"
-brew "binutils"
-brew "cmake"
-brew "coreutils"
-brew "findutils"
-brew "git"
-brew "gnu-sed"
-brew "gnupg"
-brew "libpq"
-brew "lynx"
-brew "macos-term-size"
-brew "mas"
-brew "mongodb-community"
-brew "mongodb/brew/mongodb-database-tools"
-brew "mongosh"
-brew "moreutils"
-brew "neomutt"
-brew "node@14"
-brew "node@16", link: true
-brew "openssl"
-brew "pnpm"
-brew "postgresql"
-brew "python", link: true
-brew "reattach-to-user-namespace"
-brew "redis"
-brew "rename"
-brew "ripgrep"
-brew "ruby"
-brew "shared-mime-info"
-brew "shellcheck"
-brew "tmux"
-brew "universal-ctags/universal-ctags/universal-ctags", args: ["HEAD"]
-brew "urlview"
-brew "vim"
-brew "wget"
-brew "yarn"
-brew "zlib"
-brew "zsh"
-brew "zsh-syntax-highlighting"
-# cask "clockify"
-# cask "corsair-icue"
-# cask "drivedx" if `uname -m`.strip == "x86_64"
-# cask "intel-power-gadget" if `uname -m`.strip == "x86_64"
-# cask "plex-media-server" if `uname -m`.strip == "x86_64"
-# cask "rescuetime"
+# frozen_string_literal: true
+
+tap 'buo/cask-upgrade'
+tap 'homebrew/bundle'
+tap 'homebrew/cask'
+tap 'homebrew/cask-drivers'
+tap 'homebrew/cask-fonts'
+tap 'homebrew/cask-versions'
+tap 'homebrew/core'
+tap 'homebrew/services' if `uname -m`.strip == 'x86_64'
+tap 'mongodb/brew' if `uname -m`.strip == 'x86_64'
+tap 'neomutt/neomutt'
+tap 'universal-ctags/universal-ctags'
+brew 'ack'
+brew 'asciinema'
+brew 'awscli'
+brew 'bash'
+brew 'binutils'
+brew 'cmake'
+brew 'coreutils'
+brew 'findutils'
+brew 'flyctl'
+brew 'git'
+brew 'gnu-sed'
+brew 'gnupg'
+brew 'htop'
+brew 'libpq' if `uname -m`.strip == 'x86_64'
+brew 'lynx'
+brew 'mas'
+brew 'mongodb-community' if `uname -m`.strip == 'x86_64'
+brew 'mongodb/brew/mongodb-database-tools' if `uname -m`.strip == 'x86_64'
+brew 'mongosh' if `uname -m`.strip == 'x86_64'
+brew 'moreutils'
+brew 'neomutt'
+brew 'node', link: true
+brew 'openssl'
+brew 'postgresql' if `uname -m`.strip == 'x86_64'
+brew 'python', link: true
+brew 'reattach-to-user-namespace'
+brew 'redis' if `uname -m`.strip == 'x86_64'
+brew 'rename'
+brew 'ripgrep'
+brew 'rsync'
+brew 'ruby'
+brew 'shared-mime-info'
+brew 'shellcheck'
+brew 'tmux'
+brew 'universal-ctags/universal-ctags/universal-ctags', args: ['HEAD']
+brew 'urlview'
+brew 'vim'
+brew 'wget'
+brew 'yarn'
+brew 'zlib'
+brew 'zsh-syntax-highlighting'
+brew 'zsh'
 # cask "stats"
-# cask "turbo-boost-switcher" if `uname -m`.strip == "x86_64"
-cask "balenaetcher"
-cask "bartender" if `uname -m`.strip == "x86_64"
-cask "burn"
-cask "cleanmymac"
-cask "coconutbattery"
-cask "dbeaver-community"
-cask "discord"
-cask "docker"
-cask "dropbox-beta" if `uname -m`.strip == "arm64"
-cask "dropbox" if `uname -m`.strip == "x86_64"
-cask "firefox"
-cask "flixtools"
-cask "font-hack-nerd-font"
-cask "google-chrome"
-cask "huiontablet"
-cask "insomnia"
-cask "istat-menus"
-cask "iterm2"
-cask "jdownloader"
-cask "keka"
-cask "logitech-options"
-cask "paragon-ntfs" if `uname -m`.strip == "x86_64"
-cask "slack"
-cask "spotify"
-cask "the-unarchiver"
-cask "transmission"
-cask "tunnelblick"
-cask "utm"
-cask "virtualbox-extension-pack" if `uname -m`.strip == "x86_64"
-cask "virtualbox" if `uname -m`.strip == "x86_64"
-cask "visual-studio-code"
-cask "vlc"
+cask 'balenaetcher'
+cask 'bartender' if `uname -m`.strip == 'x86_64'
+cask 'burn'
+cask 'cleanmymac'
+cask 'coconutbattery'
+cask 'dbeaver-community'
+cask 'discord'
+cask 'docker'
+cask 'dropbox-beta' if `uname -m`.strip == 'arm64'
+cask 'dropbox' if `uname -m`.strip == 'x86_64'
+cask 'firefox'
+cask 'flixtools'
+cask 'font-hack-nerd-font'
+cask 'google-chrome'
+cask 'huiontablet'
+cask 'insomnia'
+cask 'istat-menus'
+cask 'iterm2'
+cask 'jdownloader'
+cask 'keka'
+cask 'logitech-options'
+cask 'paragon-ntfs' if `uname -m`.strip == 'x86_64'
+cask 'slack'
+cask 'spotify'
+cask 'the-unarchiver'
+cask 'transmission'
+cask 'tunnelblick'
+cask 'utm'
+cask 'virtualbox-extension-pack' if `uname -m`.strip == 'x86_64'
+cask 'virtualbox' if `uname -m`.strip == 'x86_64'
+cask 'visual-studio-code'
+cask 'vlc'
+cask 'clockify'
+cask 'corsair-icue' if `uname -m`.strip == 'x86_64'
+cask 'drivedx' if `uname -m`.strip == 'x86_64'
+cask 'intel-power-gadget' if `uname -m`.strip == 'x86_64'
+cask 'plex-media-server' if `uname -m`.strip == 'x86_64'
+cask 'rescuetime'
+cask 'turbo-boost-switcher' if `uname -m`.strip == 'x86_64'
 # mas "Xcode", id: 497799835
-mas "Amphetamine", id: 937984704
-mas "CleanMyDrive 2", id: 523620159
-mas "Magnet", id: 441258766
+mas 'Amphetamine', id: 937_984_704
+mas 'CleanMyDrive 2', id: 523_620_159
+mas 'Magnet', id: 441_258_766

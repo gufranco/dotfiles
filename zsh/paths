@@ -51,6 +51,7 @@ case "$(uname)" in
 
     # Ruby
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
+    export PATH="$(brew --prefix)/lib/ruby/gems/3.1.0/bin:$PATH"
 
     # Sed
     export PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"

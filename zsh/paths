@@ -6,6 +6,18 @@
 # Npm
 export PATH="$HOME/.global-modules/bin:$PATH"
 
+# RVM
+if [ -d "$HOME/.rvm/bin" ] || [ -h "$HOME/.rvm/bin" ]; then
+  export PATH="$HOME/.rvm/bin:$PATH"
+fi
+
+# NVM
+if [ -d "$HOME/.nvm" ] || [ -h "$HOME/.nvm" ]; then
+  export NVM_DIR="$HOME/.nvm"
+
+  source "$NVM_DIR/nvm.sh"
+fi
+
 ################################################################################
 # System specific paths
 ################################################################################

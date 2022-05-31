@@ -28,6 +28,24 @@ esac
 function f5() {
   CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
+  # Dotfiles
+  cd ~/.dotfiles || exit 1
+  git pull-sub
+  git submodule update --recursive --remote
+
+  # Vim
+  vim +PlugUpgrade +PlugUpdate +CocUpdate +qall
+
+  # Oh-my-zsh
+  cd ~/.oh-my-zsh || exit 1
+  git checkout master
+  git pull
+
+  # Spaceship theme
+  cd ~/.oh-my-zsh/custom/themes/spaceship-prompt || exit 1
+  git checkout master
+  git pull
+
   case "$(uname)" in
     Linux)
       sudo apt update -y
@@ -49,24 +67,6 @@ function f5() {
 
     ;;
   esac
-
-  # Dotfiles
-  cd ~/.dotfiles || exit 1
-  git pull-sub
-  git submodule update --recursive --remote
-
-  # Vim
-  vim +PlugUpgrade +PlugUpdate +CocUpdate +qall
-
-  # Oh-my-zsh
-  cd ~/.oh-my-zsh || exit 1
-  git checkout master
-  git pull
-
-  # Spaceship theme
-  cd ~/.oh-my-zsh/custom/themes/spaceship-prompt || exit 1
-  git checkout master
-  git pull
 
   # Reload shell
   source "${HOME}/.zshrc"

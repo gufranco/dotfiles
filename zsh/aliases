@@ -60,8 +60,8 @@ if [ -x "$(command -v neomutt)" ]; then
 fi
 
 # Use neovim when available
-if [ -x "$(command -v neovim)" ]; then
-  alias vim="neovim"
+if [ -x "$(command -v nvim)" ]; then
+  alias vim="nvim"
 fi
 
 ################################################################################

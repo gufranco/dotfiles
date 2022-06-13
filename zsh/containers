@@ -15,7 +15,7 @@ function mongodb-init() {
     --env "MONGO_INITDB_ROOT_PASSWORD=root" \
     --mount type=bind,source="$HOME"/Docker/Databases/MongoDB/Dump,target=/dump \
     --publish 127.0.0.1:27017:27017 \
-    mongo:4
+    mongo:5
 }
 
 function mongodb-start() {
@@ -84,7 +84,7 @@ function postgresql-init() {
     --env "POSTGRES_PASSWORD=root" \
     --mount type=bind,source="$HOME"/Docker/Databases/PostgreSQL/Dump,target=/dump \
     --publish 127.0.0.1:5432:5432 \
-    postgres:13-alpine
+    postgres:14-alpine
 }
 
 function postgresql-start() {
@@ -114,7 +114,7 @@ function redis-init() {
     --name redis \
     --restart unless-stopped \
     --publish 127.0.0.1:6379:6379 \
-    redis:6-alpine
+    redis:7-alpine
 }
 
 function redis-start() {

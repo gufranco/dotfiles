@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!usr/bin/env bash
 
 set -Eeuo pipefail
 
@@ -17,14 +17,6 @@ case "$(uname)" in
     ############################################################################
     sudo apt update
     sudo apt dist-upgrade -y
-
-    ############################################################################
-    # Purge
-    ############################################################################
-    sudo apt purge -y \
-      apport \
-      cmdtest \
-      laptop-mode-tools
 
     ############################################################################
     # Basic packages
@@ -63,7 +55,7 @@ case "$(uname)" in
     ############################################################################
     sudo apt install -y \
       exfat-fuse \
-      exfat-utils
+      exfatprogs
 
     ############################################################################
     # 7Zip / Rar / Zip
@@ -84,7 +76,6 @@ case "$(uname)" in
 
     ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
     command -v zsh | sudo tee -a /etc/shells
-    sudo sed -i -- 's/auth       required   pam_shells.so/# auth       required   pam_shells.so/g' /etc/pam.d/chsh
     sudo chsh "$USER" -s "$(command -v zsh)"
 
     ############################################################################
@@ -97,19 +88,17 @@ case "$(uname)" in
       docker-ce
     sudo usermod -a -G docker "$USER"
 
-    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
-
     ############################################################################
     # Node.js
     ############################################################################
-    curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
     sudo apt update
     sudo apt install -y \
       g++ \
       gcc \
       make \
-      nodejs
+      nodejs \
+      yarn
 
     ############################################################################
     # Python
@@ -118,28 +107,6 @@ case "$(uname)" in
     sudo apt update
     sudo apt install -y \
       python3.9
-
-    sudo apt install -y \
-      build-essential \
-      curl \
-      git \
-      libbz2-dev \
-      libffi-dev \
-      liblzma-dev \
-      libncurses5-dev \
-      libreadline-dev \
-      libsqlite3-dev \
-      libssl-dev \
-      libxml2-dev \
-      libxmlsec1-dev \
-      llvm \
-      make \
-      tk-dev \
-      wget \
-      xz-utils \
-      zlib1g-dev
-
-    curl -fsSL https://pyenv.run | bash
 
     ############################################################################
     # Dropbox
@@ -192,16 +159,6 @@ case "$(uname)" in
     sudo snap install robo3t-snap
 
     ############################################################################
-    # Vim
-    ############################################################################
-    sudo add-apt-repository -y ppa:jonathonf/vim
-    sudo apt update
-    sudo apt install -y \
-      python3-dev \
-      vim \
-      vim-gnome
-
-    ############################################################################
     # Neovim
     ############################################################################
     sudo add-apt-repository -y ppa:neovim-ppa/stable
@@ -237,23 +194,6 @@ case "$(uname)" in
     sudo apt update
     sudo apt install -y \
       insomnia
-
-    ############################################################################
-    # Gnome
-    ############################################################################
-    sudo apt install -y \
-      gnome-screensaver \
-      gnome-shell-extensions \
-      gnome-sushi \
-      gnome-tweak-tool
-
-    ############################################################################
-    # VeraCrypt
-    ############################################################################
-    sudo add-apt-repository -y ppa:unit193/encryption
-    sudo apt update
-    sudo apt install -y \
-      veracrypt
 
     ############################################################################
     # GPG
@@ -358,20 +298,7 @@ case "$(uname)" in
       freeglut3 \
       mesa-utils \
       mesa-utils-extra \
-      mesa-vulkan-drivers \
-      vulkan-utils
-
-    ############################################################################
-    # Keybase
-    ############################################################################
-    curl -#fLo \
-      "/tmp/keybase.deb" \
-      --create-dirs https://prerelease.keybase.io/keybase_amd64.deb
-
-    sudo apt install -y \
-      /tmp/keybase.deb
-
-    sudo apt install -y -f
+      mesa-vulkan-drivers
 
     ############################################################################
     # Slack

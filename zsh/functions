@@ -26,6 +26,9 @@ esac
 # Update and upgrade everything
 ################################################################################
 function f5() {
+  # Ask for the root password upfront
+  sudo -v
+
   CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
   # Dotfiles

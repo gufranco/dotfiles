@@ -81,8 +81,8 @@ case "$(uname)" in
     ############################################################################
     # Docker
     ############################################################################
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-    sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
     sudo apt update
     sudo apt install -y \
       docker-ce
@@ -118,7 +118,7 @@ case "$(uname)" in
     # Spotify
     ############################################################################
     curl -fsSL https://download.spotify.com/debian/pubkey_5E3C45D7B312C643.gpg | sudo apt-key add -
-    echo -e "deb [arch=amd64] http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
+    echo -e "deb [arch=$(dpkg --print-architecture)] http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
     sudo apt update
     sudo apt install -y \
       spotify-client
@@ -127,23 +127,10 @@ case "$(uname)" in
     # Chrome
     ############################################################################
     curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-    echo -e "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+    echo -e "deb [arch=$(dpkg --print-architecture)] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
     sudo apt update
     sudo apt install -y \
       google-chrome-stable
-
-    ############################################################################
-    # VirtualBox
-    ############################################################################
-    wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
-    wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
-    sudo add-apt-repository -y "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-    sudo apt update
-    sudo apt install -y \
-      virtualbox-6.1 \
-      virtualbox-ext-pack
-
-    sudo adduser "$USER" vboxusers
 
     ############################################################################
     # DBeaver
@@ -181,8 +168,8 @@ case "$(uname)" in
     ############################################################################
     # Visual Studio Code
     ############################################################################
-    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-    echo -e "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg
+    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list
     sudo apt update
     sudo apt install -y \
       code
@@ -190,7 +177,7 @@ case "$(uname)" in
     ############################################################################
     # Insomnia
     ############################################################################
-    echo -e "deb [trusted=yes arch=amd64] https://download.konghq.com/insomnia-ubuntu/ default all" | sudo tee /etc/apt/sources.list.d/insomnia.list
+    echo -e "deb [trusted=yes arch=$(dpkg --print-architecture)] https://download.konghq.com/insomnia-ubuntu/ default all" | sudo tee /etc/apt/sources.list.d/insomnia.list
     sudo apt update
     sudo apt install -y \
       insomnia
@@ -303,11 +290,7 @@ case "$(uname)" in
     ############################################################################
     # Slack
     ############################################################################
-    curl -fsSL https://packagecloud.io/slacktechnologies/slack/gpgkey | sudo apt-key add -
-    echo -e "deb [arch=amd64] https://packagecloud.io/slacktechnologies/slack/debian/ jessie main" | sudo tee /etc/apt/sources.list.d/slack.list
-    sudo apt update
-    sudo apt install -y \
-      slack
+    sudo snap install slack
 
   ;;
   Darwin)

@@ -10,7 +10,7 @@ tap 'homebrew/cask-drivers'
 tap 'homebrew/cask-fonts'
 tap 'homebrew/cask-versions'
 tap 'homebrew/core'
-tap 'homebrew/services'
+tap 'homebrew/services' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
 tap 'mongodb/brew' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
 tap 'neomutt/neomutt'
 tap 'universal-ctags/universal-ctags'
@@ -36,7 +36,7 @@ brew 'mongodb/brew/mongodb-database-tools' if architecture == 'x86_64' && cpu_mo
 brew 'mongosh' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
 brew 'moreutils'
 brew 'neomutt'
-brew 'neovim'
+brew 'neovim' if architecture == 'arm64' || cpu_model.include?('Core(TM) i')
 brew 'node', link: true
 brew 'node@14' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
 brew 'openssl'
@@ -44,10 +44,9 @@ brew 'postgresql' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i'
 brew 'python', link: true
 brew 'reattach-to-user-namespace'
 brew 'redis' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
-brew 'rename'
 brew 'ripgrep'
 brew 'rsync'
-brew 'ruby'
+brew 'ruby', link: true
 brew 'shared-mime-info'
 brew 'shellcheck'
 brew 'tmux'

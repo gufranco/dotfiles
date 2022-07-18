@@ -18,7 +18,7 @@ case "$(uname)" in
   export HOMEBREW_NO_ENV_HINTS=1
 
   # Force Docker to use x86_64 images
-  export DOCKER_DEFAULT_PLATFORM=linux/amd64
+  # export DOCKER_DEFAULT_PLATFORM=linux/amd64
 
   ;;
 esac

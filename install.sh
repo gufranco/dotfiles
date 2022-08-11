@@ -9,7 +9,7 @@ sudo -v
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 case "$(uname)" in
-  Linux)
+  "Linux")
     export DEBIAN_FRONTEND=noninteractive
 
     ############################################################################
@@ -292,25 +292,15 @@ case "$(uname)" in
     ############################################################################
     sudo snap install slack
 
-  ;;
-  Darwin)
+    ;;
+  "Darwin")
     ############################################################################
     # Homebrew
     ############################################################################
-    CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-    ############################################################################
-    # dotfiles
-    ############################################################################
-    git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
-    cd ~/.dotfiles || exit 1
-    git remote set-url origin git@github.com:gufranco/dotfiles.git
-
-    ############################################################################
-    # Homebrew bundle
-    ############################################################################
     case "$(uname -m)" in
-      arm64)
+      "arm64")
+        CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
         export HOMEBREW_PREFIX="/opt/homebrew"
         export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
         export HOMEBREW_REPOSITORY="/opt/homebrew"
@@ -319,8 +309,11 @@ case "$(uname)" in
         export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
         export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
 
-      ;;
-      x86_64)
+        ;;
+
+      "x86_64")
+        CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
         export HOMEBREW_PREFIX="/usr/local"
         export HOMEBREW_CELLAR="/usr/local/Cellar"
         export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
@@ -329,11 +322,77 @@ case "$(uname)" in
         export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
         export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
 
-      ;;
+        ;;
+
+      "Power Macintosh")
+        ruby -e "$(curl -fsSL http://pickledapple.com/tigerbrew/tigerbrew-install.rb)"
+
+        export HOMEBREW_PREFIX="/usr/local"
+        export HOMEBREW_CELLAR="/usr/local/Cellar"
+        export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+        export HOMEBREW_SHELLENV_PREFIX="/usr/local"
+        export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
+        export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
+        export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
+
+        # Fix dependencies / basic packages
+        brew doctor
+        brew install curl git ruby
+
+        ;;
     esac
 
-    brew bundle --file "${HOME}/.dotfiles/Brewfile" --force cleanup
-    brew bundle --file "${HOME}/.dotfiles/Brewfile"
+    ############################################################################
+    # dotfiles
+    ############################################################################
+    if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
+      rm -rf ~/.dotfiles
+    fi
+
+    git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
+    cd ~/.dotfiles || exit 1
+    git remote set-url origin git@github.com:gufranco/dotfiles.git
+
+    ############################################################################
+    # Homebrew bundle
+    ############################################################################
+    case "$(uname -m)" in
+      "arm64" | "x86_64")
+        brew bundle --file "${HOME}/.dotfiles/Brewfile"
+
+        ;;
+
+      "Power Macintosh")
+        brew install \
+          ack \
+          awscli \
+          bash \
+          binutils \
+          cmake \
+          coreutils \
+          curl \
+          findutils \
+          git \
+          gnu-sed \
+          gnupg \
+          htop \
+          lynx \
+          moreutils \
+          mutt \
+          neofetch \
+          node \
+          openssl \
+          python \
+          ruby \
+          tmux \
+          urlview \
+          vim \
+          wget \
+          zsh \
+          zsh-syntax-highlighting
+
+        ;;
+    esac
 
     ############################################################################
     # Bash
@@ -343,12 +402,17 @@ case "$(uname)" in
     ############################################################################
     # Zsh
     ############################################################################
-    ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
     echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
     chsh -s "$(brew --prefix)/bin/zsh"
 
+    if [ -d ~/.zshrc ] || [ -h ~/.zshrc ]; then
+      rm -rf ~/.zshrc
+    fi
+
+    ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
+
     ############################################################################
-    # iTerm 2
+    # iTerm2
     ############################################################################
     curl -#fLo \
       "/tmp/gruvbox-dark.itermcolors" \
@@ -356,7 +420,7 @@ case "$(uname)" in
 
     # open "/tmp/gruvbox-dark.itermcolors"
 
-  ;;
+    ;;
 esac
 
 ################################################################################
@@ -373,34 +437,58 @@ if [ ! -d ~/.global-modules ] && [ ! -h ~/.global-modules ]; then
   mkdir ~/.global-modules
 fi
 
+if [ -d ~/.npmrc ] || [ -h ~/.npmrc ]; then
+  rm -rf ~/.npmrc
+fi
+
 ln -s ~/.dotfiles/nodejs/.npmrc ~/.npmrc
 
 ################################################################################
-# Oh-my-zsh
+# Oh-my-zsh / Spaceship
 ################################################################################
-git clone --depth=1 https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
+if [ -d ~/.oh-my-zsh ] || [ -h ~/.oh-my-zsh ]; then
+  rm -rf ~/.oh-my-zsh
+fi
 
-################################################################################
-# Spaceship theme
-################################################################################
+git clone --depth=1 https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
 git clone --depth=1 https://github.com/denysdovhan/spaceship-prompt.git ~/.oh-my-zsh/custom/themes/spaceship-prompt
 ln -s ~/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme
 
 ################################################################################
 # Git
 ################################################################################
+if [ -d ~/.gitconfig ] || [ -h ~/.gitconfig ]; then
+  rm -rf ~/.gitconfig
+fi
+
 ln -s ~/.dotfiles/git/.gitconfig ~/.gitconfig
 
 ################################################################################
 # Vim
 ################################################################################
+if [ -d ~/.vim ] || [ -h ~/.vim ]; then
+  rm -rf ~/.vim
+fi
+
 ln -s ~/.dotfiles/vim ~/.vim
+
+if [ -d ~/.config/nvim ] || [ -h ~/.config/nvim ]; then
+  rm -rf ~/.config/nvim
+fi
+
 ln -s ~/.dotfiles/vim ~/.config/nvim
+
+if [ -d ~/.vimrc ] || [ -h ~/.vimrc ]; then
+  rm -rf ~/.vimrc
+fi
+
 ln -s ~/.dotfiles/vim/init.vim ~/.vimrc
 
-if [ ! -d ~/.config/coc ] && [ ! -h ~/.config/coc ]; then
-  mkdir -p ~/.config/coc
+if [ -d ~/.config/coc ] || [ -h ~/.config/coc ]; then
+  rm -rf ~/.config/coc
 fi
+
+mkdir -p ~/.config/coc
 
 ################################################################################
 # GPG public keys
@@ -413,15 +501,19 @@ ln -s ~/.dotfiles/gnupg ~/.gnupg
 chmod 700 ~/.gnupg
 chmod 400 ~/.gnupg/keys/*
 
+if [ -d ~/.gnupg/gpg-agent.conf ] || [ -h ~/.gnupg/gpg-agent.conf ]; then
+  rm -rf ~/.gnupg/gpg-agent.conf
+fi
+
 case "$(uname)" in
-  Linux)
-    ln -s ~/.dotfiles/gnupg/gpg-agent-linux.conf ~/.dotfiles/gnupg/gpg-agent.conf
+  "Linux")
+    ln -s ~/.dotfiles/gnupg/gpg-agent-linux.conf ~/.gnupg/gpg-agent.conf
 
-  ;;
-  Darwin)
-    ln -s ~/.dotfiles/gnupg/gpg-agent-macos.conf ~/.dotfiles/gnupg/gpg-agent.conf
+    ;;
+  "Darwin")
+    ln -s ~/.dotfiles/gnupg/gpg-agent-macos.conf ~/.gnupg/gpg-agent.conf
 
-  ;;
+    ;;
 esac
 
 gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.public.pgp
@@ -448,36 +540,71 @@ chmod 400 ~/.ssh/id_*
 ################################################################################
 # Neomutt
 ################################################################################
+if [ -d ~/.muttrc ] || [ -h ~/.muttrc ]; then
+  rm -rf ~/.muttrc
+fi
+
 ln -s ~/.dotfiles/mutt/.muttrc ~/.muttrc
+
+if [ -d ~/.mutt ] || [ -h ~/.mutt ]; then
+  rm -rf ~/.mutt
+fi
+
 ln -s ~/.dotfiles/mutt ~/.mutt
+
+if [ -d ~/.mailcap ] || [ -h ~/.mailcap ]; then
+  rm -rf ~/.mailcap
+fi
+
 ln -s ~/.dotfiles/mutt/.mailcap ~/.mailcap
 
 ################################################################################
 # Tmux
 ################################################################################
+if [ -d ~/.tmux.conf ] || [ -h ~/.tmux.conf ]; then
+  rm -rf ~/.tmux.conf
+fi
+
 ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
+
+if [ -d ~/.tmux ] || [ -h ~/.tmux ]; then
+  rm -rf ~/.tmux
+fi
+
 ln -s ~/.dotfiles/tmux ~/.tmux
 
 ################################################################################
 # Curl
 ################################################################################
+if [ -d ~/.curlrc ] || [ -h ~/.curlrc ]; then
+  rm -rf ~/.curlrc
+fi
+
 ln -s ~/.dotfiles/curl/.curlrc ~/.curlrc
 
 ################################################################################
 # Wget
 ################################################################################
+if [ -d ~/.wgetrc ] || [ -h ~/.wgetrc ]; then
+  rm -rf ~/.wgetrc
+fi
+
 ln -s ~/.dotfiles/wget/.wgetrc ~/.wgetrc
 
 ################################################################################
 # Readline
 ################################################################################
+if [ -d ~/.inputrc ] || [ -h ~/.inputrc ]; then
+  rm -rf ~/.inputrc
+fi
+
 ln -s ~/.dotfiles/.inputrc ~/.inputrc
 
 ################################################################################
 # Finish
 ################################################################################
 case "$(uname)" in
-  Linux)
+  "Linux")
     # Clean the mess
     sudo apt autoremove -y
     sudo apt clean all -y
@@ -485,11 +612,8 @@ case "$(uname)" in
     # Reboot
     sudo shutdown -r now
 
-  ;;
-  Darwin)
-    # Organize Launchpad
-    defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
-
+    ;;
+  "Darwin")
     # Clean the mess
     brew cleanup -s
 
@@ -501,5 +625,5 @@ case "$(uname)" in
     # Reboot
     sudo shutdown -r now
 
-  ;;
+    ;;
 esac

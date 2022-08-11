@@ -10,8 +10,8 @@ tap 'homebrew/cask-drivers'
 tap 'homebrew/cask-fonts'
 tap 'homebrew/cask-versions'
 tap 'homebrew/core'
-tap 'homebrew/services' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
-tap 'mongodb/brew' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+tap 'homebrew/services' if cpu_model.include?('Core(TM) i')
+tap 'mongodb/brew' if cpu_model.include?('Core(TM) i')
 tap 'neomutt/neomutt'
 tap 'universal-ctags/universal-ctags'
 brew 'ack'
@@ -21,29 +21,30 @@ brew 'bash'
 brew 'binutils'
 brew 'cmake'
 brew 'coreutils'
+brew 'curl'
 brew 'findutils'
 brew 'flyctl'
 brew 'git'
 brew 'gnu-sed'
 brew 'gnupg'
 brew 'htop'
-brew 'libpq' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+brew 'libpq' if cpu_model.include?('Core(TM) i')
 brew 'lynx'
-brew 'macos-term-size' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+brew 'macos-term-size' if cpu_model.include?('Core(TM) i')
 brew 'mas'
-brew 'mongodb-community' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
-brew 'mongodb/brew/mongodb-database-tools' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
-brew 'mongosh' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+brew 'mongodb-community' if cpu_model.include?('Core(TM) i')
+brew 'mongodb/brew/mongodb-database-tools' if cpu_model.include?('Core(TM) i')
+brew 'mongosh' if cpu_model.include?('Core(TM) i')
 brew 'moreutils'
 brew 'neomutt'
 brew 'neovim' if architecture == 'arm64' || cpu_model.include?('Core(TM) i')
 brew 'node', link: true
-brew 'node@14' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+brew 'node@14' if cpu_model.include?('Core(TM) i')
 brew 'openssl'
-brew 'postgresql' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+brew 'postgresql' if cpu_model.include?('Core(TM) i')
 brew 'python', link: true
 brew 'reattach-to-user-namespace'
-brew 'redis' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+brew 'redis' if cpu_model.include?('Core(TM) i')
 brew 'ripgrep'
 brew 'rsync'
 brew 'ruby', link: true
@@ -56,8 +57,8 @@ brew 'vim'
 brew 'wget'
 brew 'yarn'
 brew 'zlib'
-brew 'zsh'
 brew 'zsh-syntax-highlighting'
+brew 'zsh'
 # cask 'jdownloader'
 # cask 'paragon-ntfs' if architecture == 'x86_64'
 # cask 'stats'
@@ -78,7 +79,7 @@ cask 'google-chrome'
 cask 'heaven'
 cask 'huiontablet'
 cask 'insomnia'
-cask 'intel-power-gadget' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+cask 'intel-power-gadget' if cpu_model.include?('Core(TM) i')
 cask 'istat-menus'
 cask 'iterm2'
 cask 'keka'
@@ -89,11 +90,11 @@ cask 'spotify'
 cask 'the-unarchiver'
 cask 'transmission-nightly'
 cask 'tunnelblick'
-cask 'turbo-boost-switcher' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+cask 'turbo-boost-switcher' if cpu_model.include?('Core(TM) i')
 cask 'utm' if architecture == 'arm64'
 cask 'valley'
-cask 'virtualbox' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
-cask 'virtualbox-extension-pack' if architecture == 'x86_64' && cpu_model.include?('Core(TM) i')
+cask 'virtualbox' if cpu_model.include?('Core(TM) i')
+cask 'virtualbox-extension-pack' if cpu_model.include?('Core(TM) i')
 cask 'visual-studio-code'
 cask 'vlc'
 # mas 'Xcode', id: 497_799_835

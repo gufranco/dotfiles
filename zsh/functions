@@ -4,7 +4,7 @@
 # System specific functions
 ################################################################################
 case "$(uname)" in
-  Linux)
+  "Linux")
     ############################################################################
     # Open the current directory, otherwise open the given location
     ############################################################################
@@ -17,7 +17,7 @@ case "$(uname)" in
     }
 
   ;;
-  Darwin)
+  "Darwin")
 
   ;;
 esac
@@ -50,28 +50,35 @@ function f5() {
   git pull
 
   case "$(uname)" in
-    Linux)
+    "Linux")
       sudo apt update -y
       sudo apt dist-upgrade -y
       sudo apt autoremove -y
       sudo apt clean all -y
 
-    ;;
+      ;;
+    "Darwin")
+      case "$(uname -m)" in
+        "x86_64" | "arm64")
+          brew update
+          brew bundle --file ~/.dotfiles/Brewfile --force cleanup
+          brew bundle --file ~/.dotfiles/Brewfile
+          brew upgrade
+          brew cu --all --yes --cleanup
+          brew cleanup -s
+          mas upgrade
+          sudo softwareupdate -i -a
+          defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
 
-    Darwin)
-      brew update
-      brew bundle --file ~/.dotfiles/Brewfile --force cleanup
-      brew bundle --file ~/.dotfiles/Brewfile
-      brew upgrade
-      brew cu --all --yes --cleanup
-      brew cleanup -s
-      mas upgrade
-      sudo softwareupdate -i -a
+          ;;
+        "Power Macintosh")
+          brew update
+          brew upgrade
+          brew cleanup -s
 
-      # Organize Launchpad
-      defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
-
-    ;;
+          ;;
+      esac
+      ;;
   esac
 
   # Reload shell

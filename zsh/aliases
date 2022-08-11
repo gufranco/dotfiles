@@ -68,7 +68,7 @@ fi
 # System specific aliases
 ################################################################################
 case "$(uname)" in
-  Linux)
+  "Linux")
     # Use docker-compose as container when binary isn't available
     if ! [ -x "$(command -v docker-compose)" ]; then
       alias docker-compose="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v \"$PWD:/rootfs/$PWD\" -w=\"/rootfs/$PWD\" docker/compose:alpine-1.25.5"
@@ -83,8 +83,8 @@ case "$(uname)" in
     # Empty the Trash on all mounted volumes and the main HDD
     alias emptytrash="trash-empty"
 
-  ;;
-  Darwin)
+    ;;
+  "Darwin")
     # Clean up LaunchServices to remove duplicates in the “Open With” menu
     alias lscleanup="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user && killall Finder"
 
@@ -132,5 +132,5 @@ case "$(uname)" in
     # Reset launchpad layout
     alias resetlaunchpad="defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock"
 
-  ;;
+    ;;
 esac

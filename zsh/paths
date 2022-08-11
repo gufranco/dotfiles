@@ -22,32 +22,35 @@ fi
 # System specific paths
 ################################################################################
 case "$(uname)" in
-  Linux)
+  "Linux")
     # Neomutt
     export PATH="/usr/libexec/neomutt:$PATH"
 
-  ;;
-  Darwin)
-    # Homebrew
-    if [ "$(uname -m)" = "arm64" ]; then
-      # Apple ARM
-      export HOMEBREW_PREFIX="/opt/homebrew";
-      export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
-      export HOMEBREW_REPOSITORY="/opt/homebrew";
-      export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew";
-      export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
-      export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
-      export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
-    else
-      # Intel
-      export HOMEBREW_PREFIX="/usr/local";
-      export HOMEBREW_CELLAR="/usr/local/Cellar";
-      export HOMEBREW_REPOSITORY="/usr/local/Homebrew";
-      export HOMEBREW_SHELLENV_PREFIX="/usr/local";
-      export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}";
-      export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:";
-      export INFOPATH="/usr/local/share/info:${INFOPATH:-}";
-    fi
+    ;;
+  "Darwin")
+    case "$(uname -m)" in
+      "arm64")
+        export HOMEBREW_PREFIX="/opt/homebrew";
+        export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
+        export HOMEBREW_REPOSITORY="/opt/homebrew";
+        export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew";
+        export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
+        export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
+        export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
+
+        ;;
+
+      "x86_64" | "Power Macintosh")
+        export HOMEBREW_PREFIX="/usr/local";
+        export HOMEBREW_CELLAR="/usr/local/Cellar";
+        export HOMEBREW_REPOSITORY="/usr/local/Homebrew";
+        export HOMEBREW_SHELLENV_PREFIX="/usr/local";
+        export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}";
+        export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:";
+        export INFOPATH="/usr/local/share/info:${INFOPATH:-}";
+
+        ;;
+    esac
 
     # Coreutils
     export PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
@@ -63,7 +66,6 @@ case "$(uname)" in
 
     # Ruby
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
-    export PATH="$(brew --prefix)/lib/ruby/gems/3.1.0/bin:$PATH"
 
     # Sed
     export PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
@@ -71,8 +73,5 @@ case "$(uname)" in
     # Binutils
     export PATH="$(brew --prefix)/opt/binutils/bin:$PATH"
 
-    # Node.js
-    export PATH="$(brew --prefix)/opt/node@16/bin:$PATH"
-
-  ;;
+    ;;
 esac

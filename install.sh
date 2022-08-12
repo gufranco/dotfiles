@@ -352,12 +352,16 @@ case "$(uname)" in
     # dotfiles
     ############################################################################
     if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
-      rm -rf ~/.dotfiles
+      cd ~/.dotfiles || exit 1
+      git remote set-url origin https://github.com/gufranco/dotfiles.git
+      git checkout master
+      git pull
+      git remote set-url origin git@github.com:gufranco/dotfiles.git
+    else
+      git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
+      cd ~/.dotfiles || exit 1
+      git remote set-url origin git@github.com:gufranco/dotfiles.git
     fi
-
-    git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
-    cd ~/.dotfiles || exit 1
-    git remote set-url origin git@github.com:gufranco/dotfiles.git
 
     ############################################################################
     # Homebrew bundle

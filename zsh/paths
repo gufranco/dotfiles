@@ -23,7 +23,6 @@ fi
 ################################################################################
 case "$(uname)" in
   "Linux")
-    # Neomutt
     export PATH="/usr/libexec/neomutt:$PATH"
 
     ;;
@@ -52,25 +51,12 @@ case "$(uname)" in
         ;;
     esac
 
-    # Coreutils
     export PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
-
-    # Findutils
     export PATH="$(brew --prefix)/opt/findutils/libexec/gnubin:$PATH"
-
-    # cURL
     export PATH="$(brew --prefix)/opt/curl/bin:$PATH"
-
-    # OpenSSL
     export PATH="$(brew --prefix)/opt/openssl/bin:$PATH"
-
-    # Ruby
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
-
-    # Sed
     export PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
-
-    # Binutils
     export PATH="$(brew --prefix)/opt/binutils/bin:$PATH"
 
     ;;

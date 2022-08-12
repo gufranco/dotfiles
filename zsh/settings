@@ -4,35 +4,23 @@
 # System specific settings
 ################################################################################
 case "$(uname)" in
-  Linux)
+  "Linux")
 
-  ;;
-  Darwin)
-  # Fix insecure completion-dependent directories
-  export ZSH_DISABLE_COMPFIX=true
+    ;;
+  "Darwin")
+    export ZSH_DISABLE_COMPFIX=true
+    export HOMEBREW_NO_ANALYTICS=1
+    export HOMEBREW_NO_ENV_HINTS=1
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64
 
-  # Disable Brew analytics
-  export HOMEBREW_NO_ANALYTICS=1
-
-  # Disable Brew env hints
-  export HOMEBREW_NO_ENV_HINTS=1
-
-  # Force Docker to use x86_64 images
-  # export DOCKER_DEFAULT_PLATFORM=linux/amd64
-
-  ;;
+    ;;
 esac
 
 ################################################################################
 # Shell
 ################################################################################
-# Ignore duplicated entries
 export HISTCONTROL=ignoredups
-
-# Ignore some commands
 export HISTIGNORE="cd:ls:[bf]g:clear:exit"
-
-# Set language
 export LANG=pt_BR.UTF-8
 
 ################################################################################
@@ -60,19 +48,19 @@ export plugins=(
 # Spaceship
 ################################################################################
 export SPACESHIP_PROMPT_ORDER=(
-  user          # Username section
-  dir           # Current directory section
-  host          # Hostname section
-  git           # Git section (git_branch + git_status)
-  node          # Node.js section
-  ruby          # Ruby section
-  docker        # Docker section
-  aws           # Amazon Web Services section
-  gcloud        # Google Cloud Platform section
-  line_sep      # Line break
-  vi_mode       # Vi-mode indicator
-  jobs          # Background jobs indicator
-  char          # Prompt character
+  user
+  dir
+  host
+  git
+  node
+  ruby
+  docker
+  aws
+  gcloud
+  line_sep
+  vi_mode
+  jobs
+  char
 )
 export SPACESHIP_USER_SHOW=always
 export SPACESHIP_PROMPT_ADD_NEWLINE=false

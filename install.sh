@@ -299,7 +299,9 @@ case "$(uname)" in
     ############################################################################
     case "$(uname -m)" in
       "arm64")
-        CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if [ ! -x "$(command -v brew)" ]; then
+          CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
 
         export HOMEBREW_PREFIX="/opt/homebrew"
         export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
@@ -312,7 +314,9 @@ case "$(uname)" in
         ;;
 
       "x86_64")
-        CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if [ ! -x "$(command -v brew)" ]; then
+          CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
 
         export HOMEBREW_PREFIX="/usr/local"
         export HOMEBREW_CELLAR="/usr/local/Cellar"
@@ -325,7 +329,9 @@ case "$(uname)" in
         ;;
 
       "Power Macintosh")
-        ruby -e "$(curl -fsSL http://pickledapple.com/tigerbrew/tigerbrew-install.rb)"
+        if [ ! -x "$(command -v brew)" ]; then
+          echo "CI" | ruby -e "$(curl -fsSL http://pickledapple.com/tigerbrew/tigerbrew-install.rb)"
+        fi
 
         export HOMEBREW_PREFIX="/usr/local"
         export HOMEBREW_CELLAR="/usr/local/Cellar"

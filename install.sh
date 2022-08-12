@@ -40,9 +40,17 @@ case "$(uname)" in
     ############################################################################
     # dotfiles
     ############################################################################
-    git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
-    cd ~/.dotfiles || exit 1
-    git remote set-url origin git@github.com:gufranco/dotfiles.git
+    if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
+      cd ~/.dotfiles || exit 1
+      git remote set-url origin https://github.com/gufranco/dotfiles.git
+      git checkout master
+      git pull
+      git remote set-url origin git@github.com:gufranco/dotfiles.git
+    else
+      git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
+      cd ~/.dotfiles || exit 1
+      git remote set-url origin git@github.com:gufranco/dotfiles.git
+    fi
 
     ############################################################################
     # Enable universe repository
@@ -71,10 +79,7 @@ case "$(uname)" in
     ############################################################################
     # Zsh
     ############################################################################
-    sudo apt install -y \
-      zsh
-
-    ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
+    sudo apt install -y zsh
     command -v zsh | sudo tee -a /etc/shells
     sudo chsh "$USER" -s "$(command -v zsh)"
 
@@ -84,8 +89,7 @@ case "$(uname)" in
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
     echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
     sudo apt update
-    sudo apt install -y \
-      docker-ce
+    sudo apt install -y docker-ce
     sudo usermod -a -G docker "$USER"
 
     ############################################################################
@@ -105,14 +109,12 @@ case "$(uname)" in
     ############################################################################
     sudo add-apt-repository -y ppa:deadsnakes/ppa
     sudo apt update
-    sudo apt install -y \
-      python3.9
+    sudo apt install -y python3.9
 
     ############################################################################
     # Dropbox
     ############################################################################
-    sudo apt install -y \
-      nautilus-dropbox
+    sudo apt install -y nautilus-dropbox
 
     ############################################################################
     # Spotify
@@ -120,8 +122,7 @@ case "$(uname)" in
     curl -fsSL https://download.spotify.com/debian/pubkey_5E3C45D7B312C643.gpg | sudo apt-key add -
     echo -e "deb [arch=$(dpkg --print-architecture)] http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
     sudo apt update
-    sudo apt install -y \
-      spotify-client
+    sudo apt install -y spotify-client
 
     ############################################################################
     # Chrome
@@ -129,16 +130,14 @@ case "$(uname)" in
     curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
     echo -e "deb [arch=$(dpkg --print-architecture)] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
     sudo apt update
-    sudo apt install -y \
-      google-chrome-stable
+    sudo apt install -y google-chrome-stable
 
     ############################################################################
     # DBeaver
     ############################################################################
     sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce
     sudo apt update
-    sudo apt install -y \
-      dbeaver-ce
+    sudo apt install -y dbeaver-ce
 
     ############################################################################
     # Robo 3T
@@ -150,20 +149,17 @@ case "$(uname)" in
     ############################################################################
     sudo add-apt-repository -y ppa:neovim-ppa/stable
     sudo apt update
-    sudo apt install -y \
-      neovim
+    sudo apt install -y neovim
 
     ############################################################################
     # Ripgrep
     ############################################################################
-    sudo apt install -y \
-      ripgrep
+    sudo apt install -y ripgrep
 
     ############################################################################
     # Universal ctags
     ############################################################################
-    sudo apt install -y \
-      universal-ctags
+    sudo apt install -y universal-ctags
 
     ############################################################################
     # Visual Studio Code
@@ -171,16 +167,14 @@ case "$(uname)" in
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg
     echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list
     sudo apt update
-    sudo apt install -y \
-      code
+    sudo apt install -y code
 
     ############################################################################
     # Insomnia
     ############################################################################
     echo -e "deb [trusted=yes arch=$(dpkg --print-architecture)] https://download.konghq.com/insomnia-ubuntu/ default all" | sudo tee /etc/apt/sources.list.d/insomnia.list
     sudo apt update
-    sudo apt install -y \
-      insomnia
+    sudo apt install -y insomnia
 
     ############################################################################
     # GPG
@@ -192,26 +186,22 @@ case "$(uname)" in
     ############################################################################
     # Neomutt
     ############################################################################
-    sudo apt install -y \
-      neomutt
+    sudo apt install -y neomutt
 
     ############################################################################
     # Lynx
     ############################################################################
-    sudo apt install -y \
-      lynx
+    sudo apt install -y lynx
 
     ############################################################################
     # Shellcheck
     ############################################################################
-    sudo apt install -y \
-      shellcheck
+    sudo apt install -y shellcheck
 
     ############################################################################
     # Hack Nerd Font
     ############################################################################
-    sudo apt install -y \
-      fonts-hack-ttf
+    sudo apt install -y fonts-hack-ttf
 
     curl -#fLo \
       "$HOME/.local/share/fonts/Hack Regular Nerd Font Complete.ttf" \
@@ -222,8 +212,7 @@ case "$(uname)" in
     ############################################################################
     # Tilix
     ############################################################################
-    sudo apt install -y \
-      tilix
+    sudo apt install -y tilix
 
     curl -#fLo \
       "$HOME/.config/tilix/schemes/gruvbox-dark-medium.json" \
@@ -232,48 +221,41 @@ case "$(uname)" in
     ############################################################################
     # VLC
     ############################################################################
-    sudo apt install -y \
-      vlc
+    sudo apt install -y vlc
 
     ############################################################################
     # Conky
     ############################################################################
-    sudo apt install -y \
-      conky-all
+    sudo apt install -y conky-all
 
     ln -s ~/.dotfiles/conky/.conkyrc ~/.conkyrc
 
     ############################################################################
     # Transmission
     ############################################################################
-    sudo apt install -y \
-      transmission
+    sudo apt install -y transmission
 
     ############################################################################
     # Asciinema
     ############################################################################
-    sudo apt install -y \
-      asciinema
+    sudo apt install -y asciinema
 
     ############################################################################
     # Preload
     ############################################################################
-    sudo apt install -y \
-      preload
+    sudo apt install -y preload
 
     ############################################################################
     # TLP
     ############################################################################
     sudo add-apt-repository -y ppa:linrunner/tlp
     sudo apt update
-    sudo apt install -y \
-      tlp
+    sudo apt install -y tlp
 
     ############################################################################
     # Caffeine
     ############################################################################
-    sudo apt install -y \
-      caffeine
+    sudo apt install -y caffeine
 
     ############################################################################
     # Drivers
@@ -371,7 +353,6 @@ case "$(uname)" in
         brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
         ;;
-
       "Power Macintosh")
         brew install \
           ack \
@@ -387,7 +368,6 @@ case "$(uname)" in
           gnupg \
           htop \
           lynx \
-          moreutils \
           mutt \
           neofetch \
           node \
@@ -414,12 +394,6 @@ case "$(uname)" in
     ############################################################################
     echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
     chsh -s "$(brew --prefix)/bin/zsh"
-
-    if [ -d ~/.zshrc ] || [ -h ~/.zshrc ]; then
-      rm -rf ~/.zshrc
-    fi
-
-    ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
 
     ############################################################################
     # iTerm2
@@ -454,8 +428,14 @@ fi
 ln -s ~/.dotfiles/nodejs/.npmrc ~/.npmrc
 
 ################################################################################
-# Oh-my-zsh / Spaceship
+# Zsh / Oh-my-zsh / Spaceship
 ################################################################################
+if [ -d ~/.zshrc ] || [ -h ~/.zshrc ]; then
+  rm -rf ~/.zshrc
+fi
+
+ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
+
 if [ -d ~/.oh-my-zsh ] || [ -h ~/.oh-my-zsh ]; then
   rm -rf ~/.oh-my-zsh
 fi

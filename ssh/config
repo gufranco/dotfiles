@@ -18,3 +18,14 @@ Host *
 Host github.com
   ControlMaster auto
   ControlPersist 120
+
+################################################################################
+# Runa
+################################################################################
+Host bastion-QA
+  HostName ec2-52-90-107-158.compute-1.amazonaws.com
+  User ec2-user
+  IdentityFile ~/.ssh/payroll-v1-bastion-staging-host-key.pem
+  IdentitiesOnly yes
+  ServerAliveInterval 30
+  ServerAliveCountMax 3

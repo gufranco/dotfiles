@@ -369,8 +369,6 @@ case "$(uname)" in
           htop \
           lynx \
           mutt \
-          neofetch \
-          node \
           openssl \
           python \
           ruby \
@@ -394,15 +392,6 @@ case "$(uname)" in
     ############################################################################
     echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
     chsh -s "$(brew --prefix)/bin/zsh"
-
-    ############################################################################
-    # iTerm2
-    ############################################################################
-    curl -#fLo \
-      "/tmp/gruvbox-dark.itermcolors" \
-      --create-dirs https://raw.githubusercontent.com/morhetz/gruvbox-contrib/master/iterm2/gruvbox-dark.itermcolors
-
-    # open "/tmp/gruvbox-dark.itermcolors"
 
     ;;
 esac

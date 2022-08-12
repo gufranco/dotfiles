@@ -34,15 +34,15 @@ conky.config = {
 };
 
 conky.text = [[
-${font sans-serif:bold:size=10}CPU ${hr 2}
-${font sans-serif:normal:size=8}${execi 1000 grep model /proc/cpuinfo | cut -d : -f2 | tail -1 | sed 's/\s//'}
-${cpu cpu0}% ${cpubar cpu0}
+  ${font sans-serif:bold:size=10}CPU ${hr 2}
+  ${font sans-serif:normal:size=8}${execi 1000 grep model /proc/cpuinfo | cut -d : -f2 | tail -1 | sed 's/\s//'}
+  ${cpu cpu0}% ${cpubar cpu0}
 
-${font sans-serif:bold:size=10}MEMORY ${hr 2}
-${font sans-serif:normal:size=8}RAM $alignc $mem / $memmax $alignr $memperc%
-$membar
+  ${font sans-serif:bold:size=10}MEMORY ${hr 2}
+  ${font sans-serif:normal:size=8}RAM $alignc $mem / $memmax $alignr $memperc%
+  $membar
 
-${font sans-serif:bold:size=10}DISK ${hr 2}
-${font sans-serif:normal:size=8}/ $alignc ${fs_used /} / ${fs_size /} $alignr ${fs_used_perc /}%
-${fs_bar /}
+  ${font sans-serif:bold:size=10}DISK ${hr 2}
+  ${font sans-serif:normal:size=8}/ $alignc ${fs_used /} / ${fs_size /} $alignr ${fs_used_perc /}%
+  ${fs_bar /}
 ]];

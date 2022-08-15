@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+function terminal-colors() {
+  for i in {0..255} ; do
+    printf "\x1b[48;5;%sm%3d\e[0m " "$i" "$i"
+
+    if (( i == 15 )) || (( i > 15 )) && (( (i-15) % 6 == 0 )); then
+      printf "\n";
+    fi
+done
+}
+
 ################################################################################
 # System specific functions
 ################################################################################
@@ -13,7 +23,7 @@ case "$(uname)" in
         xdg-open . > /dev/null 2>&1;
       else
         xdg-open "$@" > /dev/null 2>&1;
-      fi;
+      fi
     }
 
     ;;

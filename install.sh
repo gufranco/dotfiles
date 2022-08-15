@@ -385,12 +385,16 @@ case "$(uname)" in
     ############################################################################
     # Bash
     ############################################################################
-    echo -e "$(brew --prefix)/bin/bash" | sudo tee -a /etc/shells
+    if ! grep -q "$(brew --prefix)/bin/bash" /etc/shells; then
+      echo -e "$(brew --prefix)/bin/bash" | sudo tee -a /etc/shells
+    fi
 
     ############################################################################
     # Zsh
     ############################################################################
-    echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
+    if ! grep -q "$(brew --prefix)/bin/zsh" /etc/shells; then
+      echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
+    fi
     chsh -s "$(brew --prefix)/bin/zsh"
 
     ;;

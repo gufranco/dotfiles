@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
 
-function terminal-colors() {
-  for i in {0..255} ; do
-    printf "\x1b[48;5;%sm%3d\e[0m " "$i" "$i"
-
-    if (( i == 15 )) || (( i > 15 )) && (( (i-15) % 6 == 0 )); then
-      printf "\n";
-    fi
-done
-}
-
 ################################################################################
 # System specific functions
 ################################################################################
@@ -42,7 +32,7 @@ function f5() {
   CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
   # Dotfiles
-  cd ~/.dotfiles || exit 1
+  cd "${HOME}/.dotfiles" || exit 1
   git pull-sub
   git submodule update --recursive --remote
 
@@ -50,12 +40,12 @@ function f5() {
   vim +PlugUpgrade +PlugUpdate +CocUpdate +qall
 
   # Oh-my-zsh
-  cd ~/.oh-my-zsh || exit 1
+  cd "${HOME}/.oh-my-zsh" || exit 1
   git checkout master
   git pull
 
   # Spaceship theme
-  cd ~/.oh-my-zsh/custom/themes/spaceship-prompt || exit 1
+  cd "${HOME}/.oh-my-zsh/custom/themes/spaceship-prompt" || exit 1
   git checkout master
   git pull
 
@@ -68,26 +58,16 @@ function f5() {
 
       ;;
     "Darwin")
-      case "$(uname -m)" in
-        "x86_64" | "arm64")
-          brew update
-          brew bundle --file ~/.dotfiles/Brewfile --force cleanup
-          brew bundle --file ~/.dotfiles/Brewfile
-          brew upgrade
-          brew cu --all --yes --cleanup
-          brew cleanup -s
-          mas upgrade
-          sudo softwareupdate -i -a
-          defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
+      brew update
+      brew bundle --file "${HOME}/.dotfiles/Brewfile" --force cleanup
+      brew bundle --file "${HOME}/.dotfiles/Brewfile"
+      brew upgrade
+      brew cu --all --yes --cleanup
+      brew cleanup -s
+      mas upgrade
+      sudo softwareupdate -i -a
+      defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
 
-          ;;
-        "Power Macintosh")
-          brew update
-          brew upgrade
-          brew cleanup -s
-
-          ;;
-      esac
       ;;
   esac
 

@@ -31,16 +31,7 @@ source ~/.dotfiles/zsh/containers
 if [ -z "$TMUX" ]; then
   tmux new-session -s $$;
 else
-  case "$(uname -m)" in
-    "x86_64" | "arm64")
-      export TERM="screen-256color"
-
-      ;;
-    "Power Macintosh")
-      export TERM="xterm-color"
-
-      ;;
-  esac
+  export TERM="screen-256color"
 fi
 
 source $ZSH/oh-my-zsh.sh

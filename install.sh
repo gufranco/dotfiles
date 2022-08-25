@@ -80,7 +80,11 @@ case "$(uname)" in
     # Zsh
     ############################################################################
     sudo apt install -y zsh
-    command -v zsh | sudo tee -a /etc/shells
+
+    if ! grep -q "$(command -v zsh)" /etc/shells; then
+      command -v zsh | sudo tee -a /etc/shells
+    fi
+
     sudo chsh "$USER" -s "$(command -v zsh)"
 
     ############################################################################
@@ -228,6 +232,10 @@ case "$(uname)" in
     ############################################################################
     sudo apt install -y conky-all
 
+    if [ -d ~/.conkyrc ] || [ -h ~/.conkyrc ]; then
+      rm -rf ~/.conkyrc
+    fi
+
     ln -s ~/.dotfiles/conky/.conkyrc ~/.conkyrc
 
     ############################################################################
@@ -279,56 +287,34 @@ case "$(uname)" in
     ############################################################################
     # Homebrew
     ############################################################################
-    case "$(uname -m)" in
-      "arm64")
-        if [ ! -x "$(command -v brew)" ]; then
+    if [ ! -x "$(command -v brew)" ]; then
+      case "$(uname -m)" in
+        "arm64")
           CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        fi
 
-        export HOMEBREW_PREFIX="/opt/homebrew"
-        export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
-        export HOMEBREW_REPOSITORY="/opt/homebrew"
-        export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew"
-        export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
-        export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
-        export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
+          export HOMEBREW_PREFIX="/opt/homebrew"
+          export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
+          export HOMEBREW_REPOSITORY="/opt/homebrew"
+          export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew"
+          export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
+          export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
+          export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
 
-        ;;
-
-      "x86_64")
-        if [ ! -x "$(command -v brew)" ]; then
+          ;;
+        "x86_64")
           CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        fi
 
-        export HOMEBREW_PREFIX="/usr/local"
-        export HOMEBREW_CELLAR="/usr/local/Cellar"
-        export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
-        export HOMEBREW_SHELLENV_PREFIX="/usr/local"
-        export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
-        export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
-        export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
+          export HOMEBREW_PREFIX="/usr/local"
+          export HOMEBREW_CELLAR="/usr/local/Cellar"
+          export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+          export HOMEBREW_SHELLENV_PREFIX="/usr/local"
+          export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
+          export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
+          export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
 
-        ;;
-
-      "Power Macintosh")
-        if [ ! -x "$(command -v brew)" ]; then
-          echo "CI" | ruby -e "$(curl -fsSL http://pickledapple.com/tigerbrew/tigerbrew-install.rb)"
-        fi
-
-        export HOMEBREW_PREFIX="/usr/local"
-        export HOMEBREW_CELLAR="/usr/local/Cellar"
-        export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
-        export HOMEBREW_SHELLENV_PREFIX="/usr/local"
-        export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
-        export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
-        export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
-
-        # Fix dependencies / basic packages
-        brew doctor
-        brew install curl git ruby
-
-        ;;
-    esac
+          ;;
+      esac
+    fi
 
     ############################################################################
     # dotfiles
@@ -348,39 +334,8 @@ case "$(uname)" in
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    case "$(uname -m)" in
-      "arm64" | "x86_64")
-        brew bundle --file "${HOME}/.dotfiles/Brewfile"
-
-        ;;
-      "Power Macintosh")
-        brew install \
-          ack \
-          awscli \
-          bash \
-          binutils \
-          cmake \
-          coreutils \
-          curl \
-          findutils \
-          git \
-          gnu-sed \
-          gnupg \
-          htop \
-          lynx \
-          mutt \
-          openssl \
-          python \
-          ruby \
-          tmux \
-          urlview \
-          vim \
-          wget \
-          zsh \
-          zsh-syntax-highlighting
-
-        ;;
-    esac
+    brew bundle --file "${HOME}/.dotfiles/Brewfile" --force cleanup
+    brew bundle --file "${HOME}/.dotfiles/Brewfile"
 
     ############################################################################
     # Bash
@@ -394,8 +349,8 @@ case "$(uname)" in
     ############################################################################
     if ! grep -q "$(brew --prefix)/bin/zsh" /etc/shells; then
       echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
+      chsh -s "$(brew --prefix)/bin/zsh"
     fi
-    chsh -s "$(brew --prefix)/bin/zsh"
 
     ;;
 esac

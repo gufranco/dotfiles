@@ -15,7 +15,7 @@ function mongodb-init() {
     --env "MONGO_INITDB_ROOT_PASSWORD=root" \
     --mount type=bind,source="$HOME"/Docker/Databases/MongoDB/Dump,target=/dump \
     --publish 127.0.0.1:27017:27017 \
-    mongo:5
+    mongo:4
 }
 
 function mongodb-start() {

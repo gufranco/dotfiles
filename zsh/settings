@@ -58,7 +58,6 @@ export SPACESHIP_PROMPT_ORDER=(
   aws
   gcloud
   line_sep
-  vi_mode
   jobs
   char
 )

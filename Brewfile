@@ -68,20 +68,14 @@ cask 'intel-power-gadget' if cpu_model.include?('Core(TM) i')
 cask 'istat-menus'
 cask 'iterm2'
 cask 'keka'
-cask 'logitech-options'
 cask 'mongodb-compass'
 cask 'slack'
 cask 'spotify'
 cask 'the-unarchiver'
 cask 'transmission-nightly'
 cask 'tunnelblick'
-# cask 'turbo-boost-switcher' if cpu_model.include?('Core(TM) i')
-cask 'utm' if architecture == 'arm64'
-cask 'virtualbox' if cpu_model.include?('Core(TM) i')
-cask 'virtualbox-extension-pack' if cpu_model.include?('Core(TM) i')
 cask 'visual-studio-code'
 cask 'vlc'
-# mas 'Xcode', id: 497_799_835
 mas 'Amphetamine', id: 937_984_704
 mas 'CleanMyDrive 2', id: 523_620_159
 mas 'Magnet', id: 441_258_766

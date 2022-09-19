@@ -445,7 +445,7 @@ case "$(uname)" in
 
     ;;
   "Darwin")
-    ln -s ~/.dotfiles/gnupg/gpg-agent-macos.conf ~/.gnupg/gpg-agent.conf
+    ln -s "$HOME/.dotfiles/gnupg/gpg-agent-macos-$(uname -m).conf" ~/.gnupg/gpg-agent.conf
 
     ;;
 esac

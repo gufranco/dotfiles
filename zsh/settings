@@ -47,20 +47,6 @@ export plugins=(
 ################################################################################
 # Spaceship
 ################################################################################
-export SPACESHIP_PROMPT_ORDER=(
-  user
-  dir
-  host
-  git
-  node
-  ruby
-  docker
-  aws
-  gcloud
-  line_sep
-  jobs
-  char
-)
 export SPACESHIP_USER_SHOW=always
 export SPACESHIP_PROMPT_ADD_NEWLINE=false
 export SPACESHIP_CHAR_SYMBOL="❯"

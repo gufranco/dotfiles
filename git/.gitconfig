@@ -60,7 +60,7 @@
   st = status -sb
   co = checkout
   fe = fetch origin
-  fork = checkout -b
+  fork = "!fork() { git pull && git checkout -b \"$1\"; }; fork"
   pull-sub = !(git pull && git submodule foreach git pull origin master)
   lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
   incoming = !(git fetch --quiet && git log --pretty=format:'%C(yellow)%h %C(white)- %C(red)%an %C(white)- %C(cyan)%d%Creset %s %C(white)- %ar%Creset' ..@{u})

@@ -72,6 +72,7 @@ cask 'huiontablet'
 cask 'insomnia'
 cask 'intel-power-gadget' if cpu_model.include?('Core(TM) i')
 cask 'istat-menus'
+cask 'itau'
 cask 'iterm2'
 cask 'jdownloader'
 cask 'keka'

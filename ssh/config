@@ -1,5 +1,6 @@
 Host *
   IdentityFile ~/.ssh/id_ed25519
+  IdentityFile ~/.ssh/id_rsa
   AddKeysToAgent yes
   Compression yes
   ForwardAgent yes
@@ -20,12 +21,17 @@ Host github.com
   ControlPersist 120
 
 ################################################################################
-# Runa
+# Routers
 ################################################################################
-Host bastion-QA
-  HostName ec2-52-90-107-158.compute-1.amazonaws.com
-  User ec2-user
-  IdentityFile ~/.ssh/payroll-v1-bastion-staging-host-key.pem
-  IdentitiesOnly yes
-  ServerAliveInterval 30
-  ServerAliveCountMax 3
+Host 192.168.0.1
+  User root
+  HostKeyAlgorithms=+ssh-rsa
+
+Host 192.168.1.1
+  User root
+  HostKeyAlgorithms=+ssh-rsa
+
+Host 192.168.31.1
+  User root
+  HostKeyAlgorithms=+ssh-rsa
+  

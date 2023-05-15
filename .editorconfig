@@ -26,6 +26,6 @@ indent_size = 4
 [Makefile]
 indent_style = tab
 
-# C / C++
-[*.{c,h,cpp,hpp}]
-indent_size = 2
+# Telnet
+[.telnetrc]
+indent_style = tab

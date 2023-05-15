@@ -43,6 +43,7 @@ brew 'rsync'
 brew 'ruby', link: true
 brew 'shared-mime-info'
 brew 'shellcheck'
+brew 'telnet'
 brew 'tmux'
 brew 'universal-ctags/universal-ctags/universal-ctags', args: ['HEAD']
 brew 'urlview'
@@ -57,6 +58,7 @@ cask '8bitdo-ultimate-software'
 cask 'aethersx2' if architecture == 'arm64'
 cask 'aldente' if architecture == 'x86_64'
 cask 'balenaetcher'
+cask 'blueharvest'
 cask 'citra'
 cask 'cleanmymac'
 cask 'coconutbattery'
@@ -71,6 +73,7 @@ cask 'firefox'
 cask 'flixtools'
 cask 'font-hack-nerd-font'
 cask 'google-chrome'
+cask 'hex-fiend'
 cask 'huiontablet'
 cask 'insomnia'
 cask 'intel-power-gadget' if cpu_model.include?('Core(TM) i')
@@ -99,8 +102,8 @@ cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
 cask 'xemu'
+cask 'zoom'
 
 mas 'Amphetamine', id: 937_984_704
-mas 'CleanMyDrive 2', id: 523_620_159
 mas 'Magnet', id: 441_258_766
 mas 'Resident Evil Village', id: 1_640_627_334 if architecture == 'arm64'

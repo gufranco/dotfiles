@@ -31,17 +31,18 @@ export ZSH_THEME="spaceship"
 export DISABLE_AUTO_UPDATE="true"
 export HIST_STAMPS="dd/mm/yyyy"
 export plugins=(
-  gpg-agent
-  ssh-agent
-  tmux
-  git
-  ruby
-  rvm
-  gem
   bundler
-  rake
+  gem
+  git
+  gpg-agent
   node
   npm
+  nvm
+  rake
+  ruby
+  rvm
+  ssh-agent
+  tmux
 )
 
 ################################################################################

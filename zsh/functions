@@ -64,8 +64,12 @@ function f5() {
       brew upgrade
       brew cu --all --yes --cleanup
       brew cleanup -s
+
       mas upgrade
       sudo softwareupdate -i -a
+
+      ruby-install --update
+
       defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
 
       ;;

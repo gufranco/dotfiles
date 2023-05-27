@@ -99,7 +99,7 @@ case "$(uname)" in
     ############################################################################
     # Node.js
     ############################################################################
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt update
     sudo apt install -y \
       g++ \

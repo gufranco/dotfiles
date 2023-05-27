@@ -2,6 +2,7 @@
 
 architecture = `uname -m`.strip
 cpu_model = `sysctl -n machdep.cpu.brand_string`.strip
+mac_model = `sysctl -n hw.model`.strip
 
 tap 'aws/tap'
 tap 'buo/cask-upgrade'
@@ -20,6 +21,7 @@ brew 'awscli'
 brew 'bash'
 brew 'binutils'
 brew 'binwalk'
+brew 'chruby'
 brew 'cmake'
 brew 'coreutils'
 brew 'curl'
@@ -35,13 +37,14 @@ brew 'mas'
 brew 'moreutils'
 brew 'neomutt'
 brew 'neovim'
-brew 'node@20', link: true
+brew 'node@18', link: true
 brew 'openssl'
 brew 'postgresql@14'
 brew 'python', link: true
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
 brew 'rsync'
+brew 'ruby-install'
 brew 'ruby', link: true
 brew 'shared-mime-info'
 brew 'shellcheck'
@@ -53,12 +56,12 @@ brew 'vim'
 brew 'wget'
 brew 'yarn'
 brew 'zlib'
-brew 'zsh'
 brew 'zsh-syntax-highlighting'
+brew 'zsh'
 
 cask '8bitdo-ultimate-software'
 cask 'aethersx2' if architecture == 'arm64'
-cask 'aldente' if architecture == 'x86_64'
+cask 'aldente' if model == 'MacBookPro9,2'
 cask 'balenaetcher'
 cask 'blueharvest'
 cask 'citra'

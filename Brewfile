@@ -2,7 +2,7 @@
 
 architecture = `uname -m`.strip
 cpu_model = `sysctl -n machdep.cpu.brand_string`.strip
-mac_model = `sysctl -n hw.model`.strip
+model = `sysctl -n hw.model`.strip
 
 tap 'aws/tap'
 tap 'buo/cask-upgrade'

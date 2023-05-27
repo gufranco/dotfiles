@@ -8,10 +8,19 @@ case "$(uname)" in
 
     ;;
   "Darwin")
+    # Zsh
     export ZSH_DISABLE_COMPFIX=true
+
+    # Homebrew
     export HOMEBREW_NO_ANALYTICS=1
     export HOMEBREW_NO_ENV_HINTS=1
+
+    # Docker
     export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+    # Chruby
+    source "$(brew --prefix)/opt/chruby/share/chruby/chruby.sh"
+    source "$(brew --prefix)/opt/chruby/share/chruby/auto.sh"
 
     ;;
 esac
@@ -31,16 +40,7 @@ export ZSH_THEME="spaceship"
 export DISABLE_AUTO_UPDATE="true"
 export HIST_STAMPS="dd/mm/yyyy"
 export plugins=(
-  bundler
-  gem
-  git
   gpg-agent
-  node
-  npm
-  nvm
-  rake
-  ruby
-  rvm
   ssh-agent
   tmux
 )

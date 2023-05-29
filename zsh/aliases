@@ -26,37 +26,14 @@ alias la="ls -lAF ${colorflag}"
 # List only directories
 alias ld="ls -lF ${colorflag} | grep --color=never '^d'"
 
-# Always enable colored `grep` output
-alias grep="grep --color=auto"
-alias fgrep="fgrep --color=auto"
-alias egrep="egrep --color=auto"
-alias zgrep="zgrep --color=auto"
-
 # Always create parent folders if needed
 alias mkdir="mkdir -p -v"
 
-# Stop after sending 5 packets
-alias ping="ping -c 5"
-
-# Recursively delete clean up folders
-alias cleanup-node="find . -type d -name \"node_modules\" -exec rm -rf \"{}\" +"
-alias cleanup-git="find . -type d -name \".git\" -exec rm -rf \"{}\" +"
-
-# Print each PATH entry on a separate line
-alias path="sed 's/:/\n/g' <<< \"$PATH\""
-
-# Shred file
-alias shred="shred -zvu -n 10"
-
 # Use neomutt when available
-if [ -x "$(command -v neomutt)" ]; then
-  alias mutt="neomutt"
-fi
+command -v neomutt > /dev/null || alias mutt="neomutt"
 
 # Use neovim when available
-if [ -x "$(command -v nvim)" ]; then
-  alias vim="nvim"
-fi
+command -v nvim > /dev/null || alias vim="nvim"
 
 ################################################################################
 # System specific aliases
@@ -64,24 +41,18 @@ fi
 case "$(uname)" in
   "Linux")
     # Lock the screen (when going AFK)
-    alias afk="gnome-screensaver-command --lock"
+    command -v gnome-screensaver-command > /dev/null || alias afk="gnome-screensaver-command --lock"
 
     # Browser
-    alias chrome="/opt/google/chrome/google-chrome"
+    command -v google-chrome > /dev/null || alias chrome="/opt/google/chrome/google-chrome"
 
     ;;
   "Darwin")
-    # Canonical hex dump; some systems have this symlinked
-    command -v hd > /dev/null || alias hd="hexdump -C"
-
     # macOS has no `md5sum`, so use `md5` as a fallback
     command -v md5sum > /dev/null || alias md5sum="md5"
 
     # macOS has no `sha1sum`, so use `shasum` as a fallback
     command -v sha1sum > /dev/null || alias sha1sum="shasum"
-
-    # macOS has no `shred`, so use `gshred` as a fallback
-    command -v shred > /dev/null || alias shred="gshred"
 
     ;;
 esac

@@ -32,7 +32,7 @@ function f5() {
   CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
   # Dotfiles
-  cd "${HOME}/.dotfiles" || exit 1
+  cd ~/.dotfiles || exit 1
   git pull-sub
   git submodule update --recursive --remote
 
@@ -40,12 +40,12 @@ function f5() {
   vim +PlugUpgrade +PlugUpdate +CocUpdate +qall
 
   # Oh-my-zsh
-  cd "${HOME}/.oh-my-zsh" || exit 1
+  cd ~/.oh-my-zsh || exit 1
   git checkout master
   git pull
 
   # Spaceship theme
-  cd "${HOME}/.oh-my-zsh/custom/themes/spaceship-prompt" || exit 1
+  cd ~/.oh-my-zsh/custom/themes/spaceship-prompt || exit 1
   git checkout master
   git pull
 
@@ -59,8 +59,8 @@ function f5() {
       ;;
     "Darwin")
       brew update
-      brew bundle --file "${HOME}/.dotfiles/Brewfile" --force cleanup
-      brew bundle --file "${HOME}/.dotfiles/Brewfile"
+      brew bundle --file ~/.dotfiles/Brewfile --force cleanup
+      brew bundle --file ~/.dotfiles/Brewfile
       brew upgrade
       brew cu --all --yes --cleanup
       brew cleanup -s
@@ -76,7 +76,7 @@ function f5() {
   esac
 
   # Reload shell
-  source "${HOME}/.zshrc"
+  source ~/.zshrc
 
   cd "$CURRENT_DIR" || exit 1
 }

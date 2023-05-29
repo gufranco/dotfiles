@@ -398,15 +398,6 @@ fi
 ln -s ~/.dotfiles/git/.gitconfig ~/.gitconfig
 
 ################################################################################
-# RVM
-################################################################################
-if [ -x "$(command -v rvm)" ]; then
-  gpg --keyserver keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-
-  curl -sSL https://get.rvm.io | sudo bash -s stable
-fi
-
-################################################################################
 # NVM
 ################################################################################
 if [ -x "$(command -v nvm)" ]; then
@@ -576,8 +567,8 @@ case "$(uname)" in
     # Clean the mess
     brew cleanup -s
 
-    # Enable TRIM for macOS x86_64
-    if [ "$(uname -m)" = "x86_64" ]; then
+    # Enable TRIM for MacBookPro9,2
+    if [ "$(sysctl -n hw.model)" = "MacBookPro9,2" ]; then
       yes | sudo trimforce enable
     fi
 

@@ -548,7 +548,7 @@ if [ -d ~/.inputrc ] || [ -h ~/.inputrc ]; then
   rm -rf ~/.inputrc
 fi
 
-ln -s ~/.dotfiles/.inputrc ~/.inputrc
+ln -s ~/.dotfiles/readline/.inputrc ~/.inputrc
 
 ################################################################################
 # Finish

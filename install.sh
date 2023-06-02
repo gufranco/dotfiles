@@ -208,7 +208,7 @@ case "$(uname)" in
     sudo apt install -y fonts-hack-ttf
 
     curl -#fLo \
-      "$HOME/.local/share/fonts/Hack Regular Nerd Font Complete.ttf" \
+      ~/.local/share/fonts/Hack Regular Nerd Font Complete.ttf \
       --create-dirs https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/Hack/Regular/complete/Hack%20Regular%20Nerd%20Font%20Complete.ttf
 
     sudo fc-cache -fv
@@ -219,7 +219,7 @@ case "$(uname)" in
     sudo apt install -y tilix
 
     curl -#fLo \
-      "$HOME/.config/tilix/schemes/gruvbox-dark-medium.json" \
+      ~/.config/tilix/schemes/gruvbox-dark-medium.json \
       --create-dirs https://raw.githubusercontent.com/MichaelThessel/tilix-gruvbox/master/gruvbox-dark-medium.json
 
     ############################################################################
@@ -334,8 +334,8 @@ case "$(uname)" in
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    brew bundle --file "${HOME}/.dotfiles/Brewfile" --force cleanup
-    brew bundle --file "${HOME}/.dotfiles/Brewfile"
+    brew bundle --file ~/.dotfiles/Brewfile --force cleanup
+    brew bundle --file ~/.dotfiles/Brewfile
 
     ############################################################################
     # Bash
@@ -452,7 +452,7 @@ case "$(uname)" in
 
     ;;
   "Darwin")
-    ln -s "$HOME/.dotfiles/gnupg/gpg-agent-macos-$(uname -m).conf" ~/.gnupg/gpg-agent.conf
+    ln -s ~/.dotfiles/gnupg/gpg-agent-macos-"$(uname -m)".conf ~/.gnupg/gpg-agent.conf
 
     ;;
 esac

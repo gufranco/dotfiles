@@ -42,13 +42,9 @@ case "$(uname)" in
         ;;
     esac
 
-    export PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
-    export PATH="$(brew --prefix)/opt/findutils/libexec/gnubin:$PATH"
     export PATH="$(brew --prefix)/opt/curl/bin:$PATH"
     export PATH="$(brew --prefix)/opt/openssl/bin:$PATH"
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
-    export PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
-    export PATH="$(brew --prefix)/opt/binutils/bin:$PATH"
 
     ;;
 esac

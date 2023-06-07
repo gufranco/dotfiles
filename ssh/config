@@ -14,24 +14,8 @@ Host *
   UseKeychain yes
 
 ################################################################################
-# Github
+# Hosts
 ################################################################################
 Host github.com
   ControlMaster auto
   ControlPersist 120
-
-################################################################################
-# Routers
-################################################################################
-Host 192.168.0.1
-  User root
-  HostKeyAlgorithms=+ssh-rsa
-
-Host 192.168.1.1
-  User root
-  HostKeyAlgorithms=+ssh-rsa
-
-Host 192.168.31.1
-  User root
-  HostKeyAlgorithms=+ssh-rsa
-

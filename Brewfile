@@ -56,7 +56,6 @@ cask '8bitdo-ultimate-software'
 cask 'aethersx2' if architecture == 'arm64'
 cask 'aldente' if model == 'MacBookPro9,2'
 cask 'balenaetcher'
-cask 'blueharvest'
 cask 'citra'
 cask 'cleanmymac'
 cask 'coconutbattery'
@@ -100,5 +99,6 @@ cask 'xemu'
 cask 'zoom'
 
 mas 'Amphetamine', id: 937_984_704
+mas 'CleanMyDrive 2', id: 523_620_159
 mas 'Magnet', id: 441_258_766
 mas 'Resident Evil Village', id: 1_640_627_334 if architecture == 'arm64'

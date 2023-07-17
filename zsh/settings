@@ -43,6 +43,10 @@ export plugins=(
   gpg-agent
   ssh-agent
   tmux
+  node
+  nvm
+  ruby
+  chruby
 )
 
 ################################################################################

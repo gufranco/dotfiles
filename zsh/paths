@@ -3,12 +3,7 @@
 ################################################################################
 # General paths
 ################################################################################
-# NVM
-if [ -d "$HOME/.nvm" ] || [ -h "$HOME/.nvm" ]; then
-  export NVM_DIR="$HOME/.nvm"
 
-  source "$NVM_DIR/nvm.sh"
-fi
 
 ################################################################################
 # System specific paths
@@ -45,6 +40,10 @@ case "$(uname)" in
     export PATH="$(brew --prefix)/opt/curl/bin:$PATH"
     export PATH="$(brew --prefix)/opt/openssl/bin:$PATH"
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
+
+    # NVM
+    export NVM_DIR="$(brew --prefix)/opt/nvm"
+    source "$(brew --prefix)/opt/nvm/nvm.sh"
 
     ;;
 esac

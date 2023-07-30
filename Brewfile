@@ -14,6 +14,7 @@ tap 'neomutt/neomutt'
 tap 'universal-ctags/universal-ctags'
 
 brew 'ack'
+brew 'act'
 brew 'asciinema'
 brew 'awscli'
 brew 'bash'
@@ -29,12 +30,15 @@ brew 'lynx'
 brew 'mas'
 brew 'neomutt'
 brew 'neovim'
+brew 'node', link: true
 brew 'nvm'
 brew 'openssl'
+brew 'pnpm'
 brew 'python', link: true
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
 brew 'rsync'
+brew 'ruby', link: true
 brew 'ruby-install'
 brew 'shared-mime-info'
 brew 'shellcheck'

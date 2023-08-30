@@ -57,7 +57,7 @@
 
 [alias]
   st = status -sb
-  fork = "!fork() { git pull && git checkout -b \"$1\"; }; fork"
+  fork = checkout -b
   pull-sub = !(git pull && git submodule foreach git pull origin master)
   lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
   unstage = reset HEAD --

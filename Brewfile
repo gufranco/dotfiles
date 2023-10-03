@@ -7,7 +7,6 @@ model = `sysctl -n hw.model`.strip
 tap 'aws/tap'
 tap 'buo/cask-upgrade'
 tap 'homebrew/bundle'
-tap 'homebrew/cask-drivers'
 tap 'homebrew/cask-fonts'
 tap 'homebrew/cask-versions'
 tap 'neomutt/neomutt'
@@ -96,7 +95,6 @@ cask 'ppsspp'
 cask 'shottr'
 cask 'slack'
 cask 'spotify'
-cask 'telegram-desktop'
 cask 'transfer'
 cask 'transmission'
 cask 'tunnelblick'
@@ -104,11 +102,9 @@ cask 'utm'
 cask 'virtualbox-beta' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
-cask 'whatsapp'
 cask 'xemu'
 
 mas 'Amphetamine', id: 937_984_704
 mas 'CleanMyDrive 2', id: 523_620_159
 mas 'Magnet', id: 441_258_766
 mas 'Resident Evil Village for Mac', id: 1_640_627_334 if architecture == 'arm64'
-mas 'Resident Evil 4', id: 2_127_574_510 if architecture == 'arm64'

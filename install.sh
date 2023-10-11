@@ -26,6 +26,7 @@ case "$(uname)" in
     sudo apt install -y \
       apt-transport-https \
       build-essential \
+      ca-certificates \
       cmake \
       curl \
       git \
@@ -99,21 +100,24 @@ case "$(uname)" in
     ############################################################################
     # Node.js
     ############################################################################
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt update
     sudo apt install -y \
+      ca-certificates \
+      curl \
       g++ \
       gcc \
-      make \
-      nodejs \
-      yarn
+      gnupg \
+      make
+    sudo apt update
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg
+    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+    sudo apt install -y nodejs
 
     ############################################################################
     # Python
     ############################################################################
     sudo add-apt-repository -y ppa:deadsnakes/ppa
     sudo apt update
-    sudo apt install -y python3.9
+    sudo apt install -y python3.12
 
     ############################################################################
     # Dropbox
@@ -123,7 +127,7 @@ case "$(uname)" in
     ############################################################################
     # Spotify
     ############################################################################
-    curl -fsSL https://download.spotify.com/debian/pubkey_7A3A762FAFD4A51F.gpg | sudo apt-key add -
+    curl -fsSL https://download.spotify.com/debian/pubkey_7A3A762FAFD4A51F.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
     echo -e "deb [arch=$(dpkg --print-architecture)] http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
     sudo apt update
     sudo apt install -y spotify-client
@@ -208,8 +212,8 @@ case "$(uname)" in
     sudo apt install -y fonts-hack-ttf
 
     curl -#fLo \
-      ~/.local/share/fonts/Hack Regular Nerd Font Complete.ttf \
-      --create-dirs https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/Hack/Regular/complete/Hack%20Regular%20Nerd%20Font%20Complete.ttf
+      ~/.local/share/fonts/HackNerdFont-Regular.ttf \
+      --create-dirs https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf
 
     sudo fc-cache -fv
 
@@ -288,10 +292,10 @@ case "$(uname)" in
     # Homebrew
     ############################################################################
     if [ ! -x "$(command -v brew)" ]; then
+      CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
       case "$(uname -m)" in
         "arm64")
-          CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
           export HOMEBREW_PREFIX="/opt/homebrew"
           export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
           export HOMEBREW_REPOSITORY="/opt/homebrew"
@@ -302,8 +306,6 @@ case "$(uname)" in
 
           ;;
         "x86_64")
-          CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
           export HOMEBREW_PREFIX="/usr/local"
           export HOMEBREW_CELLAR="/usr/local/Cellar"
           export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
@@ -334,7 +336,6 @@ case "$(uname)" in
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    brew bundle --file ~/.dotfiles/Brewfile --force cleanup
     brew bundle --file ~/.dotfiles/Brewfile
 
     ############################################################################
@@ -567,13 +568,10 @@ case "$(uname)" in
     # Clean the mess
     brew cleanup -s
 
-    # Enable TRIM for MacBookPro9,2
-    if [ "$(sysctl -n hw.model)" = "MacBookPro9,2" ]; then
+    # Enable TRIM for MacBookPro9,2 and MacBookAir2,1
+    if [ "$(sysctl -n hw.model)" = "MacBookPro9,2" ] || [ "$(sysctl -n hw.model)" = "MacBookAir2,1" ]; then
       yes | sudo trimforce enable
     fi
-
-    # Reboot
-    sudo shutdown -r now
 
     ;;
 esac

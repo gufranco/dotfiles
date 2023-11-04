@@ -37,13 +37,26 @@ case "$(uname)" in
         ;;
     esac
 
+    # cURL
     export PATH="$(brew --prefix)/opt/curl/bin:$PATH"
+
+    # OpenSSL
     export PATH="$(brew --prefix)/opt/openssl/bin:$PATH"
+
+    # Ruby
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
 
     # NVM
     export NVM_DIR="$(brew --prefix)/opt/nvm"
     source "$(brew --prefix)/opt/nvm/nvm.sh"
+
+    # Android Studio
+    export ANDROID_HOME=$HOME/Library/Android/sdk
+    export PATH=$PATH:$ANDROID_HOME/emulator
+    export PATH=$PATH:$ANDROID_HOME/platform-tools
+
+    # Open JDK
+    export PATH="$(brew --prefix)/opt/openjdk/bin:$PATH"
 
     ;;
 esac

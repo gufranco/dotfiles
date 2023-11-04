@@ -1,5 +1,6 @@
 Host *
   IdentityFile ~/.ssh/id_ed25519
+  IdentityFile ~/.ssh/id_rsa
   AddKeysToAgent yes
   Compression yes
   ForwardAgent yes

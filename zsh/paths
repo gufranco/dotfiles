@@ -51,12 +51,12 @@ case "$(uname)" in
     source "$(brew --prefix)/opt/nvm/nvm.sh"
 
     # Android Studio
-    export ANDROID_HOME=$HOME/Library/Android/sdk
-    export PATH=$PATH:$ANDROID_HOME/emulator
-    export PATH=$PATH:$ANDROID_HOME/platform-tools
+    export ANDROID_HOME="$HOME/Library/Android/sdk"
+    export PATH="$ANDROID_HOME/emulator:$PATH"
+    export PATH="$ANDROID_HOME/platform-tools:$PATH"
 
     # Open JDK
-    export PATH="$(brew --prefix)/opt/openjdk/bin:$PATH"
+    export PATH="$(brew --prefix)/opt/openjdk@11/bin:$PATH"
 
     ;;
 esac

@@ -286,6 +286,15 @@ case "$(uname)" in
     ############################################################################
     sudo snap install slack
 
+    ############################################################################
+    # Nala
+    ############################################################################
+    echo -e "deb [trusted=yes arch=$(dpkg --print-architecture)] http://deb.volian.org/volian/ scar main" | sudo tee /etc/apt/sources.list.d/insomnia.list
+    curl -fsSL https://deb.volian.org/volian/scar.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/volian-archive-scar-unstable.gpg
+    sudo apt update
+    sudo apt install -y \
+      nala
+
     ;;
   "Darwin")
     ############################################################################

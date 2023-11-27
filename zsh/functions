@@ -16,6 +16,21 @@ case "$(uname)" in
       fi
     }
 
+    ############################################################################
+    # Nala
+    ############################################################################
+    command -v nala > /dev/null || alias apt="nala"
+
+    function sudo() {
+      if [ "$1" = "apt" ]; then
+        shift
+
+        command sudo nala "$@"
+      else
+        command sudo "$@"
+      fi
+    }
+
     ;;
   "Darwin")
 
@@ -51,6 +66,7 @@ function f5() {
 
   case "$(uname)" in
     "Linux")
+      sudo nala fetch
       sudo apt update -y
       sudo apt dist-upgrade -y
       sudo apt autoremove -y

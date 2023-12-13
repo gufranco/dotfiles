@@ -52,11 +52,7 @@ case "$(uname)" in
 
     # Android Studio
     export ANDROID_HOME="$HOME/Library/Android/sdk"
-    export PATH="$ANDROID_HOME/emulator:$PATH"
-    export PATH="$ANDROID_HOME/platform-tools:$PATH"
-
-    # Open JDK
-    export PATH="$(brew --prefix)/opt/openjdk@11/bin:$PATH"
+    export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$(brew --prefix)/opt/openjdk@11/bin:$PATH"
 
     ;;
 esac

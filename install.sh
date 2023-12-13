@@ -413,12 +413,6 @@ fi
 
 ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
 
-if [ -d ~/.config/coc ] || [ -h ~/.config/coc ]; then
-  rm -rf ~/.config/coc
-fi
-
-mkdir -p ~/.config/coc
-
 ################################################################################
 # GPG public keys
 ################################################################################
@@ -547,9 +541,6 @@ case "$(uname)" in
     sudo apt autoremove -y
     sudo apt clean all -y
 
-    # Reboot
-    sudo shutdown -r now
-
     ;;
   "Darwin")
     # Clean the mess
@@ -562,3 +553,6 @@ case "$(uname)" in
 
     ;;
 esac
+
+# Reboot
+sudo shutdown -r now

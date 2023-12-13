@@ -10,24 +10,9 @@ case "$(uname)" in
     ############################################################################
     function open() {
       if [ $# -eq 0 ]; then
-        xdg-open . > /dev/null 2>&1;
+        xdg-open . >/dev/null 2>&1
       else
-        xdg-open "$@" > /dev/null 2>&1;
-      fi
-    }
-
-    ############################################################################
-    # Nala
-    ############################################################################
-    command -v nala > /dev/null || alias apt="nala"
-
-    function sudo() {
-      if [ "$1" = "apt" ]; then
-        shift
-
-        command sudo nala "$@"
-      else
-        command sudo "$@"
+        xdg-open "$@" >/dev/null 2>&1
       fi
     }
 
@@ -86,7 +71,8 @@ function f5() {
 
       ruby-install --update
 
-      defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
+      defaults write com.apple.dock ResetLaunchPad -bool true
+      killall Dock
 
       ;;
   esac

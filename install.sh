@@ -153,13 +153,6 @@ case "$(uname)" in
     sudo snap install robo3t-snap
 
     ############################################################################
-    # Neovim
-    ############################################################################
-    sudo add-apt-repository -y ppa:neovim-ppa/stable
-    sudo apt update
-    sudo apt install -y neovim
-
-    ############################################################################
     # Ripgrep
     ############################################################################
     sudo apt install -y ripgrep
@@ -285,15 +278,6 @@ case "$(uname)" in
     # Slack
     ############################################################################
     sudo snap install slack
-
-    ############################################################################
-    # Nala
-    ############################################################################
-    echo -e "deb [trusted=yes arch=$(dpkg --print-architecture)] http://deb.volian.org/volian/ scar main" | sudo tee /etc/apt/sources.list.d/insomnia.list
-    curl -fsSL https://deb.volian.org/volian/scar.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/volian-archive-scar-unstable.gpg
-    sudo apt update
-    sudo apt install -y \
-      nala
 
     ;;
   "Darwin")
@@ -423,17 +407,11 @@ fi
 
 ln -s ~/.dotfiles/vim ~/.vim
 
-if [ -d ~/.config/nvim ] || [ -h ~/.config/nvim ]; then
-  rm -rf ~/.config/nvim
-fi
-
-ln -s ~/.dotfiles/vim ~/.config/nvim
-
 if [ -d ~/.vimrc ] || [ -h ~/.vimrc ]; then
   rm -rf ~/.vimrc
 fi
 
-ln -s ~/.dotfiles/vim/init.vim ~/.vimrc
+ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
 
 if [ -d ~/.config/coc ] || [ -h ~/.config/coc ]; then
   rm -rf ~/.config/coc

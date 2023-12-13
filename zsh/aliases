@@ -32,9 +32,6 @@ alias mkdir="mkdir -p -v"
 # Use neomutt when available
 command -v neomutt > /dev/null || alias mutt="neomutt"
 
-# Use neovim when available
-command -v nvim > /dev/null || alias vim="nvim"
-
 ################################################################################
 # System specific aliases
 ################################################################################

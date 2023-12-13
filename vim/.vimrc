@@ -37,7 +37,7 @@ Plug 'inside/vim-search-pulse'
 Plug 'itchyny/lightline.vim'
 Plug 'jszakmeister/vim-togglecursor'
 Plug 'maximbaz/lightline-ale'
-Plug 'morhetz/gruvbox'
+Plug 'ghifarit53/tokyonight-vim'
 Plug 'myusuf3/numbers.vim'
 Plug 'ryanoasis/vim-devicons'
 Plug 'thaerkh/vim-indentguides'
@@ -89,7 +89,10 @@ Plug 'Shougo/neoyank.vim'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Code completion
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
+"Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'prabirshrestha/vim-lsp'
+Plug 'mattn/vim-lsp-settings'
+Plug 'prabirshrestha/asyncomplete.vim'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Helpers
@@ -99,10 +102,10 @@ Plug 'easymotion/vim-easymotion'
 Plug 'editorconfig/editorconfig-vim'
 Plug 'ervandew/supertab'
 Plug 'kristijanhusak/vim-carbon-now-sh', { 'on': 'CarbonNowSh' }
-Plug 'majutsushi/tagbar', { 'on': 'TagbarToggle' }
 Plug 'ntpeters/vim-better-whitespace'
 Plug 'tmhedberg/matchit'
 Plug 'tpope/vim-repeat'
+Plug 'liuchengxu/vim-which-key', { 'on': ['WhichKey', 'WhichKey!'] }
 
 call plug#end()
 
@@ -129,11 +132,6 @@ set noerrorbells
 set novisualbell
 set t_vb=
 set timeoutlen=500
-if has('gui_macvim')
-  augroup macvim
-    autocmd GUIEnter * set vb t_vb=
-  augroup END
-endif
 
 " Use ripgrep over grep if avaiable
 if executable('rg')
@@ -213,29 +211,16 @@ cnoreabbrev Wqall wqall
 " Theme / GUI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 try
-  colorscheme gruvbox
+  set termguicolors
+
+  let g:tokyonight_style = 'night'
+  let g:tokyonight_enable_italic = 1
+
+  colorscheme tokyonight
 catch
   colorscheme desert
 endtry
 set background=dark
-
-if has('gui_running')
-  if s:uname ==# 'Darwin'
-    set guifont=Hack\ Nerd\ Font:h12
-  elseif s:uname ==# 'Linux'
-    set guifont=Hack\ Nerd\ Font\ 12
-  endif
-
-  " Remove menu
-  set guioptions=
-
-  " Maximize window
-  set lines=999
-  set columns=999
-elseif has('nvim')
-  " Enable true colors
-  set termguicolors
-endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " NERDTree
@@ -272,7 +257,7 @@ let g:NERDTreeIgnore = [
 " Lightline
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-  \ 'colorscheme': 'gruvbox',
+  \ 'colorscheme': 'tokyonight',
   \ 'active': {
   \   'left': [
   \     [ 'mode', 'paste' ],
@@ -399,11 +384,6 @@ map <leader>r :WinResizerStartResize<CR>
 map <leader>z :ZoomWin<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Tagbar
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nmap <leader>t :TagbarToggle<CR>
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Supertab
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:SuperTabDefaultCompletionType = '<c-n>'
@@ -411,4 +391,13 @@ let g:SuperTabDefaultCompletionType = '<c-n>'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Coc.vim
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:coc_global_extensions = ['coc-json', 'coc-git']
+"let g:coc_global_extensions = ['coc-json', 'coc-git']
+inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+inoremap <expr> <cr>    pumvisible() ? asyncomplete#close_popup() : "\<cr>"
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" WhichKey
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set timeoutlen=500
+nnoremap <silent> <leader> :WhichKey ','<CR>

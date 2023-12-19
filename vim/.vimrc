@@ -1,6 +1,7 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Encoding
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set encoding=utf-8
 scriptencoding utf-8
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -33,12 +34,12 @@ Plug 'tmux-plugins/vim-tmux'
 " UI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug 'RRethy/vim-illuminate'
+Plug 'ghifarit53/tokyonight-vim'
 Plug 'inside/vim-search-pulse'
 Plug 'itchyny/lightline.vim'
 Plug 'jszakmeister/vim-togglecursor'
 Plug 'maximbaz/lightline-ale'
-Plug 'ghifarit53/tokyonight-vim'
-Plug 'myusuf3/numbers.vim'
+Plug 'mhinz/vim-startify'
 Plug 'ryanoasis/vim-devicons'
 Plug 'thaerkh/vim-indentguides'
 Plug 'vim-scripts/CursorLineCurrentWindow'
@@ -57,10 +58,9 @@ Plug 'w0rp/ale'
 " File management
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug 'Xuyuanp/nerdtree-git-plugin', { 'on': 'NERDTreeToggle' }
-Plug 'airblade/vim-gitgutter'
 Plug 'ctrlpvim/ctrlp.vim'
+Plug 'mhinz/vim-signify'
 Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' }
-Plug 'tpope/vim-fugitive'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Windows and buffers
@@ -83,15 +83,11 @@ Plug 'godlygeek/tabular', { 'on': 'Tabularize' }
 " Clipboard
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug 'svermeulen/vim-easyclip'
-Plug 'Shougo/denite.nvim'
-Plug 'Shougo/neoyank.vim'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Code completion
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Plug 'prabirshrestha/vim-lsp'
-" Plug 'mattn/vim-lsp-settings'
-" Plug 'prabirshrestha/asyncomplete.vim'
+Plug 'neoclide/coc.nvim', {'branch': 'release', 'do': ':CocInstall coc-snippets coc-tsserver coc-prettier coc-eslint coc-css coc-lists coc-highlight coc-json' }
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Helpers
@@ -100,11 +96,12 @@ Plug 'brooth/far.vim', { 'on': ['Far', 'Farundo', 'Farp', 'Farundo'] }
 Plug 'easymotion/vim-easymotion'
 Plug 'editorconfig/editorconfig-vim'
 Plug 'ervandew/supertab'
-Plug 'kristijanhusak/vim-carbon-now-sh', { 'on': 'CarbonNowSh' }
+Plug 'liuchengxu/vim-which-key', { 'on': ['WhichKey', 'WhichKey!'] }
 Plug 'ntpeters/vim-better-whitespace'
+Plug 'rhysd/accelerated-jk'
 Plug 'tmhedberg/matchit'
 Plug 'tpope/vim-repeat'
-Plug 'liuchengxu/vim-which-key', { 'on': ['WhichKey', 'WhichKey!'] }
+
 
 call plug#end()
 
@@ -119,18 +116,18 @@ set colorcolumn=80
 
 " Disable mouse
 set mouse=
-if !has('nvim')
-  set ttymouse=
-endif
+set ttymouse=
 
 " Set update interval
 set updatetime=100
+
+" Set timeout
+set timeoutlen=500
 
 " No annoying sound on errors
 set noerrorbells
 set novisualbell
 set t_vb=
-set timeoutlen=500
 
 " Use ripgrep over grep if avaiable
 if executable('rg')
@@ -147,7 +144,6 @@ noremap <Left> <NOP>
 noremap <Right> <NOP>
 
 " Use utf8 as the standard encoding
-set encoding=utf-8
 set fileencoding=utf-8
 set fileencodings=utf-8
 
@@ -178,8 +174,11 @@ set noundofile
 if exists('$SHELL')
   set shell=$SHELL
 else
-  set shell=/bin/sh
+  set shell=/bin/bash
 endif
+
+" Always show signcolumn
+set signcolumn=yes
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Aliases
@@ -189,7 +188,6 @@ nmap <Leader>s :source $MYVIMRC<CR>
 
 " Edit vimrc
 nmap <Leader>v :edit $MYVIMRC<CR>
-
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Abbreviations
@@ -211,11 +209,10 @@ cnoreabbrev Wqall wqall
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 try
   set termguicolors
+  colorscheme tokyonight
 
   let g:tokyonight_style = 'night'
   let g:tokyonight_enable_italic = 1
-
-  colorscheme tokyonight
 catch
   colorscheme desert
 endtry
@@ -249,7 +246,9 @@ let g:NERDTreeIgnore = [
 \ '^\.git$[[dir]]',
 \ '^node_modules$[[dir]]',
 \ '^dist$[[dir]]',
-\ '^build$[[dir]]'
+\ '^build$[[dir]]',
+\ '^ios$[[dir]]',
+\ '^android$[[dir]]'
 \ ]
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -331,7 +330,7 @@ let g:ale_fixers = {
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Ignore files and folders
 let g:ctrlp_custom_ignore = {
-  \ 'dir':  '\v[\/](\.git|node_modules|dist|build)$',
+  \ 'dir':  '\v[\/](\.git|node_modules|dist|build|android|ios)$',
   \ 'file': '\v\.(gitkeep|log|gif|jpg|jpeg|png|psd|DS_Store)$'
 \ }
 
@@ -363,11 +362,6 @@ nmap f <Plug>(easymotion-overwin-f)
 let g:EasyMotion_smartcase = 1
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Carbon.now.sh
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:carbon_now_sh_options = 't=dracula&ln=true&fm=Hack'
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Easyclip
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:EasyClipAlwaysMoveCursorToEndOfPaste = 1
@@ -390,5 +384,87 @@ let g:SuperTabDefaultCompletionType = '<c-n>'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " WhichKey
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set timeoutlen=500
 nnoremap <silent> <leader> :WhichKey ','<CR>
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Accelerated-jk
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nmap j <Plug>(accelerated_jk_gj_position)
+nmap k <Plug>(accelerated_jk_gk_position)
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Startify
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:startify_custom_header = []
+
+augroup startify
+  autocmd BufWinEnter *
+  \ if !exists('t:startify_new_tab')
+  \     && empty(expand('%'))
+  \     && empty(&l:buftype)
+  \     && &l:modifiable |
+  \   let t:startify_new_tab = 1 |
+  \   Startify |
+  \ endif
+augroup END
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Coc
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+inoremap <silent><expr> <c-space> coc#refresh()
+
+" gd - go to definition of word under cursor
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+
+" gi - go to implementation
+nmap <silent> gi <Plug>(coc-implementation)
+
+" gr - find references
+nmap <silent> gr <Plug>(coc-references)
+
+" gh - get hint on whatever's under the cursor
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+nnoremap <silent> gh :call <SID>show_documentation()<CR>
+
+function! s:show_documentation()
+  if &filetype ==# 'vim'
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+
+
+" Highlight symbol under cursor on CursorHold
+augroup coc_cursorhold
+  autocmd CursorHold * silent call CocActionAsync('highlight')
+augroup END
+
+nnoremap <silent> <leader>co  :<C-u>CocList outline<cr>
+nnoremap <silent> <leader>cs  :<C-u>CocList -I symbols<cr>
+
+" List errors
+nnoremap <silent> <leader>cl  :<C-u>CocList locationlist<cr>
+
+" list commands available in tsserver (and others)
+nnoremap <silent> <leader>cc  :<C-u>CocList commands<cr>
+
+" restart when tsserver gets wonky
+nnoremap <silent> <leader>cR  :<C-u>CocRestart<CR>
+
+" view all errors
+nnoremap <silent> <leader>cl  :<C-u>CocList locationlist<CR>
+
+" manage extensions
+nnoremap <silent> <leader>cx  :<C-u>CocList extensions<cr>
+
+" rename the current word in the cursor
+nmap <leader>cr  <Plug>(coc-rename)
+nmap <leader>cf  <Plug>(coc-format-selected)
+vmap <leader>cf  <Plug>(coc-format-selected)
+
+" run code actions
+vmap <leader>ca  <Plug>(coc-codeaction-selected)
+nmap <leader>ca  <Plug>(coc-codeaction-selected)

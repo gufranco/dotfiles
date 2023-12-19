@@ -28,6 +28,7 @@ tmux/plugins/*
 .tern-port
 .netrwhist
 plug.vim*
+vim/sessions/
 vim/plugged/
 coc/extensions/package-lock.json
 coc/extensions/node_modules/

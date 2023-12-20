@@ -42,13 +42,16 @@ export ZSH_THEME="spaceship"
 export DISABLE_AUTO_UPDATE="true"
 export HIST_STAMPS="dd/mm/yyyy"
 export plugins=(
+  chruby
+  git
   gpg-agent
-  ssh-agent
-  tmux
   node
   nvm
   ruby
-  chruby
+  ssh-agent
+  sudo
+  tmux
+  zsh-autosuggestions
 )
 
 ################################################################################

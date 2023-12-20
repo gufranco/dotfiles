@@ -49,6 +49,12 @@ function f5() {
   git checkout master
   git pull
 
+
+  # Zsh auto suggestions
+  cd ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions || exit 1
+  git checkout master
+  git pull
+
   case "$(uname)" in
     "Linux")
       sudo nala fetch

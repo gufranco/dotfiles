@@ -52,6 +52,7 @@ export plugins=(
   sudo
   tmux
   zsh-autosuggestions
+  zsh-syntax-highlighting
 )
 
 ################################################################################

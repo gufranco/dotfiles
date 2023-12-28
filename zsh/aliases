@@ -46,10 +46,13 @@ case "$(uname)" in
     ;;
   "Darwin")
     # macOS has no `md5sum`, so use `md5` as a fallback
-    command -v md5sum > /dev/null || alias md5sum="md5"
+    alias md5sum="md5"
 
     # macOS has no `sha1sum`, so use `shasum` as a fallback
-    command -v sha1sum > /dev/null || alias sha1sum="shasum"
+    alias sha1sum="shasum"
+
+    # Use bat as previewer
+    alias fzf="fzf --preview \"bat --color=always --style=numbers --line-range=:500 {}\""
 
     ;;
 esac

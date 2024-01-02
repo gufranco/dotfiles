@@ -51,6 +51,7 @@ export plugins=(
   ssh-agent
   sudo
   tmux
+  you-should-use
   zsh-autosuggestions
   zsh-syntax-highlighting
 )

@@ -55,6 +55,16 @@ function f5() {
   git checkout master
   git pull
 
+  # Zsh syntax highlighting
+  cd ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting || exit 1
+  git checkout master
+  git pull
+
+  # You should use
+  cd ~/.oh-my-zsh/custom/plugins/you-should-use || exit 1
+  git checkout master
+  git pull
+
   case "$(uname)" in
     "Linux")
       sudo nala fetch

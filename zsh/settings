@@ -42,15 +42,35 @@ export ZSH_THEME="spaceship"
 export DISABLE_AUTO_UPDATE="true"
 export HIST_STAMPS="dd/mm/yyyy"
 export plugins=(
+  aws
+  bun
   chruby
+  deno
+  docker
+  docker-compose
+  docker-machine
+  fzf
+  gcloud
+  gem
   git
+  github
+  gitignore
+  golang
   gpg-agent
+  macos
   node
+  npm
   nvm
+  python
+  ripgrep
   ruby
   ssh-agent
   sudo
   tmux
+  ubuntu
+  vscode
+  xcode
+  yarn
   you-should-use
   zsh-autosuggestions
   zsh-syntax-highlighting

@@ -30,7 +30,7 @@ Plug 'tmux-plugins/vim-tmux'
 " UI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug 'artnez/vim-wipeout', { 'on': 'Wipeout' }
-Plug 'ghifarit53/tokyonight-vim'
+Plug 'morhetz/gruvbox'
 Plug 'inside/vim-search-pulse'
 Plug 'itchyny/lightline.vim'
 Plug 'jszakmeister/vim-togglecursor'
@@ -164,10 +164,8 @@ nmap <Leader>v :edit $MYVIMRC<CR>
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 try
   set termguicolors
-  colorscheme tokyonight
 
-  let g:tokyonight_style = 'night'
-  let g:tokyonight_enable_italic = 1
+  colorscheme gruvbox
 catch
   colorscheme desert
 endtry
@@ -210,7 +208,7 @@ let g:NERDTreeIgnore = [
 " Lightline
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-  \ 'colorscheme': 'tokyonight',
+  \ 'colorscheme': 'gruvbox',
   \ 'active': {
   \   'left': [
   \     [ 'mode', 'paste' ],

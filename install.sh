@@ -380,13 +380,34 @@ fi
 
 git clone --depth=1 https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
 
-# Plugins
+if [ -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting ]; then
+  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+fi
+
 git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+
+if [ -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions ]; then
+  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+fi
+
 git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+
+if [ -d ~/.oh-my-zsh/custom/plugins/you-should-use ] || [ -h ~/.oh-my-zsh/custom/plugins/you-should-use ]; then
+  rm -rf ~/.oh-my-zsh/custom/plugins/you-should-use
+fi
+
 git clone --depth=1 https://github.com/MichaelAquilina/zsh-you-should-use.git ~/.oh-my-zsh/custom/plugins/you-should-use
 
-# Theme
+if [ -d ~/.oh-my-zsh/custom/themes/spaceship-prompt ] || [ -h ~/.oh-my-zsh/custom/themes/spaceship-prompt ]; then
+  rm -rf ~/.oh-my-zsh/custom/themes/spaceship-prompt
+fi
+
 git clone --depth=1 https://github.com/denysdovhan/spaceship-prompt.git ~/.oh-my-zsh/custom/themes/spaceship-prompt
+
+if [ -d ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme ] || [ -h ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme ]; then
+  rm -rf ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme
+fi
+
 ln -s ~/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme
 
 ################################################################################
@@ -421,7 +442,7 @@ fi
 ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
 
 ################################################################################
-# GPG public keys
+# GPG
 ################################################################################
 if [ -d ~/.gnupg ] || [ -h ~/.gnupg ]; then
   rm -rf ~/.gnupg

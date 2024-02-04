@@ -57,7 +57,6 @@ brew 'zsh'
 brew 'zsh-syntax-highlighting'
 
 cask '8bitdo-ultimate-software'
-cask 'aethersx2' if architecture == 'arm64'
 cask 'aldente' if ['MacBookAir2,1', 'MacBookPro9,2', 'MacBook10,1'].include?(model)
 cask 'android-studio'
 cask 'balenaetcher'

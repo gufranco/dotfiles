@@ -10,7 +10,6 @@ tap 'homebrew/bundle'
 tap 'homebrew/cask-fonts'
 tap 'homebrew/cask-versions'
 tap 'neomutt/neomutt'
-tap 'stripe/stripe-cli'
 tap 'universal-ctags/universal-ctags'
 
 brew 'ack'
@@ -20,15 +19,20 @@ brew 'awscli'
 brew 'bash'
 brew 'bat'
 brew 'ca-certificates'
+brew 'cairo' # Canvas dependency
 brew 'chruby'
 brew 'cmake'
 brew 'cocoapods'
 brew 'curl'
 brew 'fd'
 brew 'fzf'
+brew 'giflib' # Canvas dependency
 brew 'git'
 brew 'gnupg'
 brew 'java11'
+brew 'jpeg' # Canvas dependency
+brew 'libpng' # Canvas dependency
+brew 'librsvg' # Canvas dependency
 brew 'lynx'
 brew 'mas'
 brew 'neomutt'
@@ -36,6 +40,9 @@ brew 'neovim'
 brew 'node', link: true
 brew 'nvm'
 brew 'openssl'
+brew 'pango' # Canvas dependency
+brew 'pixman' # Canvas dependency
+brew 'pkg-config' # Canvas dependency
 brew 'pnpm'
 brew 'python', link: true
 brew 'reattach-to-user-namespace'

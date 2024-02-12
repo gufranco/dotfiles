@@ -19,20 +19,15 @@ brew 'awscli'
 brew 'bash'
 brew 'bat'
 brew 'ca-certificates'
-brew 'cairo' # Canvas dependency
 brew 'chruby'
 brew 'cmake'
 brew 'cocoapods'
 brew 'curl'
 brew 'fd'
 brew 'fzf'
-brew 'giflib' # Canvas dependency
 brew 'git'
 brew 'gnupg'
 brew 'java11'
-brew 'jpeg' # Canvas dependency
-brew 'libpng' # Canvas dependency
-brew 'librsvg' # Canvas dependency
 brew 'lynx'
 brew 'mas'
 brew 'neomutt'
@@ -40,9 +35,6 @@ brew 'neovim'
 brew 'node', link: true
 brew 'nvm'
 brew 'openssl'
-brew 'pango' # Canvas dependency
-brew 'pixman' # Canvas dependency
-brew 'pkg-config' # Canvas dependency
 brew 'pnpm'
 brew 'python', link: true
 brew 'reattach-to-user-namespace'
@@ -58,7 +50,6 @@ brew 'urlview'
 brew 'vim'
 brew 'vint'
 brew 'wget'
-brew 'yarn'
 brew 'zlib'
 brew 'zsh'
 brew 'zsh-syntax-highlighting'
@@ -92,7 +83,6 @@ cask 'maestral'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
-cask 'paragon-ntfs' if architecture == 'x86_64'
 cask 'parallels' if architecture == 'arm64'
 cask 'podman-desktop'
 cask 'postman'

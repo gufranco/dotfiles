@@ -24,10 +24,12 @@ brew 'cmake'
 brew 'cocoapods'
 brew 'curl'
 brew 'fd'
+brew 'ffmpegthumbnailer' # Yazi dependency
 brew 'fzf'
 brew 'git'
 brew 'gnupg'
 brew 'java11'
+brew 'jq' # Yazi dependency
 brew 'lynx'
 brew 'mas'
 brew 'neomutt'
@@ -45,11 +47,13 @@ brew 'shared-mime-info'
 brew 'shellcheck'
 brew 'telnet'
 brew 'tmux'
-brew 'universal-ctags/universal-ctags/universal-ctags', args: ['HEAD']
+brew 'unar' # Yazi dependency
+brew 'universal-ctags', args: ['HEAD']
 brew 'urlview'
 brew 'vim'
 brew 'vint'
 brew 'wget'
+brew 'yazi'
 brew 'zlib'
 brew 'zsh'
 brew 'zsh-syntax-highlighting'
@@ -95,6 +99,7 @@ cask 'tunnelblick'
 cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
+cask 'zed'
 
 mas 'Amphetamine', id: 937_984_704
 mas 'CleanMyDrive 2', id: 523_620_159

@@ -8,7 +8,6 @@ tap 'aws/tap'
 tap 'buo/cask-upgrade'
 tap 'homebrew/bundle'
 tap 'homebrew/cask-fonts'
-tap 'homebrew/cask-versions'
 tap 'neomutt/neomutt'
 tap 'universal-ctags/universal-ctags'
 
@@ -28,6 +27,7 @@ brew 'ffmpegthumbnailer' # Yazi dependency
 brew 'fzf'
 brew 'git'
 brew 'gnupg'
+brew 'golang'
 brew 'java11'
 brew 'jq' # Yazi dependency
 brew 'lynx'
@@ -53,8 +53,9 @@ brew 'urlview'
 brew 'vim'
 brew 'vint'
 brew 'wget'
-brew 'yazi'
+brew 'yazi', args: ['HEAD']
 brew 'zlib'
+brew 'zoxide' # Yazi dependency
 brew 'zsh'
 brew 'zsh-syntax-highlighting'
 

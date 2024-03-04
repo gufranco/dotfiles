@@ -551,15 +551,11 @@ ln -s ~/.dotfiles/readline/.inputrc ~/.inputrc
 ################################################################################
 # Yazi
 ################################################################################
-if [ ! -d ~/.config/yazi ] && [ ! -h ~/.config/yazi ]; then
-  mkdir -p ~/.config/yazi
+if [ -d ~/.config/yazi ] && [ -h ~/.config/yazi ]; then
+  rm -rf ~/.config/yazi
 fi
 
-if [ -d ~/.config/yazi/yazi.toml ] || [ -h ~/.config/yazi/yazi.toml ]; then
-  rm -rf ~/.config/yazi/yazi.toml
-fi
-
-ln -s ~/.dotfiles/yazi/yazi.toml ~/.config/yazi/yazi.toml
+ln -s ~/.dotfiles/yazi ~/.config/yazi
 
 ################################################################################
 # Finish

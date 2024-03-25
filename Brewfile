@@ -23,13 +23,11 @@ brew 'cmake'
 brew 'cocoapods'
 brew 'curl'
 brew 'fd'
-brew 'ffmpegthumbnailer' # Yazi dependency
 brew 'fzf'
 brew 'git'
 brew 'gnupg'
 brew 'golang'
 brew 'java11'
-brew 'jq' # Yazi dependency
 brew 'lynx'
 brew 'mas'
 brew 'neomutt'
@@ -45,17 +43,13 @@ brew 'ruby', link: true
 brew 'ruby-install'
 brew 'shared-mime-info'
 brew 'shellcheck'
-brew 'telnet'
 brew 'tmux'
-brew 'unar' # Yazi dependency
 brew 'universal-ctags', args: ['HEAD']
 brew 'urlview'
 brew 'vim'
 brew 'vint'
 brew 'wget'
-brew 'yazi', args: ['HEAD']
 brew 'zlib'
-brew 'zoxide' # Yazi dependency
 brew 'zsh'
 brew 'zsh-syntax-highlighting'
 
@@ -63,6 +57,7 @@ cask '8bitdo-ultimate-software'
 cask 'aldente' if ['MacBookAir2,1', 'MacBookPro9,2', 'MacBook10,1'].include?(model)
 cask 'android-studio'
 cask 'balenaetcher'
+cask 'brave-browser'
 cask 'burn'
 cask 'coconutbattery'
 cask 'cyberduck'

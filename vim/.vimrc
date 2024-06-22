@@ -36,11 +36,13 @@ Plug 'itchyny/lightline.vim'
 Plug 'jszakmeister/vim-togglecursor'
 Plug 'maximbaz/lightline-ale'
 Plug 'mhinz/vim-startify'
+Plug 'myusuf3/numbers.vim'
 Plug 'RRethy/vim-illuminate'
 Plug 'ryanoasis/vim-devicons'
 Plug 'simeji/winresizer', { 'on': 'WinResizerStartResize' }
 Plug 'thaerkh/vim-indentguides'
 Plug 'vim-scripts/CursorLineCurrentWindow'
+Plug 'vim-scripts/ZoomWin', { 'on': 'ZoomWin' }
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Languages support
@@ -66,6 +68,13 @@ Plug 'sickill/vim-pasta'
 Plug 'mg979/vim-visual-multi', { 'branch': 'master' }
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-surround'
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Clipboard
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Plug 'svermeulen/vim-easyclip'
+Plug 'Shougo/denite.nvim'
+Plug 'Shougo/neoyank.vim'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Helpers
@@ -96,9 +105,6 @@ set mouse=
 " Set update interval
 set updatetime=100
 
-" Set timeout
-set timeoutlen=500
-
 " No annoying sound on errors
 set noerrorbells
 set novisualbell
@@ -124,6 +130,9 @@ set fileformats=unix,dos,mac
 if has('clipboard')
   set clipboard^=unnamed,unnamedplus
 endif
+
+" Unset the last search pattern register by hitting return
+nnoremap <CR> :nohlsearch<CR><CR>
 
 " Disable modelines
 set nomodeline
@@ -163,8 +172,6 @@ nmap <Leader>v :edit $MYVIMRC<CR>
 " Theme / GUI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 try
-  set termguicolors
-
   colorscheme gruvbox
 catch
   colorscheme desert

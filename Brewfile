@@ -90,8 +90,8 @@ cask 'vlc'
 mas 'Amphetamine', id: 937_984_704
 mas 'CleanMyDrive 2', id: 523_620_159
 mas 'Magnet', id: 441_258_766
-mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64'
-mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64'
-mas 'Resident Evil Village', id: 1_640_627_334 if architecture == 'arm64'
-mas 'Stray', id: 6_451_498_949 if architecture == 'arm64'
+# mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64'
+# mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64'
+# mas 'Resident Evil Village', id: 1_640_627_334 if architecture == 'arm64'
+# mas 'Stray', id: 6_451_498_949 if architecture == 'arm64'
 mas 'Xcode', id: 497_799_835

@@ -282,6 +282,13 @@ case "$(uname)" in
     ;;
   "Darwin")
     ############################################################################
+    # Rosetta 2
+    ############################################################################
+    if [ "$(uname -m)" = "arm64" ] && ! /usr/bin/pgrep oahd >/dev/null; then
+      /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+    fi
+
+    ############################################################################
     # Homebrew
     ############################################################################
     if [ ! -x "$(command -v brew)" ]; then
@@ -329,7 +336,7 @@ case "$(uname)" in
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    brew bundle --file ~/.dotfiles/Brewfile
+    brew bundle --file ~/.dotfiles/Brewfile --no-lock
 
     ############################################################################
     # Bash
@@ -562,8 +569,8 @@ case "$(uname)" in
     # Clean the mess
     brew cleanup -s
 
-    # Enable TRIM for MacBookPro9,2 and MacBookAir2,1
-    if [ "$(sysctl -n hw.model)" = "MacBookPro9,2" ] || [ "$(sysctl -n hw.model)" = "MacBookAir2,1" ]; then
+    # Enable TRIM
+    if [ "$(system_profiler SPSerialATADataType | grep 'TRIM Support' | awk '{print $3}')" = "Yes" ]; then
       yes | sudo trimforce enable
     fi
 

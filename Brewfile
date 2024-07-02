@@ -3,6 +3,7 @@
 architecture = `uname -m`.strip
 cpu_model = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
+serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
 
 tap 'aws/tap'
 tap 'buo/cask-upgrade'
@@ -55,13 +56,13 @@ brew 'zsh-syntax-highlighting'
 
 cask 'aldente' if architecture == 'x86_64'
 cask 'android-studio'
-cask 'balenaetcher'
 cask 'coconutbattery'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'discord'
-cask 'displaylink' if /\AApple M[1-3]\z/.match?(model)
-cask 'docker'
+cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu_model)
+cask 'docker' if serial != 'J6WCV57T0W'
+cask 'rancher' if serial == 'J6WCV57T0W'
 cask 'firefox'
 cask 'flixtools'
 cask 'font-hack-nerd-font'
@@ -76,7 +77,7 @@ cask 'microsoft-teams'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
-cask 'parallels' if architecture == 'arm64'
+cask 'parallels' if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?('serial')
 cask 'postman'
 cask 'shottr'
 cask 'slack'
@@ -87,11 +88,11 @@ cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
 
+mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?('serial')
+mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?('serial')
+mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?('serial')
+mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?('serial')
 mas 'Amphetamine', id: 937_984_704
 mas 'CleanMyDrive 2', id: 523_620_159
 mas 'Magnet', id: 441_258_766
-# mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64'
-# mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64'
-# mas 'Resident Evil Village', id: 1_640_627_334 if architecture == 'arm64'
-# mas 'Stray', id: 6_451_498_949 if architecture == 'arm64'
 mas 'Xcode', id: 497_799_835

@@ -98,3 +98,12 @@ function f5() {
 
   cd "$CURRENT_DIR" || exit 1
 }
+
+################################################################################
+# Shhhh... :D
+################################################################################
+function prepare_albums() {
+  find . -type f -name "*.flac" -exec bash -c 'for i; do echo "$i"; ffmpeg -i "$i" -map 0:a -c:a alac -y "${i%.flac}.m4a" && rm -f "$i"; done' bash {} +
+  find . -type f ! -name "*.m4a" -exec rm -f {} +
+  find . -type d -empty -delete
+}

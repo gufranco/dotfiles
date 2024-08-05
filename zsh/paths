@@ -49,5 +49,10 @@ case "$(uname)" in
     export ANDROID_HOME="$HOME/Library/Android/sdk"
     export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$(brew --prefix)/opt/openjdk@11/bin:$PATH"
 
+    # Rancher
+    if [ -d "$HOME/.rd/bin" ]; then
+      export PATH="$HOME/.rd/bin:$PATH"
+    fi
+
     ;;
 esac

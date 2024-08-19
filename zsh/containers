@@ -1,110 +1,93 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# MongoDB
+# Define the platform docker should use
 ################################################################################
-function mongodb-init() {
-  mkdir -p ~/Docker/MongoDB
+function get_platform() {
+  case "$(uname -m)" in
+    "arm64")
+      echo "linux/arm64"
+
+      ;;
+    "x86_64")
+      echo "linux/amd64"
+
+      ;;
+  esac
+}
+
+################################################################################
+# Mongo
+################################################################################
+function mongo-init() {
+  mkdir -p ~/Docker/Mongo
 
   docker run \
+    --platform "$(get_platform)" \
     --detach \
-    --hostname mongodb \
-    --name mongodb \
+    --hostname mongo \
+    --name mongo \
     --restart unless-stopped \
-    --env "MONGO_INITDB_ROOT_USERNAME=root" \
-    --env "MONGO_INITDB_ROOT_PASSWORD=root" \
-    --mount type=bind,source="$HOME"/Docker/MongoDB,target=/external \
+    --env "MONGO_INITDB_ROOT_USERNAME=mongo" \
+    --env "MONGO_INITDB_ROOT_PASSWORD=mongo" \
+    --mount type=bind,source="$HOME"/Docker/Mongo,target=/external \
     --publish 127.0.0.1:27017:27017 \
-    mongo:4
+    mongo:7
 }
 
-function mongodb-start() {
-  docker run mongodb
+function mongo-start() {
+  docker run mongo
 }
 
-function mongodb-stop() {
-  docker stop mongodb
+function mongo-stop() {
+  docker stop mongo
 }
 
-function mongodb-purge() {
-  mongodb-stop
-  docker rm mongodb
-  rm -rf ~/Docker/MongoDB
+function mongo-purge() {
+  mongo-stop
+  docker rm mongo
+  rm -rf ~/Docker/Mongo
 }
 
-function mongodb-terminal() {
-  docker exec -it mongodb /bin/bash
+function mongo-terminal() {
+  docker exec -it mongo /bin/bash
 }
 
 ################################################################################
-# MariaDB
+# Postgres
 ################################################################################
-function mariadb-init() {
-  mkdir -p ~/Docker/MariaDB
+function postgres-init() {
+  mkdir -p ~/Docker/Postgres
 
   docker run \
+    --platform "$(get_platform)" \
     --detach \
-    --hostname mariadb \
-    --name mariadb \
+    --hostname postgres \
+    --name postgres \
     --restart unless-stopped \
-    --env "MARIADB_ROOT_PASSWORD=root" \
-    --mount type=bind,source="$HOME"/Docker/MariaDB,target=/external \
-    --publish 127.0.0.1:3306:3306 \
-    mariadb:10
-}
-
-function mariadb-start() {
-  docker run mariadb
-}
-
-function mariadb-stop() {
-  docker stop mariadb
-}
-
-function mariadb-purge() {
-  mariadb-stop
-  docker rm mariadb
-  rm -rf ~/Docker/MariaDB
-}
-
-function mariadb-terminal() {
-  docker exec -it mariadb /bin/bash
-}
-
-################################################################################
-# PostgreSQL
-################################################################################
-function postgresql-init() {
-  mkdir -p ~/Docker/PostgreSQL
-
-  docker run \
-    --detach \
-    --hostname postgresql \
-    --name postgresql \
-    --restart unless-stopped \
-    --env "POSTGRES_USER=root" \
-    --env "POSTGRES_PASSWORD=root" \
-    --mount type=bind,source="$HOME"/Docker/PostgreSQL,target=/external \
+    --env "POSTGRES_USER=postgres" \
+    --env "POSTGRES_PASSWORD=postgres" \
+    --mount type=bind,source="$HOME"/Docker/Postgres,target=/external \
     --publish 127.0.0.1:5432:5432 \
-    postgres:14-alpine
+    postgres:15-alpine
 }
 
-function postgresql-start() {
-  docker run postgresql
+function postgres-start() {
+  docker run postgres
 }
 
-function postgresql-stop() {
-  docker stop postgresql
+function postgres-stop() {
+  docker stop postgres
 }
 
-function postgresql-purge() {
-  postgresql-stop
-  docker rm postgresql
-  rm -rf ~/Docker/PostgreSQL
+function postgres-purge() {
+  postgres-stop
+  docker rm postgres
+  rm -rf ~/Docker/Postgres
 }
 
-function postgresql-terminal() {
-  docker exec -it postgresql /bin/sh
+function postgres-terminal() {
+  docker exec -it postgres /bin/sh
 }
 
 ################################################################################
@@ -114,6 +97,7 @@ function redis-init() {
   mkdir -p ~/Docker/Redis
 
   docker run \
+    --platform "$(get_platform)" \
     --detach \
     --hostname redis \
     --name redis \

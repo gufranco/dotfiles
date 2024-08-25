@@ -55,6 +55,9 @@
 [help]
   autocorrect = 1
 
+[fetch]
+  prune = true
+
 [alias]
   st = status -sb
   fork = checkout -b

@@ -81,7 +81,7 @@ cask 'maestral'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
-cask 'openlens'
+cask 'openlens' if serial == 'J6WCV57T0W'
 cask 'parallels' if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
 cask 'postman'
 cask 'rancher' if serial == 'J6WCV57T0W'
@@ -93,7 +93,6 @@ cask 'tunnelblick'
 cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
-cask 'wezterm'
 
 mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
 mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)

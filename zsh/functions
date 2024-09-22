@@ -29,6 +29,13 @@ function f5() {
   # Ask for the root password upfront
   sudo -v
 
+  # Keep-alive
+  while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+  # Store the background process PID
+  SUDO_PID=$!
+
+  # Store the current folder
   CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
   # Dotfiles
@@ -37,37 +44,58 @@ function f5() {
   git submodule update --recursive --remote
 
   # Vim
-  vim +PlugUpgrade +PlugUpdate +CocUpdate +qall
+  vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall
+  for dir in ~/.vim/plugged/*/; do
+    if [ -d "$dir/.git" ]; then
+      git -C "$dir" fetch --prune
+      git -C "$dir" gc --aggressive --prune=now
+    fi
+  done
+
 
   # Oh-my-zsh
   cd ~/.oh-my-zsh || exit 1
   git checkout master
   git pull
+  git fetch --prune
+  git gc --aggressive --prune=now
+
 
   # Spaceship theme
   cd ~/.oh-my-zsh/custom/themes/spaceship-prompt || exit 1
   git checkout master
   git pull
+  git fetch --prune
+  git gc --aggressive --prune=now
+
 
 
   # Zsh auto suggestions
   cd ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions || exit 1
   git checkout master
   git pull
+  git fetch --prune
+  git gc --aggressive --prune=now
+
 
   # Zsh syntax highlighting
   cd ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting || exit 1
   git checkout master
   git pull
+  git fetch --prune
+  git gc --aggressive --prune=now
+
 
   # You should use
   cd ~/.oh-my-zsh/custom/plugins/you-should-use || exit 1
   git checkout master
   git pull
+  git fetch --prune
+  git gc --aggressive --prune=now
+
 
   case "$(uname)" in
     "Linux")
-      sudo nala fetch
       sudo apt update -y
       sudo apt dist-upgrade -y
       sudo apt autoremove -y
@@ -93,17 +121,53 @@ function f5() {
       ;;
   esac
 
+  # Move back to the original folder
+  cd "$CURRENT_DIR" || exit 1
+
+  # Terminate the process that keeps the sudo session active
+  kill "$SUDO_PID"
+
+  # Expire the sudo session immediately after the function finishes
+  sudo -k
+
   # Reload shell
   source ~/.zshrc
-
-  cd "$CURRENT_DIR" || exit 1
 }
 
 ################################################################################
-# Shhhh... :D
+# Convert flac to m4a
 ################################################################################
 function prepare_albums() {
   find . -type f -name "*.flac" -exec bash -c 'for i; do echo "$i"; ffmpeg -i "$i" -map 0:a -c:a alac -y "${i%.flac}.m4a" && rm -f "$i"; done' bash {} +
   find . -type f ! -name "*.m4a" -exec rm -f {} +
   find . -type d -empty -delete
+}
+
+################################################################################
+# Clean files created by macOS
+################################################################################
+function clean_apple_files() {
+  find . -name "._*" -exec rm -f {} \;
+  find . -name ".DS_Store" -exec rm -f {} \;
+  find . -name ".Trashes" -exec rm -rf {} \;
+  find . -name "._.Trashes" -exec rm -f {} \;
+  find . -name ".Spotlight-V100" -exec rm -rf {} \;
+  find . -name ".fseventsd" -exec rm -rf {} \;
+  find . -name ".TemporaryItems" -exec rm -rf {} \;
+  find . -name ".VolumeIcon.icns" -exec rm -f {} \;
+  find . -name "Icon?" -exec rm -f {} \;
+  find . -name ".com.apple.timemachine.supported" -exec rm -f {} \;
+  find . -name ".AppleDouble" -exec rm -rf {} \;
+  find . -name ".AppleDB" -exec rm -rf {} \;
+  find . -name ".AppleDesktop" -exec rm -rf {} \;
+  find . -name "TheVolumeSettingsFolder" -exec rm -rf {} \;
+  find . -name ".AppleSwap" -exec rm -rf {} \;
+  find . -name "Desktop Folder" -exec rm -rf {} \;
+  find . -name "Network Trash Folder" -exec rm -rf {} \;
+  find . -name ".DocumentRevisions-V100" -exec rm -rf {} \;
+  find . -name ".PKInstallSandboxManager" -exec rm -rf {} \;
+  find . -name ".PKInstallSandboxManager-SystemSoftware" -exec rm -rf {} \;
+  find . -name ".Spotlight-*" -exec rm -rf {} \;
+  find . -name ".apdisk" -exec rm -f {} \;
+  find . -name "._.TemporaryItems" -exec rm -f {} \;
 }

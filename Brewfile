@@ -81,6 +81,7 @@ cask 'maestral'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
+cask 'opencore-patcher' if ['C02TW09THH29'].include?(serial)
 cask 'openlens' if serial == 'J6WCV57T0W'
 cask 'parallels' if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
 cask 'postman'

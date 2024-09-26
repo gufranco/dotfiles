@@ -5,12 +5,13 @@ cpu_model = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
 
-tap 'UltimateNova1203/maxcso'
 tap 'aws/tap'
 tap 'buo/cask-upgrade'
 tap 'homebrew/bundle'
 tap 'homebrew/services'
 tap 'neomutt/neomutt'
+tap 'oven-sh/bun'
+tap 'UltimateNova1203/maxcso'
 tap 'universal-ctags/universal-ctags'
 
 brew 'ack'
@@ -19,6 +20,7 @@ brew 'asciinema'
 brew 'awscli'
 brew 'bash'
 brew 'bat'
+brew 'bun'
 brew 'ca-certificates'
 brew 'chruby'
 brew 'cmake'
@@ -45,20 +47,20 @@ brew 'pnpm'
 brew 'python', link: true
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
-brew 'ruby', link: true
 brew 'ruby-install'
+brew 'ruby', link: true
 brew 'shared-mime-info'
 brew 'shellcheck'
 brew 'snyk-cli'
 brew 'tmux'
-brew 'universal-ctags', args: ['HEAD']
+brew 'universal-ctags'
 brew 'urlview'
 brew 'vim'
 brew 'vint'
 brew 'wget'
 brew 'zlib'
-brew 'zsh'
 brew 'zsh-syntax-highlighting'
+brew 'zsh'
 
 cask 'aldente' if architecture == 'x86_64'
 cask 'android-studio'
@@ -95,11 +97,11 @@ cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
 
+mas 'Amphetamine', id: 937_984_704
+mas 'CleanMyDrive 2', id: 523_620_159
+mas 'Magnet', id: 441_258_766
 mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
 mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
 mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
 mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
-mas 'Amphetamine', id: 937_984_704
-mas 'CleanMyDrive 2', id: 523_620_159
-mas 'Magnet', id: 441_258_766
 mas 'Xcode', id: 497_799_835

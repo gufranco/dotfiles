@@ -29,19 +29,11 @@ function f5() {
   # Ask for the root password upfront
   sudo -v
 
-  # Keep-alive
-  while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
-
-  # Store the background process PID
-  SUDO_PID=$!
-
-  # Store the current folder
-  CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
-
   # Dotfiles
-  cd ~/.dotfiles || exit 1
-  git pull-sub
-  git submodule update --recursive --remote
+  git -C "$HOME/.dotfiles" pull-sub
+  git -C "$HOME/.dotfiles" submodule update --recursive --remote
+  git -C "$HOME/.dotfiles" fetch --prune
+  git -C "$HOME/.dotfiles" gc --aggressive --prune=now
 
   # Vim
   vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall
@@ -52,47 +44,35 @@ function f5() {
     fi
   done
 
-
   # Oh-my-zsh
-  cd ~/.oh-my-zsh || exit 1
-  git checkout master
-  git pull
-  git fetch --prune
-  git gc --aggressive --prune=now
-
+  git -C "$HOME/.oh-my-zsh" checkout master
+  git -C "$HOME/.oh-my-zsh" pull
+  git -C "$HOME/.oh-my-zsh" fetch --prune
+  git -C "$HOME/.oh-my-zsh" gc --aggressive --prune=now
 
   # Spaceship theme
-  cd ~/.oh-my-zsh/custom/themes/spaceship-prompt || exit 1
-  git checkout master
-  git pull
-  git fetch --prune
-  git gc --aggressive --prune=now
-
-
+  git -C "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" checkout master
+  git -C "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" pull
+  git -C "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" fetch --prune
+  git -C "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" gc --aggressive --prune=now
 
   # Zsh auto suggestions
-  cd ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions || exit 1
-  git checkout master
-  git pull
-  git fetch --prune
-  git gc --aggressive --prune=now
-
+  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" checkout master
+  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" pull
+  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" fetch --prune
+  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" gc --aggressive --prune=now
 
   # Zsh syntax highlighting
-  cd ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting || exit 1
-  git checkout master
-  git pull
-  git fetch --prune
-  git gc --aggressive --prune=now
-
+  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" checkout master
+  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" pull
+  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" fetch --prune
+  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" gc --aggressive --prune=now
 
   # You should use
-  cd ~/.oh-my-zsh/custom/plugins/you-should-use || exit 1
-  git checkout master
-  git pull
-  git fetch --prune
-  git gc --aggressive --prune=now
-
+  git -C "$HOME/.oh-my-zsh/custom/plugins/you-should-use" checkout master
+  git -C "$HOME/.oh-my-zsh/custom/plugins/you-should-use" pull
+  git -C "$HOME/.oh-my-zsh/custom/plugins/you-should-use" fetch --prune
+  git -C "$HOME/.oh-my-zsh/custom/plugins/you-should-use" gc --aggressive --prune=now
 
   case "$(uname)" in
     "Linux")
@@ -104,8 +84,7 @@ function f5() {
       ;;
     "Darwin")
       brew update
-      brew bundle --file ~/.dotfiles/Brewfile --force cleanup --no-lock
-      brew bundle --file ~/.dotfiles/Brewfile --no-lock
+      brew bundle --file "$HOME/.dotfiles/Brewfile" --force cleanup --no-lock
       brew upgrade
       brew cu --all --yes --cleanup
       brew cleanup -s
@@ -121,17 +100,12 @@ function f5() {
       ;;
   esac
 
-  # Move back to the original folder
-  cd "$CURRENT_DIR" || exit 1
-
-  # Terminate the process that keeps the sudo session active
-  kill "$SUDO_PID"
-
   # Expire the sudo session immediately after the function finishes
   sudo -k
 
-  # Reload shell
-  source ~/.zshrc
+  # Reload zsh settings
+  # shellcheck disable=SC1091
+  source "$HOME/.zshrc"
 }
 
 ################################################################################

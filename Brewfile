@@ -37,7 +37,7 @@ brew 'java11'
 brew 'kubectl'
 brew 'lynx'
 brew 'mas'
-brew 'maxcso'
+# brew 'maxcso'
 brew 'neomutt'
 brew 'neovim'
 brew 'node', link: true

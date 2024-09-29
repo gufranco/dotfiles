@@ -37,7 +37,7 @@ function f5() {
 
   # Vim
   vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall
-  for dir in ~/.vim/plugged/*/; do
+  for dir in "$HOME"/.vim/plugged/*/; do
     if [ -d "$dir/.git" ]; then
       git -C "$dir" fetch --prune
       git -C "$dir" gc --aggressive --prune=now

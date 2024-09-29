@@ -20,7 +20,7 @@ function get_platform() {
 # Mongo
 ################################################################################
 function mongo-init() {
-  mkdir -p ~/Docker/Mongo
+  mkdir -p "$HOME/Docker/Mongo"
 
   docker run \
     --platform "$(get_platform)" \
@@ -46,7 +46,7 @@ function mongo-stop() {
 function mongo-purge() {
   mongo-stop
   docker rm mongo
-  rm -rf ~/Docker/Mongo
+  rm -rf "$HOME/Docker/Mongo"
 }
 
 function mongo-terminal() {
@@ -57,7 +57,7 @@ function mongo-terminal() {
 # Postgres
 ################################################################################
 function postgres-init() {
-  mkdir -p ~/Docker/Postgres
+  mkdir -p "$HOME/Docker/Postgres"
 
   docker run \
     --platform "$(get_platform)" \
@@ -83,7 +83,7 @@ function postgres-stop() {
 function postgres-purge() {
   postgres-stop
   docker rm postgres
-  rm -rf ~/Docker/Postgres
+  rm -rf "$HOME/Docker/Postgres"
 }
 
 function postgres-terminal() {
@@ -94,7 +94,7 @@ function postgres-terminal() {
 # Redis
 ################################################################################
 function redis-init() {
-  mkdir -p ~/Docker/Redis
+  mkdir -p "$HOME/Docker/Redis"
 
   docker run \
     --platform "$(get_platform)" \
@@ -118,7 +118,7 @@ function redis-stop() {
 function redis-purge() {
   redis-stop
   docker rm redis
-  rm -rf ~/Docker/Redis
+  rm -rf "$HOME/Docker/Redis"
 }
 
 function redis-terminal() {

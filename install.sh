@@ -336,7 +336,7 @@ case "$(uname)" in
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    brew bundle --file ~/.dotfiles/Brewfile --no-lock
+    brew bundle --file "$HOME/.dotfiles/Brewfile" --force cleanup --no-lock
 
     ############################################################################
     # Bash
@@ -350,8 +350,8 @@ case "$(uname)" in
     ############################################################################
     if ! grep -q "$(brew --prefix)/bin/zsh" /etc/shells; then
       echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
-      chsh -s "$(brew --prefix)/bin/zsh"
     fi
+    # chsh -s "$(brew --prefix)/bin/zsh"
 
     ;;
 esac

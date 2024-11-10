@@ -351,7 +351,7 @@ case "$(uname)" in
     if ! grep -q "$(brew --prefix)/bin/zsh" /etc/shells; then
       echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
     fi
-    # chsh -s "$(brew --prefix)/bin/zsh"
+    chsh -s "$(brew --prefix)/bin/zsh"
 
     ;;
 esac

@@ -1,9 +1,16 @@
 # frozen_string_literal: true
 
+# System
 architecture = `uname -m`.strip
 cpu_model = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
+
+# Serials
+macbook_pro_D_serial = 'J6WCV57T0W'
+macbook_pro_B_serial = 'LFHY7WDM00'
+macbook_12_serial = 'C02TW09THH29'
+macbook_pro_13_serial = ''
 
 tap 'UltimateNova1203/maxcso'
 tap 'universal-ctags/universal-ctags'
@@ -44,6 +51,7 @@ brew 'node', link: true
 brew 'nvm'
 brew 'openssl'
 brew 'pnpm'
+brew 'postgresql@15' if serial == macbook_pro_D_serial
 brew 'python', link: true
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
@@ -69,7 +77,7 @@ cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'discord'
 cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu_model)
-cask 'docker' if serial != 'J6WCV57T0W'
+cask 'docker' if serial != macbook_pro_D_serial
 cask 'firefox'
 cask 'flixtools'
 cask 'font-hack-nerd-font'
@@ -83,11 +91,11 @@ cask 'maestral'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
-cask 'opencore-patcher' if ['C02TW09THH29'].include?(serial)
-cask 'openlens' if serial == 'J6WCV57T0W'
-cask 'parallels' if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
+cask 'opencore-patcher' if [macbook_12_serial, macbook_pro_13_serial].include?(serial)
+cask 'openlens' if serial == macbook_pro_D_serial
+cask 'parallels' if architecture == 'arm64' && ![macbook_pro_D_serial, macbook_pro_B_serial].include?(serial)
 cask 'postman'
-cask 'rancher' if serial == 'J6WCV57T0W'
+cask 'rancher' if serial == macbook_pro_D_serial
 cask 'shottr'
 cask 'slack'
 cask 'spotify'
@@ -100,8 +108,8 @@ cask 'vlc'
 mas 'Amphetamine', id: 937_984_704
 mas 'CleanMyDrive 2', id: 523_620_159
 mas 'Magnet', id: 441_258_766
-mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
-mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
-mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
-mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && !['J6WCV57T0W', 'LFHY7WDM00'].include?(serial)
+mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && ![macbook_pro_D_serial, macbook_pro_B_serial].include?(serial)
+mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && ![macbook_pro_D_serial, macbook_pro_B_serial].include?(serial)
+mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && ![macbook_pro_D_serial, macbook_pro_B_serial].include?(serial)
+mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && ![macbook_pro_D_serial, macbook_pro_B_serial].include?(serial)
 mas 'Xcode', id: 497_799_835

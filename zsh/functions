@@ -46,33 +46,41 @@ function f5() {
 
   # Oh-my-zsh
   git -C "$HOME/.oh-my-zsh" checkout master
+  git -C "$HOME/.oh-my-zsh" stash
   git -C "$HOME/.oh-my-zsh" pull
+  git -C "$HOME/.oh-my-zsh" stash apply
   git -C "$HOME/.oh-my-zsh" fetch --prune
   git -C "$HOME/.oh-my-zsh" gc --aggressive --prune=now
 
-  # Spaceship theme
-  git -C "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" checkout master
-  git -C "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" pull
-  git -C "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" fetch --prune
-  git -C "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" gc --aggressive --prune=now
+  # Oh-my-zsh themes
+  for dir in "$HOME/.oh-my-zsh/custom/themes/"*/; do
+    git -C "$dir" checkout master
+    git -C "$dir" stash
+    git -C "$dir" pull
+    git -C "$dir" stash apply
+    git -C "$dir" fetch --prune
+    git -C "$dir" gc --aggressive --prune=now
+  done
 
-  # Zsh auto suggestions
-  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" checkout master
-  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" pull
-  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" fetch --prune
-  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" gc --aggressive --prune=now
+  # Oh-my-zsh plugins
+  for dir in "$HOME/.oh-my-zsh/custom/plugins/"*/; do
+    git -C "$dir" checkout master
+    git -C "$dir" stash
+    git -C "$dir" pull
+    git -C "$dir" stash apply
+    git -C "$dir" fetch --prune
+    git -C "$dir" gc --aggressive --prune=now
+  done
 
-  # Zsh syntax highlighting
-  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" checkout master
-  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" pull
-  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" fetch --prune
-  git -C "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" gc --aggressive --prune=now
-
-  # You should use
-  git -C "$HOME/.oh-my-zsh/custom/plugins/you-should-use" checkout master
-  git -C "$HOME/.oh-my-zsh/custom/plugins/you-should-use" pull
-  git -C "$HOME/.oh-my-zsh/custom/plugins/you-should-use" fetch --prune
-  git -C "$HOME/.oh-my-zsh/custom/plugins/you-should-use" gc --aggressive --prune=now
+  # Tmux plugins
+  for dir in "$HOME/.tmux/plugins/"*/; do
+    git -C "$dir" checkout master
+    git -C "$dir" stash
+    git -C "$dir" pull
+    git -C "$dir" stash apply
+    git -C "$dir" fetch --prune
+    git -C "$dir" gc --aggressive --prune=now
+  done
 
   case "$(uname)" in
     "Linux")

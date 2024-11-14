@@ -53,10 +53,12 @@ brew 'openssl'
 brew 'pnpm'
 brew 'postgresql@15' if serial == macbook_pro_D_serial
 brew 'python', link: true
+brew 'rclone'
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
-brew 'ruby-install'
+brew 'rsync'
 brew 'ruby', link: true
+brew 'ruby-install'
 brew 'shared-mime-info'
 brew 'shellcheck'
 brew 'snyk-cli'
@@ -67,8 +69,8 @@ brew 'vim'
 brew 'vint'
 brew 'wget'
 brew 'zlib'
-brew 'zsh-syntax-highlighting'
 brew 'zsh'
+brew 'zsh-syntax-highlighting'
 
 cask 'aldente' if architecture == 'x86_64'
 cask 'android-studio'

@@ -50,6 +50,7 @@ brew 'neovim'
 brew 'node', link: true
 brew 'nvm'
 brew 'openssl'
+brew 'p7zip'
 brew 'pnpm'
 brew 'postgresql@15' if serial == macbook_pro_D_serial
 brew 'python', link: true

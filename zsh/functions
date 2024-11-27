@@ -153,3 +153,27 @@ function clean_apple_files() {
   find . -name ".apdisk" -exec rm -f {} \;
   find . -name "._.TemporaryItems" -exec rm -f {} \;
 }
+
+################################################################################
+# Decompress files
+################################################################################
+function decompress_files() {
+  local extensions=("*.zip" "*.7z" "*.rar" "*.tar" "*.tar.gz" "*.tar.bz2" "*.tar.xz")
+
+  for ext in "${extensions[@]}"; do
+    for archive_file in $ext; do
+      if [ -f "$archive_file" ]; then
+        folder_name="${archive_file%.*}"
+
+        rm -rf "$folder_name"
+        mkdir -p "$folder_name"
+
+        7z x "$archive_file" -o"$folder_name" -mmt
+
+        if [ $? -eq 0 ]; then
+          rm "$archive_file"
+        fi
+      fi
+    done
+  done
+}

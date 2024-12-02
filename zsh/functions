@@ -45,7 +45,8 @@ function f5() {
   done
 
   # Oh-my-zsh
-  git -C "$HOME/.oh-my-zsh" checkout master
+  git -C "$HOME/.oh-my-zsh" checkout "$(git -C "$HOME/.oh-my-zsh" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
+  git -C "$HOME/.oh-my-zsh" stash clear
   git -C "$HOME/.oh-my-zsh" stash
   git -C "$HOME/.oh-my-zsh" pull
   git -C "$HOME/.oh-my-zsh" stash apply
@@ -54,7 +55,8 @@ function f5() {
 
   # Oh-my-zsh themes
   for dir in "$HOME/.oh-my-zsh/custom/themes/"*/; do
-    git -C "$dir" checkout master
+    git -C "$dir" checkout "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
+    git -C "$dir" stash clear
     git -C "$dir" stash
     git -C "$dir" pull
     git -C "$dir" stash apply
@@ -64,7 +66,8 @@ function f5() {
 
   # Oh-my-zsh plugins
   for dir in "$HOME/.oh-my-zsh/custom/plugins/"*/; do
-    git -C "$dir" checkout master
+    git -C "$dir" checkout "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
+    git -C "$dir" stash clear
     git -C "$dir" stash
     git -C "$dir" pull
     git -C "$dir" stash apply
@@ -74,7 +77,12 @@ function f5() {
 
   # Tmux plugins
   for dir in "$HOME/.tmux/plugins/"*/; do
-    git -C "$dir" checkout master
+    if [[ "$(basename "$dir")" == "tpm" ]]; then
+      continue
+    fi
+
+    git -C "$dir" checkout "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
+    git -C "$dir" stash clear
     git -C "$dir" stash
     git -C "$dir" pull
     git -C "$dir" stash apply

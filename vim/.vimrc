@@ -30,7 +30,7 @@ Plug 'tmux-plugins/vim-tmux'
 " UI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug 'artnez/vim-wipeout', { 'on': 'Wipeout' }
-Plug 'morhetz/gruvbox'
+Plug 'ghifarit53/tokyonight-vim'
 Plug 'inside/vim-search-pulse'
 Plug 'itchyny/lightline.vim'
 Plug 'jszakmeister/vim-togglecursor'
@@ -172,7 +172,10 @@ nmap <Leader>v :edit $MYVIMRC<CR>
 " Theme / GUI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 try
-  colorscheme gruvbox
+  let g:tokyonight_style = 'night'
+  let g:tokyonight_enable_italic = 1
+
+  colorscheme tokyonight
 catch
   colorscheme desert
 endtry
@@ -215,7 +218,7 @@ let g:NERDTreeIgnore = [
 " Lightline
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-  \ 'colorscheme': 'gruvbox',
+  \ 'colorscheme': 'tokyonight',
   \ 'active': {
   \   'left': [
   \     [ 'mode', 'paste' ],
@@ -225,17 +228,17 @@ let g:lightline = {
   \     [ 'linter_checking', 'linter_errors', 'linter_warnings', 'linter_ok' ]
   \   ]
   \ },
-	\ 'component': {
-	\   'lineinfo': ' %3l:%-2v',
-	\ },
+  \ 'component': {
+  \   'lineinfo': ' %3l:%-2v',
+  \ },
   \ 'component_function': {
   \   'gitbranch': 'fugitive#head',
   \ },
   \ 'separator': {
-	\   'left': '', 'right': ''
+  \   'left': '', 'right': ''
   \ },
   \ 'subseparator': {
-	\   'left': '', 'right': ''
+  \   'left': '', 'right': ''
   \ },
   \ 'component_expand': {
   \   'linter_checking': 'lightline#ale#checking',

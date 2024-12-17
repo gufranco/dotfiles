@@ -30,6 +30,14 @@ source "$HOME/.dotfiles/zsh/containers"
 ################################################################################
 if [ -z "$TMUX" ]; then
   tmux new-session -s $$;
+
+  if [ -f "$HOME/.dotfiles/tmux/plugins/tmux-git-autofetch/git-autofetch.tmux" ]; then
+    tmux-git-autofetch() {
+        ("$HOME/.dotfiles/tmux/plugins/tmux-git-autofetch/git-autofetch.tmux" --current &)
+    }
+
+    add-zsh-hook chpwd tmux-git-autofetch
+  fi
 else
   export TERM="screen-256color"
 fi

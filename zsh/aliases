@@ -52,7 +52,10 @@ case "$(uname)" in
     command -v sha1sum > /dev/null || alias sha1sum="shasum"
 
     # Use bat as fzf previewer
-    alias fzf="fzf --preview \"bat --theme=gruvbox-dark --color=always --style=numbers --line-range=:500 {}\""
+    command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="fzf --preview 'bat --color=never --style=numbers --line-range=:500 {}'"
+
+    # Set tty-clock to hide date, show seconds, and center the clock
+    command -v tty-clock > /dev/null && alias tty-clock="tty-clock -Dcs"
 
     ;;
 esac

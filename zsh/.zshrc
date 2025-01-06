@@ -28,7 +28,7 @@ source "$HOME/.dotfiles/zsh/containers"
 ################################################################################
 # Tmux
 ################################################################################
-if [ -z "$TMUX" ]; then
+if [ -z "$TMUX" ] && [ "$TERM_PROGRAM" != "vscode" ]; then
   tmux new-session -s $$;
 else
   export TERM="screen-256color"

@@ -1,29 +1,12 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# Define the platform docker should use
-################################################################################
-function get_platform() {
-  case "$(uname -m)" in
-    "arm64")
-      echo "linux/arm64"
-
-      ;;
-    "x86_64")
-      echo "linux/amd64"
-
-      ;;
-  esac
-}
-
-################################################################################
 # Mongo
 ################################################################################
 function mongo-init() {
   mkdir -p "$HOME/Docker/Mongo"
 
   docker run \
-    --platform "$(get_platform)" \
     --detach \
     --hostname mongo \
     --name mongo \
@@ -32,7 +15,7 @@ function mongo-init() {
     --env "MONGO_INITDB_ROOT_PASSWORD=mongo" \
     --mount type=bind,source="$HOME"/Docker/Mongo,target=/external \
     --publish 127.0.0.1:27017:27017 \
-    mongo:7
+    mongo:latest
 }
 
 function mongo-start() {
@@ -60,7 +43,6 @@ function postgres-init() {
   mkdir -p "$HOME/Docker/Postgres"
 
   docker run \
-    --platform "$(get_platform)" \
     --detach \
     --hostname postgres \
     --name postgres \
@@ -69,7 +51,7 @@ function postgres-init() {
     --env "POSTGRES_PASSWORD=postgres" \
     --mount type=bind,source="$HOME"/Docker/Postgres,target=/external \
     --publish 127.0.0.1:5432:5432 \
-    postgres:15-alpine
+    postgres:alpine
 }
 
 function postgres-start() {
@@ -97,14 +79,13 @@ function redis-init() {
   mkdir -p "$HOME/Docker/Redis"
 
   docker run \
-    --platform "$(get_platform)" \
     --detach \
     --hostname redis \
     --name redis \
     --restart unless-stopped \
     --mount type=bind,source="$HOME"/Docker/Redis,target=/external \
     --publish 127.0.0.1:6379:6379 \
-    redis:7-alpine
+    redis:alpine
 }
 
 function redis-start() {
@@ -123,4 +104,72 @@ function redis-purge() {
 
 function redis-terminal() {
   docker exec -it redis /bin/sh
+}
+
+################################################################################
+# Valkey
+################################################################################
+function valkey-init() {
+  mkdir -p "$HOME/Docker/Valkey"
+
+  docker run \
+    --detach \
+    --hostname valkey \
+    --name valkey \
+    --restart unless-stopped \
+    --mount type=bind,source="$HOME"/Docker/Valkey,target=/external \
+    --publish 127.0.0.1:7000:7000 \
+    valkey:alpine
+}
+
+function valkey-start() {
+  docker run valkey
+}
+
+function valkey-stop() {
+  docker stop valkey
+}
+
+function valkey-purge() {
+  valkey-stop
+  docker rm valkey
+  rm -rf "$HOME/Docker/Valkey"
+}
+
+function valkey-terminal() {
+  docker exec -it valkey /bin/sh
+}
+
+################################################################################
+# Redict
+################################################################################
+function redict-init() {
+  mkdir -p "$HOME/Docker/Redict"
+
+  docker run \
+    --detach \
+    --hostname redict \
+    --name redict \
+    --restart unless-stopped \
+    --mount type=bind,source="$HOME"/Docker/Redict,target=/external \
+    --publish 127.0.0.1:6379:6379 \
+    registry.redict.io/redict:alpine
+}
+
+function redict-start() {
+  docker run redict
+}
+
+function redict-stop() {
+  docker stop redict
+}
+
+function redict-purge() {
+  redict-stop
+  docker rm redict
+  rm -rf "$HOME/Docker/Redict"
+}
+
+function redict-terminal() {
+  docker exec -it redict /bin/sh
 }

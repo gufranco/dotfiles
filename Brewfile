@@ -82,7 +82,6 @@ brew 'zlib'
 brew 'zsh'
 brew 'zsh-syntax-highlighting'
 
-# cask 'iterm2'
 cask 'aldente' if architecture == 'x86_64'
 cask 'android-studio'
 cask 'coconutbattery'
@@ -99,6 +98,7 @@ cask 'font-noto-sans-symbols-2'
 cask 'google-chrome'
 cask 'handbrake'
 cask 'istat-menus'
+cask 'iterm2'
 cask 'jdownloader'
 cask 'keka'
 cask 'kitty'
@@ -119,6 +119,7 @@ cask 'tunnelblick'
 cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
+cask 'zoom' if serial == macbook_pro_deel_serial
 
 mas 'Amphetamine', id: 937_984_704
 mas 'CleanMyDrive 2', id: 523_620_159

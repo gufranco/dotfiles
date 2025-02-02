@@ -9,7 +9,7 @@ serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | a
 # Serials
 macbook_pro_deel_serial = 'J6WCV57T0W'
 macbook_12_serial = 'C02TW09THH29'
-macbook_pro_13_serial = ''
+macbook_pro_13_serial = 'C02J332HDV30'
 
 tap 'UltimateNova1203/maxcso'
 tap 'universal-ctags/universal-ctags'

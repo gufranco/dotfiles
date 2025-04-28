@@ -7,7 +7,7 @@ model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
 
 # Serials
-macbook_pro_deel_serial = 'J6WCV57T0W'
+macbook_pro_work_serial = 'J6WCV57T0W'
 macbook_12_serial = 'C02TW09THH29'
 macbook_pro_13_serial = 'C02J332HDV30'
 
@@ -18,7 +18,6 @@ tap 'homebrew/bundle'
 tap 'homebrew/services'
 tap 'neomutt/neomutt'
 
-brew 'UltimateNova1203/maxcso/maxcso'
 brew 'ack'
 brew 'act'
 brew 'asciinema'
@@ -30,7 +29,7 @@ brew 'ca-certificates'
 brew 'chruby'
 brew 'cmake'
 brew 'cocoapods'
-brew 'colima' if serial != macbook_pro_deel_serial
+brew 'colima' if serial != macbook_pro_work_serial
 brew 'coreutils'
 brew 'cpufetch'
 brew 'curl'
@@ -45,6 +44,7 @@ brew 'git'
 brew 'glab'
 brew 'gnupg'
 brew 'golang'
+brew 'golangci-lint'
 brew 'gsed'
 brew 'java11'
 brew 'jesseduffield/lazydocker/lazydocker'
@@ -64,19 +64,20 @@ brew 'oven-sh/bun/bun'
 brew 'p7zip'
 brew 'pnpm'
 brew 'podman'
-brew 'postgresql@15' if serial == macbook_pro_deel_serial
+brew 'postgresql@15' if serial == macbook_pro_work_serial
 brew 'python', link: true
 brew 'rclone'
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
 brew 'rsync'
-brew 'ruby', link: true
 brew 'ruby-install'
+brew 'ruby', link: true
 brew 'shared-mime-info'
 brew 'shellcheck'
 brew 'snyk-cli'
 brew 'tmux'
 brew 'tty-clock'
+brew 'UltimateNova1203/maxcso/maxcso'
 brew 'universal-ctags'
 brew 'urlview'
 brew 'vim'
@@ -84,17 +85,18 @@ brew 'vint'
 brew 'wget'
 brew 'yazi'
 brew 'zlib'
-brew 'zsh'
 brew 'zsh-syntax-highlighting'
+brew 'zsh'
 
-cask 'aldente' if architecture == 'x86_64'
+cask 'aldente' if [macbook_12_serial, macbook_pro_13_serial].include?(serial)
 cask 'android-studio'
+cask 'cleanmymac' if serial != macbook_pro_work_serial
 cask 'coconutbattery'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'discord'
 cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu_model)
-cask 'docker' if serial != macbook_pro_deel_serial
+cask 'docker' if serial != macbook_pro_work_serial
 cask 'firefox'
 cask 'flixtools'
 cask 'font-hack-nerd-font'
@@ -113,11 +115,11 @@ cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
 cask 'opencore-patcher' if [macbook_12_serial, macbook_pro_13_serial].include?(serial)
-cask 'openlens' if serial == macbook_pro_deel_serial
-cask 'parallels' if architecture == 'arm64' && macbook_pro_deel_serial != serial
-cask 'podman-desktop' if serial != macbook_pro_deel_serial
+cask 'openlens' if serial == macbook_pro_work_serial
+cask 'parallels' if architecture == 'arm64' && serial != macbook_pro_work_serial
+cask 'podman-desktop' if serial != macbook_pro_work_serial
 cask 'postman'
-cask 'rancher' if serial == macbook_pro_deel_serial
+cask 'rancher' if serial == macbook_pro_work_serial
 cask 'shottr'
 cask 'slack'
 cask 'spotify'
@@ -126,13 +128,12 @@ cask 'tunnelblick'
 cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
-cask 'zoom' if serial == macbook_pro_deel_serial
+cask 'zoom' if serial == macbook_pro_work_serial
 
 mas 'Amphetamine', id: 937_984_704
-mas 'CleanMyDrive 2', id: 523_620_159
 mas 'Magnet', id: 441_258_766
-mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && macbook_pro_deel_serial != serial
-mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && macbook_pro_deel_serial != serial
-mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && macbook_pro_deel_serial != serial
-mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && macbook_pro_deel_serial != serial
+mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && serial != macbook_pro_work_serial
+mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && serial != macbook_pro_work_serial
+mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && serial != macbook_pro_work_serial
+mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && serial != macbook_pro_work_serial
 mas 'Xcode', id: 497_799_835

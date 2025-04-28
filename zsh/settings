@@ -15,16 +15,6 @@ case "$(uname)" in
     export HOMEBREW_NO_ANALYTICS=1
     export HOMEBREW_NO_ENV_HINTS=1
 
-    # Docker
-    if [ "$(uname -m)" = "arm64" ]; then
-      export DOCKER_DEFAULT_PLATFORM="linux/amd64"
-    fi
-
-    # Rosetta 2
-    if [ "$(uname -m)" = "arm64" ] && ! /usr/bin/pgrep oahd >/dev/null; then
-      /usr/sbin/softwareupdate --install-rosetta --agree-to-license
-    fi
-
     # Chruby
     source "$(brew --prefix)/opt/chruby/share/chruby/chruby.sh"
     source "$(brew --prefix)/opt/chruby/share/chruby/auto.sh"

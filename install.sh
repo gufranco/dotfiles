@@ -15,6 +15,7 @@ case "$(uname)" in
     ############################################################################
     # Update / upgrade
     ############################################################################
+    sudo add-apt-repository universe
     sudo apt update
     sudo apt dist-upgrade -y
 
@@ -52,12 +53,6 @@ case "$(uname)" in
       cd ~/.dotfiles || exit 1
       git remote set-url origin git@github.com:gufranco/dotfiles.git
     fi
-
-    ############################################################################
-    # Enable universe repository
-    ############################################################################
-    sudo add-apt-repository universe
-    sudo apt update
 
     ############################################################################
     # Enable exFat
@@ -107,9 +102,9 @@ case "$(uname)" in
       gcc \
       gnupg \
       make
-    sudo apt update
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg
-    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+    sudo apt update
     sudo apt install -y nodejs
 
     ############################################################################
@@ -117,7 +112,7 @@ case "$(uname)" in
     ############################################################################
     sudo add-apt-repository -y ppa:deadsnakes/ppa
     sudo apt update
-    sudo apt install -y python3.12
+    sudo apt install -y python3.14
 
     ############################################################################
     # Dropbox
@@ -127,7 +122,7 @@ case "$(uname)" in
     ############################################################################
     # Spotify
     ############################################################################
-    curl -fsSL https://download.spotify.com/debian/pubkey_7A3A762FAFD4A51F.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
+    curl -fsSL https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
     echo -e "deb [arch=$(dpkg --print-architecture)] http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
     sudo apt update
     sudo apt install -y spotify-client
@@ -148,14 +143,14 @@ case "$(uname)" in
     sudo apt install -y dbeaver-ce
 
     ############################################################################
-    # Robo 3T
-    ############################################################################
-    sudo snap install robo3t-snap
-
-    ############################################################################
     # Ripgrep
     ############################################################################
     sudo apt install -y ripgrep
+
+    ############################################################################
+    # Fzf
+    ############################################################################
+    sudo apt install -y fzf
 
     ############################################################################
     # Universal ctags
@@ -171,11 +166,9 @@ case "$(uname)" in
     sudo apt install -y code
 
     ############################################################################
-    # Insomnia
+    # Postman
     ############################################################################
-    echo -e "deb [trusted=yes arch=$(dpkg --print-architecture)] https://download.konghq.com/insomnia-ubuntu/ default all" | sudo tee /etc/apt/sources.list.d/insomnia.list
-    sudo apt update
-    sudo apt install -y insomnia
+    sudo snap install postman
 
     ############################################################################
     # GPG
@@ -211,13 +204,9 @@ case "$(uname)" in
     sudo fc-cache -fv
 
     ############################################################################
-    # Tilix
+    # Kitty
     ############################################################################
-    sudo apt install -y tilix
-
-    curl -#fLo \
-      ~/.config/tilix/schemes/gruvbox-dark-medium.json \
-      --create-dirs https://raw.githubusercontent.com/MichaelThessel/tilix-gruvbox/master/gruvbox-dark-medium.json
+    sudo apt install -y kitty
 
     ############################################################################
     # VLC
@@ -261,18 +250,6 @@ case "$(uname)" in
     # Caffeine
     ############################################################################
     sudo apt install -y caffeine
-
-    ############################################################################
-    # Drivers
-    ############################################################################
-    sudo add-apt-repository -y ppa:oibaf/graphics-drivers
-    sudo add-apt-repository -y ppa:graphics-drivers/ppa
-    sudo apt update
-    sudo apt install -y \
-      freeglut3 \
-      mesa-utils \
-      mesa-utils-extra \
-      mesa-vulkan-drivers
 
     ############################################################################
     # Slack

@@ -30,7 +30,11 @@ case "$(uname)" in
       ca-certificates \
       cmake \
       curl \
+      g++ \
+      gcc \
       git \
+      gnupg \
+      make \
       snapd \
       software-properties-common \
       tmux \
@@ -43,15 +47,13 @@ case "$(uname)" in
     # dotfiles
     ############################################################################
     if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
-      cd ~/.dotfiles || exit 1
-      git remote set-url origin https://github.com/gufranco/dotfiles.git
-      git checkout master
-      git pull
-      git remote set-url origin git@github.com:gufranco/dotfiles.git
+      git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git
+      git -C "$HOME/.dotfiles" checkout master
+      git -C "$HOME/.dotfiles" pull
+      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
     else
-      git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
-      cd ~/.dotfiles || exit 1
-      git remote set-url origin git@github.com:gufranco/dotfiles.git
+      git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"
+      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
     fi
 
     ############################################################################
@@ -95,17 +97,17 @@ case "$(uname)" in
     ############################################################################
     # Node.js
     ############################################################################
-    sudo apt install -y \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg
+    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+    sudo apt update
+    sudo apt install -y
       ca-certificates \
       curl \
       g++ \
       gcc \
       gnupg \
-      make
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg
-    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-    sudo apt update
-    sudo apt install -y nodejs
+      make \
+      nodejs
 
     ############################################################################
     # Python
@@ -123,15 +125,15 @@ case "$(uname)" in
     # Spotify
     ############################################################################
     curl -fsSL https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
-    echo -e "deb [arch=$(dpkg --print-architecture)] http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
+    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
     sudo apt update
     sudo apt install -y spotify-client
 
     ############################################################################
     # Chrome
     ############################################################################
-    curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-    echo -e "deb [arch=$(dpkg --print-architecture)] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+    curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg
+    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
     sudo apt update
     sudo apt install -y google-chrome-stable
 
@@ -256,6 +258,12 @@ case "$(uname)" in
     ############################################################################
     sudo snap install slack
 
+    ############################################################################
+    # Steam
+    ############################################################################
+    sudo dpkg --add-architecture i386
+    sudo snap install steam
+
     ;;
   "Darwin")
     ############################################################################
@@ -299,21 +307,24 @@ case "$(uname)" in
     # dotfiles
     ############################################################################
     if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
-      cd ~/.dotfiles || exit 1
-      git remote set-url origin https://github.com/gufranco/dotfiles.git
-      git checkout master
-      git pull
-      git remote set-url origin git@github.com:gufranco/dotfiles.git
+      git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git
+      git -C "$HOME/.dotfiles" checkout master
+      git -C "$HOME/.dotfiles" pull
+      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
     else
-      git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git ~/.dotfiles
-      cd ~/.dotfiles || exit 1
-      git remote set-url origin git@github.com:gufranco/dotfiles.git
+      git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"
+      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
     fi
 
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    brew bundle --file "$HOME/.dotfiles/Brewfile" --force cleanup --no-lock
+    brew update
+    brew bundle --file "$HOME/.dotfiles/Brewfile" --force cleanup
+    brew bundle --file "$HOME/.dotfiles/Brewfile"
+    brew upgrade
+    brew cu --all --yes --cleanup
+    brew cleanup -s
 
     ############################################################################
     # Bash

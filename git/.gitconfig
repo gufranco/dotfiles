@@ -18,9 +18,6 @@
   gpgsign = true
   template = ~/.dotfiles/git/.gitmessage
 
-[github]
-  user = gufranco
-
 [color]
   ui = auto
 
@@ -50,7 +47,9 @@
   enabled = true
 
 [push]
+  followTags = true
   default = current
+  gpgSign = if-asked
 
 [help]
   autocorrect = 1
@@ -58,11 +57,28 @@
 [fetch]
   prune = true
 
+[advice]
+  mergeConflict = false
+  statusHints = false
+  commitBeforeMerge = false
+  detachedHead = false
+  pushNonFastForward = false
+  pushUpdateRejected = false
+
+[rebase]
+  autoStash = true
+  quiet = true
+
+[status]
+  submoduleSummary = true
+
 [alias]
   st = status -sb
-  fork = checkout -b
-  pull-sub = !(git pull && git submodule foreach git pull origin master)
-  lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-  unstage = reset HEAD --
-  undo = checkout --
-  committers = !(git log | grep Author | sort | uniq -c | sort -n -r)
+  fork = checkout -q -b
+  pull-sub = !git pull --quiet && git submodule foreach 'git pull --quiet origin master || true'
+  lg = log --color --graph --decorate --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  unstage = reset -q HEAD --
+  undo = checkout -q --
+  committers = !git log --quiet | grep Author | sort | uniq -c | sort -n -r
+  amend = commit --amend --no-edit --quiet
+  last = log -1 --quiet HEAD

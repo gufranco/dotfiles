@@ -9,7 +9,7 @@ conky.config = {
   draw_graph_borders = false,
   draw_outline = false,
   draw_shades = false,
-  font = 'Hack Nerd Font Mono:size=14',
+  font = 'Hack Nerd Font Mono:size=12',
   gap_x = 0,
   gap_y = 33,
   imlib_cache_size = 0,
@@ -34,17 +34,17 @@ conky.config = {
 };
 
 conky.text = [[
-  ${font sans-serif:bold:size=14}CPU ${hr 2}
-  ${font sans-serif:normal:size=12}${execi 1000 grep model /proc/cpuinfo | cut -d : -f2 | tail -1 | sed 's/\s//'}
+  ${font Hack Nerd Font Mono:bold:size=12}CPU ${hr 2}
+  ${font Hack Nerd Font Mono:normal:size=10}${execi 1000 grep model /proc/cpuinfo | cut -d : -f2 | tail -1 | sed 's/\s//'}
   ${cpu cpu0}% ${cpubar cpu0}
 
-  ${font sans-serif:bold:size=14}MEMORY ${hr 2}
-  ${font sans-serif:normal:size=12}RAM $alignc $mem / $memmax $alignr $memperc%
+  ${font Hack Nerd Font Mono:bold:size=12}MEMORY ${hr 2}
+  ${font Hack Nerd Font Mono:normal:size=10}RAM $alignc $mem / $memmax $alignr $memperc%
   $membar
 
-  ${font sans-serif:bold:size=14}DISK ${hr 2}
-  ${font sans-serif:normal:size=12}/ $alignc ${fs_used /} / ${fs_size /} $alignr ${fs_used_perc /}%
+  ${font Hack Nerd Font Mono:bold:size=12}DISK ${hr 2}
+  ${font Hack Nerd Font Mono:normal:size=10}/ $alignc ${fs_used /} / ${fs_size /} $alignr ${fs_used_perc /}%
   ${fs_bar /}
-  ${font sans-serif:normal:size=12}/home $alignc ${fs_used /home} / ${fs_size /home} $alignr ${fs_used_perc /home}%
+  ${font Hack Nerd Font Mono:normal:size=10}/home $alignc ${fs_used /home} / ${fs_size /home} $alignr ${fs_used_perc /home}%
   ${fs_bar /home}
 ]];

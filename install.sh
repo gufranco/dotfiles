@@ -40,6 +40,7 @@ case "$(uname)" in
       tmux \
       trash-cli \
       ubuntu-restricted-extras \
+      vim \
       wget \
       xsel
 
@@ -177,7 +178,8 @@ case "$(uname)" in
     ############################################################################
     sudo apt install -y \
       gpg \
-      gnupg-agent
+      gnupg-agent \
+      pinentry-curses
 
     ############################################################################
     # Neomutt

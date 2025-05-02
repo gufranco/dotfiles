@@ -391,12 +391,6 @@ fi
 
 git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
 
-if [ -d ~/.oh-my-zsh/custom/plugins/you-should-use ] || [ -h ~/.oh-my-zsh/custom/plugins/you-should-use ]; then
-  rm -rf ~/.oh-my-zsh/custom/plugins/you-should-use
-fi
-
-git clone --depth=1 https://github.com/MichaelAquilina/zsh-you-should-use.git ~/.oh-my-zsh/custom/plugins/you-should-use
-
 if [ -d ~/.oh-my-zsh/custom/themes/spaceship-prompt ] || [ -h ~/.oh-my-zsh/custom/themes/spaceship-prompt ]; then
   rm -rf ~/.oh-my-zsh/custom/themes/spaceship-prompt
 fi

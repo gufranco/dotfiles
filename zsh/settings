@@ -15,10 +15,6 @@ case "$(uname)" in
     export HOMEBREW_NO_ANALYTICS=1
     export HOMEBREW_NO_ENV_HINTS=1
 
-    # Chruby
-    source "$(brew --prefix)/opt/chruby/share/chruby/chruby.sh"
-    source "$(brew --prefix)/opt/chruby/share/chruby/auto.sh"
-
     ;;
 esac
 
@@ -37,34 +33,8 @@ export ZSH_THEME="spaceship"
 export DISABLE_AUTO_UPDATE="true"
 export HIST_STAMPS="dd/mm/yyyy"
 export plugins=(
-  aws
-  bun
-  chruby
-  deno
-  docker
-  docker-compose
-  fzf
-  gcloud
-  gem
-  git
-  github
-  gitignore
-  golang
   gpg-agent
-  macos
-  node
-  npm
-  nvm
-  python
-  ruby
   ssh-agent
-  sudo
-  tmux
-  ubuntu
-  vscode
-  xcode
-  yarn
-  you-should-use
   zsh-autosuggestions
   zsh-syntax-highlighting
 )

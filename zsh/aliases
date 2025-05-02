@@ -37,12 +37,6 @@ case "$(uname)" in
     # macOS has no `sha1sum`, so use `shasum` as a fallback
     command -v sha1sum > /dev/null || alias sha1sum="shasum"
 
-    # Use bat as fzf previewer
-    command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="fzf --preview 'bat --color=never --style=numbers --line-range=:500 {}'"
-
-    # Set tty-clock to hide date, show seconds, and center the clock
-    command -v tty-clock > /dev/null && alias tty-clock="tty-clock -Dcs"
-
     # Colorized ls
     alias ls="command ls -G"
 

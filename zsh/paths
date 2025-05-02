@@ -45,10 +45,6 @@ case "$(uname)" in
     export NVM_DIR="$(brew --prefix)/opt/nvm"
     source "$(brew --prefix)/opt/nvm/nvm.sh"
 
-    # Android Studio
-    export ANDROID_HOME="$HOME/Library/Android/sdk"
-    export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$(brew --prefix)/opt/openjdk@11/bin:$PATH"
-
     # Rancher
     if [ -d "$HOME/.rd/bin" ]; then
       export PATH="$HOME/.rd/bin:$PATH"

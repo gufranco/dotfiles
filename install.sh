@@ -30,19 +30,27 @@ case "$(uname)" in
       ca-certificates \
       cmake \
       curl \
+      exfat-fuse \
+      exfatprogs \
       g++ \
       gcc \
       git \
       gnupg \
       make \
+      p7zip-full \
+      p7zip-rar \
+      rar \
       snapd \
       software-properties-common \
       tmux \
       trash-cli \
       ubuntu-restricted-extras \
+      unrar \
+      unzip \
       vim \
       wget \
-      xsel
+      xsel \
+      zip
 
     ############################################################################
     # dotfiles
@@ -56,24 +64,6 @@ case "$(uname)" in
       git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"
       git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
     fi
-
-    ############################################################################
-    # Enable exFat
-    ############################################################################
-    sudo apt install -y \
-      exfat-fuse \
-      exfatprogs
-
-    ############################################################################
-    # 7Zip / Rar / Zip
-    ############################################################################
-    sudo apt install -y \
-      p7zip-full \
-      p7zip-rar \
-      rar \
-      unrar \
-      unzip \
-      zip
 
     ############################################################################
     # Zsh
@@ -103,14 +93,7 @@ case "$(uname)" in
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg
     echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
     sudo apt update
-    sudo apt install -y \
-      ca-certificates \
-      curl \
-      g++ \
-      gcc \
-      gnupg \
-      make \
-      nodejs
+    sudo apt install -y nodejs
 
     ############################################################################
     # Python
@@ -241,18 +224,6 @@ case "$(uname)" in
     sudo apt install -y asciinema
 
     ############################################################################
-    # Preload
-    ############################################################################
-    sudo apt install -y preload
-
-    ############################################################################
-    # TLP
-    ############################################################################
-    sudo add-apt-repository -y ppa:linrunner/tlp
-    sudo apt update
-    sudo apt install -y tlp
-
-    ############################################################################
     # Caffeine
     ############################################################################
     sudo apt install -y caffeine
@@ -263,12 +234,28 @@ case "$(uname)" in
     sudo snap install slack
 
     ############################################################################
-    # Steam
+    # GPU
     ############################################################################
+    # nVidia driver
     NVIDIA_VERSION=550
     sudo dpkg --add-architecture i386
     sudo apt update
+    sudo apt -y upgrade
     sudo apt install -y nvidia-driver-$NVIDIA_VERSION libnvidia-gl-$NVIDIA_VERSION:i386
+
+    # Mesa drivers (point release)
+    sudo add-apt-repository -y ppa:kisak/kisak-mesa
+    sudo apt update
+    sudo apt -y upgrade
+
+    # Mesa drivers (bleeding edge)
+    sudo add-apt-repository -y ppa:oibaf/graphics-drivers
+    sudo apt update
+    sudo apt -y upgrade
+
+    ############################################################################
+    # Steam
+    ############################################################################
     sudo snap install steam
 
     ;;

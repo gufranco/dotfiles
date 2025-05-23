@@ -46,7 +46,6 @@ brew 'nvm'
 brew 'openssl'
 brew 'p7zip'
 brew 'pnpm'
-brew 'postgresql@15' if serial == macbook_pro_work_serial
 brew 'python', link: true
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
@@ -64,8 +63,6 @@ brew 'zlib'
 brew 'zsh-syntax-highlighting'
 brew 'zsh'
 
-# cask 'font-monaspace-nerd-font'
-# cask 'font-noto-sans-symbols-2'
 cask 'aldente' if [macbook_12_serial, macbook_pro_13_serial].include?(serial)
 cask 'cleanmymac' if serial != macbook_pro_work_serial
 cask 'coconutbattery'

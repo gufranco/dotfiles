@@ -26,8 +26,12 @@ brew 'bash'
 brew 'bc'
 brew 'ca-certificates'
 brew 'cmake'
+brew 'colima' if serial != macbook_pro_work_serial
 brew 'coreutils'
 brew 'curl'
+brew 'docker-compose' if serial != macbook_pro_work_serial
+brew 'docker-credential-helper' if serial != macbook_pro_work_serial
+brew 'docker' if serial != macbook_pro_work_serial
 brew 'fd'
 brew 'fzf'
 brew 'gawk'
@@ -38,6 +42,7 @@ brew 'golangci-lint'
 brew 'gsed'
 brew 'jq'
 brew 'libpq'
+brew 'lima-additional-guestagents' if serial != macbook_pro_work_serial
 brew 'lynx'
 brew 'mas'
 brew 'neomutt'
@@ -70,7 +75,6 @@ cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'discord'
 cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu_model)
-cask 'docker' if serial != macbook_pro_work_serial
 cask 'firefox'
 cask 'flixtools'
 cask 'font-hack-nerd-font'
@@ -79,6 +83,7 @@ cask 'istat-menus'
 cask 'jdownloader'
 cask 'keka'
 cask 'kitty'
+cask 'librewolf', args: { 'no-quarantine' => true }
 cask 'maestral'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
@@ -89,7 +94,7 @@ cask 'parallels' if architecture == 'arm64' && serial != macbook_pro_work_serial
 cask 'postman'
 cask 'rancher' if serial == macbook_pro_work_serial
 cask 'slack'
-cask 'spotify'
+cask 'spotify', args: { 'no-quarantine' => true }
 cask 'transmission'
 cask 'tunnelblick'
 cask 'virtualbox' if architecture == 'x86_64'

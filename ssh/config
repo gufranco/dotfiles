@@ -1,17 +1,16 @@
 Host *
   IdentityFile ~/.ssh/id_ed25519
-  IdentityFile ~/.ssh/id_rsa
   AddKeysToAgent yes
+  UseKeychain yes
   Compression yes
   ForwardAgent yes
-  IgnoreUnknown UseKeychain
-  LogLevel INFO
-  Protocol 2
-  ServerAliveCountMax 10
-  ServerAliveInterval 20
-  StrictHostKeyChecking ask
   TCPKeepAlive yes
-  UseKeychain yes
+  ServerAliveInterval 20
+  ServerAliveCountMax 10
+  LogLevel INFO
+  StrictHostKeyChecking ask
+  IgnoreUnknown UseKeychain
+  Protocol 2
 
 ################################################################################
 # Hosts
@@ -19,3 +18,9 @@ Host *
 Host github.com
   ControlMaster auto
   ControlPersist 120
+
+################################################################################
+# Colima
+################################################################################
+Include ~/.colima/ssh_config
+

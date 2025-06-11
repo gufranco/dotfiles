@@ -15,6 +15,9 @@ case "$(uname)" in
     export HOMEBREW_NO_ANALYTICS=1
     export HOMEBREW_NO_ENV_HINTS=1
 
+    # Docker
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
     ;;
 esac
 

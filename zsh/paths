@@ -50,5 +50,11 @@ case "$(uname)" in
       export PATH="$HOME/.rd/bin:$PATH"
     fi
 
+    # Pnpm
+    if command -v pnpm >/dev/null 2>&1; then
+      export PNPM_HOME="$HOME/Library/pnpm"
+      export PATH="$PNPM_HOME:$PATH"
+    fi
+
     ;;
 esac

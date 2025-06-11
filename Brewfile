@@ -25,10 +25,16 @@ brew 'awscli'
 brew 'bash'
 brew 'bc'
 brew 'ca-certificates'
+brew 'cdrtools' # contains genisoimage
 brew 'cmake'
+brew 'colima' if serial != macbook_pro_work_serial
 brew 'coreutils'
 brew 'curl'
+brew 'docker-compose' if serial != macbook_pro_work_serial
+brew 'docker-credential-helper' if serial != macbook_pro_work_serial
+brew 'docker' if serial != macbook_pro_work_serial
 brew 'fd'
+brew 'ffmpeg'
 brew 'fzf'
 brew 'gawk'
 brew 'git'
@@ -38,6 +44,7 @@ brew 'golangci-lint'
 brew 'gsed'
 brew 'jq'
 brew 'libpq'
+brew 'lima-additional-guestagents' if serial != macbook_pro_work_serial
 brew 'lynx'
 brew 'mas'
 brew 'neomutt'
@@ -53,9 +60,11 @@ brew 'ruby', link: true
 brew 'shared-mime-info'
 brew 'shellcheck'
 brew 'tmux'
+brew 'ucon64'
 brew 'UltimateNova1203/maxcso/maxcso'
 brew 'universal-ctags'
 brew 'urlview'
+brew 'vcdimager'
 brew 'vim'
 brew 'vint'
 brew 'wget'
@@ -70,15 +79,14 @@ cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'discord'
 cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu_model)
-cask 'docker' if serial != macbook_pro_work_serial
 cask 'firefox'
 cask 'flixtools'
 cask 'font-hack-nerd-font'
 cask 'google-chrome'
 cask 'istat-menus'
+cask 'iterm2'
 cask 'jdownloader'
 cask 'keka'
-cask 'kitty'
 cask 'maestral'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
@@ -89,7 +97,7 @@ cask 'parallels' if architecture == 'arm64' && serial != macbook_pro_work_serial
 cask 'postman'
 cask 'rancher' if serial == macbook_pro_work_serial
 cask 'slack'
-cask 'spotify'
+cask 'spotify', args: { 'no-quarantine' => true }
 cask 'transmission'
 cask 'tunnelblick'
 cask 'virtualbox' if architecture == 'x86_64'
@@ -99,8 +107,8 @@ cask 'zoom' if serial == macbook_pro_work_serial
 
 mas 'Amphetamine', id: 937_984_704
 mas 'Magnet', id: 441_258_766
-mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && serial != macbook_pro_work_serial
-mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && serial != macbook_pro_work_serial
-mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && serial != macbook_pro_work_serial
-mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && serial != macbook_pro_work_serial
+# mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && serial != macbook_pro_work_serial
+# mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && serial != macbook_pro_work_serial
+# mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && serial != macbook_pro_work_serial
+# mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && serial != macbook_pro_work_serial
 mas 'Xcode', id: 497_799_835

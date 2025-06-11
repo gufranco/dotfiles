@@ -35,40 +35,17 @@ function f5() {
   # Vim
   vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall
 
-  # Oh-my-zsh
-  git -C "$HOME/.oh-my-zsh" checkout "$(git -C "$HOME/.oh-my-zsh" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
-  git -C "$HOME/.oh-my-zsh" stash clear
-  git -C "$HOME/.oh-my-zsh" stash
-  git -C "$HOME/.oh-my-zsh" pull
-  git -C "$HOME/.oh-my-zsh" stash apply
-  git -C "$HOME/.oh-my-zsh" fetch --prune
-  git -C "$HOME/.oh-my-zsh" gc --aggressive --prune=now
+  # Plugins
+  for dir in \
+    "$HOME/.oh-my-zsh" \
+    "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ \
+    "$HOME/.tmux/plugins/"*/; do
 
-  # Oh-my-zsh themes
-  for dir in "$HOME/.oh-my-zsh/custom/themes/"*/; do
-    git -C "$dir" checkout "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
-    git -C "$dir" stash clear
-    git -C "$dir" stash
-    git -C "$dir" pull
-    git -C "$dir" stash apply
-    git -C "$dir" fetch --prune
-    git -C "$dir" gc --aggressive --prune=now
-  done
+    if [ ! -d "$dir/.git" ]; then
+      continue
+    fi
 
-  # Oh-my-zsh plugins
-  for dir in "$HOME/.oh-my-zsh/custom/plugins/"*/; do
-    git -C "$dir" checkout "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
-    git -C "$dir" stash clear
-    git -C "$dir" stash
-    git -C "$dir" pull
-    git -C "$dir" stash apply
-    git -C "$dir" fetch --prune
-    git -C "$dir" gc --aggressive --prune=now
-  done
-
-  # Tmux plugins
-  for dir in "$HOME/.tmux/plugins/"*/; do
-    if [[ "$(basename "$dir")" == "tpm" ]]; then
+    if [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]]; then
       continue
     fi
 
@@ -109,4 +86,218 @@ function f5() {
   # Reload zsh settings
   # shellcheck disable=SC1091
   source "$HOME/.zshrc"
+}
+
+################################################################################
+# Convert any movie file to VCD ISO
+################################################################################
+convert_to_vcd() {
+  local INPUT_VIDEO="$1"
+  local SUBTITLES="$2"
+
+  local CHUNK_SECONDS=4800
+  local OVERLAP=60
+  local BASENAME
+  BASENAME=$(basename "${INPUT_VIDEO%.*}")_disc
+
+  if [ -z "$INPUT_VIDEO" ]; then
+    echo "[ERROR] No input video provided."
+    echo "Usage: convert_to_vcd path/to/video.[mp4|mkv] [optional path/to/subtitles.srt]"
+    return 1
+  fi
+
+  if [ ! -f "$INPUT_VIDEO" ]; then
+    echo "[ERROR] Video file not found: $INPUT_VIDEO"
+    return 1
+  fi
+
+  for tool in ffmpeg vcdimager iconv file ffprobe; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      echo "[ERROR] Required tool not found in PATH: $tool"
+      return 1
+    fi
+  done
+
+  local ASSFILE=""
+  if [ -n "$SUBTITLES" ]; then
+    echo "[INFO] Subtitle file provided: $SUBTITLES"
+
+    if [ ! -f "$SUBTITLES" ]; then
+      echo "[ERROR] Subtitle file not found: $SUBTITLES"
+      return 1
+    fi
+
+    local ENCODING
+    ENCODING=$(file -I "$SUBTITLES" | awk -F'charset=' '{print $2}')
+    [ "$DEBUG" = true ] && echo "[DEBUG] Detected subtitle encoding: $ENCODING"
+
+    if [[ "$ENCODING" != "utf-8" && "$ENCODING" != "us-ascii" ]]; then
+      echo "[INFO] Converting subtitles to UTF-8..."
+      iconv -f "$ENCODING" -t UTF-8 "$SUBTITLES" > "${BASENAME}_subtitles_utf8.srt"
+      SUBTITLES="${BASENAME}_subtitles_utf8.srt"
+    fi
+
+    ASSFILE="${BASENAME}_styled.ass"
+    ffmpeg -v error -i "$SUBTITLES" "${ASSFILE}"
+
+    printf '[Script Info]\nScriptType: v4.00+\nPlayResX: 352\nPlayResY: 240\nScaledBorderAndShadow: yes\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,16,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,1,1,2,10,10,10,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n' | cat - "$ASSFILE" > "${ASSFILE}.tmp" && mv "${ASSFILE}.tmp" "$ASSFILE"
+  else
+    echo "[INFO] No subtitles provided."
+  fi
+
+  local DURATION
+  DURATION=$(ffprobe -v error -show_entries format=duration \
+    -of default=noprint_wrappers=1:nokey=1 "$INPUT_VIDEO")
+  DURATION=${DURATION%.*}
+  [ "$DEBUG" = true ] && echo "[DEBUG] Video duration in seconds: $DURATION"
+
+  local PART=1
+  local START=0
+
+  while [ "$START" -lt "$DURATION" ]; do
+    echo "[INFO] Processing part $PART (start at $START seconds)..."
+
+    local OUTFILE="${BASENAME}${PART}.mpg"
+    local CUEFILE="${BASENAME}${PART}.cue"
+    local BINFILE="${BASENAME}${PART}.bin"
+
+    if [ -n "$ASSFILE" ]; then
+      [ "$DEBUG" = true ] && echo "[DEBUG] Running ffmpeg with subtitles..."
+      ffmpeg \
+        -v error \
+        -ss "$START" \
+        -t "$CHUNK_SECONDS" \
+        -i "$INPUT_VIDEO" \
+        -vf "subtitles=${ASSFILE},crop=in_h*4/3:in_h,scale=352:240" \
+        -r 29.97 \
+        -g 15 \
+        -c:v mpeg1video \
+        -b:v 1150000 \
+        -minrate 1150000 \
+        -maxrate 1150000 \
+        -bufsize 327680 \
+        -c:a mp2 \
+        -ab 224k \
+        -ac 2 \
+        -ar 44100 \
+        -muxrate 1411200 \
+        -packetsize 2324 \
+        -f vcd \
+        "$OUTFILE"
+    else
+      [ "$DEBUG" = true ] && echo "[DEBUG] Running ffmpeg without subtitles..."
+      ffmpeg \
+        -v error \
+        -ss "$START" \
+        -t "$CHUNK_SECONDS" \
+        -i "$INPUT_VIDEO" \
+        -vf "crop=in_h*4/3:in_h,scale=352:240" \
+        -r 29.97 \
+        -g 15 \
+        -c:v mpeg1video \
+        -b:v 1150000 \
+        -minrate 1150000 \
+        -maxrate 1150000 \
+        -bufsize 327680 \
+        -c:a mp2 \
+        -ab 224k \
+        -ac 2 \
+        -ar 44100 \
+        -muxrate 1411200 \
+        -packetsize 2324 \
+        -f vcd \
+        "$OUTFILE"
+    fi
+
+    if [ ! -f "$OUTFILE" ]; then
+      echo "[ERROR] ffmpeg failed to generate output file: $OUTFILE"
+      return 1
+    fi
+
+    [ "$DEBUG" = true ] && echo "[DEBUG] Creating CUE/BIN: $CUEFILE / $BINFILE from $OUTFILE"
+    vcdimager -t vcd2 -c "$CUEFILE" -b "$BINFILE" "$OUTFILE"
+    if [ $? -ne 0 ]; then
+      echo "[ERROR] vcdimager failed to create image for part $PART"
+      return 1
+    fi
+
+    START=$((START + CHUNK_SECONDS - OVERLAP))
+    PART=$((PART + 1))
+  done
+
+  echo "[INFO] All parts processed successfully. Discs generated: $((PART - 1))"
+}
+
+################################################################################
+# Prepare n64 roms for Mr Backup Z64
+################################################################################
+prepare_mr_backup_z64_roms() {
+  IFS=$'\n\t'
+
+  local MAX_CF_SIZE=$((2 * 1024 * 1024 * 1024)) # 2GB
+  local MAX_FILES_PER_FOLDER=500
+
+  local ORIGINAL_DIR
+  ORIGINAL_DIR="$(pwd)"
+
+  local TMP_DIR
+  TMP_DIR="$(mktemp -d -t prepare_z64_roms.XXXXXXXXXX)"
+
+  # Garante que o diretório temporário será apagado mesmo em caso de erro
+  trap 'rm -rf "$TMP_DIR"' EXIT
+
+  cd "$TMP_DIR" || exit
+
+  find "$ORIGINAL_DIR" -maxdepth 1 -type f -exec cp -p {} . \;
+
+  for file in *; do
+    if [[ -f "$file" ]]; then
+      local base
+      base="$(basename "$file")"
+      local first_char
+      first_char="$(echo "$base" | cut -c1)"
+
+      if [[ "$first_char" =~ [0-9] ]]; then
+        target_folder="#"
+      else
+        target_folder="$(echo "$first_char" | tr '[:lower:]' '[:upper:]')"
+      fi
+
+      mkdir -p "$target_folder"
+      mv -- "$file" "$target_folder/"
+    fi
+  done
+
+  local DESTINATION="$TMP_DIR/CF_GROUPS"
+  mkdir -p "$DESTINATION"
+
+  local group_number=1
+  local group_folder="${DESTINATION}/CF_Group_${group_number}"
+  mkdir -p "$group_folder"
+  local current_size=0
+  local current_files=0
+
+  for folder in $(find . -mindepth 1 -maxdepth 1 -type d ! -name 'CF_GROUPS' | sort); do
+    local folder_size_kb
+    folder_size_kb=$(du -sk "$folder" | awk '{print $1}')
+    local folder_size_bytes=$((folder_size_kb * 1024))
+    local file_count
+    file_count=$(find "$folder" -type f | wc -l)
+
+    if (( current_size + folder_size_bytes > MAX_CF_SIZE )) || (( current_files + file_count > MAX_FILES_PER_FOLDER )); then
+      group_number=$((group_number + 1))
+      group_folder="${DESTINATION}/CF_Group_${group_number}"
+      mkdir -p "$group_folder"
+      current_size=0
+      current_files=0
+    fi
+
+    mv -- "$folder" "$group_folder/"
+    current_size=$((current_size + folder_size_bytes))
+    current_files=$((current_files + file_count))
+  done
+
+  mv "$DESTINATION"/* "$ORIGINAL_DIR/"
+
+  echo "[DONE] prepare_z64_roms completed."
 }

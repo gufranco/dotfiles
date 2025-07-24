@@ -54,6 +54,7 @@ brew 'openssl'
 brew 'p7zip'
 brew 'pnpm'
 brew 'python', link: true
+brew 'rclone'
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
 brew 'ruby', link: true

@@ -171,6 +171,9 @@ convert_to_vcd() {
         -vf "subtitles=${ASSFILE},crop=in_h*4/3:in_h,scale=352:240" \
         -r 29.97 \
         -g 15 \
+        -mbd 2 \
+        -cmp 2 \
+        -subcmp 2 \
         -c:v mpeg1video \
         -b:v 1150000 \
         -minrate 1150000 \
@@ -194,6 +197,9 @@ convert_to_vcd() {
         -vf "crop=in_h*4/3:in_h,scale=352:240" \
         -r 29.97 \
         -g 15 \
+        -mbd 2 \
+        -cmp 2 \
+        -subcmp 2 \
         -c:v mpeg1video \
         -b:v 1150000 \
         -minrate 1150000 \

@@ -92,146 +92,94 @@ function f5() {
 # Convert any movie file to VCD ISO
 ################################################################################
 convert_to_vcd() {
-  local INPUT_VIDEO="$1"
-  local SUBTITLES="$2"
-
-  local CHUNK_SECONDS=4800
+  local CD74=false
+  local INPUT_VIDEO=""
+  local SUBTITLES=""
   local OVERLAP=60
-  local BASENAME
-  BASENAME=$(basename "${INPUT_VIDEO%.*}")_disc
+  local CHUNK_SECONDS=4800
 
-  if [ -z "$INPUT_VIDEO" ]; then
-    echo "[ERROR] No input video provided."
-    echo "Usage: convert_to_vcd path/to/video.[mp4|mkv] [optional path/to/subtitles.srt]"
+  for arg in "$@"; do
+    case "$arg" in
+      --cd74) CD74=true ;;
+      *) [ -z "$INPUT_VIDEO" ] && INPUT_VIDEO="$arg" || SUBTITLES="$arg" ;;
+    esac
+  done
+
+  if [ -z "$INPUT_VIDEO" ] || [ ! -f "$INPUT_VIDEO" ]; then
+    echo "[ERROR] Input video is missing or invalid."
+    echo "Usage: convert_to_vcd [--cd74] video.[mp4|mkv] [optional subtitles.srt]"
     return 1
   fi
 
-  if [ ! -f "$INPUT_VIDEO" ]; then
-    echo "[ERROR] Video file not found: $INPUT_VIDEO"
-    return 1
+  $CD74 && CHUNK_SECONDS=4440
+  if $CD74; then
+    echo "[INFO] Using chunk duration: ${CHUNK_SECONDS}s (74min mode)"
+  else
+    echo "[INFO] Using chunk duration: ${CHUNK_SECONDS}s (80min mode)"
   fi
 
   for tool in ffmpeg vcdimager iconv file ffprobe; do
-    if ! command -v "$tool" >/dev/null 2>&1; then
-      echo "[ERROR] Required tool not found in PATH: $tool"
-      return 1
-    fi
+    command -v "$tool" >/dev/null || { echo "[ERROR] Missing tool: $tool"; return 1; }
   done
 
+  local BASENAME="${INPUT_VIDEO%.*}_disc"
   local ASSFILE=""
   if [ -n "$SUBTITLES" ]; then
-    echo "[INFO] Subtitle file provided: $SUBTITLES"
-
-    if [ ! -f "$SUBTITLES" ]; then
-      echo "[ERROR] Subtitle file not found: $SUBTITLES"
-      return 1
-    fi
-
+    [ ! -f "$SUBTITLES" ] && echo "[ERROR] Subtitle file not found: $SUBTITLES" && return 1
+    echo "[INFO] Subtitle provided: $SUBTITLES"
     local ENCODING
     ENCODING=$(file -I "$SUBTITLES" | awk -F'charset=' '{print $2}')
-    [ "$DEBUG" = true ] && echo "[DEBUG] Detected subtitle encoding: $ENCODING"
-
+    echo "[DEBUG] Subtitle encoding: $ENCODING"
     if [[ "$ENCODING" != "utf-8" && "$ENCODING" != "us-ascii" ]]; then
-      echo "[INFO] Converting subtitles to UTF-8..."
-      iconv -f "$ENCODING" -t UTF-8 "$SUBTITLES" > "${BASENAME}_subtitles_utf8.srt"
-      SUBTITLES="${BASENAME}_subtitles_utf8.srt"
+      iconv -f "$ENCODING" -t UTF-8 "$SUBTITLES" > "${BASENAME}_utf8.srt"
+      SUBTITLES="${BASENAME}_utf8.srt"
+      echo "[INFO] Subtitle converted to UTF-8"
     fi
-
-    ASSFILE="${BASENAME}_styled.ass"
-    ffmpeg -v error -i "$SUBTITLES" "${ASSFILE}"
-
-    printf '[Script Info]\nScriptType: v4.00+\nPlayResX: 352\nPlayResY: 240\nScaledBorderAndShadow: yes\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,16,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,1,1,2,10,10,10,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n' | cat - "$ASSFILE" > "${ASSFILE}.tmp" && mv "${ASSFILE}.tmp" "$ASSFILE"
-  else
-    echo "[INFO] No subtitles provided."
+    ASSFILE="${BASENAME}.ass"
+    ffmpeg -v error -i "$SUBTITLES" "$ASSFILE"
+    {
+      printf '[Script Info]\nScriptType: v4.00+\nPlayResX: 352\nPlayResY: 240\nScaledBorderAndShadow: yes\n\n'
+      printf '[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n'
+      printf 'Style: Default,Arial,16,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,1,1,2,10,10,10,1\n\n'
+      printf '[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n'
+      cat "$ASSFILE"
+    } > "${ASSFILE}.tmp" && mv "${ASSFILE}.tmp" "$ASSFILE"
   fi
 
   local DURATION
-  DURATION=$(ffprobe -v error -show_entries format=duration \
-    -of default=noprint_wrappers=1:nokey=1 "$INPUT_VIDEO")
+  DURATION=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$INPUT_VIDEO")
   DURATION=${DURATION%.*}
-  [ "$DEBUG" = true ] && echo "[DEBUG] Video duration in seconds: $DURATION"
+  echo "[DEBUG] Video duration: ${DURATION}s"
 
-  local PART=1
-  local START=0
-
+  local PART=1 START=0
   while [ "$START" -lt "$DURATION" ]; do
-    echo "[INFO] Processing part $PART (start at $START seconds)..."
+    echo "[INFO] Encoding part $PART (start=$START)..."
+    local OUT="${BASENAME}${PART}.mpg"
+    local BIN="${BASENAME}${PART}.bin"
+    local CUE="${BASENAME}${PART}.cue"
 
-    local OUTFILE="${BASENAME}${PART}.mpg"
-    local CUEFILE="${BASENAME}${PART}.cue"
-    local BINFILE="${BASENAME}${PART}.bin"
+    local FILTER="crop=in_h*4/3:in_h,scale=352:240"
+    [ -n "$ASSFILE" ] && FILTER="subtitles=${ASSFILE},$FILTER"
 
-    if [ -n "$ASSFILE" ]; then
-      [ "$DEBUG" = true ] && echo "[DEBUG] Running ffmpeg with subtitles..."
-      ffmpeg \
-        -v error \
-        -ss "$START" \
-        -t "$CHUNK_SECONDS" \
-        -i "$INPUT_VIDEO" \
-        -vf "subtitles=${ASSFILE},crop=in_h*4/3:in_h,scale=352:240" \
-        -r 29.97 \
-        -g 15 \
-        -mbd 2 \
-        -cmp 2 \
-        -subcmp 2 \
-        -c:v mpeg1video \
-        -b:v 1150000 \
-        -minrate 1150000 \
-        -maxrate 1150000 \
-        -bufsize 327680 \
-        -c:a mp2 \
-        -ab 224k \
-        -ac 2 \
-        -ar 44100 \
-        -muxrate 1411200 \
-        -packetsize 2324 \
-        -f vcd \
-        "$OUTFILE"
-    else
-      [ "$DEBUG" = true ] && echo "[DEBUG] Running ffmpeg without subtitles..."
-      ffmpeg \
-        -v error \
-        -ss "$START" \
-        -t "$CHUNK_SECONDS" \
-        -i "$INPUT_VIDEO" \
-        -vf "crop=in_h*4/3:in_h,scale=352:240" \
-        -r 29.97 \
-        -g 15 \
-        -mbd 2 \
-        -cmp 2 \
-        -subcmp 2 \
-        -c:v mpeg1video \
-        -b:v 1150000 \
-        -minrate 1150000 \
-        -maxrate 1150000 \
-        -bufsize 327680 \
-        -c:a mp2 \
-        -ab 224k \
-        -ac 2 \
-        -ar 44100 \
-        -muxrate 1411200 \
-        -packetsize 2324 \
-        -f vcd \
-        "$OUTFILE"
-    fi
+    ffmpeg -v error -ss "$START" -t "$CHUNK_SECONDS" -i "$INPUT_VIDEO" \
+      -vf "$FILTER" -r 29.97 -g 15 -mbd 2 -cmp 2 -subcmp 2 \
+      -c:v mpeg1video -b:v 1150000 -minrate 1150000 -maxrate 1150000 -bufsize 327680 \
+      -c:a mp2 -ab 224k -ac 2 -ar 44100 \
+      -muxrate 1411200 -packetsize 2324 -f vcd "$OUT"
 
-    if [ ! -f "$OUTFILE" ]; then
-      echo "[ERROR] ffmpeg failed to generate output file: $OUTFILE"
+    [ ! -f "$OUT" ] && echo "[ERROR] ffmpeg failed for part $PART" && return 1
+
+    echo "[INFO] Generating BIN/CUE for part $PART..."
+    vcdimager -t vcd2 -c "$CUE" -b "$BIN" "$OUT" || {
+      echo "[ERROR] vcdimager failed for part $PART"
       return 1
-    fi
-
-    [ "$DEBUG" = true ] && echo "[DEBUG] Creating CUE/BIN: $CUEFILE / $BINFILE from $OUTFILE"
-    vcdimager -t vcd2 -c "$CUEFILE" -b "$BINFILE" "$OUTFILE"
-    if [ $? -ne 0 ]; then
-      echo "[ERROR] vcdimager failed to create image for part $PART"
-      return 1
-    fi
+    }
 
     START=$((START + CHUNK_SECONDS - OVERLAP))
     PART=$((PART + 1))
   done
 
-  echo "[INFO] All parts processed successfully. Discs generated: $((PART - 1))"
+  echo "[INFO] Completed. Total discs: $((PART - 1))"
 }
 
 ################################################################################
@@ -306,4 +254,229 @@ prepare_mr_backup_z64_roms() {
   mv "$DESTINATION"/* "$ORIGINAL_DIR/"
 
   echo "[DONE] prepare_z64_roms completed."
+}
+
+################################################################################
+# Sync games library
+################################################################################
+sync_games() {
+  DEST="./Redump/NEC - PC Engine CD & TurboGrafx CD//"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --size-only \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  :http:"NEC - PC Engine CD & TurboGrafx CD/" \
+  "$DEST"
+
+DEST="./Redump/SNK - Neo Geo CD/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --size-only \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  :http:"SNK - Neo Geo CD/" \
+  "$DEST"
+
+DEST="./Redump/Sega - Saturn/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Sega - Saturn/" \
+  "$DEST"
+
+DEST="./Redump/Sega - Mega CD & Sega CD/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Sega - Mega CD & Sega CD/" \
+  "$DEST"
+
+DEST="./Redump/Sony - PlayStation/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Sony - PlayStation/" \
+  "$DEST"
+
+DEST="./Redump/Sony - PlayStation 2/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Sony - PlayStation 2/" \
+  "$DEST"
+
+DEST="./Redump/Panasonic - 3DO Interactive Multiplayer/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Panasonic - 3DO Interactive Multiplayer/" \
+  "$DEST"
+
+DEST="./Redump/Video CD/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Video CD/" \
+  "$DEST"
+
+DEST="./Redump/Sega - Dreamcast/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Sega - Dreamcast/" \
+  "$DEST"
+
+DEST="./Redump/Sega - Dreamcast - GDI Files/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Sega - Dreamcast - GDI Files/" \
+  "$DEST"
+
+DEST="./Redump/Sony - PlayStation Portable/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url https://myrient.erista.me/files/Redump/ \
+  \
+  --filter '+ *\(World*' \
+  --filter '+ *\(USA*' \
+  --filter '+ *\(Japan*' \
+  --filter '+ *\(Brazil*' \
+  \
+  --filter '- *' \
+  --size-only \
+  :http:"Sony - PlayStation Portable/" \
+  "$DEST"
+
+DEST="./Internet Archive/htgdb-gamepacks/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url "https://myrient.erista.me/files/Internet Archive/the_last_collector/" \
+  --size-only \
+  :http:"htgdb-gamepacks/" \
+  "$DEST"
+
+DEST="./Internet Archive/mdplus_collection_22_04_16/"
+mkdir -p "$DEST"
+rclone sync \
+  --progress \
+  --ignore-case \
+  --multi-thread-streams=0 \
+  --http-url "https://myrient.erista.me/files/Internet Archive/md_/" \
+  --size-only \
+  :http:"mdplus_collection_22_04_16/" \
+  "$DEST"
 }

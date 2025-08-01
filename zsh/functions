@@ -272,9 +272,10 @@ rclone sync \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
+  \
   :http:"NEC - PC Engine CD & TurboGrafx CD/" \
   "$DEST"
 
@@ -290,9 +291,10 @@ rclone sync \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
+  \
   :http:"SNK - Neo Geo CD/" \
   "$DEST"
 
@@ -302,15 +304,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
   \
   --filter '- *' \
-  --size-only \
   :http:"Sega - Saturn/" \
   "$DEST"
 
@@ -320,15 +323,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
-  --size-only \
+  \
   :http:"Sega - Mega CD & Sega CD/" \
   "$DEST"
 
@@ -338,15 +342,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
-  --size-only \
+  \
   :http:"Sony - PlayStation/" \
   "$DEST"
 
@@ -356,15 +361,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
-  --size-only \
+  \
   :http:"Sony - PlayStation 2/" \
   "$DEST"
 
@@ -374,15 +380,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
-  --size-only \
+  \
   :http:"Panasonic - 3DO Interactive Multiplayer/" \
   "$DEST"
 
@@ -392,15 +399,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
-  --size-only \
+  \
   :http:"Video CD/" \
   "$DEST"
 
@@ -410,15 +418,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
-  --size-only \
+  \
   :http:"Sega - Dreamcast/" \
   "$DEST"
 
@@ -428,15 +437,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
-  --size-only \
+  \
   :http:"Sega - Dreamcast - GDI Files/" \
   "$DEST"
 
@@ -446,15 +456,16 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
+  --size-only \
   --http-url https://myrient.erista.me/files/Redump/ \
   \
   --filter '+ *\(World*' \
   --filter '+ *\(USA*' \
   --filter '+ *\(Japan*' \
+  --filter '+ *\(Export*' \
   --filter '+ *\(Brazil*' \
-  \
   --filter '- *' \
-  --size-only \
+  \
   :http:"Sony - PlayStation Portable/" \
   "$DEST"
 
@@ -464,8 +475,8 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
-  --http-url "https://myrient.erista.me/files/Internet Archive/the_last_collector/" \
   --size-only \
+  --http-url "https://myrient.erista.me/files/Internet Archive/the_last_collector/" \
   :http:"htgdb-gamepacks/" \
   "$DEST"
 
@@ -475,8 +486,8 @@ rclone sync \
   --progress \
   --ignore-case \
   --multi-thread-streams=0 \
-  --http-url "https://myrient.erista.me/files/Internet Archive/md_/" \
   --size-only \
+  --http-url "https://myrient.erista.me/files/Internet Archive/md_/" \
   :http:"mdplus_collection_22_04_16/" \
   "$DEST"
 }

@@ -7,7 +7,6 @@ model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
 
 # Serials
-macbook_pro_work_serial = 'J6WCV57T0W'
 macbook_12_serial = 'C02TW09THH29'
 macbook_pro_13_serial = 'C02J332HDV30'
 
@@ -27,12 +26,12 @@ brew 'bc'
 brew 'ca-certificates'
 brew 'cdrtools' # contains genisoimage
 brew 'cmake'
-brew 'colima' if serial != macbook_pro_work_serial
+brew 'colima'
 brew 'coreutils'
 brew 'curl'
-brew 'docker-compose' if serial != macbook_pro_work_serial
-brew 'docker-credential-helper' if serial != macbook_pro_work_serial
-brew 'docker' if serial != macbook_pro_work_serial
+brew 'docker-compose'
+brew 'docker-credential-helper'
+brew 'docker'
 brew 'fd'
 brew 'ffmpeg'
 brew 'fzf'
@@ -44,7 +43,7 @@ brew 'golangci-lint'
 brew 'gsed'
 brew 'jq'
 brew 'libpq'
-brew 'lima-additional-guestagents' if serial != macbook_pro_work_serial
+brew 'lima-additional-guestagents'
 brew 'lynx'
 brew 'mas'
 brew 'neomutt'
@@ -74,7 +73,8 @@ brew 'zsh-syntax-highlighting'
 brew 'zsh'
 
 cask 'aldente' if [macbook_12_serial, macbook_pro_13_serial].include?(serial)
-cask 'cleanmymac' if serial != macbook_pro_work_serial
+cask 'balenaetcher'
+cask 'cleanmymac'
 cask 'coconutbattery'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
@@ -93,10 +93,8 @@ cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
 cask 'opencore-patcher' if [macbook_12_serial, macbook_pro_13_serial].include?(serial)
-cask 'openlens' if serial == macbook_pro_work_serial
-cask 'parallels' if architecture == 'arm64' && serial != macbook_pro_work_serial
+cask 'parallels' if architecture == 'arm64'
 cask 'postman'
-cask 'rancher' if serial == macbook_pro_work_serial
 cask 'slack'
 cask 'spotify', args: { 'no-quarantine' => true }
 cask 'transmission'
@@ -104,12 +102,11 @@ cask 'tunnelblick'
 cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
-cask 'zoom' if serial == macbook_pro_work_serial
 
 mas 'Amphetamine', id: 937_984_704
 mas 'Magnet', id: 441_258_766
-# mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && serial != macbook_pro_work_serial
-# mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && serial != macbook_pro_work_serial
-# mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && serial != macbook_pro_work_serial
-# mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && serial != macbook_pro_work_serial
+# mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64'
+# mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64'
+# mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64'
+# mas 'Stray', id: 6_451_498_949 if architecture == 'arm64'
 mas 'Xcode', id: 497_799_835

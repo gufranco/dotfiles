@@ -45,11 +45,6 @@ case "$(uname)" in
     export NVM_DIR="$(brew --prefix)/opt/nvm"
     source "$(brew --prefix)/opt/nvm/nvm.sh"
 
-    # Rancher
-    if [ -d "$HOME/.rd/bin" ]; then
-      export PATH="$HOME/.rd/bin:$PATH"
-    fi
-
     # Pnpm
     if command -v pnpm >/dev/null 2>&1; then
       export PNPM_HOME="$HOME/Library/pnpm"

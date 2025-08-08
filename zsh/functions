@@ -260,234 +260,229 @@ prepare_mr_backup_z64_roms() {
 # Sync games library
 ################################################################################
 sync_games() {
-  DEST="./Redump/NEC - PC Engine CD & TurboGrafx CD//"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"NEC - PC Engine CD & TurboGrafx CD/" \
-  "$DEST"
+  _sync_myrient_redump
+  _sync_myrient_no_intro
+  _sync_internet_archive
+  _sync_ossc
+}
 
-DEST="./Redump/SNK - Neo Geo CD/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"SNK - Neo Geo CD/" \
-  "$DEST"
+_sync_myrient_redump() {
+  local group="Redump"
+  local folders=(
+    "NEC - PC Engine CD & TurboGrafx CD"
+    "Nintendo - GameCube - NKit RVZ [zstd-19-128k]"
+    "Panasonic - 3DO Interactive Multiplayer"
+    "Sega - Dreamcast - GDI Files"
+    "Sega - Dreamcast"
+    "Sega - Mega CD & Sega CD"
+    "Sega - Saturn"
+    "SNK - Neo Geo CD"
+    "Sony - PlayStation 2"
+    "Sony - PlayStation Portable"
+    "Sony - PlayStation"
+    "Video CD"
+  )
 
-DEST="./Redump/Sega - Saturn/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  \
-  --filter '- *' \
-  :http:"Sega - Saturn/" \
-  "$DEST"
+  for folder in "${folders[@]}"; do
+    mkdir -p "./$group/$folder/"
+    echo "\nProcessing: $folder"
 
-DEST="./Redump/Sega - Mega CD & Sega CD/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"Sega - Mega CD & Sega CD/" \
-  "$DEST"
+    rclone sync \
+      --progress \
+      --ignore-case \
+      --multi-thread-streams=0 \
+      --size-only \
+      --http-url "https://myrient.erista.me/files/$group/" \
+      --filter '+ *\(World*' \
+      --filter '+ *\(USA*' \
+      --filter '+ *\(Japan*' \
+      --filter '+ *\(Export*' \
+      --filter '+ *\(Brazil*' \
+      --filter '- *' \
+      ":http:$folder/" \
+      "./$group/$folder/"
+  done
+}
 
-DEST="./Redump/Sony - PlayStation/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"Sony - PlayStation/" \
-  "$DEST"
+_sync_internet_archive() {
+  local folders=(
+    "desktop_20240424"
+    "htgdb-gamepacks"
+    "mdplus_collection_22_04_16"
+    "neo-geo-aes-romset"
+    "Neo-geoRomCollectionByGhostware"
+    "neogeoaesmvscomplete"
+    "RetroarchSystemFiles/Retroarch-System/"
+    "ric64s-neosd-rom-archive"
+    "rom_scene_collection"
+  )
 
-DEST="./Redump/Sony - PlayStation 2/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"Sony - PlayStation 2/" \
-  "$DEST"
+  for folder in "${folders[@]}"; do
+    mkdir -p "./Internet Archive/$folder/"
+    echo "\nProcessing: $folder"
 
-DEST="./Redump/Panasonic - 3DO Interactive Multiplayer/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"Panasonic - 3DO Interactive Multiplayer/" \
-  "$DEST"
+    rclone sync \
+      --progress \
+      --ignore-case \
+      --multi-thread-streams=0 \
+      --size-only \
+      "archive.org:$folder/" \
+      "./Internet Archive/$folder/"
+  done
+}
 
-DEST="./Redump/Video CD/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"Video CD/" \
-  "$DEST"
+_sync_myrient_no_intro() {
+  local group="No-Intro"
+  local folders=(
+    "Arduboy Inc - Arduboy"
+    "Bandai - WonderSwan"
+    "Bandai - WonderSwan Color"
+    "Bandai - WonderSwan Color (Aftermarket)"
+    "GamePark - GP2X"
+    "GamePark - GP32"
+    "Microsoft - MSX"
+    "Microsoft - MSX (Aftermarket)"
+    "Microsoft - MSX2"
+    "Microsoft - MSX2 (Aftermarket)"
+    "NEC - PC Engine - TurboGrafx-16"
+    "NEC - PC Engine - TurboGrafx-16 (Aftermarket)"
+    "NEC - PC Engine - TurboGrafx-16 (Private)"
+    "NEC - PC Engine SuperGrafx"
+    "Nintendo - Family BASIC (Tapes)"
+    "Nintendo - Family Computer Disk System (FDS)"
+    "Nintendo - Family Computer Disk System (FDS) (Aftermarket)"
+    "Nintendo - Family Computer Disk System (QD)"
+    "Nintendo - Family Computer Network System"
+    "Nintendo - Game & Watch"
+    "Nintendo - Game Boy"
+    "Nintendo - Game Boy (Aftermarket)"
+    "Nintendo - Game Boy (Private)"
+    "Nintendo - Game Boy Advance"
+    "Nintendo - Game Boy Advance (Aftermarket)"
+    "Nintendo - Game Boy Advance (Multiboot)"
+    "Nintendo - Game Boy Advance (Play-Yan)"
+    "Nintendo - Game Boy Advance (Private)"
+    "Nintendo - Game Boy Advance (Video)"
+    "Nintendo - Game Boy Advance (Video) (Aftermarket)"
+    "Nintendo - Game Boy Advance (Video) (Private)"
+    "Nintendo - Game Boy Advance (e-Reader)"
+    "Nintendo - Game Boy Advance (e-Reader) (Aftermarket)"
+    "Nintendo - Game Boy Color"
+    "Nintendo - Game Boy Color (Aftermarket)"
+    "Nintendo - Game Boy Color (Private)"
+    "Nintendo - Kiosk Video Compact Flash (CardImage)"
+    "Nintendo - Kiosk Video Compact Flash (Extracted)"
+    "Nintendo - Misc"
+    "Nintendo - New Nintendo 3DS (Decrypted)"
+    "Nintendo - New Nintendo 3DS (Encrypted)"
+    "Nintendo - Nintendo 3DS (Decrypted)"
+    "Nintendo - Nintendo 3DS (Digital) (CDN)"
+    "Nintendo - Nintendo 3DS (Digital) (Dev ROMs)"
+    "Nintendo - Nintendo 3DS (Digital) (Pre-Install)"
+    "Nintendo - Nintendo 3DS (Digital) (SpotPass)"
+    "Nintendo - Nintendo 3DS (Encrypted)"
+    "Nintendo - Nintendo 64 (BigEndian)"
+    "Nintendo - Nintendo 64 (BigEndian) (Aftermarket)"
+    "Nintendo - Nintendo 64 (BigEndian) (Private)"
+    "Nintendo - Nintendo 64 (Mario no Photopi SmartMedia)"
+    "Nintendo - Nintendo 64DD"
+    "Nintendo - Nintendo DS (DSvision SD cards)"
+    "Nintendo - Nintendo DS (Decrypted)"
+    "Nintendo - Nintendo DS (Decrypted) (Aftermarket)"
+    "Nintendo - Nintendo DS (Decrypted) (Private)"
+    "Nintendo - Nintendo DS (Download Play)"
+    "Nintendo - Nintendo DS (Encrypted)"
+    "Nintendo - Nintendo DS (Encrypted) (Aftermarket)"
+    "Nintendo - Nintendo DS (Encrypted) (Private)"
+    "Nintendo - Nintendo DSi (Decrypted)"
+    "Nintendo - Nintendo DSi (Digital)"
+    "Nintendo - Nintendo DSi (Digital) (CDN) (Decrypted)"
+    "Nintendo - Nintendo DSi (Digital) (CDN) (Encrypted)"
+    "Nintendo - Nintendo DSi (Encrypted)"
+    "Nintendo - Nintendo Entertainment System (Headered)"
+    "Nintendo - Nintendo Entertainment System (Headered) (Aftermarket)"
+    "Nintendo - Nintendo Entertainment System (Headered) (Private)"
+    "Nintendo - Nintendo Entertainment System (Headerless)"
+    "Nintendo - Nintendo Entertainment System (Headerless) (Aftermarket)"
+    "Nintendo - Nintendo Entertainment System (Headerless) (Private)"
+    "Nintendo - Nintendo GameCube (Memory Card)"
+    "Nintendo - Nintendo GameCube (NPDP Carts)"
+    "Nintendo - Nintendo Music (M4A)"
+    "Nintendo - Nintendo Music (Tracks)"
+    "Nintendo - Pokemon Mini"
+    "Nintendo - Pokemon Mini (Aftermarket)"
+    "Nintendo - Satellaview"
+    "Nintendo - Satellaview (Aftermarket)"
+    "Nintendo - Sufami Turbo"
+    "Nintendo - Super Nintendo Entertainment System"
+    "Nintendo - Super Nintendo Entertainment System (Aftermarket)"
+    "Nintendo - Super Nintendo Entertainment System (Private)"
+    "Nintendo - Virtual Boy"
+    "Nintendo - Virtual Boy (Aftermarket)"
+    "Nintendo - Virtual Boy (Private)"
+    "Nintendo - Wallpapers"
+    "Non-Redump - Atari - Atari Jaguar CD"
+    "Non-Redump - NEC - PC Engine CD + TurboGrafx CD"
+    "Non-Redump - NEC - PC Engine CD + TurboGrafx CD (Aftermarket)"
+    "Non-Redump - Nintendo - Nintendo GameCube"
+    "Non-Redump - Nintendo - Nintendo GameCube (Aftermarket)"
+    "Non-Redump - Nintendo - Nintendo GameCube (Private)"
+    "Non-Redump - Nintendo - Wii"
+    "Non-Redump - Panasonic - 3DO Interactive Multiplayer"
+    "Non-Redump - Sega - ALLS"
+    "Non-Redump - Sega - Dreamcast"
+    "Non-Redump - Sega - Dreamcast (Aftermarket)"
+    "Non-Redump - Sega - Dreamcast (Private)"
+    "Non-Redump - Sega - Sega Mega CD + Sega CD"
+    "Non-Redump - Sega - Sega Mega CD + Sega CD (Aftermarket)"
+    "Non-Redump - Sega - Sega Saturn"
+    "Non-Redump - Sony - PlayStation"
+    "Non-Redump - Sony - PlayStation 2"
+    "Non-Redump - Sony - PlayStation Portable"
+    "SNK - NeoGeo Pocket"
+    "SNK - NeoGeo Pocket Color"
+    "Sega - 32X"
+    "Sega - 32X (Aftermarket)"
+    "Sega - Dreamcast (Visual Memory Unit)"
+    "Sega - Game Gear"
+    "Sega - Game Gear (Aftermarket)"
+    "Sega - Master System - Mark III"
+    "Sega - Master System - Mark III (Aftermarket)"
+    "Sega - Master System - Mark III (Private)"
+    "Sega - Mega Drive - Genesis"
+    "Sega - Mega Drive - Genesis (Aftermarket)"
+    "Sega - Mega Drive - Genesis (Private)"
+    "Sega - SG-1000"
+    "Sega - SG-1000 (Aftermarket)"
+    "Seta - Aleck64 (BigEndian)"
+    "Sharp - X68000 (Flux)"
+  )
 
-DEST="./Redump/Sega - Dreamcast/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"Sega - Dreamcast/" \
-  "$DEST"
+  for folder in "${folders[@]}"; do
+    mkdir -p "./$group/$folder/"
+    echo "\nProcessing: $folder"
 
-DEST="./Redump/Sega - Dreamcast - GDI Files/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"Sega - Dreamcast - GDI Files/" \
-  "$DEST"
+    rclone sync \
+      --progress \
+      --ignore-case \
+      --multi-thread-streams=0 \
+      --size-only \
+      --http-url "https://myrient.erista.me/files/$group/" \
+      ":http:$folder/" \
+      "./$group/$folder/"
+  done
+}
 
-DEST="./Redump/Sony - PlayStation Portable/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url https://myrient.erista.me/files/Redump/ \
-  \
-  --filter '+ *\(World*' \
-  --filter '+ *\(USA*' \
-  --filter '+ *\(Japan*' \
-  --filter '+ *\(Export*' \
-  --filter '+ *\(Brazil*' \
-  --filter '- *' \
-  \
-  :http:"Sony - PlayStation Portable/" \
-  "$DEST"
+_sync_ossc() {
+  mkdir -p "./OSSC/"
+  echo "\nProcessing: OSSC"
 
-DEST="./Internet Archive/htgdb-gamepacks/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url "https://myrient.erista.me/files/Internet Archive/the_last_collector/" \
-  :http:"htgdb-gamepacks/" \
-  "$DEST"
-
-DEST="./Internet Archive/mdplus_collection_22_04_16/"
-mkdir -p "$DEST"
-rclone sync \
-  --progress \
-  --ignore-case \
-  --multi-thread-streams=0 \
-  --size-only \
-  --http-url "https://myrient.erista.me/files/Internet Archive/md_/" \
-  :http:"mdplus_collection_22_04_16/" \
-  "$DEST"
+  rclone sync \
+    --progress \
+    --ignore-case \
+    --multi-thread-streams=0 \
+    --size-only \
+    --http-url http://www.infocult.com/m/ossc/fw/v1-series/ \
+    ":http:" \
+    "./OSSC"
 }

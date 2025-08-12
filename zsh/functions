@@ -251,55 +251,84 @@ function prepare_mr_backup_z64_roms() {
 # Sync games library
 ################################################################################
 function sync_games() {
-  __sync_myrient_redump
+  __sync_redump
   __sync_internet_archive
-  __sync_myrient_no_intro
+  __sync_no_intro
   __sync_ossc
 }
 
-function __sync_myrient_redump() {
+function __sync_redump() {
   local group="Redump"
   local folders=(
     "NEC - PC Engine CD & TurboGrafx CD"
     "Nintendo - GameCube - NKit RVZ [zstd-19-128k]"
-    "Panasonic - 3DO Interactive Multiplayer"
-    "PlayStation GameShark Updates"
     "Sega - Dreamcast - GDI Files"
     "Sega - Dreamcast"
     "Sega - Mega CD & Sega CD"
     "Sega - Saturn"
     "SNK - Neo Geo CD"
-    "Sony - PlayStation 2"
-    "Sony - PlayStation Portable"
     "Sony - PlayStation"
+    "Sony - PlayStation Portable"
+    "Sony - PlayStation 2"
     "Video CD"
-    # "Microsoft - Xbox 360"
-    # "Microsoft - Xbox"
-    # "Nintendo - Wii - NKit RVZ [zstd-19-128k]"
-    # "Sony - PlayStation 3 - Disc Keys TXT"
-    # "Sony - PlayStation 3 - Disc Keys"
-    # "Sony - PlayStation 3"
   )
 
   for folder in "${folders[@]}"; do
     mkdir -p "./$group/$folder/"
     echo "\nProcessing: $folder"
 
-    rclone sync \
-      --progress \
-      --ignore-case \
-      --multi-thread-streams=0 \
-      --size-only \
-      --http-url "https://myrient.erista.me/files/$group/" \
-      --filter '+ *\(World*' \
-      --filter '+ *\(USA*' \
-      --filter '+ *\(Japan*' \
-      --filter '+ *\(Export*' \
-      --filter '+ *\(Brazil*' \
-      --filter '- *' \
-      --delete-excluded \
-      ":http:$folder/" \
-      "./$group/$folder/"
+  rclone sync \
+    --progress \
+    --ignore-case \
+    --multi-thread-streams=0 \
+    --size-only \
+    --delete-excluded \
+    \
+    --filter '- *\(Demo*' \
+    --filter '- *Demo\)*' \
+    --filter '- *\(Debug*' \
+    --filter '- *Debug\)*' \
+    --filter '- *\(Beta*' \
+    --filter '- *Beta\)*' \
+    --filter '- *\(Proto*' \
+    --filter '- *Proto\)*' \
+    --filter '- *\(Prototype*' \
+    --filter '- *Prototype\)*' \
+    --filter '- *\(Unl*' \
+    --filter '- *Unl\)*' \
+    --filter '- *\(Unlicensed*' \
+    --filter '- *Unlicensed\)*' \
+    --filter '- *\(Trial*' \
+    --filter '- *Trial\)*' \
+    --filter '- *\(Kiosk*' \
+    --filter '- *Kiosk\)*' \
+    --filter '- *\(Preview*' \
+    --filter '- *Preview\)*' \
+    --filter '- *\(Promo*' \
+    --filter '- *Promo\)*' \
+    --filter '- *\(Promotional*' \
+    --filter '- *Promotional\)*' \
+    \
+    --filter '- *\ Demo Disc\ *' \
+    --filter '- *\ Interactive Multi-Game Demo Disc\ *' \
+    --filter '- *\ Interactive Sampler Disc\ *' \
+    --filter '- *\ Jam Pack\ *' \
+    --filter '- *\ PlayStation Underground\ *' \
+    --filter '- *\ Trial Edition\ *' \
+    --filter '- *\ Trial Version\ *' \
+    \
+    --filter '+ *\(World*' \
+    --filter '+ *\(USA*' \
+    --filter '+ *\(Japan*' \
+    --filter '+ *\(Export*' \
+    --filter '+ *\(Brazil*' \
+    --filter '+ *Brazil\)*' \
+    \
+    --filter '- *' \
+    \
+    --http-url "https://myrient.erista.me/files/$group/" \
+    ":http:$folder/" \
+    "./$group/$folder/"
   done
 }
 
@@ -327,14 +356,14 @@ function __sync_internet_archive() {
       --ignore-case \
       --multi-thread-streams=0 \
       --size-only \
-      --exclude '*.{torrent,xml,sqlite,png,jpg}' \
       --delete-excluded \
+      --exclude '*.{torrent,xml,sqlite,png,jpg}' \
       "archive.org:$folder/" \
       "./Internet Archive/$folder/"
   done
 }
 
-function __sync_myrient_no_intro() {
+function __sync_no_intro() {
   local group="No-Intro"
   local folders=(
     "Bandai - WonderSwan"
@@ -437,8 +466,8 @@ function __sync_myrient_no_intro() {
       --ignore-case \
       --multi-thread-streams=0 \
       --size-only \
-      --http-url "https://myrient.erista.me/files/$group/" \
       --delete-excluded \
+      --http-url "https://myrient.erista.me/files/$group/" \
       ":http:$folder/" \
       "./$group/$folder/"
   done
@@ -453,9 +482,9 @@ function __sync_ossc() {
     --ignore-case \
     --multi-thread-streams=0 \
     --size-only \
-    --http-url http://www.infocult.com/m/ossc/fw/v1-series/ \
-    --exclude '*.{jic,txt}' \
     --delete-excluded \
+    --exclude '*.{jic,txt}' \
+     --http-url http://www.infocult.com/m/ossc/fw/v1-series/ \
     ":http:" \
     "./OSSC"
 }

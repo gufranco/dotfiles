@@ -73,8 +73,6 @@ brew 'zsh-syntax-highlighting'
 brew 'zsh'
 
 cask 'aldente' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
-cask 'balenaetcher'
-cask 'cleanmymac'
 cask 'coconutbattery'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
@@ -96,7 +94,6 @@ cask 'postman'
 cask 'slack'
 cask 'spotify', args: { 'no-quarantine' => true }
 cask 'transmission'
-cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
 

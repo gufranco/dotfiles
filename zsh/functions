@@ -284,47 +284,43 @@ function __sync_redump() {
     --size-only \
     --delete-excluded \
     \
-    --filter '- *\(Demo*' \
-    --filter '- *Demo\)*' \
-    --filter '- *\(Debug*' \
-    --filter '- *Debug\)*' \
-    --filter '- *\(Beta*' \
-    --filter '- *Beta\)*' \
-    --filter '- *\(Proto*' \
-    --filter '- *Proto\)*' \
-    --filter '- *\(Prototype*' \
-    --filter '- *Prototype\)*' \
-    --filter '- *\(Unl*' \
-    --filter '- *Unl\)*' \
-    --filter '- *\(Unlicensed*' \
-    --filter '- *Unlicensed\)*' \
-    --filter '- *\(Trial*' \
-    --filter '- *Trial\)*' \
-    --filter '- *\(Kiosk*' \
-    --filter '- *Kiosk\)*' \
-    --filter '- *\(Preview*' \
-    --filter '- *Preview\)*' \
-    --filter '- *\(Promo*' \
-    --filter '- *Promo\)*' \
-    --filter '- *\(Promotional*' \
-    --filter '- *Promotional\)*' \
+    --filter "- *\(Demo*" \
+    --filter "- *Demo\)*" \
+    --filter "- *\(Debug*" \
+    --filter "- *Debug\)*" \
+    --filter "- *\(Beta*" \
+    --filter "- *Beta\)*" \
+    --filter "- *\(Proto*" \
+    --filter "- *Proto\)*" \
+    --filter "- *\(Prototype*" \
+    --filter "- *Prototype\)*" \
+    --filter "- *\(Trial*" \
+    --filter "- *Trial\)*" \
+    --filter "- *\(Kiosk*" \
+    --filter "- *Kiosk\)*" \
+    --filter "- *\(Preview*" \
+    --filter "- *Preview\)*" \
+    --filter "- *\(Promo*" \
+    --filter "- *Promo\)*" \
+    --filter "- *\(Promotional*" \
+    --filter "- *Promotional\)*" \
     \
-    --filter '- *\ Demo Disc\ *' \
-    --filter '- *\ Interactive Multi-Game Demo Disc\ *' \
-    --filter '- *\ Interactive Sampler Disc\ *' \
-    --filter '- *\ Jam Pack\ *' \
-    --filter '- *\ PlayStation Underground\ *' \
-    --filter '- *\ Trial Edition\ *' \
-    --filter '- *\ Trial Version\ *' \
+    --filter "- *\ Demo Disc\ *" \
+    --filter "- *\ Interactive Multi-Game Demo Disc\ *" \
+    --filter "- *\ Interactive Sampler Disc\ *" \
+    --filter "- *\ Jam Pack\ *" \
+    --filter "- *\ PlayStation Underground\ *" \
+    --filter "- *\ Trial Edition\ *" \
+    --filter "- *\ Trial Version\ *" \
     \
-    --filter '+ *\(World*' \
-    --filter '+ *\(USA*' \
-    --filter '+ *\(Japan*' \
-    --filter '+ *\(Export*' \
-    --filter '+ *\(Brazil*' \
-    --filter '+ *Brazil\)*' \
+    --filter "+ *\(World*" \
+    --filter "+ *\(USA*" \
+    --filter "+ *\(Japan*" \
+    --filter "+ *\(Export*" \
+    --filter "+ *\(Brazil*" \
+    --filter "+ *Brazil\)*" \
     \
-    --filter '- *' \
+    --filter "- *" \
     \
     --http-url "https://myrient.erista.me/files/$group/" \
     ":http:$folder/" \
@@ -333,6 +329,7 @@ function __sync_redump() {
 }
 
 function __sync_internet_archive() {
+  local group="Internet Archive"
   local folders=(
     "desktop_20240424"
     "htgdb-gamepacks"
@@ -348,7 +345,7 @@ function __sync_internet_archive() {
   )
 
   for folder in "${folders[@]}"; do
-    mkdir -p "./Internet Archive/$folder/"
+    mkdir -p "./$group/$folder/"
     echo "\nProcessing: $folder"
 
     rclone sync \
@@ -357,9 +354,9 @@ function __sync_internet_archive() {
       --multi-thread-streams=0 \
       --size-only \
       --delete-excluded \
-      --exclude '*.{torrent,xml,sqlite,png,jpg}' \
+      --exclude "*.{torrent,xml,sqlite,png,jpg}" \
       "archive.org:$folder/" \
-      "./Internet Archive/$folder/"
+      "./$group/$folder/"
   done
 }
 
@@ -467,6 +464,36 @@ function __sync_no_intro() {
       --multi-thread-streams=0 \
       --size-only \
       --delete-excluded \
+      \
+      --filter "- *\(Demo*" \
+      --filter "- *Demo\)*" \
+      --filter "- *\(Debug*" \
+      --filter "- *Debug\)*" \
+      --filter "- *\(Beta*" \
+      --filter "- *Beta\)*" \
+      --filter "- *\(Proto*" \
+      --filter "- *Proto\)*" \
+      --filter "- *\(Prototype*" \
+      --filter "- *Prototype\)*" \
+      --filter "- *\(Trial*" \
+      --filter "- *Trial\)*" \
+      --filter "- *\(Kiosk*" \
+      --filter "- *Kiosk\)*" \
+      --filter "- *\(Preview*" \
+      --filter "- *Preview\)*" \
+      --filter "- *\(Promo*" \
+      --filter "- *Promo\)*" \
+      --filter "- *\(Promotional*" \
+      --filter "- *Promotional\)*" \
+      \
+      --filter "+ *\(World*" \
+      --filter "+ *\(USA*" \
+      --filter "+ *\(Japan*" \
+      --filter "+ *\(Export*" \
+      --filter "+ *\(Brazil*" \
+      --filter "+ *Brazil\)*" \
+      \
+      --filter "- *" \
       --http-url "https://myrient.erista.me/files/$group/" \
       ":http:$folder/" \
       "./$group/$folder/"
@@ -474,8 +501,9 @@ function __sync_no_intro() {
 }
 
 function __sync_ossc() {
-  mkdir -p "./OSSC/"
-  echo "\nProcessing: OSSC"
+  local folder="OSSC"
+  mkdir -p "./$folder/"
+  echo "\nProcessing: $folder"
 
   rclone sync \
     --progress \
@@ -483,8 +511,8 @@ function __sync_ossc() {
     --multi-thread-streams=0 \
     --size-only \
     --delete-excluded \
-    --exclude '*.{jic,txt}' \
-     --http-url http://www.infocult.com/m/ossc/fw/v1-series/ \
+    --exclude "*.{jic,txt}" \
+     --http-url "http://www.infocult.com/m/ossc/fw/v1-series/" \
     ":http:" \
-    "./OSSC"
+    "./$folder"
 }

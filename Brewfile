@@ -14,6 +14,7 @@ tap 'universal-ctags/universal-ctags'
 tap 'aws/tap'
 tap 'buo/cask-upgrade'
 tap 'neomutt/neomutt'
+tap 'UltimateNova1203/maxcso'
 
 brew 'ack'
 brew 'act'

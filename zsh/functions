@@ -30,7 +30,6 @@ function f5() {
   git -C "$HOME/.dotfiles" pull-sub
   git -C "$HOME/.dotfiles" submodule update --recursive --remote
   git -C "$HOME/.dotfiles" fetch --prune
-  git -C "$HOME/.dotfiles" gc --aggressive --prune=now
 
   # Vim
   vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall
@@ -50,12 +49,8 @@ function f5() {
     fi
 
     git -C "$dir" checkout "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
-    git -C "$dir" stash clear
-    git -C "$dir" stash
     git -C "$dir" pull
-    git -C "$dir" stash apply
     git -C "$dir" fetch --prune
-    git -C "$dir" gc --aggressive --prune=now
   done
 
   case "$(uname)" in

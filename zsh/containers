@@ -13,8 +13,8 @@ function mongo-init() {
     --restart unless-stopped \
     --env "MONGO_INITDB_ROOT_USERNAME=mongo" \
     --env "MONGO_INITDB_ROOT_PASSWORD=mongo" \
-    --mount type=bind,source="$HOME"/Docker/Mongo,target=/external \
-    --publish 127.0.0.1:27017:27017 \
+    --mount "type=bind,source=$HOME/Docker/Mongo,target=/external" \
+    --publish "127.0.0.1:27017:27017" \
     mongo:latest
 }
 
@@ -49,8 +49,8 @@ function postgres-init() {
     --restart unless-stopped \
     --env "POSTGRES_USER=postgres" \
     --env "POSTGRES_PASSWORD=postgres" \
-    --mount type=bind,source="$HOME"/Docker/Postgres,target=/external \
-    --publish 127.0.0.1:5432:5432 \
+    --mount "type=bind,source=$HOME/Docker/Postgres,target=/external" \
+    --publish "127.0.0.1:5432:5432" \
     postgres:alpine
 }
 
@@ -83,8 +83,8 @@ function redis-init() {
     --hostname redis \
     --name redis \
     --restart unless-stopped \
-    --mount type=bind,source="$HOME"/Docker/Redis,target=/external \
-    --publish 127.0.0.1:6379:6379 \
+    --mount "type=bind,source=$HOME/Docker/Redis,target=/external" \
+    --publish "127.0.0.1:6379:6379" \
     redis:alpine
 }
 
@@ -117,8 +117,8 @@ function valkey-init() {
     --hostname valkey \
     --name valkey \
     --restart unless-stopped \
-    --mount type=bind,source="$HOME"/Docker/Valkey,target=/external \
-    --publish 127.0.0.1:7000:7000 \
+    --mount "type=bind,source=$HOME/Docker/Valkey,target=/external" \
+    --publish "127.0.0.1:7000:7000" \
     valkey:alpine
 }
 
@@ -151,8 +151,8 @@ function redict-init() {
     --hostname redict \
     --name redict \
     --restart unless-stopped \
-    --mount type=bind,source="$HOME"/Docker/Redict,target=/external \
-    --publish 127.0.0.1:6379:6379 \
+    --mount "type=bind,source=$HOME/Docker/Redict,target=/external" \
+    --publish "127.0.0.1:6379:6379" \
     registry.redict.io/redict:alpine
 }
 

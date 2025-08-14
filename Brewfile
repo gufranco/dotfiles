@@ -13,8 +13,6 @@ macbook_pro_13_mid_2012_serial = 'C02J332HDV30'
 tap 'universal-ctags/universal-ctags'
 tap 'aws/tap'
 tap 'buo/cask-upgrade'
-tap 'homebrew/bundle'
-tap 'homebrew/services'
 tap 'neomutt/neomutt'
 
 brew 'ack'
@@ -103,4 +101,4 @@ mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64'
 mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64'
 mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64'
 mas 'Stray', id: 6_451_498_949 if architecture == 'arm64'
-mas 'Xcode', id: 497_799_835
+# mas 'Xcode', id: 497_799_835

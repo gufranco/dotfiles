@@ -42,7 +42,7 @@ case "$(uname)" in
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
 
     # NVM
-    export NVM_DIR="$(brew --prefix)/opt/nvm"
+    export NVM_DIR="$HOME/.nvm"
     source "$(brew --prefix)/opt/nvm/nvm.sh"
 
     # Pnpm

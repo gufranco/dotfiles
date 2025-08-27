@@ -29,7 +29,7 @@ set smtp_url = "smtps://gustavocfranco@gmail.com@smtp.gmail.com:465/"
 ################################################################################
 # Password
 ################################################################################
-source "gpg -d ~/.mutt/accounts/com.gmail.gustavocfranco/password.gpg |"
+source "gpg --quiet --batch --yes -d ~/.mutt/accounts/com.gmail.gustavocfranco/password.gpg |"
 
 ################################################################################
 # Security

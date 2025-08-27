@@ -27,7 +27,7 @@ set smtp_url = "smtp://gufranco@live.com@smtp-mail.outlook.com:587"
 ################################################################################
 # Password
 ################################################################################
-source "gpg -d ~/.mutt/accounts/com.live.gufranco/password.gpg |"
+source "gpg --quiet --batch --yes -d ~/.mutt/accounts/com.live.gufranco/password.gpg |"
 
 ################################################################################
 # Security

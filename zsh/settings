@@ -49,3 +49,10 @@ export SPACESHIP_USER_SHOW=always
 export SPACESHIP_PROMPT_ADD_NEWLINE=false
 export SPACESHIP_CHAR_SYMBOL="❯"
 export SPACESHIP_CHAR_SUFFIX=" "
+
+################################################################################
+# Npm
+################################################################################
+if [ -z "$NPM_TOKEN" ]; then
+  export NPM_TOKEN="$(gpg --quiet --batch --yes -d ~/.dotfiles/nodejs/tokens/classic.gpg | tr -d '\n')"
+fi

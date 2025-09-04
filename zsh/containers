@@ -1,6 +1,91 @@
 #!/usr/bin/env bash
 
 ################################################################################
+# Internal functions to calculate the cores, memory and disk size for VMs
+################################################################################
+function __calculate_vm_cores() {
+  case "$(uname -s)" in
+    Darwin)
+
+      echo $(( $(sysctl -n hw.ncpu) / 2 ))
+      ;;
+    Linux)
+      echo $(( $(nproc) / 2 ))
+
+      ;;
+  esac
+}
+
+function __calculate_vm_memory() {
+  case "$(uname -s)" in
+    Darwin)
+
+      echo $(( $(sysctl -n hw.memsize) / 1024 / 1024 / 1024 / 2 ))
+      ;;
+    Linux)
+      echo $(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 / 2 ))
+
+      ;;
+  esac
+}
+
+function __calculate_vm_disk() {
+  case "$(uname -s)" in
+      Darwin)
+        echo $(( $(df -g / | awk 'NR==2 {print $2}') / 20 ))
+
+        ;;
+      Linux)
+        echo $(( $(df -BG / | awk 'NR==2 {gsub("G","",$2); print $2}') / 20 ))
+
+        ;;
+    esac
+}
+
+################################################################################
+# Colima VM
+################################################################################
+function colima-start() {
+  local cores="$(__calculate_vm_cores)"
+  local memory="$(__calculate_vm_memory)"
+  local disk="$(__calculate_vm_disk)"
+
+  colima start \
+    --cpu "${cores}" \
+    --memory "${memory}" \
+    --disk "${disk}" \
+    \
+    --runtime "docker" \
+    --vm-type "qemu" \
+    --mount "$HOME:w" \
+    --dns "1.1.1.1,8.8.8.8"
+}
+
+function colima-stop() {
+  colima stop
+}
+
+function colima-purge() {
+  docker-purge
+
+  colima stop --force
+  colima delete --force
+}
+
+################################################################################
+# Docker purge
+################################################################################
+function docker-purge() {
+  docker stop $(docker ps -aq) 2>/dev/null
+  docker rm -f $(docker ps -aq) 2>/dev/null
+  docker rmi -f $(docker images -aq) 2>/dev/null
+  docker volume rm $(docker volume ls -q) 2>/dev/null
+  docker network rm $(docker network ls -q) 2>/dev/null
+  docker builder prune -af
+  docker system prune -af --volumes
+}
+
+################################################################################
 # Mongo
 ################################################################################
 function mongo-init() {

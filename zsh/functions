@@ -84,6 +84,68 @@ function f5() {
 }
 
 ################################################################################
+# Zero fill and verify a storage device
+################################################################################
+function zero_fill_verify() {
+  local disk="$1"
+  local size=$(diskutil info "$disk" | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
+  local threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB (binary, 2147483648 bytes)
+
+  if [ -z "$disk" ] || [ ! -b "$disk" ]; then
+    echo "Error: device not found or invalid: $disk"
+    return 1
+  fi
+
+  read "?This will ERASE all data on $disk. Continue? (y/N): " confirm
+  [ "$confirm" != "y" ] && { echo "Operation cancelled."; return 1; }
+
+  echo "Step 1: Cleaning $disk..."
+  for i in {1..2}; do
+    echo "- Pass: $i"
+
+    echo "Writing 0xFF..."
+    tr '\000' '\377' < /dev/zero | \
+      head -c "$size" | \
+      sudo dd of="$disk" bs=1m status=progress || {
+        echo "Error: failed to write 0xFF."
+        return 1
+      }
+
+    echo "Verifying 0xFF..."
+    sudo dd if="$disk" bs="$size" count=1 status=progress | \
+      cmp -n "$size" - <(tr '\000' '\377' < /dev/zero) || {
+        echo "Error: failed to verify 0xFF."
+        return 1
+      }
+
+    echo "Writing 0x00..."
+    sudo dd if=/dev/zero of="$disk" bs="$size" count=1 status=progress || {
+      echo "Error: failed to write 0x00."
+      return 1
+    }
+
+    echo "Verifying 0x00..."
+    sudo dd if="$disk" bs="$size" count=1 status=progress | \
+      cmp -n "$size" - /dev/zero || {
+        echo "Error: failed to verify 0x00."
+        return 1
+      }
+  done
+
+  echo "Step 2: Creating partition..."
+  if [ "$size" -le "$threshold_bytes" ]; then
+    echo "Using FAT16 (<= 2 GB)..."
+    sudo diskutil eraseDisk "MS-DOS FAT16" "NO NAME" MBRFormat "$disk"
+  else
+    echo "Using FAT32 (> 2 GB)..."
+    sudo diskutil eraseDisk "MS-DOS FAT32" "NO NAME" MBRFormat "$disk"
+  fi
+
+  echo "Step 3: Ejecting device..."
+  sudo diskutil eject "$disk" 2>/dev/null
+}
+
+################################################################################
 # Convert any movie file to VCD ISO
 ################################################################################
 function convert_to_vcd() {
@@ -180,7 +242,7 @@ function convert_to_vcd() {
 ################################################################################
 # Prepare n64 roms for Mr Backup Z64
 ################################################################################
-function prepare_mr_backup_z64_roms() {
+function prepare_z64_roms() {
   IFS=$'\n\t'
 
   local MAX_CF_SIZE=$((1990 * 1024 * 1024))

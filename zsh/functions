@@ -89,19 +89,32 @@ function f5() {
 function zero_fill_verify() {
   local disk="$1"
   local size=$(diskutil info "$disk" | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
+  local passes=2
   local threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB (binary, 2147483648 bytes)
+  local create_partition=0
+
+  for arg in "$@"; do
+    if [[ "$arg" == "--create-partition" ]]; then
+      create_partition=1
+      break
+    fi
+  done
 
   if [ -z "$disk" ] || [ ! -b "$disk" ]; then
     echo "Error: device not found or invalid: $disk"
     return 1
   fi
 
-  read "?This will ERASE all data on $disk. Continue? (y/N): " confirm
+  printf "This will ERASE all data on %s. Continue? (y/N): " "$disk"
+  IFS= read -r confirm
   [ "$confirm" != "y" ] && { echo "Operation cancelled."; return 1; }
 
-  echo "Step 1: Cleaning $disk..."
-  for i in {1..2}; do
-    echo "- Pass: $i"
+  echo "Unmounting $disk..."
+  sudo diskutil unmountDisk "$disk"
+
+  echo "Cleaning $disk..."
+  for ((index=1; index <= passes; index++)); do
+    echo "- Pass $index of $passes"
 
     echo "Writing 0xFF..."
     tr '\000' '\377' < /dev/zero | \
@@ -132,17 +145,19 @@ function zero_fill_verify() {
       }
   done
 
-  echo "Step 2: Creating partition..."
-  if [ "$size" -le "$threshold_bytes" ]; then
-    echo "Using FAT16 (<= 2 GB)..."
-    sudo diskutil eraseDisk "MS-DOS FAT16" "NO NAME" MBRFormat "$disk"
-  else
-    echo "Using FAT32 (> 2 GB)..."
-    sudo diskutil eraseDisk "MS-DOS FAT32" "NO NAME" MBRFormat "$disk"
-  fi
+  if [[ "$create_partition" -eq 1 ]]; then
+    echo "Creating partition..."
 
-  echo "Step 3: Ejecting device..."
-  sudo diskutil eject "$disk" 2>/dev/null
+    if [ "$size" -le "$threshold_bytes" ]; then
+      echo "Using FAT16 (<= 2 GB)..."
+
+      sudo diskutil eraseDisk "MS-DOS FAT16" "NO NAME" MBRFormat "$disk"
+    else
+      echo "Using FAT32 (> 2 GB)..."
+
+      sudo diskutil eraseDisk "MS-DOS FAT32" "NO NAME" MBRFormat "$disk"
+    fi
+  fi
 }
 
 ################################################################################
@@ -307,13 +322,6 @@ function prepare_z64_roms() {
 ################################################################################
 # Sync games library
 ################################################################################
-function sync_games() {
-  __sync_redump
-  __sync_internet_archive
-  __sync_no_intro
-  __sync_ossc
-}
-
 function __sync_redump() {
   local group="Redump"
   local folders=(
@@ -572,4 +580,11 @@ function __sync_ossc() {
      --http-url "http://www.infocult.com/m/ossc/fw/v1-series/" \
     ":http:" \
     "./$folder"
+}
+
+function sync_games() {
+  __sync_redump
+  __sync_internet_archive
+  __sync_no_intro
+  __sync_ossc
 }

@@ -70,8 +70,8 @@ brew 'zlib'
 brew 'zsh-syntax-highlighting'
 brew 'zsh'
 
-# cask 'cleanmymac'
 cask 'aldente' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
+cask 'cleanmymac'
 cask 'coconutbattery'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
@@ -90,12 +90,14 @@ cask 'maestral'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
+cask 'nordvpn'
 cask 'opencore-patcher' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
 cask 'parallels' if architecture == 'arm64'
 cask 'postman'
 cask 'slack'
 cask 'spotify', args: { 'no-quarantine' => true }
 cask 'transmission'
+cask 'tunnelblick'
 cask 'visual-studio-code'
 cask 'vlc'
 

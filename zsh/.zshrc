@@ -11,7 +11,16 @@ source "$HOME/.dotfiles/zsh/paths"
 if [ -z "$TMUX" ] && [ "$TERM_PROGRAM" != "vscode" ]; then
   tmux new-session -s $$;
 else
-  export TERM="screen-256color"
+  case "$(uname -m)" in
+    "x86_64" | "arm64")
+      export TERM="screen-256color"
+
+      ;;
+    "Power Macintosh")
+      export TERM="xterm-color"
+
+      ;;
+  esac
 fi
 
 ################################################################################

@@ -73,6 +73,7 @@ brew 'zsh'
 cask 'aldente' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
 cask 'cleanmymac'
 cask 'coconutbattery'
+cask 'cursor'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu_model)
@@ -104,6 +105,11 @@ cask 'vlc'
 # mas 'Xcode', id: 497_799_835
 mas 'Amphetamine', id: 937_984_704
 mas 'Magnet', id: 441_258_766
+
+# Games
+mas 'Cyberpunk 2077', id: 6_633_429_424 if architecture == 'arm64'
+mas 'Resident Evil 2', id: 1_640_632_432 if architecture == 'arm64'
+mas 'Resident Evil 3', id: 1_640_630_077 if architecture == 'arm64'
 mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64'
 mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64'
 mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64'

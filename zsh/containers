@@ -4,43 +4,95 @@
 # Internal functions to calculate the cores, memory and disk size for VMs
 ################################################################################
 function __calculate_vm_cores() {
+  # Percentage of total CPU cores to allocate
+  local percentage=25
+  # Minimum number of CPU cores to allocate
+  local minimum=2
+
   case "$(uname -s)" in
     Darwin)
+      local total="$(sysctl -n hw.ncpu)"
 
-      echo $(( $(sysctl -n hw.ncpu) / 2 ))
       ;;
     Linux)
-      echo $(( $(nproc) / 2 ))
+      local total="$(nproc)"
 
       ;;
   esac
+
+  if [ "$total" -le 2 ]; then
+    echo "$total"
+
+    return
+  fi
+
+  local result=$(( total * percentage / 100 ))
+
+  if [ "$result" -lt "$minimum" ]; then
+    echo "$minimum"
+
+    return
+  fi
+
+  echo "$result"
 }
 
 function __calculate_vm_memory() {
+  # Percentage of total memory to allocate
+  local percentage=50
+  # Minimum memory to allocate (in GiB)
+  local minimum=4
+
   case "$(uname -s)" in
     Darwin)
+      local total=$(( "$(sysctl -n hw.memsize)" / 1024 / 1024 / 1024 ))
 
-      echo $(( $(sysctl -n hw.memsize) / 1024 / 1024 / 1024 / 2 ))
       ;;
     Linux)
-      echo $(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 / 2 ))
+      local total=$(( "$(grep MemTotal /proc/meminfo | awk '{print $2}')" / 1024 / 1024 ))
 
       ;;
   esac
+
+  local result=$(( total * percentage / 100 ))
+
+  if [ "$result" -lt "$minimum" ]; then
+    echo "$minimum"
+
+    return
+  fi
+
+  echo "$result"
 }
 
-function __calculate_vm_disk() {
+function __calculate_vm_storage() {
+  # Percentage of total storage to allocate
+  local percentage=20
+  # Minimum storage to allocate (in GiB)
+  local minimum=10
+
   case "$(uname -s)" in
-      Darwin)
-        echo $(( $(df -g / | awk 'NR==2 {print $2}') / 20 ))
+    Darwin)
+      local total=$(( "$(diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {print $2}')" / 1073741824 ))
 
-        ;;
-      Linux)
-        echo $(( $(df -BG / | awk 'NR==2 {gsub("G","",$2); print $2}') / 20 ))
+      ;;
+    Linux)
+      local total=$(( "$(lsblk -bdno SIZE "/dev/$(lsblk -no pkname "$(df / --output=source | tail -n1)")")" / 1073741824 ))
 
-        ;;
-    esac
+      ;;
+  esac
+
+  local result=$(( total * percentage / 100 ))
+
+  if [ "$result" -lt "$minimum" ]; then
+    echo "$minimum"
+
+    return
+  fi
+
+  echo "$result"
 }
+
 
 ################################################################################
 # Colima VM
@@ -48,12 +100,12 @@ function __calculate_vm_disk() {
 function colima-start() {
   local cores="$(__calculate_vm_cores)"
   local memory="$(__calculate_vm_memory)"
-  local disk="$(__calculate_vm_disk)"
+  local storage="$(__calculate_vm_storage)"
 
   colima start \
     --cpu "${cores}" \
     --memory "${memory}" \
-    --disk "${disk}" \
+    --disk "${storage}" \
     \
     --runtime "docker" \
     --vm-type "qemu" \
@@ -76,11 +128,11 @@ function colima-purge() {
 # Docker purge
 ################################################################################
 function docker-purge() {
-  docker stop $(docker ps -aq) 2>/dev/null
-  docker rm -f $(docker ps -aq) 2>/dev/null
-  docker rmi -f $(docker images -aq) 2>/dev/null
-  docker volume rm $(docker volume ls -q) 2>/dev/null
-  docker network rm $(docker network ls -q) 2>/dev/null
+  docker stop "$(docker ps -aq)" 2>/dev/null
+  docker rm -f "$(docker ps -aq)" 2>/dev/null
+  docker rmi -f "$(docker images -aq)" 2>/dev/null
+  docker volume rm "$(docker volume ls -q)" 2>/dev/null
+  docker network rm "$(docker network ls -q)" 2>/dev/null
   docker builder prune -af
   docker system prune -af --volumes
 }

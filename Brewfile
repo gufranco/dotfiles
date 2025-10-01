@@ -5,6 +5,7 @@ architecture = `uname -m`.strip
 cpu_model = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
+storage = (`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824)
 
 # Serials
 macbook_retina_12_2017_serial = 'C02TW09THH29'
@@ -70,7 +71,11 @@ brew 'zlib'
 brew 'zsh-syntax-highlighting'
 brew 'zsh'
 
+# cask 'adobe-creative-cloud'
+# cask 'microsoft-office'
+cask '1password'
 cask 'aldente' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
+cask 'arc'
 cask 'cleanmymac'
 cask 'coconutbattery'
 cask 'cursor'
@@ -85,6 +90,7 @@ cask 'istat-menus'
 cask 'iterm2'
 cask 'jdownloader'
 cask 'keka'
+cask 'lastpass'
 cask 'linear-linear'
 cask 'maccy'
 cask 'maestral'
@@ -95,22 +101,27 @@ cask 'nordvpn'
 cask 'opencore-patcher' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
 cask 'parallels' if architecture == 'arm64'
 cask 'postman'
+cask 'shottr'
 cask 'slack'
 cask 'spotify', args: { 'no-quarantine' => true }
+cask 'sublime-text'
+cask 'textmate'
 cask 'transmission'
 cask 'tunnelblick'
+cask 'virtualbox' if architecture == 'x86_64'
 cask 'visual-studio-code'
 cask 'vlc'
 
-# mas 'Xcode', id: 497_799_835
+mas 'Xcode', id: 497_799_835
 mas 'Amphetamine', id: 937_984_704
 mas 'Magnet', id: 441_258_766
 
 # Games
-mas 'Cyberpunk 2077', id: 6_633_429_424 if architecture == 'arm64'
-mas 'Resident Evil 2', id: 1_640_632_432 if architecture == 'arm64'
-mas 'Resident Evil 3', id: 1_640_630_077 if architecture == 'arm64'
-mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64'
-mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64'
-mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64'
-mas 'Stray', id: 6_451_498_949 if architecture == 'arm64'
+mas 'Cyberpunk 2077', id: 6_633_429_424 if architecture == 'arm64' && storage >= 512
+mas 'Death Stranding', id: 6_449_748_961 if architecture == 'arm64' && storage >= 512
+mas 'Resident Evil 2', id: 1_640_632_432 if architecture == 'arm64' && storage >= 512
+mas 'Resident Evil 3', id: 1_640_630_077 if architecture == 'arm64' && storage >= 512
+mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && storage >= 512
+mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && storage >= 512
+mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && storage >= 512
+mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && storage >= 512

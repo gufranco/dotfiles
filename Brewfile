@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# System
+# System specs
 architecture = `uname -m`.strip
-cpu_model = `sysctl -n machdep.cpu.brand_string`.strip
+cpu = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
 storage = (`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824)
@@ -71,17 +71,18 @@ brew 'zlib'
 brew 'zsh-syntax-highlighting'
 brew 'zsh'
 
-# cask 'adobe-creative-cloud'
-# cask 'microsoft-office'
+# cask 'cleanmymac'
+# cask 'visual-studio-code'
 cask '1password'
 cask 'aldente' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
 cask 'arc'
-cask 'cleanmymac'
 cask 'coconutbattery'
+cask 'cursor-cli'
 cask 'cursor'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
-cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu_model)
+cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu)
+cask 'figma'
 cask 'flixtools'
 cask 'font-hack-nerd-font'
 cask 'google-chrome'
@@ -99,24 +100,23 @@ cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
 cask 'nordvpn'
 cask 'opencore-patcher' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
-cask 'parallels' if architecture == 'arm64'
+cask 'parallels'
 cask 'postman'
 cask 'shottr'
 cask 'slack'
-cask 'spotify', args: { 'no-quarantine' => true }
+cask 'spotify', args: { no_quarantine => true }
 cask 'sublime-text'
 cask 'textmate'
 cask 'transmission'
 cask 'tunnelblick'
-cask 'virtualbox' if architecture == 'x86_64'
-cask 'visual-studio-code'
 cask 'vlc'
 
+# App Store apps
 mas 'Xcode', id: 497_799_835
 mas 'Amphetamine', id: 937_984_704
 mas 'Magnet', id: 441_258_766
 
-# Games
+# App Store games
 mas 'Cyberpunk 2077', id: 6_633_429_424 if architecture == 'arm64' && storage >= 512
 mas 'Death Stranding', id: 6_449_748_961 if architecture == 'arm64' && storage >= 512
 mas 'Resident Evil 2', id: 1_640_632_432 if architecture == 'arm64' && storage >= 512

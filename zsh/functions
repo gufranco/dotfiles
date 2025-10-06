@@ -96,7 +96,7 @@ function f5() {
 function zero_fill_verify() {
   local disk="$1"
   local size=$(diskutil info "$disk" | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
-  local passes=2
+  local passes=1
   local threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB (binary, 2147483648 bytes)
   local create_partition=0
 
@@ -109,6 +109,7 @@ function zero_fill_verify() {
 
   if [ -z "$disk" ] || [ ! -b "$disk" ]; then
     echo "Error: device not found or invalid: $disk"
+
     return 1
   fi
 
@@ -128,6 +129,7 @@ function zero_fill_verify() {
       head -c "$size" | \
       sudo dd of="$disk" bs=1m status=progress || {
         echo "Error: failed to write 0xFF."
+
         return 1
       }
 
@@ -135,12 +137,14 @@ function zero_fill_verify() {
     sudo dd if="$disk" bs="$size" count=1 status=progress | \
       cmp -n "$size" - <(tr '\000' '\377' < /dev/zero) || {
         echo "Error: failed to verify 0xFF."
+
         return 1
       }
 
     echo "Writing 0x00..."
     sudo dd if=/dev/zero of="$disk" bs="$size" count=1 status=progress || {
       echo "Error: failed to write 0x00."
+
       return 1
     }
 
@@ -148,6 +152,7 @@ function zero_fill_verify() {
     sudo dd if="$disk" bs="$size" count=1 status=progress | \
       cmp -n "$size" - /dev/zero || {
         echo "Error: failed to verify 0x00."
+
         return 1
       }
   done
@@ -165,165 +170,8 @@ function zero_fill_verify() {
       sudo diskutil eraseDisk "MS-DOS FAT32" "NO NAME" MBRFormat "$disk"
     fi
   fi
-}
 
-################################################################################
-# Convert any movie file to VCD ISO
-################################################################################
-function convert_to_vcd() {
-  local CD74=false
-  local INPUT_VIDEO=""
-  local SUBTITLES=""
-  local OVERLAP=60
-  local CHUNK_SECONDS=4800
-
-  for arg in "$@"; do
-    case "$arg" in
-      --cd74) CD74=true ;;
-      *) [ -z "$INPUT_VIDEO" ] && INPUT_VIDEO="$arg" || SUBTITLES="$arg" ;;
-    esac
-  done
-
-  if [ -z "$INPUT_VIDEO" ] || [ ! -f "$INPUT_VIDEO" ]; then
-    echo "[ERROR] Input video is missing or invalid."
-    echo "Usage: convert_to_vcd [--cd74] video.[mp4|mkv] [optional subtitles.srt]"
-    return 1
-  fi
-
-  $CD74 && CHUNK_SECONDS=4440
-  if $CD74; then
-    echo "[INFO] Using chunk duration: ${CHUNK_SECONDS}s (74min mode)"
-  else
-    echo "[INFO] Using chunk duration: ${CHUNK_SECONDS}s (80min mode)"
-  fi
-
-  for tool in ffmpeg vcdimager iconv file ffprobe; do
-    command -v "$tool" >/dev/null || { echo "[ERROR] Missing tool: $tool"; return 1; }
-  done
-
-  local BASENAME="${INPUT_VIDEO%.*}_disc"
-  local ASSFILE=""
-  if [ -n "$SUBTITLES" ]; then
-    [ ! -f "$SUBTITLES" ] && echo "[ERROR] Subtitle file not found: $SUBTITLES" && return 1
-    echo "[INFO] Subtitle provided: $SUBTITLES"
-    local ENCODING
-    ENCODING=$(file -I "$SUBTITLES" | awk -F'charset=' '{print $2}')
-    echo "[DEBUG] Subtitle encoding: $ENCODING"
-    if [[ "$ENCODING" != "utf-8" && "$ENCODING" != "us-ascii" ]]; then
-      iconv -f "$ENCODING" -t UTF-8 "$SUBTITLES" > "${BASENAME}_utf8.srt"
-      SUBTITLES="${BASENAME}_utf8.srt"
-      echo "[INFO] Subtitle converted to UTF-8"
-    fi
-    ASSFILE="${BASENAME}.ass"
-    ffmpeg -v error -i "$SUBTITLES" "$ASSFILE"
-    {
-      printf '[Script Info]\nScriptType: v4.00+\nPlayResX: 352\nPlayResY: 240\nScaledBorderAndShadow: yes\n\n'
-      printf '[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n'
-      printf 'Style: Default,Arial,16,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,1,1,2,10,10,10,1\n\n'
-      printf '[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n'
-      cat "$ASSFILE"
-    } > "${ASSFILE}.tmp" && mv "${ASSFILE}.tmp" "$ASSFILE"
-  fi
-
-  local DURATION
-  DURATION=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$INPUT_VIDEO")
-  DURATION=${DURATION%.*}
-  echo "[DEBUG] Video duration: ${DURATION}s"
-
-  local PART=1 START=0
-  while [ "$START" -lt "$DURATION" ]; do
-    echo "[INFO] Encoding part $PART (start=$START)..."
-    local OUT="${BASENAME}${PART}.mpg"
-    local BIN="${BASENAME}${PART}.bin"
-    local CUE="${BASENAME}${PART}.cue"
-
-    local FILTER="crop=in_h*4/3:in_h,scale=352:240"
-    [ -n "$ASSFILE" ] && FILTER="subtitles=${ASSFILE},$FILTER"
-
-    ffmpeg -v error -ss "$START" -t "$CHUNK_SECONDS" -i "$INPUT_VIDEO" \
-      -vf "$FILTER" -r 29.97 -g 15 -mbd 2 -cmp 2 -subcmp 2 \
-      -c:v mpeg1video -b:v 1150000 -minrate 1150000 -maxrate 1150000 -bufsize 327680 \
-      -c:a mp2 -ab 224k -ac 2 -ar 44100 \
-      -muxrate 1411200 -packetsize 2324 -f vcd "$OUT"
-
-    [ ! -f "$OUT" ] && echo "[ERROR] ffmpeg failed for part $PART" && return 1
-
-    echo "[INFO] Generating BIN/CUE for part $PART..."
-    vcdimager -t vcd2 -c "$CUE" -b "$BIN" "$OUT" || {
-      echo "[ERROR] vcdimager failed for part $PART"
-      return 1
-    }
-
-    START=$((START + CHUNK_SECONDS - OVERLAP))
-    PART=$((PART + 1))
-  done
-
-  echo "[INFO] Completed. Total discs: $((PART - 1))"
-}
-
-################################################################################
-# Prepare n64 roms for Mr Backup Z64
-################################################################################
-function prepare_z64_roms() {
-  IFS=$'\n\t'
-
-  local MAX_CF_SIZE=$((1990 * 1024 * 1024))
-  local MAX_FILES_PER_FOLDER=500
-  local ORIGINAL_DIR="$(pwd)"
-  local TMP_DIR="$(mktemp -d -t prepare_z64_roms.XXXXXXXXXX)"
-
-  trap 'rm -rf "$TMP_DIR"' EXIT
-
-  cd "$TMP_DIR" || exit
-
-  find "$ORIGINAL_DIR" -maxdepth 1 -type f -exec cp -p {} . \;
-
-  for file in *; do
-    if [[ -f "$file" ]]; then
-      local base="$(basename "$file")"
-      local first_char="$(echo "$base" | cut -c1)"
-
-      if [[ "$first_char" =~ [0-9] ]]; then
-        target_folder="#"
-      else
-        target_folder="$(echo "$first_char" | tr '[:lower:]' '[:upper:]')"
-      fi
-
-      mkdir -p "$target_folder"
-      mv -- "$file" "$target_folder/"
-    fi
-  done
-
-  local DESTINATION="$TMP_DIR/CF_GROUPS"
-  mkdir -p "$DESTINATION"
-
-  local group_number=1
-  local group_folder="${DESTINATION}/CF_Group_${group_number}"
-  mkdir -p "$group_folder"
-  local current_size=0
-  local current_files=0
-
-  for folder in $(find . -mindepth 1 -maxdepth 1 -type d ! -name 'CF_GROUPS' | sort); do
-    local folder_size_kb=$(du -sk "$folder" | awk '{print $1}')
-    local folder_size_bytes=$((folder_size_kb * 1024))
-    local file_count=$(find "$folder" -type f | wc -l)
-
-    if (( current_size + folder_size_bytes > MAX_CF_SIZE )) || (( current_files + file_count > MAX_FILES_PER_FOLDER )); then
-      group_number=$((group_number + 1))
-      group_folder="${DESTINATION}/CF_Group_${group_number}"
-      mkdir -p "$group_folder"
-      current_size=0
-      current_files=0
-    fi
-
-    mv -- "$folder" "$group_folder/"
-    current_size=$((current_size + folder_size_bytes))
-    current_files=$((current_files + file_count))
-  done
-
-  mv "$DESTINATION"/* "$ORIGINAL_DIR/"
-
-  echo "[DONE] prepare_z64_roms completed."
+  sudo diskutil eject "$disk"
 }
 
 ################################################################################
@@ -347,56 +195,56 @@ function __sync_redump() {
 
   for folder in "${folders[@]}"; do
     mkdir -p "./$group/$folder/"
-    echo "\nProcessing: $folder"
+    printf "\nProcessing: %s\n" "$folder"
 
-  rclone sync \
-    --progress \
-    --ignore-case \
-    --multi-thread-streams=0 \
-    --size-only \
-    --delete-excluded \
-    \
-    --filter "- *\(Demo*" \
-    --filter "- *Demo\)*" \
-    --filter "- *\(Debug*" \
-    --filter "- *Debug\)*" \
-    --filter "- *\(Beta*" \
-    --filter "- *Beta\)*" \
-    --filter "- *\(Proto*" \
-    --filter "- *Proto\)*" \
-    --filter "- *\(Prototype*" \
-    --filter "- *Prototype\)*" \
-    --filter "- *\(Trial*" \
-    --filter "- *Trial\)*" \
-    --filter "- *\(Kiosk*" \
-    --filter "- *Kiosk\)*" \
-    --filter "- *\(Preview*" \
-    --filter "- *Preview\)*" \
-    --filter "- *\(Promo*" \
-    --filter "- *Promo\)*" \
-    --filter "- *\(Promotional*" \
-    --filter "- *Promotional\)*" \
-    \
-    --filter "- *\ Demo Disc\ *" \
-    --filter "- *\ Interactive Multi-Game Demo Disc\ *" \
-    --filter "- *\ Interactive Sampler Disc\ *" \
-    --filter "- *\ Jam Pack\ *" \
-    --filter "- *\ PlayStation Underground\ *" \
-    --filter "- *\ Trial Edition\ *" \
-    --filter "- *\ Trial Version\ *" \
-    \
-    --filter "+ *\(World*" \
-    --filter "+ *\(USA*" \
-    --filter "+ *\(Japan*" \
-    --filter "+ *\(Export*" \
-    --filter "+ *\(Brazil*" \
-    --filter "+ *Brazil\)*" \
-    \
-    --filter "- *" \
-    \
-    --http-url "https://myrient.erista.me/files/$group/" \
-    ":http:$folder/" \
-    "./$group/$folder/"
+    rclone sync \
+      --progress \
+      --ignore-case \
+      --multi-thread-streams=0 \
+      --size-only \
+      --delete-excluded \
+      \
+      --filter "- *\(Demo*" \
+      --filter "- *Demo\)*" \
+      --filter "- *\(Debug*" \
+      --filter "- *Debug\)*" \
+      --filter "- *\(Beta*" \
+      --filter "- *Beta\)*" \
+      --filter "- *\(Proto*" \
+      --filter "- *Proto\)*" \
+      --filter "- *\(Prototype*" \
+      --filter "- *Prototype\)*" \
+      --filter "- *\(Trial*" \
+      --filter "- *Trial\)*" \
+      --filter "- *\(Kiosk*" \
+      --filter "- *Kiosk\)*" \
+      --filter "- *\(Preview*" \
+      --filter "- *Preview\)*" \
+      --filter "- *\(Promo*" \
+      --filter "- *Promo\)*" \
+      --filter "- *\(Promotional*" \
+      --filter "- *Promotional\)*" \
+      \
+      --filter "- *\ Demo Disc\ *" \
+      --filter "- *\ Interactive Multi-Game Demo Disc\ *" \
+      --filter "- *\ Interactive Sampler Disc\ *" \
+      --filter "- *\ Jam Pack\ *" \
+      --filter "- *\ PlayStation Underground\ *" \
+      --filter "- *\ Trial Edition\ *" \
+      --filter "- *\ Trial Version\ *" \
+      \
+      --filter "+ *\(World*" \
+      --filter "+ *\(USA*" \
+      --filter "+ *\(Japan*" \
+      --filter "+ *\(Export*" \
+      --filter "+ *\(Brazil*" \
+      --filter "+ *Brazil\)*" \
+      \
+      --filter "- *" \
+      \
+      --http-url "https://myrient.erista.me/files/$group/" \
+      ":http:$folder/" \
+      "./$group/$folder/"
   done
 }
 
@@ -418,7 +266,7 @@ function __sync_internet_archive() {
 
   for folder in "${folders[@]}"; do
     mkdir -p "./$group/$folder/"
-    echo "\nProcessing: $folder"
+    printf "\nProcessing: %s\n" "$folder"
 
     rclone sync \
       --progress \
@@ -528,7 +376,7 @@ function __sync_no_intro() {
 
   for folder in "${folders[@]}"; do
     mkdir -p "./$group/$folder/"
-    echo "\nProcessing: $folder"
+    printf "\nProcessing: %s\n" "$folder"
 
     rclone sync \
       --progress \
@@ -575,7 +423,7 @@ function __sync_no_intro() {
 function __sync_ossc() {
   local folder="OSSC"
   mkdir -p "./$folder/"
-  echo "\nProcessing: $folder"
+  printf "\nProcessing: %s\n" "$folder"
 
   rclone sync \
     --progress \

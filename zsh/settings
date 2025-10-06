@@ -54,5 +54,6 @@ export SPACESHIP_CHAR_SUFFIX=" "
 # Npm
 ################################################################################
 if [ -z "$NPM_TOKEN" ]; then
+  # shellcheck disable=SC2155
   export NPM_TOKEN="$(gpg --quiet --batch --yes -d ~/.dotfiles/nodejs/tokens/classic.gpg | tr -d '\n')"
 fi

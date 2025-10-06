@@ -11,10 +11,12 @@ function __calculate_vm_cores() {
 
   case "$(uname -s)" in
     Darwin)
+      # shellcheck disable=SC2155
       local total="$(sysctl -n hw.ncpu)"
 
       ;;
     Linux)
+      # shellcheck disable=SC2155
       local total="$(nproc)"
 
       ;;
@@ -45,10 +47,12 @@ function __calculate_vm_memory() {
 
   case "$(uname -s)" in
     Darwin)
+      # shellcheck disable=SC2155
       local total=$(( "$(sysctl -n hw.memsize)" / 1024 / 1024 / 1024 ))
 
       ;;
     Linux)
+      # shellcheck disable=SC2155
       local total=$(( "$(grep MemTotal /proc/meminfo | awk '{print $2}')" / 1024 / 1024 ))
 
       ;;
@@ -73,10 +77,12 @@ function __calculate_vm_storage() {
 
   case "$(uname -s)" in
     Darwin)
+      # shellcheck disable=SC2155
       local total=$(( "$(diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}')" / 1073741824 ))
 
       ;;
     Linux)
+      # shellcheck disable=SC2155
       local total=$(( "$(lsblk -bdno SIZE "/dev/$(lsblk -no pkname "$(df / --output=source | tail -n1)")")" / 1073741824 ))
 
       ;;
@@ -97,8 +103,11 @@ function __calculate_vm_storage() {
 # Colima VM
 ################################################################################
 function colima-start() {
+  # shellcheck disable=SC2155
   local cores="$(__calculate_vm_cores)"
+  # shellcheck disable=SC2155
   local memory="$(__calculate_vm_memory)"
+  # shellcheck disable=SC2155
   local storage="$(__calculate_vm_storage)"
 
   colima start \
@@ -155,7 +164,7 @@ function mongo-init() {
 }
 
 function mongo-start() {
-  docker run mongo
+  docker start mongo
 }
 
 function mongo-stop() {
@@ -169,7 +178,7 @@ function mongo-purge() {
 }
 
 function mongo-terminal() {
-  docker exec -it mongo /bin/bash
+  docker exec -it mongo /bin/sh
 }
 
 ################################################################################
@@ -191,7 +200,7 @@ function postgres-init() {
 }
 
 function postgres-start() {
-  docker run postgres
+  docker start postgres
 }
 
 function postgres-stop() {
@@ -225,7 +234,7 @@ function redis-init() {
 }
 
 function redis-start() {
-  docker run redis
+  docker start redis
 }
 
 function redis-stop() {
@@ -259,7 +268,7 @@ function valkey-init() {
 }
 
 function valkey-start() {
-  docker run valkey
+  docker start valkey
 }
 
 function valkey-stop() {
@@ -293,7 +302,7 @@ function redict-init() {
 }
 
 function redict-start() {
-  docker run redict
+  docker start redict
 }
 
 function redict-stop() {

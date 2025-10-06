@@ -33,16 +33,20 @@ case "$(uname)" in
     esac
 
     # cURL
+    # shellcheck disable=SC2155
     export PATH="$(brew --prefix)/opt/curl/bin:$PATH"
 
     # OpenSSL
+    # shellcheck disable=SC2155
     export PATH="$(brew --prefix)/opt/openssl/bin:$PATH"
 
     # Ruby
+    # shellcheck disable=SC2155
     export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
 
     # NVM
     export NVM_DIR="$HOME/.nvm"
+    # shellcheck disable=SC1091
     source "$(brew --prefix)/opt/nvm/nvm.sh"
 
     # Pnpm

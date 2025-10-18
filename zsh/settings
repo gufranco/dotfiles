@@ -36,10 +36,69 @@ export ZSH_THEME="spaceship"
 export DISABLE_AUTO_UPDATE="true"
 export HIST_STAMPS="dd/mm/yyyy"
 export plugins=(
+  # Security & Authentication
   gpg-agent
   ssh-agent
+
+  # Shell Interface & Experience
   zsh-autosuggestions
   zsh-syntax-highlighting
+  history-substring-search
+
+  # Version Control & Git
+  git
+  gitignore
+  github
+
+  # Containers & Orchestration
+  docker
+  docker-compose
+  kubectl
+
+  # Cloud & DevOps
+  aws
+
+  # Programming Languages - JavaScript/TypeScript
+  node
+  npm
+  yarn
+
+  # Programming Languages - Python
+  python
+  pip
+
+  # Programming Languages - Ruby
+  ruby
+  gem
+  bundler
+
+  # Programming Languages - Go
+  golang
+
+  # Editors & IDEs
+  sublime
+  vscode
+
+  # Terminal & Multiplexing
+  tmux
+
+  # File Operations & Search
+  fzf
+  rsync
+  extract
+
+  # System & Package Management
+  macos
+  brew
+
+  # Development Tools
+  stripe
+  rclone
+
+  # Productivity & Misc
+  common-aliases
+  web-search
+  copyfile
 )
 
 ################################################################################

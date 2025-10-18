@@ -50,10 +50,33 @@ case "$(uname)" in
     source "$(brew --prefix)/opt/nvm/nvm.sh"
 
     # Pnpm
-    if command -v pnpm >/dev/null 2>&1; then
-      export PNPM_HOME="$HOME/Library/pnpm"
-      export PATH="$PNPM_HOME:$PATH"
-    fi
+    export PNPM_HOME="$HOME/Library/pnpm"
+    export PATH="$PNPM_HOME:$PATH"
+
+    # Android SDK
+    export ANDROID_HOME="$HOME/Library/Android/sdk"
+    # shellcheck disable=SC2155
+    export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$(brew --prefix)/opt/openjdk@11/bin:$PATH"
+
+    # Chruby
+    source "$(brew --prefix)/opt/chruby/share/chruby/chruby.sh"
+    source "$(brew --prefix)/opt/chruby/share/chruby/auto.sh"
+
+    # Bc
+    # shellcheck disable=SC2155
+    export PATH="$(brew --prefix)/opt/bc/bin:$PATH"
+
+    # Coreutils
+    # shellcheck disable=SC2155
+    export PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
+
+    # Gawk
+    # shellcheck disable=SC2155
+    export PATH="$(brew --prefix)/opt/gawk/libexec/gnubin:$PATH"
+
+    # GNU Sed
+    # shellcheck disable=SC2155
+    export PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
 
     ;;
 esac

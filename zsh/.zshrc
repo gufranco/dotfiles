@@ -47,3 +47,4 @@ source "$HOME/.dotfiles/zsh/containers"
 # Oh-my-zsh
 ################################################################################
 source "$ZSH/oh-my-zsh.sh"
+export PATH="/opt/homebrew/opt/bc/bin:$PATH"

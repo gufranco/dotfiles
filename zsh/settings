@@ -120,7 +120,8 @@ export SPACESHIP_CHAR_SUFFIX=" "
 if [ -z "$NPM_TOKEN" ]; then
   export NPM_TOKEN_CACHE_FILE="$HOME/.dotfiles/nodejs/tokens/classic.cache"
 
-  if [ ! -f "$NPM_TOKEN_CACHE_FILE" ] || [ $(( $(date +%s) - $(stat -f %m "$NPM_TOKEN_CACHE_FILE" 2>/dev/null || echo 0) )) -gt 86400 ]; then
+  # Check if cache file exists and is not older than 24 hours (86400 seconds)
+  if [ ! -f "$NPM_TOKEN_CACHE_FILE" ] || [ "$(find "$NPM_TOKEN_CACHE_FILE" -mtime +1 2>/dev/null)" ]; then
     gpg --quiet --batch --yes -d "$HOME/.dotfiles/nodejs/tokens/classic.gpg" | tr -d '\n' > "$NPM_TOKEN_CACHE_FILE"
     chmod 600 "$NPM_TOKEN_CACHE_FILE"
   fi

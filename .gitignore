@@ -37,3 +37,6 @@ coc/memos.json
 
 # Brew
 Brewfile.lock.json
+
+# Node.js
+nodejs/*/*.cache

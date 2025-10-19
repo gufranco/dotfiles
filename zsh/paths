@@ -34,20 +34,20 @@ case "$(uname)" in
 
     # cURL
     # shellcheck disable=SC2155
-    export PATH="$(brew --prefix)/opt/curl/bin:$PATH"
+    export PATH="$HOMEBREW_PREFIX/opt/curl/bin:$PATH"
 
     # OpenSSL
     # shellcheck disable=SC2155
-    export PATH="$(brew --prefix)/opt/openssl/bin:$PATH"
+    export PATH="$HOMEBREW_PREFIX/opt/openssl/bin:$PATH"
 
     # Ruby
     # shellcheck disable=SC2155
-    export PATH="$(brew --prefix)/opt/ruby/bin:$PATH"
+    export PATH="$HOMEBREW_PREFIX/opt/ruby/bin:$PATH"
 
     # NVM
     export NVM_DIR="$HOME/.nvm"
     # shellcheck disable=SC1091
-    source "$(brew --prefix)/opt/nvm/nvm.sh"
+    source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
 
     # Pnpm
     export PNPM_HOME="$HOME/Library/pnpm"
@@ -56,27 +56,27 @@ case "$(uname)" in
     # Android SDK
     export ANDROID_HOME="$HOME/Library/Android/sdk"
     # shellcheck disable=SC2155
-    export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$(brew --prefix)/opt/openjdk@11/bin:$PATH"
+    export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$HOMEBREW_PREFIX/opt/openjdk@11/bin:$PATH"
 
     # Chruby
-    source "$(brew --prefix)/opt/chruby/share/chruby/chruby.sh"
-    source "$(brew --prefix)/opt/chruby/share/chruby/auto.sh"
+    source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
+    source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
 
     # Bc
     # shellcheck disable=SC2155
-    export PATH="$(brew --prefix)/opt/bc/bin:$PATH"
+    export PATH="$HOMEBREW_PREFIX/opt/bc/bin:$PATH"
 
     # Coreutils
     # shellcheck disable=SC2155
-    export PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
+    export PATH="$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin:$PATH"
 
     # Gawk
     # shellcheck disable=SC2155
-    export PATH="$(brew --prefix)/opt/gawk/libexec/gnubin:$PATH"
+    export PATH="$HOMEBREW_PREFIX/opt/gawk/libexec/gnubin:$PATH"
 
     # GNU Sed
     # shellcheck disable=SC2155
-    export PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
+    export PATH="$HOMEBREW_PREFIX/opt/gnu-sed/libexec/gnubin:$PATH"
 
     ;;
 esac

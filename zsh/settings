@@ -47,8 +47,6 @@ export plugins=(
   you-should-use
   zsh-completions
   colored-man-pages
-  command-not-found
-  last-working-dir
   sudo
   zsh-z
   zsh-autocomplete
@@ -104,7 +102,6 @@ export plugins=(
   rclone
 
   # Productivity & Misc
-  common-aliases
   web-search
   copyfile
 )
@@ -121,6 +118,13 @@ export SPACESHIP_CHAR_SUFFIX=" "
 # Npm
 ################################################################################
 if [ -z "$NPM_TOKEN" ]; then
+  export NPM_TOKEN_CACHE_FILE="$HOME/.dotfiles/nodejs/tokens/classic.cache"
+
+  if [ ! -f "$NPM_TOKEN_CACHE_FILE" ] || [ $(( $(date +%s) - $(stat -f %m "$NPM_TOKEN_CACHE_FILE" 2>/dev/null || echo 0) )) -gt 86400 ]; then
+    gpg --quiet --batch --yes -d "$HOME/.dotfiles/nodejs/tokens/classic.gpg" | tr -d '\n' > "$NPM_TOKEN_CACHE_FILE"
+    chmod 600 "$NPM_TOKEN_CACHE_FILE"
+  fi
+
   # shellcheck disable=SC2155
-  export NPM_TOKEN="$(gpg --quiet --batch --yes -d ~/.dotfiles/nodejs/tokens/classic.gpg | tr -d '\n')"
+  export NPM_TOKEN="$(cat $NPM_TOKEN_CACHE_FILE)"
 fi

@@ -27,8 +27,7 @@ command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="fzf --pre
 # TTY Clock with custom options
 command -v tty-clock > /dev/null && alias tty-clock="tty-clock -Dcs"
 
-# Remove any existing ls alias and define our own
-unalias ls 2>/dev/null || true
+# Colorized ls
 alias ls="command ls \$LS_COLOR_FLAG"
 
 # List all files colorized in long format, excluding . and ..

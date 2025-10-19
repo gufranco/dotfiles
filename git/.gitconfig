@@ -54,7 +54,7 @@
 [push]
   followTags = true
   default = current
-  gpgSign = true
+  gpgSign = if-asked
 
 [help]
   autocorrect = 1

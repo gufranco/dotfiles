@@ -446,11 +446,34 @@ fi
 
 git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
 
-if [ -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions ]; then
-  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+
+# You Should Use plugin
+if [ -d ~/.oh-my-zsh/custom/plugins/you-should-use ] || [ -h ~/.oh-my-zsh/custom/plugins/you-should-use ]; then
+  rm -rf ~/.oh-my-zsh/custom/plugins/you-should-use
 fi
 
-git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+git clone --depth=1 https://github.com/MichaelAquilina/zsh-you-should-use.git ~/.oh-my-zsh/custom/plugins/you-should-use
+
+# Zsh Completions plugin
+if [ -d ~/.oh-my-zsh/custom/plugins/zsh-completions ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-completions ]; then
+  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-completions
+fi
+
+git clone --depth=1 https://github.com/zsh-users/zsh-completions.git ~/.oh-my-zsh/custom/plugins/zsh-completions
+
+# Zsh-z plugin (better than native z)
+if [ -d ~/.oh-my-zsh/custom/plugins/zsh-z ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-z ]; then
+  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-z
+fi
+
+git clone --depth=1 https://github.com/agkozak/zsh-z.git ~/.oh-my-zsh/custom/plugins/zsh-z
+
+# Zsh-autocomplete plugin
+if [ -d ~/.oh-my-zsh/custom/plugins/zsh-autocomplete ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-autocomplete ]; then
+  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-autocomplete
+fi
+
+git clone --depth=1 https://github.com/marlonrichert/zsh-autocomplete.git ~/.oh-my-zsh/custom/plugins/zsh-autocomplete
 
 if [ -d ~/.oh-my-zsh/custom/themes/spaceship-prompt ] || [ -h ~/.oh-my-zsh/custom/themes/spaceship-prompt ]; then
   rm -rf ~/.oh-my-zsh/custom/themes/spaceship-prompt

@@ -325,17 +325,17 @@ case "$(uname)" in
     ############################################################################
     # Bash
     ############################################################################
-    if ! grep -q "$(brew --prefix)/bin/bash" /etc/shells; then
-      echo -e "$(brew --prefix)/bin/bash" | sudo tee -a /etc/shells
+    if ! grep -q "$HOMEBREW_PREFIX/bin/bash" /etc/shells; then
+      echo -e "$HOMEBREW_PREFIX/bin/bash" | sudo tee -a /etc/shells
     fi
 
     ############################################################################
     # Zsh
     ############################################################################
-    if ! grep -q "$(brew --prefix)/bin/zsh" /etc/shells; then
-      echo -e "$(brew --prefix)/bin/zsh" | sudo tee -a /etc/shells
+    if ! grep -q "$HOMEBREW_PREFIX/bin/zsh" /etc/shells; then
+      echo -e "$HOMEBREW_PREFIX/bin/zsh" | sudo tee -a /etc/shells
     fi
-    chsh -s "$(brew --prefix)/bin/zsh"
+    chsh -s "$HOMEBREW_PREFIX/bin/zsh"
 
     ;;
 esac
@@ -348,6 +348,20 @@ if [ -d ~/.npmrc ] || [ -h ~/.npmrc ]; then
 fi
 
 ln -s ~/.dotfiles/nodejs/.npmrc ~/.npmrc
+
+# Yarn configuration
+if [ -d ~/.yarnrc.yml ] || [ -h ~/.yarnrc.yml ]; then
+  rm -rf ~/.yarnrc.yml
+fi
+
+ln -s ~/.dotfiles/nodejs/.yarnrc.yml ~/.yarnrc.yml
+
+# PNPM configuration
+if [ -d ~/.pnpmrc ] || [ -h ~/.pnpmrc ]; then
+  rm -rf ~/.pnpmrc
+fi
+
+ln -s ~/.dotfiles/nodejs/.pnpmrc ~/.pnpmrc
 
 if [ ! -d ~/.nvm ] && [ ! -h ~/.nvm ]; then
   mkdir -p ~/.nvm

@@ -1,0 +1,30 @@
+# PNPM Configuration
+# Maintains same behavior as .npmrc for consistency
+
+# Registry configuration
+registry=https://registry.npmjs.org/
+
+# Authentication
+//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+//registry.npmjs.org/:always-auth=true
+
+# Security settings
+audit=true
+audit-level=moderate
+engine-strict=true
+ignore-scripts=true
+
+# Network settings
+fetch-retries=3
+fetch-retry-mintimeout=10000
+fetch-retry-maxtimeout=60000
+
+# CLI behavior
+update-notifier=false
+progress=false
+fund=false
+loglevel=warn
+
+# Performance settings
+store-dir=~/.pnpm-store
+cache-dir=~/.pnpm-cache

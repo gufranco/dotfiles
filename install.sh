@@ -599,6 +599,16 @@ fi
 ln -s ~/.dotfiles/readline/.inputrc ~/.inputrc
 
 ################################################################################
+# Kitty
+################################################################################
+if [ -d ~/.config/kitty/kitty.conf ] || [ -h ~/.config/kitty/kitty.conf ]; then
+  rm -rf ~/.config/kitty/kitty.conf
+fi
+
+mkdir -p ~/.config/kitty
+ln -s ~/.dotfiles/kitty/kitty.conf ~/.config/kitty/kitty.conf
+
+################################################################################
 # Finish
 ################################################################################
 case "$(uname)" in

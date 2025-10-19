@@ -1,0 +1,29 @@
+# Telnet Configuration
+# Security and usability improvements
+
+# Disable automatic login
+set autologin off
+
+# Disable echo of passwords
+set echo off
+
+# Set timeout for connections
+set timeout 30
+
+# Disable automatic character conversion
+set binary off
+
+# Set terminal type
+set term vt100
+
+# Disable telnet escape character (Ctrl+])
+set escape off
+
+# Enable line mode for better security
+set line on
+
+# Disable automatic flush
+set flush off
+
+# Set window size
+set window 80 24

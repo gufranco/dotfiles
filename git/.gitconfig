@@ -10,6 +10,11 @@
   pager = less -FRSX
   whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
   editor = vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72'
+  preloadindex = true
+  fscache = true
+  untrackedCache = true
+  fsmonitor = true
+  compression = 1
 
 [init]
   defaultBranch = main
@@ -67,10 +72,6 @@
 [url "https://"]
   insteadOf = git://
 
-[core]
-  preloadindex = true
-  fscache = true
-
 [gc]
   auto = 256
 
@@ -80,14 +81,6 @@
 
 [index]
   version = 4
-
-[advice]
-  mergeConflict = false
-  statusHints = false
-  commitBeforeMerge = false
-  detachedHead = false
-  pushNonFastForward = false
-  pushUpdateRejected = false
 
 [rebase]
   autoStash = true

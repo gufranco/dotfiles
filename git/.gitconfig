@@ -49,13 +49,37 @@
 [push]
   followTags = true
   default = current
-  gpgSign = if-asked
+  gpgSign = true
 
 [help]
   autocorrect = 1
 
 [fetch]
   prune = true
+  fsckObjects = true
+
+[transfer]
+  fsckObjects = true
+
+[receive]
+  fsckObjects = true
+
+[url "https://"]
+  insteadOf = git://
+
+[core]
+  preloadindex = true
+  fscache = true
+
+[gc]
+  auto = 256
+
+[pack]
+  threads = 0
+  windowMemory = 256m
+
+[index]
+  version = 4
 
 [advice]
   mergeConflict = false

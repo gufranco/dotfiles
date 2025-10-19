@@ -1,19 +1,41 @@
 #!/usr/bin/env bash
 
 ################################################################################
+# Color detection (simple approach)
+################################################################################
+# Detect if ls supports --color (GNU) or only -G (BSD)
+if ls --color > /dev/null 2>&1; then
+  # GNU ls (works on Linux and macOS with GNU coreutils)
+  LS_COLOR_FLAG="--color"
+else
+  # BSD ls (macOS default)
+  LS_COLOR_FLAG="-G"
+fi
+
+################################################################################
 # General aliases
 ################################################################################
 # Always create parent folders if needed
 alias mkdir="mkdir -p -v"
 
 # Use neomutt when available
-command -v neomutt > /dev/null || alias mutt="neomutt"
+command -v neomutt > /dev/null && alias mutt="neomutt"
 
 # FZF with bat preview
 command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="fzf --preview 'bat --color=never --style=numbers --line-range=:500 {}'"
 
 # TTY Clock with custom options
 command -v tty-clock > /dev/null && alias tty-clock="tty-clock -Dcs"
+
+# Remove any existing ls alias and define our own
+unalias ls 2>/dev/null || true
+alias ls="command ls \$LS_COLOR_FLAG"
+
+# List all files colorized in long format, excluding . and ..
+alias la="command ls -lAF \$LS_COLOR_FLAG"
+
+# List only directories
+alias ld="command ls -lF \$LS_COLOR_FLAG | grep --color=never '^d'"
 
 ################################################################################
 # System specific aliases
@@ -26,15 +48,6 @@ case "$(uname)" in
     # Browser
     command -v google-chrome > /dev/null || alias chrome="/opt/google/chrome/google-chrome"
 
-    # Colorized ls
-    alias ls="command ls --color"
-
-    # List all files colorized in long format, excluding . and ..
-    alias la="ls -lAF --color"
-
-    # List only directories
-    alias ld="ls -lF --color | grep --color=never '^d'"
-
     ;;
   "Darwin")
     # macOS has no `md5sum`, so use `md5` as a fallback
@@ -42,15 +55,6 @@ case "$(uname)" in
 
     # macOS has no `sha1sum`, so use `shasum` as a fallback
     command -v sha1sum > /dev/null || alias sha1sum="shasum"
-
-    # Colorized ls
-    alias ls="command ls -G"
-
-    # List all files colorized in long format, excluding . and ..
-    alias la="ls -lAF -G"
-
-    # List only directories
-    alias ld="ls -lF -G | grep --color=never '^d'"
 
     ;;
 esac

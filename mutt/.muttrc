@@ -1,4 +1,9 @@
 ################################################################################
+# Load theme
+################################################################################
+source ~/.dotfiles/mutt/themes/tokyo-night.muttrc
+
+################################################################################
 # Folder hooks
 ################################################################################
 folder-hook "com.gmail.gustavocfranco" "source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc"
@@ -16,7 +21,7 @@ macro index <f4> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/
 # Editor
 ################################################################################
 set charset = "utf-8"
-set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup tw=72 ft=mail noautoindent fo=watqc cursorline number colorcolumn=72 nojs nosmartindent list listchars=trail:•'"
+set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup tw=72 ft=mail noautoindent fo=watqc cursorline number colorcolumn=72 nojs nosmartindent syntax=mail'"
 
 ################################################################################
 # Status bar
@@ -58,8 +63,13 @@ auto_view application/x-tcl
 auto_view application/x-zip-compressed
 auto_view application/zip
 auto_view image/tiff
+auto_view image/jpeg
+auto_view image/png
+auto_view image/gif
+auto_view application/pdf
 auto_view text/html
 auto_view text/x-vcard
+auto_view text/calendar
 
 ################################################################################
 # Sanely handle multi-part messages
@@ -97,13 +107,14 @@ unset record
 ################################################################################
 # Index view
 ################################################################################
-set date_format = "%Y-%m-%d  %H:%M:%S"
-set index_format = "[%Z]  %D  %-20.20F  %s"
+set date_format = "%Y-%m-%d %H:%M"
+set index_format = "[%Z] %D %-20.20F %s"
 set reply_regexp = "^(([Rr][Ee]?(\[[0-9]+\])?: *)?(\[[^]]+\] *)?)*"
 set sort = threads
 set sort_aux = reverse-last-date-received
 set sort_re
 set uncollapse_jump
+set collapse_unread
 
 ################################################################################
 # Pager view

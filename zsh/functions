@@ -76,13 +76,6 @@ function f5() {
       killall Dock
 
       ;;
-
-    "Power Macintosh")
-      brew update
-      brew upgrade
-      brew cleanup -s
-
-      ;;
   esac
 
   # Reload zsh settings

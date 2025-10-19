@@ -20,7 +20,7 @@ case "$(uname)" in
         export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
 
         ;;
-      "x86_64" | "Power Macintosh")
+      "x86_64")
         export HOMEBREW_PREFIX="/usr/local";
         export HOMEBREW_CELLAR="/usr/local/Cellar";
         export HOMEBREW_REPOSITORY="/usr/local/Homebrew";

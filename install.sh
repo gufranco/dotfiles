@@ -296,24 +296,6 @@ case "$(uname)" in
           export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
 
           ;;
-        "Power Macintosh")
-          echo "CI" | ruby -e "$(curl -fsSL https://raw.githubusercontent.com/mistydemeo/tigerbrew/refs/heads/go/install)"
-
-          export HOMEBREW_PREFIX="/usr/local"
-          export HOMEBREW_CELLAR="/usr/local/Cellar"
-          export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
-          export HOMEBREW_SHELLENV_PREFIX="/usr/local"
-          export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
-          export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
-          export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
-
-          brew doctor
-          brew update
-          brew upgrade
-          brew install curl curl-ca-bundle git ruby
-          brew cleanup -s
-
-          ;;
       esac
     fi
 
@@ -333,66 +315,12 @@ case "$(uname)" in
     ############################################################################
     # Homebrew bundle
     ############################################################################
-    case "$(uname -m)" in
-      "arm64" | "x86_64")
-        brew update
-        brew bundle --file "$HOME/.dotfiles/Brewfile" --force cleanup
-        brew bundle --file "$HOME/.dotfiles/Brewfile"
-        brew upgrade
-        brew cu --all --yes --cleanup
-        brew cleanup -s
-
-        ;;
-      "Power Macintosh")
-        packages=(
-          ack
-          asciinema
-          awscli
-          bash
-          binutils
-          cdrtools
-          cmake
-          coreutils
-          curl
-          curl-ca-bundle
-          ffmpeg
-          findutils
-          fzf
-          gawk
-          git
-          gnupg
-          jq
-          gcc
-          lynx
-          mutt
-          node
-          gpp
-          nvm
-          openssl
-          p7zip
-          python
-          reattach-to-user-namespace
-          ruby
-          shared-mime-info
-          shellcheck
-          tmux
-          urlview
-          vcdimager
-          vim
-          wget
-          zlib
-          zsh
-          zsh-syntax-highlighting
-        )
-
-        for pkg in "${packages[@]}"; do
-          brew install "$pkg"
-        done
-
-        brew cleanup -s
-
-        ;;
-    esac
+    brew update
+    brew bundle --file "$HOME/.dotfiles/Brewfile" --force cleanup
+    brew bundle --file "$HOME/.dotfiles/Brewfile"
+    brew upgrade
+    brew cu --all --yes --cleanup
+    brew cleanup -s
 
     ############################################################################
     # Bash

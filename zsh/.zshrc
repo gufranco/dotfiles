@@ -16,10 +16,6 @@ else
       export TERM="screen-256color"
 
       ;;
-    "Power Macintosh")
-      export TERM="xterm-color"
-
-      ;;
   esac
 fi
 

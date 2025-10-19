@@ -335,6 +335,7 @@ case "$(uname)" in
     if ! grep -q "$HOMEBREW_PREFIX/bin/zsh" /etc/shells; then
       echo -e "$HOMEBREW_PREFIX/bin/zsh" | sudo tee -a /etc/shells
     fi
+
     chsh -s "$HOMEBREW_PREFIX/bin/zsh"
 
     ;;

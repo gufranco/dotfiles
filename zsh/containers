@@ -71,7 +71,7 @@ function __calculate_vm_memory() {
 
 function __calculate_vm_storage() {
   # Percentage of total storage to allocate
-  local percentage=20
+  local percentage=5
   # Minimum storage to allocate (in GiB)
   local minimum=10
 
@@ -79,24 +79,25 @@ function __calculate_vm_storage() {
     Darwin)
       # shellcheck disable=SC2155
       local total=$(( "$(diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}')" / 1073741824 ))
-
       ;;
     Linux)
       # shellcheck disable=SC2155
       local total=$(( "$(lsblk -bdno SIZE "/dev/$(lsblk -no pkname "$(df / --output=source | tail -n1)")")" / 1073741824 ))
-
       ;;
   esac
 
   local result=$(( total * percentage / 100 ))
 
-  if [ "$result" -lt "$minimum" ]; then
+  local step=$(( result < 100 ? 10 : 100 ))
+  local rounded=$(( ((result + step / 2) / step) * step ))
+
+  if [ "$rounded" -lt "$minimum" ]; then
     echo "$minimum"
 
     return
   fi
 
-  echo "$result"
+  echo "$rounded"
 }
 
 ################################################################################

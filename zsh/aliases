@@ -1,27 +1,10 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# Color detection (simple approach)
-################################################################################
-# Detect if ls supports --color (GNU) or only -G (BSD)
-if ls --color > /dev/null 2>&1; then
-  LS_COLOR_FLAG="--color"
-else
-  LS_COLOR_FLAG="-G"
-fi
-
-# Detect if grep supports --color (GNU) or not (BSD)
-if grep --color > /dev/null 2>&1; then
-  GREP_COLOR_FLAG="--color"
-else
-  GREP_COLOR_FLAG=""
-fi
-
-################################################################################
 # General aliases
 ################################################################################
 # Always create parent folders if needed
-alias mkdir="mkdir -p -v"
+command -v mkdir > /dev/null && alias mkdir="mkdir -p -v"
 
 # Use neomutt when available
 command -v neomutt > /dev/null && alias mutt="neomutt"
@@ -32,23 +15,32 @@ command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="fzf --pre
 # TTY Clock with custom options
 command -v tty-clock > /dev/null && alias tty-clock="tty-clock -Dcs"
 
-# Colorized ls
-alias ls="command ls \$LS_COLOR_FLAG"
+# Find files
+command -v find > /dev/null && alias findf="command find . -type f -name"
 
-# List all files colorized in long format, excluding . and ..
-alias la="command ls -lAF \$LS_COLOR_FLAG"
+# Find directories
+command -v find > /dev/null && alias findd="command find . -type d -name"
 
-# List only directories
-alias ld="command ls -lF \$LS_COLOR_FLAG | grep --color=never '^d'"
-
-# Colorized grep
-alias grep="command grep \$GREP_COLOR_FLAG"
+# Find executable files
+command -v find > /dev/null && alias findx="command find . -type f -executable"
 
 ################################################################################
 # System specific aliases
 ################################################################################
 case "$(uname)" in
   "Linux")
+    # Colorized ls
+    command -v ls > /dev/null && alias ls="command ls --color"
+
+    # List all files colorized in long format, excluding . and ..
+    command -v ls > /dev/null && alias la="command ls -lAF --color"
+
+    # List only directories
+    command -v ls > /dev/null && alias ld="command ls -lF --color | command grep --color=never '^d'"
+
+    # Colorized grep
+    command -v grep > /dev/null && alias grep="command grep --color"
+
     # Lock the screen (when going AFK)
     command -v gnome-screensaver-command > /dev/null || alias afk="gnome-screensaver-command --lock"
 
@@ -57,11 +49,37 @@ case "$(uname)" in
 
     ;;
   "Darwin")
+    # Detect if ls supports --color (GNU) or only -G (BSD)
+    if command ls --color > /dev/null 2>&1; then
+      LS_COLOR_FLAG="--color"
+    else
+      LS_COLOR_FLAG="-G"
+    fi
+
+    # Detect if grep supports --color (GNU) or not (BSD)
+    if command grep --color > /dev/null 2>&1; then
+      GREP_COLOR_FLAG="--color"
+    else
+      GREP_COLOR_FLAG=""
+    fi
+
+    # Colorized ls
+    command -v ls > /dev/null && alias ls="command ls \$LS_COLOR_FLAG"
+
+    # List all files colorized in long format, excluding . and ..
+    command -v ls > /dev/null && alias la="command ls -lAF \$LS_COLOR_FLAG"
+
+    # List only directories
+    command -v ls > /dev/null && alias ld="command ls -lF \$LS_COLOR_FLAG | grep --color=never '^d'"
+
+    # Colorized grep
+    command -v grep > /dev/null && alias grep="command grep \$GREP_COLOR_FLAG"
+
     # macOS has no `md5sum`, so use `md5` as a fallback
-    command -v md5sum > /dev/null || alias md5sum="md5"
+    command -v md5sum > /dev/null || alias md5sum="command md5"
 
     # macOS has no `sha1sum`, so use `shasum` as a fallback
-    command -v sha1sum > /dev/null || alias sha1sum="shasum"
+    command -v sha1sum > /dev/null || alias sha1sum="command shasum"
 
     ;;
 esac

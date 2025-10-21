@@ -78,5 +78,37 @@ case "$(uname)" in
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/gnu-sed/libexec/gnubin:$PATH"
 
+    # GNU findutils
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/findutils/libexec/gnubin:$PATH"
+
+    # GNU grep
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/grep/libexec/gnubin:$PATH"
+
+    # GNU binutils
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/binutils/bin:$PATH"
+
+    # GNU make
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/make/libexec/gnubin:$PATH"
+
+    # GNU tar
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/gnu-tar/libexec/gnubin:$PATH"
+
+    # GNU which
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/which/bin:$PATH"
+
+    # GNU diffutils
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/diffutils/bin:$PATH"
+
+    # GNU patch
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/patch/bin:$PATH"
+
     ;;
 esac

@@ -5,11 +5,16 @@
 ################################################################################
 # Detect if ls supports --color (GNU) or only -G (BSD)
 if ls --color > /dev/null 2>&1; then
-  # GNU ls (works on Linux and macOS with GNU coreutils)
   LS_COLOR_FLAG="--color"
 else
-  # BSD ls (macOS default)
   LS_COLOR_FLAG="-G"
+fi
+
+# Detect if grep supports --color (GNU) or not (BSD)
+if grep --color > /dev/null 2>&1; then
+  GREP_COLOR_FLAG="--color"
+else
+  GREP_COLOR_FLAG=""
 fi
 
 ################################################################################
@@ -35,6 +40,9 @@ alias la="command ls -lAF \$LS_COLOR_FLAG"
 
 # List only directories
 alias ld="command ls -lF \$LS_COLOR_FLAG | grep --color=never '^d'"
+
+# Colorized grep
+alias grep="command grep \$GREP_COLOR_FLAG"
 
 ################################################################################
 # System specific aliases

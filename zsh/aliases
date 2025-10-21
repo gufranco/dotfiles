@@ -10,7 +10,7 @@ command -v mkdir > /dev/null && alias mkdir="command mkdir -p -v"
 command -v neomutt > /dev/null && alias mutt="command neomutt"
 
 # FZF with bat preview
-command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="command fzf --preview 'bat --color=never --style=numbers --line-range=:500 {}'"
+command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="command fzf --preview 'command bat --color=never --style=numbers --line-range=:500 {}'"
 
 # TTY Clock with custom options
 command -v tty-clock > /dev/null && alias tty-clock="command tty-clock -Dcs"

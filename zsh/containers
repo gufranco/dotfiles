@@ -137,13 +137,13 @@ function colima-purge() {
 # Docker purge
 ################################################################################
 function docker-purge() {
-  docker stop "$(docker ps -aq)" 2>/dev/null
-  docker rm -f "$(docker ps -aq)" 2>/dev/null
-  docker rmi -f "$(docker images -aq)" 2>/dev/null
-  docker volume rm "$(docker volume ls -q)" 2>/dev/null
-  docker network rm "$(docker network ls -q)" 2>/dev/null
-  docker builder prune -af
-  docker system prune -af --volumes
+  command docker stop "$(command docker ps -aq)" 2> /dev/null
+  command docker rm -f "$(command docker ps -aq)" 2> /dev/null
+  command docker rmi -f "$(command docker images -aq)" 2> /dev/null
+  command docker volume rm "$(command docker volume ls -q)" 2> /dev/null
+  command docker network rm "$(command docker network ls -q)" 2> /dev/null
+  command docker builder prune -af
+  command docker system prune -af --volumes
 }
 
 ################################################################################
@@ -152,7 +152,7 @@ function docker-purge() {
 function mongo-init() {
   mkdir -p "$HOME/Docker/Mongo"
 
-  docker run \
+  command docker run \
     --detach \
     --hostname mongo \
     --name mongo \
@@ -165,21 +165,21 @@ function mongo-init() {
 }
 
 function mongo-start() {
-  docker start mongo
+  command docker start mongo
 }
 
 function mongo-stop() {
-  docker stop mongo
+  command docker stop mongo
 }
 
 function mongo-purge() {
   mongo-stop
-  docker rm mongo
+  command docker rm mongo
   rm -rf "$HOME/Docker/Mongo"
 }
 
 function mongo-terminal() {
-  docker exec -it mongo /bin/sh
+  command docker exec -it mongo /bin/sh
 }
 
 ################################################################################
@@ -188,7 +188,7 @@ function mongo-terminal() {
 function postgres-init() {
   mkdir -p "$HOME/Docker/Postgres"
 
-  docker run \
+  command docker run \
     --detach \
     --hostname postgres \
     --name postgres \
@@ -201,21 +201,21 @@ function postgres-init() {
 }
 
 function postgres-start() {
-  docker start postgres
+  command docker start postgres
 }
 
 function postgres-stop() {
-  docker stop postgres
+  command docker stop postgres
 }
 
 function postgres-purge() {
   postgres-stop
-  docker rm postgres
+  command docker rm postgres
   rm -rf "$HOME/Docker/Postgres"
 }
 
 function postgres-terminal() {
-  docker exec -it postgres /bin/sh
+  command docker exec -it postgres /bin/sh
 }
 
 ################################################################################
@@ -224,7 +224,7 @@ function postgres-terminal() {
 function redis-init() {
   mkdir -p "$HOME/Docker/Redis"
 
-  docker run \
+  command docker run \
     --detach \
     --hostname redis \
     --name redis \
@@ -235,21 +235,21 @@ function redis-init() {
 }
 
 function redis-start() {
-  docker start redis
+  command docker start redis
 }
 
 function redis-stop() {
-  docker stop redis
+  command docker stop redis
 }
 
 function redis-purge() {
   redis-stop
-  docker rm redis
+  command docker rm redis
   rm -rf "$HOME/Docker/Redis"
 }
 
 function redis-terminal() {
-  docker exec -it redis /bin/sh
+  command docker exec -it redis /bin/sh
 }
 
 ################################################################################
@@ -258,7 +258,7 @@ function redis-terminal() {
 function valkey-init() {
   mkdir -p "$HOME/Docker/Valkey"
 
-  docker run \
+  command docker run \
     --detach \
     --hostname valkey \
     --name valkey \
@@ -269,21 +269,21 @@ function valkey-init() {
 }
 
 function valkey-start() {
-  docker start valkey
+  command docker start valkey
 }
 
 function valkey-stop() {
-  docker stop valkey
+  command docker stop valkey
 }
 
 function valkey-purge() {
   valkey-stop
-  docker rm valkey
+  command docker rm valkey
   rm -rf "$HOME/Docker/Valkey"
 }
 
 function valkey-terminal() {
-  docker exec -it valkey /bin/sh
+  command docker exec -it valkey /bin/sh
 }
 
 ################################################################################
@@ -292,7 +292,7 @@ function valkey-terminal() {
 function redict-init() {
   mkdir -p "$HOME/Docker/Redict"
 
-  docker run \
+  command docker run \
     --detach \
     --hostname redict \
     --name redict \
@@ -303,19 +303,19 @@ function redict-init() {
 }
 
 function redict-start() {
-  docker start redict
+  command docker start redict
 }
 
 function redict-stop() {
-  docker stop redict
+  command docker stop redict
 }
 
 function redict-purge() {
   redict-stop
-  docker rm redict
+  command docker rm redict
   rm -rf "$HOME/Docker/Redict"
 }
 
 function redict-terminal() {
-  docker exec -it redict /bin/sh
+  command docker exec -it redict /bin/sh
 }

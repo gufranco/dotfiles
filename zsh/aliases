@@ -4,16 +4,16 @@
 # General aliases
 ################################################################################
 # Always create parent folders if needed
-command -v mkdir > /dev/null && alias mkdir="mkdir -p -v"
+command -v mkdir > /dev/null && alias mkdir="command mkdir -p -v"
 
 # Use neomutt when available
-command -v neomutt > /dev/null && alias mutt="neomutt"
+command -v neomutt > /dev/null && alias mutt="command neomutt"
 
 # FZF with bat preview
-command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="fzf --preview 'bat --color=never --style=numbers --line-range=:500 {}'"
+command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="command fzf --preview 'bat --color=never --style=numbers --line-range=:500 {}'"
 
 # TTY Clock with custom options
-command -v tty-clock > /dev/null && alias tty-clock="tty-clock -Dcs"
+command -v tty-clock > /dev/null && alias tty-clock="command tty-clock -Dcs"
 
 # Find files
 command -v find > /dev/null && alias findf="command find . -type f -name"

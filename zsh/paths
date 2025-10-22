@@ -5,6 +5,7 @@
 ################################################################################
 case "$(uname)" in
   "Linux")
+    # Neomutt
     export PATH="/usr/libexec/neomutt:$PATH"
 
     ;;
@@ -62,15 +63,15 @@ case "$(uname)" in
     source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
     source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
 
-    # Bc
+    # GNU Bc
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/bc/bin:$PATH"
 
-    # Coreutils
+    # GNU Coreutils
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin:$PATH"
 
-    # Gawk
+    # GNU Gawk
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/gawk/libexec/gnubin:$PATH"
 
@@ -78,37 +79,69 @@ case "$(uname)" in
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/gnu-sed/libexec/gnubin:$PATH"
 
-    # GNU findutils
+    # GNU Findutils
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/findutils/libexec/gnubin:$PATH"
 
-    # GNU grep
+    # GNU Grep
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/grep/libexec/gnubin:$PATH"
 
-    # GNU binutils
+    # GNU Binutils
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/binutils/bin:$PATH"
 
-    # GNU make
+    # GNU Make
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/make/libexec/gnubin:$PATH"
 
-    # GNU tar
+    # GNU Tar
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/gnu-tar/libexec/gnubin:$PATH"
 
-    # GNU which
+    # GNU Which
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/which/bin:$PATH"
 
-    # GNU diffutils
+    # GNU Diffutils
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/diffutils/bin:$PATH"
 
-    # GNU patch
+    # GNU Patch
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/patch/bin:$PATH"
+
+    # GNU Time
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/gnu-time/libexec/gnubin:$PATH"
+
+    # GNU Which
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/gnu-which/libexec/gnubin:$PATH"
+
+    # GNU Units
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/gnu-units/bin:$PATH"
+
+    # GNU Indent
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/gnu-indent/libexec/gnubin:$PATH"
+
+    # GNU Inetutils
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/inetutils/libexec/gnubin:$PATH"
+
+    # GNU Mailutils
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/mailutils/bin:$PATH"
+
+    # GNU Moreutils
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/moreutils/bin:$PATH"
+
+    # GNU Patchutils
+    # shellcheck disable=SC2155
+    export PATH="$HOMEBREW_PREFIX/opt/patchutils/bin:$PATH"
 
     ;;
 esac

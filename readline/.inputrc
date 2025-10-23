@@ -1,3 +1,6 @@
+################################################################################
+# Completion settings
+################################################################################
 # Make Tab autocomplete regardless of filename case
 set completion-ignore-case on
 
@@ -6,11 +9,6 @@ set show-all-if-ambiguous on
 
 # Immediately add a trailing slash when autocompleting symlinks to directories
 set mark-symlinked-directories on
-
-# Use the text that has already been typed as the prefix for searching through
-# commands (i.e. more intelligent Up/Down behavior)
-"\e[B": history-search-forward
-"\e[A": history-search-backward
 
 # Do not autocomplete hidden files unless the pattern explicitly begins with a dot
 set match-hidden-files off
@@ -31,10 +29,132 @@ set visible-stats on
 # Readline used by Bash 4.)
 set skip-completed-text on
 
+# Enable menu completion (cycle through options with Tab)
+set menu-complete-display-prefix on
+
+# Show completions in columns
+set print-completions-horizontally on
+
+################################################################################
+# History settings
+################################################################################
+# Use the text that has already been typed as the prefix for searching through
+# commands (i.e. more intelligent Up/Down behavior)
+"\e[B": history-search-forward
+"\e[A": history-search-backward
+
+# Maximum number of commands to remember
+set history-size 10000
+
+################################################################################
+# Character encoding and display
+################################################################################
 # Allow UTF-8 input and output, instead of showing stuff like $'\0123\0456'
 set input-meta on
 set output-meta on
 set convert-meta off
 
+# Enable 8-bit input
+set input-meta on
+
+# Display characters with the eighth bit set directly
+set output-meta on
+
+# Don't convert characters with the eighth bit set
+set convert-meta off
+
+################################################################################
+# Key bindings and shortcuts
+################################################################################
 # Use Alt/Meta + Delete to delete the preceding word
 "\e[3;3~": kill-word
+
+# Ctrl+A - Go to beginning of line
+"\C-a": beginning-of-line
+
+# Ctrl+E - Go to end of line
+"\C-e": end-of-line
+
+# Ctrl+K - Kill from cursor to end of line
+"\C-k": kill-line
+
+# Ctrl+U - Kill from cursor to beginning of line
+"\C-u": backward-kill-line
+
+# Ctrl+W - Kill word backwards
+"\C-w": backward-kill-word
+
+# Ctrl+L - Clear screen
+"\C-l": clear-screen
+
+# Ctrl+R - Search history backwards
+"\C-r": reverse-search-history
+
+# Ctrl+S - Search history forwards
+"\C-s": forward-search-history
+
+# Alt+F - Move forward one word
+"\ef": forward-word
+
+# Alt+B - Move backward one word
+"\eb": backward-word
+
+# Alt+D - Delete word forward
+"\ed": kill-word
+
+# Alt+Backspace - Delete word backward
+"\e\C-h": backward-kill-word
+
+# Ctrl+T - Transpose characters
+"\C-t": transpose-chars
+
+# Alt+T - Transpose words
+"\et": transpose-words
+
+################################################################################
+# Editing behavior
+################################################################################
+# Enable emacs mode (default)
+set editing-mode emacs
+
+# Enable bell for errors
+set bell-style audible
+
+# Don't beep on ambiguous completions
+set bell-style none
+
+# Show matching parentheses
+set blink-matching-paren on
+
+# Enable bracketed paste mode
+set enable-bracketed-paste on
+
+# Don't wrap long lines
+set horizontal-scroll-mode off
+
+# Enable keyseq timeout
+set keyseq-timeout 500
+
+# Enable mark mode
+set mark-modified-lines on
+
+# Enable meta key
+set meta-flag on
+
+################################################################################
+# Advanced features
+################################################################################
+# Enable colored completions
+set colored-completion-prefix on
+
+# Enable colored stats
+set colored-stats on
+
+# Enable tilde expansion
+set expand-tilde on
+
+################################################################################
+# Performance optimizations
+################################################################################
+# Enable incremental search
+set isearch-terminators "\C-g\C-r\C-s"

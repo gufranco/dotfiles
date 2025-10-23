@@ -2,32 +2,100 @@
 # General settings
 ################################################################################
 Host *
+  # Identity and authentication
   IdentityFile ~/.ssh/id_ed25519
   AddKeysToAgent yes
   UseKeychain yes
+
+  # Connection settings
   Compression yes
   ForwardAgent yes
   TCPKeepAlive yes
   ServerAliveInterval 20
   ServerAliveCountMax 10
+
+  # Security settings
   LogLevel INFO
   StrictHostKeyChecking ask
   IgnoreUnknown UseKeychain
   Protocol 2
 
+  # Disable insecure features
+  PasswordAuthentication no
+  ChallengeResponseAuthentication no
+  GSSAPIAuthentication no
+
+  # Connection multiplexing for efficiency
+  ControlMaster auto
+  ControlPersist 300
+  ControlPath ~/.ssh/control-%r@%h:%p
+
 ################################################################################
-# Hosts
+# Cryptographic algorithms and security
+################################################################################
+Host *
+  # Preferred key exchange algorithms (secure)
+  KexAlgorithms curve25519-sha256@libssh.org,curve25519-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
+
+  # Preferred host key algorithms (secure)
+  HostKeyAlgorithms ssh-ed25519,ssh-ed25519-cert-v01@openssh.com,rsa-sha2-512,rsa-sha2-256
+
+  # Preferred public key algorithms (secure)
+  PubkeyAcceptedKeyTypes ssh-ed25519,ssh-ed25519-cert-v01@openssh.com,rsa-sha2-512,rsa-sha2-256
+
+  # Preferred cipher algorithms (secure)
+  Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+  # Preferred MAC algorithms (secure)
+  MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512
+
+################################################################################
+# Host-specific configurations
 ################################################################################
 Host github.com
+  HostName github.com
+  User git
   ControlMaster auto
   ControlPersist 120
+  ControlPath ~/.ssh/control-github-%r@%h:%p
 
+Host gitlab.com
+  HostName gitlab.com
+  User git
+  ControlMaster auto
+  ControlPersist 120
+  ControlPath ~/.ssh/control-gitlab-%r@%h:%p
+
+Host bitbucket.org
+  HostName bitbucket.org
+  User git
+  ControlMaster auto
+  ControlPersist 120
+  ControlPath ~/.ssh/control-bitbucket-%r@%h:%p
+
+################################################################################
+# Container environments
 ################################################################################
 # Colima
-################################################################################
 Include ~/.colima/ssh_config
 
-################################################################################
 # Orbstack
-################################################################################
 Include ~/.orbstack/ssh/config
+
+################################################################################
+# Security hardening
+################################################################################
+Host *
+  # Disable X11 forwarding for security
+  ForwardX11 no
+  ForwardX11Trusted no
+
+  # Set connection timeout
+  ConnectTimeout 30
+
+  # Set maximum authentication attempts
+  NumberOfPasswordPrompts 3
+
+  # Enable host key verification
+  StrictHostKeyChecking ask
+  VerifyHostKeyDNS ask

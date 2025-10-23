@@ -1,0 +1,16 @@
+# fd Configuration
+--hidden
+--follow
+--exclude=.git
+--exclude=node_modules
+--exclude=*.log
+--exclude=*.tmp
+--exclude=.DS_Store
+--exclude=*.pyc
+--exclude=__pycache__
+--exclude=.pytest_cache
+--exclude=.coverage
+--exclude=dist
+--exclude=build
+--exclude=.venv
+--exclude=venv

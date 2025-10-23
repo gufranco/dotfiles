@@ -1,0 +1,17 @@
+# Ripgrep Configuration
+--smart-case
+--follow
+--hidden
+--glob=!.git
+--glob=!node_modules
+--glob=!*.log
+--glob=!*.tmp
+--glob=!.DS_Store
+--glob=!*.pyc
+--glob=!__pycache__
+--glob=!.pytest_cache
+--glob=!.coverage
+--glob=!dist
+--glob=!build
+--glob=!.venv
+--glob=!venv

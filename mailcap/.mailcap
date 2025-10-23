@@ -1,0 +1,175 @@
+################################################################################
+# HTML and Web Content
+################################################################################
+# Convert HTML to plain text using lynx
+text/html; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.html
+
+# Handle XHTML
+application/xhtml+xml; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.xhtml
+
+# Handle XML
+application/xml; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.xml
+
+# Handle SVG
+image/svg+xml; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.svg
+
+################################################################################
+# Text Formats
+################################################################################
+# Plain text
+text/plain; cat %s; copiousoutput; needsterminal
+
+# Rich text format
+text/richtext; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.rtf
+
+# Markdown
+text/markdown; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.md
+
+# CSV files
+text/csv; column -t -s, %s; copiousoutput; needsterminal; nametemplate=%s.csv
+
+# JSON files
+application/json; python3 -m json.tool %s; copiousoutput; needsterminal; nametemplate=%s.json
+
+################################################################################
+# Image Formats (Basic handling)
+################################################################################
+# JPEG images - show file info
+image/jpeg; file %s; copiousoutput; needsterminal; nametemplate=%s.jpg
+
+# PNG images - show file info
+image/png; file %s; copiousoutput; needsterminal; nametemplate=%s.png
+
+# GIF images - show file info
+image/gif; file %s; copiousoutput; needsterminal; nametemplate=%s.gif
+
+# WebP images - show file info
+image/webp; file %s; copiousoutput; needsterminal; nametemplate=%s.webp
+
+# SVG images - render as text (handled above in XML section)
+
+# BMP images - show file info
+image/bmp; file %s; copiousoutput; needsterminal; nametemplate=%s.bmp
+
+# TIFF images - show file info
+image/tiff; file %s; copiousoutput; needsterminal; nametemplate=%s.tiff
+
+################################################################################
+# Document Formats (Basic handling)
+################################################################################
+# PDF files - show file info
+application/pdf; file %s; copiousoutput; needsterminal; nametemplate=%s.pdf
+
+# PostScript files - show file info
+application/postscript; file %s; copiousoutput; needsterminal; nametemplate=%s.ps
+
+# Microsoft Word documents - show file info
+application/msword; file %s; copiousoutput; needsterminal; nametemplate=%s.doc
+
+# Microsoft Excel spreadsheets - show file info
+application/vnd.ms-excel; file %s; copiousoutput; needsterminal; nametemplate=%s.xls
+
+# Microsoft PowerPoint presentations - show file info
+application/vnd.ms-powerpoint; file %s; copiousoutput; needsterminal; nametemplate=%s.ppt
+
+# OpenDocument Text - show file info
+application/vnd.oasis.opendocument.text; file %s; copiousoutput; needsterminal; nametemplate=%s.odt
+
+# OpenDocument Spreadsheet - show file info
+application/vnd.oasis.opendocument.spreadsheet; file %s; copiousoutput; needsterminal; nametemplate=%s.ods
+
+# OpenDocument Presentation - show file info
+application/vnd.oasis.opendocument.presentation; file %s; copiousoutput; needsterminal; nametemplate=%s.odp
+
+################################################################################
+# Archive Formats
+################################################################################
+# ZIP archives
+application/zip; unzip -l %s; copiousoutput; needsterminal; nametemplate=%s.zip
+
+# TAR archives
+application/x-tar; tar -tf %s; copiousoutput; needsterminal; nametemplate=%s.tar
+
+# GZIP archives
+application/gzip; gunzip -c %s; copiousoutput; needsterminal; nametemplate=%s.gz
+
+# BZIP2 archives
+application/x-bzip2; bunzip2 -c %s; copiousoutput; needsterminal; nametemplate=%s.bz2
+
+# 7-Zip archives
+application/x-7z-compressed; 7z l %s; copiousoutput; needsterminal; nametemplate=%s.7z
+
+# RAR archives - show file info
+application/x-rar; file %s; copiousoutput; needsterminal; nametemplate=%s.rar
+
+################################################################################
+# Audio Formats (Basic handling)
+################################################################################
+# MP3 audio - show file info
+audio/mpeg; file %s; copiousoutput; needsterminal; nametemplate=%s.mp3
+
+# WAV audio - show file info
+audio/wav; file %s; copiousoutput; needsterminal; nametemplate=%s.wav
+
+# OGG audio - show file info
+audio/ogg; file %s; copiousoutput; needsterminal; nametemplate=%s.ogg
+
+# FLAC audio - show file info
+audio/flac; file %s; copiousoutput; needsterminal; nametemplate=%s.flac
+
+# AAC audio - show file info
+audio/aac; file %s; copiousoutput; needsterminal; nametemplate=%s.aac
+
+################################################################################
+# Video Formats (Basic handling)
+################################################################################
+# MP4 video - show file info
+video/mp4; file %s; copiousoutput; needsterminal; nametemplate=%s.mp4
+
+# AVI video - show file info
+video/x-msvideo; file %s; copiousoutput; needsterminal; nametemplate=%s.avi
+
+# MOV video - show file info
+video/quicktime; file %s; copiousoutput; needsterminal; nametemplate=%s.mov
+
+# WebM video - show file info
+video/webm; file %s; copiousoutput; needsterminal; nametemplate=%s.webm
+
+# MKV video - show file info
+video/x-matroska; file %s; copiousoutput; needsterminal; nametemplate=%s.mkv
+
+################################################################################
+# Code and Development
+################################################################################
+# Python files
+text/x-python; python3 -m py_compile %s; copiousoutput; needsterminal; nametemplate=%s.py
+
+# JavaScript files
+text/javascript; node -c %s; copiousoutput; needsterminal; nametemplate=%s.js
+
+# CSS files
+text/css; cat %s; copiousoutput; needsterminal; nametemplate=%s.css
+
+# Shell scripts
+text/x-sh; bash -n %s; copiousoutput; needsterminal; nametemplate=%s.sh
+
+# C source files
+text/x-c; gcc -fsyntax-only %s; copiousoutput; needsterminal; nametemplate=%s.c
+
+# C++ source files
+text/x-c++; g++ -fsyntax-only %s; copiousoutput; needsterminal; nametemplate=%s.cpp
+
+# Java source files
+text/x-java; javac -Xlint %s; copiousoutput; needsterminal; nametemplate=%s.java
+
+# Go source files
+text/x-go; go build -o /dev/null %s; copiousoutput; needsterminal; nametemplate=%s.go
+
+# Rust source files
+text/x-rust; rustc --crate-type bin %s; copiousoutput; needsterminal; nametemplate=%s.rs
+
+################################################################################
+# Fallback and Default
+################################################################################
+# Default handler for unknown types
+*/*; cat %s; copiousoutput; needsterminal

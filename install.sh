@@ -480,16 +480,19 @@ case "$(uname)" in
     ;;
 esac
 
-gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.public.pgp
-gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.public.pgp
-gpg --import ~/.gnupg/keys/com.gmail.gustavocfranco.public.pgp
-gpg --import ~/.gnupg/keys/com.icloud.gufranco.public.pgp
-gpg --import ~/.gnupg/keys/com.live.gufranco.public.pgp
-# gpg --import ~/.gnupg/keys/ch.protonmail.gufranco.private.pgp
-# gpg --import ~/.gnupg/keys/com.github.noreply.users.gufranco.private.pgp
-# gpg --import ~/.gnupg/keys/com.gmail.gustavocfranco.private.pgp
-# gpg --import ~/.gnupg/keys/com.icloud.gufranco.private.pgp
-# gpg --import ~/.gnupg/keys/com.live.gufranco.private.pgp
+# Import all public GPG keys
+for key in ~/.gnupg/keys/*.public.pgp; do
+  if [ -f "$key" ]; then
+    gpg --import "$key"
+  fi
+done
+
+# Import all private GPG keys
+for key in ~/.gnupg/keys/*.private.pgp; do
+  if [ -f "$key" ]; then
+    gpg --import "$key"
+  fi
+done
 
 ################################################################################
 # SSH
@@ -563,6 +566,43 @@ if [ -d ~/.inputrc ] || [ -h ~/.inputrc ]; then
 fi
 
 ln -s ~/.dotfiles/readline/.inputrc ~/.inputrc
+
+################################################################################
+# Mailcap
+################################################################################
+if [ -d ~/.mailcap ] || [ -h ~/.mailcap ]; then
+  rm -rf ~/.mailcap
+fi
+
+ln -s ~/.dotfiles/mailcap/.mailcap ~/.mailcap
+
+################################################################################
+# htop
+################################################################################
+if [ -d ~/.config/htop ] || [ -h ~/.config/htop ]; then
+  rm -rf ~/.config/htop
+fi
+
+mkdir -p ~/.config/htop
+ln -s ~/.dotfiles/htop/htoprc ~/.config/htop/htoprc
+
+################################################################################
+# Ripgrep
+################################################################################
+if [ -d ~/.ripgreprc ] || [ -h ~/.ripgreprc ]; then
+  rm -rf ~/.ripgreprc
+fi
+
+ln -s ~/.dotfiles/ripgrep/.ripgreprc ~/.ripgreprc
+
+################################################################################
+# fd
+################################################################################
+if [ -d ~/.fdrc ] || [ -h ~/.fdrc ]; then
+  rm -rf ~/.fdrc
+fi
+
+ln -s ~/.dotfiles/fd/.fdrc ~/.fdrc
 
 ################################################################################
 # Telnet

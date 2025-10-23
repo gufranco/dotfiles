@@ -1,0 +1,83 @@
+# Fields to display (PID, USER, PRIORITY, NICE, M_SIZE, M_RESIDENT, M_SHARE, STATE, PERCENT_CPU, PERCENT_MEM, TIME, COMMAND)
+fields=0 48 17 18 38 39 40 2 46 47 49 1
+
+# Sort by CPU usage (field 46)
+sort_key=46
+
+# Sort direction (0=ascending, 1=descending)
+sort_direction=1
+
+# Hide threads (0=show, 1=hide)
+hide_threads=0
+
+# Hide kernel threads (0=show, 1=hide)
+hide_kernel_threads=1
+
+# Hide userland threads (0=show, 1=hide)
+hide_userland_threads=0
+
+# Shadow other users' processes (0=no, 1=yes)
+shadow_other_users=0
+
+# Show thread names (0=no, 1=yes)
+show_thread_names=0
+
+# Show program path (0=no, 1=yes)
+show_program_path=1
+
+# Highlight base name (0=no, 1=yes)
+highlight_base_name=1
+
+# Highlight megabytes (0=no, 1=yes)
+highlight_megabytes=1
+
+# Highlight threads (0=no, 1=yes)
+highlight_threads=1
+
+# Tree view (0=no, 1=yes)
+tree_view=0
+
+# Header margin (0=no, 1=yes)
+header_margin=1
+
+# Detailed CPU time (0=no, 1=yes)
+detailed_cpu_time=0
+
+# CPU count from one (0=no, 1=yes)
+cpu_count_from_one=0
+
+# Show CPU usage (0=no, 1=yes)
+show_cpu_usage=1
+
+# Show CPU frequency (0=no, 1=yes)
+show_cpu_frequency=0
+
+# Show CPU temperature (0=no, 1=yes)
+show_cpu_temperature=0
+
+# Degree Fahrenheit (0=Celsius, 1=Fahrenheit)
+degree_fahrenheit=0
+
+# Update process names (0=no, 1=yes)
+update_process_names=0
+
+# Account guest in CPU meter (0=no, 1=yes)
+account_guest_in_cpu_meter=0
+
+# Color scheme (0=monochrome, 1=black on white, 2=white on black, 3=colored)
+color_scheme=0
+
+# Update delay in tenths of seconds
+delay=15
+
+# Left meters (CPU, Memory, Swap)
+left_meters=LeftCPUs Memory Swap
+
+# Left meter modes (1=bar, 2=text, 3=graph)
+left_meter_modes=1 1 1
+
+# Right meters (CPU, Tasks, Load Average, Uptime)
+right_meters=RightCPUs Tasks LoadAverage Uptime
+
+# Right meter modes (1=bar, 2=text, 3=graph)
+right_meter_modes=1 2 2 2

@@ -99,6 +99,7 @@ brew 'procs'
 brew 'pygments'
 brew 'python', link: true
 brew 'rclone'
+brew 'readline'
 brew 'reattach-to-user-namespace'
 brew 'ripgrep'
 brew 'rsync'

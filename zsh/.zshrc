@@ -6,17 +6,12 @@
 source "$HOME/.dotfiles/zsh/paths"
 
 ################################################################################
-# Tmux
+# Terminal Colors & Tmux
 ################################################################################
 if [ -z "$TMUX" ] && [ "$TERM_PROGRAM" != "vscode" ]; then
-  tmux new-session -s $$;
+  tmux new-session -s $$ -d && tmux attach-session -t $$
 else
-  case "$(uname -m)" in
-    "x86_64" | "arm64")
-      export TERM="screen-256color"
-
-      ;;
-  esac
+  export TERM="screen-256color"
 fi
 
 ################################################################################

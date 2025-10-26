@@ -68,6 +68,7 @@ export plugins=(
   node
   npm
   yarn
+  nvm
 
   # Programming Languages - Python
   python
@@ -77,6 +78,7 @@ export plugins=(
   ruby
   gem
   bundler
+  chruby
 
   # Programming Languages - Go
   golang
@@ -118,7 +120,8 @@ export SPACESHIP_CHAR_SUFFIX=" "
 # Npm
 ################################################################################
 if [ -z "$NPM_TOKEN" ]; then
-  export NPM_TOKEN_CACHE_FILE="$HOME/.dotfiles/nodejs/tokens/classic.cache"
+  # shellcheck disable=SC2155
+  export NPM_TOKEN_CACHE_FILE="/tmp/npm_token_$(whoami).cache"
 
   # Check if cache file exists and is not older than 24 hours (86400 seconds)
   if [ ! -f "$NPM_TOKEN_CACHE_FILE" ] || [ "$(find "$NPM_TOKEN_CACHE_FILE" -mtime +1 2>/dev/null)" ]; then
@@ -127,5 +130,5 @@ if [ -z "$NPM_TOKEN" ]; then
   fi
 
   # shellcheck disable=SC2155
-  export NPM_TOKEN="$(cat $NPM_TOKEN_CACHE_FILE)"
+  export NPM_TOKEN="$(cat "$NPM_TOKEN_CACHE_FILE")"
 fi

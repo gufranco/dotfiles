@@ -53,6 +53,16 @@ function f5() {
     git -C "$dir" fetch --prune
   done
 
+  # Node.js LTS Update
+  nvm install --lts
+  nvm use --lts
+  nvm alias default lts/*
+
+  # Ruby Update
+  ruby-install --update
+  ruby-install ruby
+  chruby ruby
+
   case "$(uname)" in
     "Linux")
       sudo apt update -y
@@ -88,7 +98,8 @@ function f5() {
 ################################################################################
 function zero_fill_verify() {
   local disk="$1"
-  local size=$(diskutil info "$disk" | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
+  local size
+  size=$(diskutil info "$disk" | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
   local passes=1
   local threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB (binary, 2147483648 bytes)
   local create_partition=0

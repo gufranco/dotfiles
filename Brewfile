@@ -5,7 +5,7 @@ architecture = `uname -m`.strip
 cpu = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
-storage = (`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824)
+storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824) + 255) / 256) * 256
 
 # Serials
 macbook_retina_12_2017_serial = 'C02TW09THH29'
@@ -118,6 +118,8 @@ brew 'unar' # Yazi dependency
 brew 'universal-ctags'
 brew 'unzip'
 brew 'urlview'
+brew 'vagrant-manager' if architecture == 'x86_64'
+brew 'vagrant' if architecture == 'x86_64'
 brew 'vcdimager'
 brew 'vim'
 brew 'vint'
@@ -189,7 +191,7 @@ cask 'parallels'
 cask 'postman'
 cask 'shottr'
 cask 'slack'
-cask 'spotify', args: { 'no-quarantine' => true }
+cask 'spotify', args: { no_quarantine: true }
 cask 'sublime-text'
 cask 'textmate'
 cask 'transmission'

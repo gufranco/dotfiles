@@ -26,14 +26,14 @@ function __calculate_vm_cores() {
 
   local result=$(( total * percentage / 100 ))
 
-  if [ "$result" -lt "$minimum" ]; then
-    echo "$minimum"
+  if [ "$result" -gt "$maximum" ]; then
+    echo "$maximum"
 
     return
   fi
 
-  if [ "$result" -gt "$maximum" ]; then
-    echo "$maximum"
+  if [ "$result" -lt "$minimum" ]; then
+    echo "$minimum"
 
     return
   fi
@@ -45,7 +45,7 @@ function __calculate_vm_memory() {
   # Percentage of total memory to allocate
   local percentage=50
   # Minimum memory to allocate (in GiB)
-  local minimum=4
+  local minimum=2
   # Maximum memory to allocate (in GiB)
   local maximum=16
 
@@ -64,20 +64,25 @@ function __calculate_vm_memory() {
 
   local result=$(( total * percentage / 100 ))
 
+  # Round up to nearest power of 2 up to maximum
+  local rounded=1
+  while [ "$rounded" -lt "$result" ] && [ "$rounded" -lt "$maximum" ]; do
+    rounded=$(( rounded * 2 ))
+  done
 
-  if [ "$result" -lt "$minimum" ]; then
-    echo "$minimum"
-
-    return
-  fi
-
-  if [ "$result" -gt "$maximum" ]; then
+  if [ "$rounded" -gt "$maximum" ]; then
     echo "$maximum"
 
     return
   fi
 
-  echo "$result"
+  if [ "$rounded" -lt "$minimum" ]; then
+    echo "$minimum"
+
+    return
+  fi
+
+  echo "$rounded"
 }
 
 function __calculate_vm_storage() {
@@ -128,6 +133,8 @@ function colima-start() {
   local memory="$(__calculate_vm_memory)"
   # shellcheck disable=SC2155
   local storage="$(__calculate_vm_storage)"
+
+  echo "Starting Colima with ${cores} cores, ${memory}GiB RAM, ${storage}GiB disk..."
 
   command colima start \
     --cpu "${cores}" \

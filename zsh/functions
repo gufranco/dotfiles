@@ -56,12 +56,12 @@ function f5() {
   # Node.js LTS Update
   nvm install --lts
   nvm use --lts
-  nvm alias default lts/*
+  nvm alias default "lts/*"
 
-  # Ruby Update
-  ruby-install --update
-  ruby-install ruby
-  chruby ruby
+  # Ruby Update (silently continue on failure)
+  ruby-install --update 2>/dev/null || true
+  ruby-install ruby 2>/dev/null || true
+  chruby ruby 2>/dev/null || true
 
   case "$(uname)" in
     "Linux")

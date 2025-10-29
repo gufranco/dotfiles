@@ -26,86 +26,116 @@ command -v find > /dev/null && alias findd="command find . -type d -name"
 ################################################################################
 case "$(uname)" in
   "Linux")
-    # Colorized ls
-    command -v ls > /dev/null && alias ls="command ls --color"
+    # ls aliases
+    if command -v ls > /dev/null; then
+      # Colorized ls
+      alias ls="command ls --color"
 
-    # List all files colorized in long format, excluding . and ..
-    command -v ls > /dev/null && alias la="command ls -lAF --color"
-
-    # List only directories
-    command -v ls > /dev/null && alias ld="command ls -lF --color | command grep --color=never '^d'"
+      # List all files colorized in long format, excluding . and ..
+      alias la="command ls -lAF --color"
+    fi
 
     # Colorized grep
     command -v grep > /dev/null && alias grep="command grep --color"
 
-    # GNU find aliases (Linux always has GNU)
+    # Find executable files
     command -v find > /dev/null && alias findx="command find . -type f -executable"
 
-    # GNU time aliases (Linux always has GNU)
+    # Verbose time output
     command -v time > /dev/null && alias time="command time -v"
 
-    # GNU which aliases (Linux always has GNU)
+    # Show all instances of a command
     command -v which > /dev/null && alias which="command which -a"
 
+    # Clipboard (macOS-style commands for Linux)
+    if command -v xclip > /dev/null; then
+      alias pbcopy="command xclip -selection clipboard"
+      alias pbpaste="command xclip -selection clipboard -o"
+    elif command -v xsel > /dev/null; then
+      alias pbcopy="command xsel --clipboard --input"
+      alias pbpaste="command xsel --clipboard --output"
+    fi
+
+    # Open files/URLs (macOS-style command for Linux)
+    command -v xdg-open > /dev/null && alias open="command xdg-open"
+
     # Lock the screen (when going AFK)
-    command -v gnome-screensaver-command > /dev/null || alias afk="gnome-screensaver-command --lock"
+    command -v gnome-screensaver-command > /dev/null || alias afk="command gnome-screensaver-command --lock"
 
     # Browser
     command -v google-chrome > /dev/null || alias chrome="/opt/google/chrome/google-chrome"
 
     ;;
   "Darwin")
-    if command ls --color > /dev/null 2>&1; then
-      # GNU ls with color
-      command -v ls > /dev/null && alias ls="command ls --color"
+    # ls aliases - prefer eza, fallback to GNU ls, then BSD ls
+    if command eza --version > /dev/null 2>&1; then
+      # Colorized ls using eza
+      alias ls="command eza --color"
 
-      # GNU ls with long format and color
-      command -v ls > /dev/null && alias la="command ls -lAF --color"
+      # List all files in long format using eza
+      alias la="command eza --color --long"
+    elif command ls --color > /dev/null 2>&1; then
+      # Colorized ls using GNU coreutils
+      alias ls="command ls --color"
 
-      # GNU ls with long format and color, excluding directories
-      command -v ls > /dev/null && alias ld="command ls -lF --color | grep --color=never '^d'"
+      # List all files colorized in long format, excluding . and ..
+      alias la="command ls -lAF --color"
     else
-      # BSD ls with color
-      command -v ls > /dev/null && alias ls="command ls -G"
+      # Colorized ls using BSD
+      alias ls="command ls -G"
 
-      # BSD ls with long format and color
-      command -v ls > /dev/null && alias la="command ls -lAF -G"
-
-      # BSD ls with long format and color, excluding directories
-      command -v ls > /dev/null && alias ld="command ls -lF -G | grep --color=never '^d'"
+      # List all files colorized in long format, excluding . and ..
+      alias la="command ls -lAF -G"
     fi
 
+    # Find executable files
     if command find --version > /dev/null 2>&1; then
-      # GNU find with executable flag
-      command -v find > /dev/null && alias findx="command find . -type f -executable"
+      alias findx="command find . -type f -executable"
     else
-      # BSD find with permission flag
-      command -v find > /dev/null && alias findx="command find . -type f -perm +111"
+      alias findx="command find . -type f -perm +111"
     fi
 
-    # Detect if time supports --version (GNU) or not (BSD)
-    if command time --version > /dev/null 2>&1; then
-      command -v time > /dev/null && alias time="command time -v"
-    fi
+    # Verbose time output (GNU only)
+    command time --version > /dev/null 2>&1 && alias time="command time -v"
 
-    if command which --version > /dev/null 2>&1; then
-      # GNU which with all instances
-      command -v which > /dev/null && alias which="command which -a"
-    fi
+    # Show all instances of a command (GNU only)
+    command which --version > /dev/null 2>&1 && alias which="command which -a"
 
+    # Colorized grep
     if command grep --version > /dev/null 2>&1; then
-      # GNU grep with color
-      command -v grep > /dev/null && alias grep="command grep --color"
+      alias grep="command grep --color"
     else
-      # BSD grep with color
-      command -v grep > /dev/null && alias grep="command grep -G"
+      alias grep="command grep -G"
     fi
 
     # macOS has no `md5sum`, so use `md5` as a fallback
     command -v md5sum > /dev/null || alias md5sum="command md5"
 
-    # macOS has no `sha1sum`, so use `shasum` as a fallback
+    # macOS has no `sha*sum` commands, so use `shasum` as a fallback
     command -v sha1sum > /dev/null || alias sha1sum="command shasum"
+    command -v sha256sum > /dev/null || alias sha256sum="command shasum -a 256"
+    command -v sha512sum > /dev/null || alias sha512sum="command shasum -a 512"
+
+    # macOS readlink doesn't support -f flag, use realpath or greadlink
+    if ! readlink -f / >/dev/null 2>&1; then
+      if command -v realpath > /dev/null; then
+        alias readlink="command realpath"
+      elif command -v greadlink > /dev/null; then
+        alias readlink="command greadlink"
+      fi
+    fi
+
+    # Use sd (find & replace) instead of sed when available
+    command -v sd > /dev/null && alias sed="command sd"
+
+    # Use broot (better tree) instead of tree when available
+    command -v br > /dev/null && alias tree="command br"
+
+    # Use tokei for code statistics
+    command -v tokei > /dev/null && alias stats="command tokei"
+
+    # Use gping (graphical ping) instead of ping when available
+    command -v gping > /dev/null && alias ping="command gping"
 
     ;;
 esac

@@ -383,19 +383,12 @@ fi
 
 git clone --depth=1 https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
 
+# Zsh Syntax Highlighting plugin
 if [ -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting ]; then
   rm -rf ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
 fi
 
 git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
-
-
-# You Should Use plugin
-if [ -d ~/.oh-my-zsh/custom/plugins/you-should-use ] || [ -h ~/.oh-my-zsh/custom/plugins/you-should-use ]; then
-  rm -rf ~/.oh-my-zsh/custom/plugins/you-should-use
-fi
-
-git clone --depth=1 https://github.com/MichaelAquilina/zsh-you-should-use.git ~/.oh-my-zsh/custom/plugins/you-should-use
 
 # Zsh Completions plugin
 if [ -d ~/.oh-my-zsh/custom/plugins/zsh-completions ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-completions ]; then
@@ -404,20 +397,14 @@ fi
 
 git clone --depth=1 https://github.com/zsh-users/zsh-completions.git ~/.oh-my-zsh/custom/plugins/zsh-completions
 
-# Zsh-z plugin (better than native z)
-if [ -d ~/.oh-my-zsh/custom/plugins/zsh-z ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-z ]; then
-  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-z
+# Fzf Tab plugin
+if [ -d ~/.oh-my-zsh/custom/plugins/fzf-tab ] || [ -h ~/.oh-my-zsh/custom/plugins/fzf-tab ]; then
+  rm -rf ~/.oh-my-zsh/custom/plugins/fzf-tab
 fi
 
-git clone --depth=1 https://github.com/agkozak/zsh-z.git ~/.oh-my-zsh/custom/plugins/zsh-z
+git clone --depth=1 https://github.com/Aloxaf/fzf-tab.git ~/.oh-my-zsh/custom/plugins/fzf-tab
 
-# Zsh-autocomplete plugin
-if [ -d ~/.oh-my-zsh/custom/plugins/zsh-autocomplete ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-autocomplete ]; then
-  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-autocomplete
-fi
-
-git clone --depth=1 https://github.com/marlonrichert/zsh-autocomplete.git ~/.oh-my-zsh/custom/plugins/zsh-autocomplete
-
+# Spaceship theme
 if [ -d ~/.oh-my-zsh/custom/themes/spaceship-prompt ] || [ -h ~/.oh-my-zsh/custom/themes/spaceship-prompt ]; then
   rm -rf ~/.oh-my-zsh/custom/themes/spaceship-prompt
 fi

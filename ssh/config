@@ -10,7 +10,7 @@ Include ~/.colima/ssh_config
 Host *
   # Identity and authentication
   IdentityFile ~/.ssh/id_ed25519
-  IdentitiesOnly yes
+  IdentityFile ~/.ssh/id_rsa
   AddKeysToAgent yes
   UseKeychain yes
 
@@ -35,7 +35,7 @@ Host *
   # Connection multiplexing for efficiency
   ControlMaster auto
   ControlPersist 300
-  ControlPath ~/.ssh/control-%r@%h:%p
+  ControlPath ~/.ssh/control-%C
 
 ################################################################################
 # Cryptographic algorithms and security
@@ -64,21 +64,21 @@ Host github.com
   User git
   ControlMaster auto
   ControlPersist 120
-  ControlPath ~/.ssh/control-github-%r@%h:%p
+  ControlPath ~/.ssh/control-%C
 
 Host gitlab.com
   HostName gitlab.com
   User git
   ControlMaster auto
   ControlPersist 120
-  ControlPath ~/.ssh/control-gitlab-%r@%h:%p
+  ControlPath ~/.ssh/control-%C
 
 Host bitbucket.org
   HostName bitbucket.org
   User git
   ControlMaster auto
   ControlPersist 120
-  ControlPath ~/.ssh/control-bitbucket-%r@%h:%p
+  ControlPath ~/.ssh/control-%C
 
 ################################################################################
 # Security hardening

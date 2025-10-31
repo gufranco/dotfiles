@@ -60,7 +60,9 @@ case "$(uname)" in
     export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$HOMEBREW_PREFIX/opt/openjdk@11/bin:$PATH"
 
     # Chruby
+    # shellcheck disable=SC1091
     source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
+    # shellcheck disable=SC1091
     source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
 
     # GNU Bc

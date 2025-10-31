@@ -8,10 +8,14 @@ source "$HOME/.dotfiles/zsh/paths"
 ################################################################################
 # Terminal Colors & Tmux
 ################################################################################
+# Enable True Color support (24-bit)
+export COLORTERM=truecolor
+
+# Tmux integration
 if [ -z "$TMUX" ] && [ "$TERM_PROGRAM" != "vscode" ]; then
   tmux new-session -s $$ -d && tmux attach-session -t $$
-else
-  export TERM="screen-256color"
+elif [ -n "$TMUX" ] && [ "$TERM_PROGRAM" != "kitty" ]; then
+  export TERM="tmux-256color"
 fi
 
 ################################################################################

@@ -71,3 +71,10 @@ if [ -z "$NPM_TOKEN" ]; then
   # shellcheck disable=SC2155
   export NPM_TOKEN="$(cat "$NPM_TOKEN_CACHE_FILE")"
 fi
+
+################################################################################
+# Workspace
+################################################################################
+if [ ! -e "$HOME/Workspace" ] && [ -d "$HOME/Dropbox/Workspace" ]; then
+  ln -s "$HOME/Dropbox/Workspace" "$HOME/Workspace"
+fi

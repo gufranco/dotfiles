@@ -5,11 +5,11 @@
 ################################################################################
 function __calculate_vm_cores() {
   # Percentage of total CPU cores to allocate
-  local percentage=50
+  local percentage=25
   # Minimum number of CPU cores to allocate
   local minimum=2
   # Maximum number of CPU cores to allocate
-  local maximum=4
+  local maximum=8
 
   case "$(uname -s)" in
     Darwin)
@@ -25,6 +25,11 @@ function __calculate_vm_cores() {
   esac
 
   local result=$(( total * percentage / 100 ))
+
+  # Round up to next even number if odd and >= 2
+  if [ "$result" -ge 2 ] && [ $(( result % 2 )) -ne 0 ]; then
+    result=$(( result + 1 ))
+  fi
 
   if [ "$result" -gt "$maximum" ]; then
     echo "$maximum"
@@ -144,10 +149,12 @@ function __ensure_docker_compose_plugin() {
 
     if [ "$current_target" != "$compose_bin" ]; then
       rm -f "$plugin_path"
+
       ln -sf "$compose_bin" "$plugin_path"
     fi
   elif [ -e "$plugin_path" ]; then
     rm -f "$plugin_path"
+
     ln -sf "$compose_bin" "$plugin_path"
   else
     ln -sf "$compose_bin" "$plugin_path"
@@ -161,9 +168,48 @@ function __ensure_docker_compose_plugin() {
 ################################################################################
 # Colima VM
 ################################################################################
+function __confirm_colima_config() {
+  local profile="$1"
+  local cores="$2"
+  local memory="$3"
+  local storage="$4"
+  local os_type="$5"
+  local arch="$6"
+
+  echo ""
+  echo "================================================================================"
+  echo "  Colima VM - Configuration"
+  echo "================================================================================"
+  echo ""
+  echo "Profile:          ${profile}"
+  echo "Platform:         ${os_type} (${arch})"
+  echo ""
+  echo "Configuration:"
+  echo "  CPU Cores:      ${cores}"
+  echo "  Memory:         ${memory}GiB"
+  echo "  Disk:           ${storage}GiB"
+  echo ""
+
+  if [[ "${CI:-0}" = "1" ]]; then
+    return 0
+  fi
+
+  read -r "?Do you want to continue with these configurations? (y/N): "
+  echo ""
+
+  if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
 function colima-start() {
   # Ensure Docker Compose V2 plugin is properly configured
   __ensure_docker_compose_plugin
+
+  # Get profile name (default to "default" if not provided)
+  local profile="${1:-default}"
 
   # shellcheck disable=SC2155
   local cores="$(__calculate_vm_cores)"
@@ -176,17 +222,13 @@ function colima-start() {
   # shellcheck disable=SC2155
   local arch="$(uname -m)"
 
+  # Show configuration and ask for confirmation
+  __confirm_colima_config "$profile" "$cores" "$memory" "$storage" "$os_type" "$arch" || return 1
+
   echo ""
   echo "================================================================================"
   echo "  Colima VM - Starting"
   echo "================================================================================"
-  echo ""
-  echo "Platform: ${os_type} (${arch})"
-  echo ""
-  echo "Configuration:"
-  echo "  CPU Cores:      ${cores}"
-  echo "  Memory:         ${memory}GiB"
-  echo "  Disk:           ${storage}GiB"
   echo ""
 
   case "$os_type" in
@@ -212,6 +254,7 @@ function colima-start() {
           echo ""
 
           command colima start \
+            --profile "${profile}" \
             --cpu "${cores}" \
             --memory "${memory}" \
             --disk "${storage}" \
@@ -257,6 +300,7 @@ function colima-start() {
           echo ""
 
           command colima start \
+            --profile "${profile}" \
             --cpu "${cores}" \
             --memory "${memory}" \
             --disk "${storage}" \
@@ -305,6 +349,7 @@ function colima-start() {
       echo ""
 
       command colima start \
+        --profile "${profile}" \
         --cpu "${cores}" \
         --memory "${memory}" \
         --disk "${storage}" \
@@ -332,23 +377,79 @@ function colima-start() {
 }
 
 function colima-stop() {
-  command colima stop
+  local profile="${1:-default}"
+
+  echo ""
+  echo "================================================================================"
+  echo "  Colima VM - Stop"
+  echo "================================================================================"
+  echo ""
+  echo "Profile:         ${profile}"
+  echo ""
+
+  if [[ "${CI:-0}" = "1" ]]; then
+    echo "CI mode detected - auto-confirming..."
+    echo ""
+  else
+    read -r "?Do you want to stop this VM? (y/N): "
+    echo ""
+
+    if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
+      return 1
+    fi
+  fi
+
+  command colima stop --profile "${profile}"
 }
 
 function colima-purge() {
-  docker-purge
-  command colima stop --force 2>/dev/null || true
-  command colima delete --force 2>/dev/null || true
+  local profile="${1:-default}"
+
+  echo ""
+  echo "================================================================================"
+  echo "  Colima VM - Purge (WARNING: Destructive Operation)"
+  echo "================================================================================"
+  echo ""
+  echo "Profile:         ${profile}"
+  echo ""
+  echo "This operation will:"
+  echo "  - Stop all Docker containers"
+  echo "  - Remove all Docker images, volumes, and networks"
+  echo "  - Stop the Colima VM"
+  echo "  - Delete the Colima VM and all its data"
+  echo ""
+  echo "WARNING: This action cannot be undone!"
+  echo ""
+
+  if [[ "${CI:-0}" = "1" ]]; then
+    echo "CI mode detected - auto-confirming..."
+    echo ""
+  else
+    read -r "?Are you sure you want to continue? (y/N): "
+    echo ""
+
+    if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
+      return 1
+    fi
+  fi
+
+  docker-purge "${profile}"
+  command colima stop --profile "${profile}" --force 2>/dev/null || true
+  command colima delete --profile "${profile}" --force 2>/dev/null || true
 }
 
 ################################################################################
 # Docker purge
 ################################################################################
 function docker-purge() {
-  command docker stop "$(command docker ps -aq)" 2>/dev/null || true
-  command docker system prune -af --volumes --filter "label!=keep" 2>/dev/null || true
-  command docker builder prune -af 2>/dev/null || true
-  command docker images -q | xargs -r docker rmi -f 2>/dev/null || true
+  local profile="${1:-default}"
+  # shellcheck disable=SC2155
+  local context="$([[ "${profile}" = "default" ]] && echo "colima" || echo "colima-${profile}")"
+
+  DOCKER_CONTEXT="${context}" command docker stop "$(DOCKER_CONTEXT="${context}" command docker ps -aq)" 2>/dev/null || true
+  DOCKER_CONTEXT="${context}" command docker system prune -af --volumes --filter "label!=keep" 2>/dev/null || true
+  DOCKER_CONTEXT="${context}" command docker builder prune -af 2>/dev/null || true
+  DOCKER_CONTEXT="${context}" command docker images -q | xargs -r docker rmi -f 2>/dev/null || true
 }
 
 ################################################################################
@@ -397,8 +498,8 @@ function mongo-stop() {
 }
 
 function mongo-purge() {
-  mongo-stop
-  command docker rm mongo
+  mongo-stop 2>/dev/null || true
+  command docker rm mongo 2>/dev/null || true
   rm -rf "$HOME/Docker/Mongo"
 }
 
@@ -451,8 +552,8 @@ function postgres-stop() {
 }
 
 function postgres-purge() {
-  postgres-stop
-  command docker rm postgres
+  postgres-stop 2>/dev/null || true
+  command docker rm postgres 2>/dev/null || true
   rm -rf "$HOME/Docker/Postgres"
 }
 
@@ -502,8 +603,8 @@ function redis-stop() {
 }
 
 function redis-purge() {
-  redis-stop
-  command docker rm redis
+  redis-stop 2>/dev/null || true
+  command docker rm redis 2>/dev/null || true
   rm -rf "$HOME/Docker/Redis"
 }
 
@@ -553,8 +654,8 @@ function valkey-stop() {
 }
 
 function valkey-purge() {
-  valkey-stop
-  command docker rm valkey
+  valkey-stop 2>/dev/null || true
+  command docker rm valkey 2>/dev/null || true
   rm -rf "$HOME/Docker/Valkey"
 }
 
@@ -604,8 +705,8 @@ function redict-stop() {
 }
 
 function redict-purge() {
-  redict-stop
-  command docker rm redict
+  redict-stop 2>/dev/null || true
+  command docker rm redict 2>/dev/null || true
   rm -rf "$HOME/Docker/Redict"
 }
 

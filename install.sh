@@ -1,636 +1,680 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
+set -Eeo pipefail
 
-# Ask for the root password upfront
+################################################################################
+# Global variables
+################################################################################
+SUDO_KEEPALIVE_PID=""
+SCRIPT_START_TIME=$(date +%s)
+
+################################################################################
+# Helper functions
+################################################################################
+log_info() {
+  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
+  local mins=$((elapsed / 60))
+  local secs=$((elapsed % 60))
+  printf "\033[0;34m[INFO]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
+}
+
+log_success() {
+  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
+  local mins=$((elapsed / 60))
+  local secs=$((elapsed % 60))
+  printf "\033[0;32m[✓]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
+}
+
+log_warning() {
+  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
+  local mins=$((elapsed / 60))
+  local secs=$((elapsed % 60))
+  printf "\033[0;33m[!]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
+}
+
+log_error() {
+  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
+  local mins=$((elapsed / 60))
+  local secs=$((elapsed % 60))
+  printf "\033[0;31m[✗]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
+}
+
+log_skip() {
+  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
+  local mins=$((elapsed / 60))
+  local secs=$((elapsed % 60))
+  printf "\033[0;90m[SKIP]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
+}
+
+# Check if command exists
+cmd_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+# Check if package is installed (Debian/Ubuntu)
+pkg_installed() {
+  dpkg -l "$1" 2>/dev/null | grep -q "^ii"
+}
+
+# Check if snap package is installed
+snap_installed() {
+  snap list "$1" >/dev/null 2>&1
+}
+
+# Safe symlink - only creates if needed
+safe_link() {
+  local src="$1"
+  local dst="$2"
+
+  # Check if already correctly linked
+  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+    log_skip "Link OK: $dst"
+    return 0
+  fi
+
+  # Remove if exists and is different
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    rm -rf "$dst"
+  fi
+
+  ln -s "$src" "$dst"
+  log_success "Linked: $dst -> $src"
+}
+
+# Clone or update git repository
+git_sync() {
+  local url="$1"
+  local path="$2"
+  local depth="${3:-1}"
+
+  if [ -d "$path/.git" ]; then
+    log_info "Updating: $(basename "$path")"
+    git -C "$path" pull --quiet --no-edit 2>/dev/null || true
+    log_success "Updated: $(basename "$path")"
+  else
+    log_info "Cloning: $(basename "$path")"
+    rm -rf "$path"
+    git clone --quiet --depth="$depth" "$url" "$path"
+    log_success "Cloned: $(basename "$path")"
+  fi
+}
+
+################################################################################
+# Root password and keep-alive
+################################################################################
+# Ask for password only once at the beginning
+echo ""
+log_info "==============================================================="
+log_info "Dotfiles Installation Script"
+log_info "==============================================================="
+echo ""
+log_warning "This script will ask for your sudo password ONCE"
+log_warning "Then it will keep sudo alive for the entire duration"
+log_warning "You can leave it running overnight if needed"
+echo ""
+
+# Request sudo password
 sudo -v
 
-# Keep-alive
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+# Start sudo keep-alive in background
+# This will refresh sudo every 50 seconds (default timeout is 5 minutes)
+# It will run for the entire duration of the script
+(
+  while true; do
+    sleep 50
+    sudo -n true 2>/dev/null
+    kill -0 "$$" 2>/dev/null || exit
+  done
+) &
+SUDO_KEEPALIVE_PID=$!
 
+# Cleanup function to kill sudo keep-alive on exit
+cleanup_sudo() {
+  if [ -n "$SUDO_KEEPALIVE_PID" ]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+    wait "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+  fi
+}
+
+# Register cleanup on exit
+trap cleanup_sudo EXIT INT TERM
+
+log_success "Sudo keep-alive started (PID: $SUDO_KEEPALIVE_PID)"
+log_info "Script will run without asking for password again"
+echo ""
+
+################################################################################
+# OS-specific installation
+################################################################################
 case "$(uname)" in
   "Linux")
+    log_info "System: Linux (Ubuntu/Debian)"
     export DEBIAN_FRONTEND=noninteractive
+    export GIT_TERMINAL_PROMPT=0
 
     ############################################################################
-    # Update / upgrade
+    # System update
     ############################################################################
-    sudo add-apt-repository universe
-    sudo apt update
-    sudo apt dist-upgrade -y
+    log_info "Updating system..."
+    sudo add-apt-repository -y universe >/dev/null 2>&1 || true
+    sudo apt update -qq
+    sudo apt dist-upgrade -y -qq
+    log_success "System updated"
 
     ############################################################################
     # Basic packages
     ############################################################################
-    echo -e "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+    log_info "Installing basic packages..."
+    echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
 
-    sudo apt install -y \
-      apt-transport-https \
-      build-essential \
-      ca-certificates \
-      cmake \
-      curl \
-      exfat-fuse \
-      exfatprogs \
-      g++ \
-      gcc \
-      git \
-      gnupg \
-      make \
-      p7zip-full \
-      p7zip-rar \
-      rar \
-      snapd \
-      software-properties-common \
-      tmux \
-      trash-cli \
-      ubuntu-restricted-extras \
-      unrar \
-      unzip \
-      vim \
-      wget \
-      xsel \
-      zip
+    BASIC_PKGS=(apt-transport-https build-essential ca-certificates cmake curl
+      exfat-fuse exfatprogs g++ gcc git gnupg make p7zip-full p7zip-rar
+      rar snapd software-properties-common tmux trash-cli ubuntu-restricted-extras
+      unrar unzip vim wget xsel zip)
+
+    for pkg in "${BASIC_PKGS[@]}"; do
+      pkg_installed "$pkg" || sudo apt install -y -qq "$pkg"
+    done
+    log_success "Basic packages installed"
 
     ############################################################################
-    # dotfiles
+    # Dotfiles repository
     ############################################################################
-    if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
-      git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git
-      git -C "$HOME/.dotfiles" checkout master
-      git -C "$HOME/.dotfiles" pull
-      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
+    log_info "Setting up dotfiles..."
+    if [ -d "$HOME/.dotfiles/.git" ]; then
+      git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git 2>/dev/null || true
+      git -C "$HOME/.dotfiles" checkout -f master 2>/dev/null || true
+      git -C "$HOME/.dotfiles" pull --no-edit 2>/dev/null || true
+      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
+      log_success "Dotfiles updated"
     else
       git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"
-      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
+      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
+      log_success "Dotfiles cloned"
     fi
 
     ############################################################################
     # Zsh
     ############################################################################
-    sudo apt install -y \
-      zsh \
-      zsh-syntax-highlighting
+    log_info "Installing Zsh..."
+    pkg_installed zsh || sudo apt install -y -qq zsh zsh-syntax-highlighting
 
-    if ! grep -q "$(command -v zsh)" /etc/shells; then
-      command -v zsh | sudo tee -a /etc/shells
+    if ! grep -q "$(command -v zsh)" /etc/shells 2>/dev/null; then
+      command -v zsh | sudo tee -a /etc/shells >/dev/null
     fi
 
-    sudo chsh "$USER" -s "$(command -v zsh)"
+    if [ "$SHELL" != "$(command -v zsh)" ]; then
+      sudo chsh "$USER" -s "$(command -v zsh)" 2>/dev/null || true
+      log_success "Shell changed to Zsh"
+    else
+      log_skip "Shell already Zsh"
+    fi
 
     ############################################################################
     # Docker
     ############################################################################
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
-    sudo apt update
-    sudo apt install -y docker-ce
-    sudo usermod -a -G docker "$USER"
+    if ! cmd_exists docker; then
+      log_info "Installing Docker..."
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq docker-ce
+      log_success "Docker installed"
+    else
+      log_skip "Docker already installed"
+    fi
+
+    if ! groups "$USER" | grep -q docker; then
+      sudo usermod -a -G docker "$USER"
+      log_success "User added to docker group"
+    fi
 
     ############################################################################
-    # Node.js
+    # Node.js 22
     ############################################################################
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg
-    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-    sudo apt update
-    sudo apt install -y nodejs
+    if ! cmd_exists node || [ "$(node --version | cut -d. -f1 | tr -d v)" -lt 22 ]; then
+      log_info "Installing Node.js 22..."
+      curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq nodejs
+      log_success "Node.js installed"
+    else
+      log_skip "Node.js 22+ already installed"
+    fi
 
     ############################################################################
-    # Python
+    # Python 3.14
     ############################################################################
-    sudo add-apt-repository -y ppa:deadsnakes/ppa
-    sudo apt update
-    sudo apt install -y python3.14
+    if ! cmd_exists python3.14; then
+      log_info "Installing Python 3.14..."
+      sudo add-apt-repository -y ppa:deadsnakes/ppa >/dev/null 2>&1 || true
+      sudo apt update -qq
+      sudo apt install -y -qq python3.14
+      log_success "Python 3.14 installed"
+    else
+      log_skip "Python 3.14 already installed"
+    fi
 
     ############################################################################
-    # Dropbox
+    # Applications
     ############################################################################
-    sudo apt install -y nautilus-dropbox
+    APPS=(nautilus-dropbox ripgrep fzf universal-ctags neomutt lynx
+      shellcheck fonts-hack-ttf kitty vlc conky-all transmission
+      asciinema caffeine)
+
+    for app in "${APPS[@]}"; do
+      if ! pkg_installed "$app"; then
+        log_info "Installing $app..."
+        sudo apt install -y -qq "$app" 2>/dev/null || log_warning "Failed: $app"
+      fi
+    done
 
     ############################################################################
     # Spotify
     ############################################################################
-    curl -fsSL https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
-    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
-    sudo apt update
-    sudo apt install -y spotify-client
+    if ! pkg_installed spotify-client; then
+      log_info "Installing Spotify..."
+      curl -fsSL https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq spotify-client
+      log_success "Spotify installed"
+    else
+      log_skip "Spotify already installed"
+    fi
 
     ############################################################################
-    # Chrome
+    # Google Chrome
     ############################################################################
-    curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg
-    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-    sudo apt update
-    sudo apt install -y google-chrome-stable
+    if ! pkg_installed google-chrome-stable; then
+      log_info "Installing Google Chrome..."
+      curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq google-chrome-stable
+      log_success "Chrome installed"
+    else
+      log_skip "Chrome already installed"
+    fi
 
     ############################################################################
     # DBeaver
     ############################################################################
-    sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce
-    sudo apt update
-    sudo apt install -y dbeaver-ce
-
-    ############################################################################
-    # Ripgrep
-    ############################################################################
-    sudo apt install -y ripgrep
-
-    ############################################################################
-    # Fzf
-    ############################################################################
-    sudo apt install -y fzf
-
-    ############################################################################
-    # Universal ctags
-    ############################################################################
-    sudo apt install -y universal-ctags
+    if ! pkg_installed dbeaver-ce; then
+      log_info "Installing DBeaver..."
+      sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce >/dev/null 2>&1 || true
+      sudo apt update -qq
+      sudo apt install -y -qq dbeaver-ce
+      log_success "DBeaver installed"
+    else
+      log_skip "DBeaver already installed"
+    fi
 
     ############################################################################
     # Visual Studio Code
     ############################################################################
-    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg
-    echo -e "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list
-    sudo apt update
-    sudo apt install -y code
+    if ! pkg_installed code; then
+      log_info "Installing VS Code..."
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq code
+      log_success "VS Code installed"
+    else
+      log_skip "VS Code already installed"
+    fi
 
     ############################################################################
-    # Postman
+    # Snap packages
     ############################################################################
-    sudo snap install postman
+    if cmd_exists snap; then
+      snap_installed postman || { log_info "Installing Postman..."; sudo snap install --classic postman 2>/dev/null || sudo snap install postman 2>/dev/null || true; }
+      snap_installed slack || { log_info "Installing Slack..."; sudo snap install --classic slack 2>/dev/null || sudo snap install slack 2>/dev/null || true; }
+      snap_installed steam || { log_info "Installing Steam..."; sudo snap install --classic steam 2>/dev/null || sudo snap install steam 2>/dev/null || true; }
+    fi
 
     ############################################################################
     # GPG
     ############################################################################
-    sudo apt install -y \
-      gpg \
-      gnupg-agent \
-      pinentry-curses
+    pkg_installed gpg || sudo apt install -y -qq gpg pinentry-curses
 
     ############################################################################
-    # Neomutt
+    # Nerd Fonts
     ############################################################################
-    sudo apt install -y neomutt
+    log_info "Installing Nerd Fonts..."
+    mkdir -p "$HOME/.local/share/fonts"
 
-    ############################################################################
-    # Lynx
-    ############################################################################
-    sudo apt install -y lynx
+    if [ ! -f "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" ]; then
+      curl -#fLo "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" \
+        https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf
+    fi
 
-    ############################################################################
-    # Shellcheck
-    ############################################################################
-    sudo apt install -y shellcheck
+    if [ ! -f "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" ]; then
+      curl -#fLo "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" \
+        https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/JetBrainsMono/Ligatures/Regular/JetBrainsMonoNerdFont-Regular.ttf
+    fi
 
-    ############################################################################
-    # Hack Nerd Font
-    ############################################################################
-    sudo apt install -y fonts-hack-ttf
-
-    curl -#fLo \
-      ~/.local/share/fonts/HackNerdFont-Regular.ttf \
-      --create-dirs https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf
-
-    sudo fc-cache -fv
-
-    ############################################################################
-    # Kitty
-    ############################################################################
-    sudo apt install -y kitty
-
-    ############################################################################
-    # VLC
-    ############################################################################
-    sudo apt install -y vlc
+    sudo fc-cache -fv >/dev/null 2>&1
+    log_success "Fonts installed"
 
     ############################################################################
     # Conky
     ############################################################################
-    sudo apt install -y conky-all
-
-    if [ -d ~/.conkyrc ] || [ -h ~/.conkyrc ]; then
-      rm -rf ~/.conkyrc
-    fi
-
-    ln -s ~/.dotfiles/conky/.conkyrc ~/.conkyrc
+    safe_link "$HOME/.dotfiles/conky/.conkyrc" "$HOME/.conkyrc"
 
     ############################################################################
-    # Transmission
+    # GPU drivers
     ############################################################################
-    sudo apt install -y transmission
-
-    ############################################################################
-    # Asciinema
-    ############################################################################
-    sudo apt install -y asciinema
-
-    ############################################################################
-    # Caffeine
-    ############################################################################
-    sudo apt install -y caffeine
-
-    ############################################################################
-    # Slack
-    ############################################################################
-    sudo snap install slack
-
-    ############################################################################
-    # GPU
-    ############################################################################
-    # nVidia driver
+    log_info "Installing NVIDIA drivers..."
     NVIDIA_VERSION=550
     sudo dpkg --add-architecture i386
-    sudo apt update
-    sudo apt -y upgrade
-    sudo apt install -y nvidia-driver-$NVIDIA_VERSION libnvidia-gl-$NVIDIA_VERSION:i386
+    sudo apt update -qq
+    sudo apt -y upgrade -qq
+
+    if ! pkg_installed "nvidia-driver-$NVIDIA_VERSION"; then
+      sudo apt install -y nvidia-driver-$NVIDIA_VERSION libnvidia-gl-$NVIDIA_VERSION:i386
+      log_success "NVIDIA drivers installed"
+    else
+      log_skip "NVIDIA drivers already installed"
+    fi
 
     # Mesa drivers (point release)
-    sudo add-apt-repository -y ppa:kisak/kisak-mesa
-    sudo apt update
-    sudo apt -y upgrade
+    log_info "Installing Mesa drivers (point release)..."
+    sudo add-apt-repository -y ppa:kisak/kisak-mesa >/dev/null 2>&1 || true
+    sudo apt update -qq
+    sudo apt -y upgrade -qq
 
     # Mesa drivers (bleeding edge)
-    sudo add-apt-repository -y ppa:oibaf/graphics-drivers
-    sudo apt update
-    sudo apt -y upgrade
-
-    ############################################################################
-    # Steam
-    ############################################################################
-    sudo snap install steam
+    log_info "Installing Mesa drivers (bleeding edge)..."
+    sudo add-apt-repository -y ppa:oibaf/graphics-drivers >/dev/null 2>&1 || true
+    sudo apt update -qq
+    sudo apt -y upgrade -qq
+    log_success "GPU drivers configured"
 
     ;;
+
   "Darwin")
+    log_info "System: macOS ($(uname -m))"
+
     ############################################################################
-    # Rosetta 2
+    # Rosetta 2 (Apple Silicon)
     ############################################################################
-    if [ "$(uname -m)" = "arm64" ] && ! /usr/bin/pgrep oahd >/dev/null; then
-      /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+    if [ "$(uname -m)" = "arm64" ] && ! /usr/bin/pgrep oahd >/dev/null 2>&1; then
+      log_info "Installing Rosetta 2..."
+      /usr/sbin/softwareupdate --install-rosetta --agree-to-license 2>/dev/null || true
+      log_success "Rosetta 2 installed"
     fi
 
     ############################################################################
     # Homebrew
     ############################################################################
-    if [ ! -x "$(command -v brew)" ]; then
-      case "$(uname -m)" in
-        "arm64")
-          CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-          export HOMEBREW_PREFIX="/opt/homebrew"
-          export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
-          export HOMEBREW_REPOSITORY="/opt/homebrew"
-          export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew"
-          export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
-          export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
-          export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
-
-          ;;
-        "x86_64")
-          CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-          export HOMEBREW_PREFIX="/usr/local"
-          export HOMEBREW_CELLAR="/usr/local/Cellar"
-          export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
-          export HOMEBREW_SHELLENV_PREFIX="/usr/local"
-          export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
-          export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
-          export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
-
-          ;;
-      esac
+    if ! cmd_exists brew; then
+      log_info "Installing Homebrew..."
+      CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      log_success "Homebrew installed"
+    else
+      log_skip "Homebrew already installed"
     fi
 
+    # Set Homebrew environment
+    case "$(uname -m)" in
+      "arm64")
+        export HOMEBREW_PREFIX="/opt/homebrew"
+        export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
+        export HOMEBREW_REPOSITORY="/opt/homebrew"
+        export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew"
+        export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
+        export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
+        export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
+        ;;
+      "x86_64")
+        export HOMEBREW_PREFIX="/usr/local"
+        export HOMEBREW_CELLAR="/usr/local/Cellar"
+        export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+        export HOMEBREW_SHELLENV_PREFIX="/usr/local"
+        export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
+        export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
+        export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
+        ;;
+    esac
+
     ############################################################################
-    # dotfiles
+    # Dotfiles repository
     ############################################################################
-    if [ -d ~/.dotfiles ] || [ -h ~/.dotfiles ]; then
-      git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git
-      git -C "$HOME/.dotfiles" checkout master
-      git -C "$HOME/.dotfiles" pull
-      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
+    log_info "Setting up dotfiles..."
+    if [ -d "$HOME/.dotfiles/.git" ]; then
+      git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git 2>/dev/null || true
+      git -C "$HOME/.dotfiles" checkout -f master 2>/dev/null || true
+      git -C "$HOME/.dotfiles" pull --no-edit 2>/dev/null || true
+      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
+      log_success "Dotfiles updated"
     else
       git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"
-      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git
+      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
+      log_success "Dotfiles cloned"
     fi
 
     ############################################################################
-    # Homebrew bundle
+    # Homebrew packages
     ############################################################################
+    log_info "Installing Homebrew packages..."
     brew update
-    brew bundle --file "$HOME/.dotfiles/Brewfile" --force cleanup
-    brew bundle --file "$HOME/.dotfiles/Brewfile"
-    brew upgrade
-    brew cu --all --yes --cleanup
-    brew cleanup -s
+    brew bundle --file "$HOME/.dotfiles/Brewfile" || true
+    brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
+    brew upgrade || true
+    cmd_exists brew-cu && brew cu --all --yes --cleanup 2>/dev/null || true
+    brew cleanup -s || true
+    log_success "Homebrew packages updated"
 
     ############################################################################
     # Bash
     ############################################################################
-    if ! grep -q "$HOMEBREW_PREFIX/bin/bash" /etc/shells; then
-      echo -e "$HOMEBREW_PREFIX/bin/bash" | sudo tee -a /etc/shells
+    if ! grep -q "$HOMEBREW_PREFIX/bin/bash" /etc/shells 2>/dev/null; then
+      log_info "Adding Homebrew bash to /etc/shells..."
+      echo "$HOMEBREW_PREFIX/bin/bash" | sudo tee -a /etc/shells >/dev/null
+      log_success "Bash added to /etc/shells"
     fi
 
     ############################################################################
     # Zsh
     ############################################################################
-    if ! grep -q "$HOMEBREW_PREFIX/bin/zsh" /etc/shells; then
-      echo -e "$HOMEBREW_PREFIX/bin/zsh" | sudo tee -a /etc/shells
+    if ! grep -q "$HOMEBREW_PREFIX/bin/zsh" /etc/shells 2>/dev/null; then
+      log_info "Adding Homebrew zsh to /etc/shells..."
+      echo "$HOMEBREW_PREFIX/bin/zsh" | sudo tee -a /etc/shells >/dev/null
+      log_success "Zsh added to /etc/shells"
     fi
 
-    chsh -s "$HOMEBREW_PREFIX/bin/zsh"
+    if [ "$SHELL" != "$HOMEBREW_PREFIX/bin/zsh" ]; then
+      chsh -s "$HOMEBREW_PREFIX/bin/zsh" || true
+      log_success "Shell changed to Zsh"
+    else
+      log_skip "Shell already Zsh"
+    fi
 
     ;;
 esac
 
-################################################################################
+############################################################################
+# Universal configurations (Linux + macOS)
+############################################################################
+
+############################################################################
 # Node.js
-################################################################################
-if [ -d ~/.npmrc ] || [ -h ~/.npmrc ]; then
-  rm -rf ~/.npmrc
-fi
+############################################################################
+log_info "Setting up Node.js configs..."
+safe_link "$HOME/.dotfiles/nodejs/.npmrc" "$HOME/.npmrc"
+safe_link "$HOME/.dotfiles/nodejs/.yarnrc.yml" "$HOME/.yarnrc.yml"
+safe_link "$HOME/.dotfiles/nodejs/.pnpmrc" "$HOME/.pnpmrc"
+mkdir -p "$HOME/.nvm"
 
-ln -s ~/.dotfiles/nodejs/.npmrc ~/.npmrc
+############################################################################
+# Oh My Zsh
+############################################################################
+log_info "Setting up Oh My Zsh..."
+safe_link "$HOME/.dotfiles/zsh/.zshrc" "$HOME/.zshrc"
 
-# Yarn configuration
-if [ -d ~/.yarnrc.yml ] || [ -h ~/.yarnrc.yml ]; then
-  rm -rf ~/.yarnrc.yml
-fi
+git_sync "https://github.com/robbyrussell/oh-my-zsh.git" "$HOME/.oh-my-zsh" 1
+git_sync "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" 1
+git_sync "https://github.com/zsh-users/zsh-completions.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" 1
+git_sync "https://github.com/Aloxaf/fzf-tab.git" "$HOME/.oh-my-zsh/custom/plugins/fzf-tab" 1
+git_sync "https://github.com/denysdovhan/spaceship-prompt.git" "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" 1
 
-ln -s ~/.dotfiles/nodejs/.yarnrc.yml ~/.yarnrc.yml
+safe_link "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme" "$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
 
-# PNPM configuration
-if [ -d ~/.pnpmrc ] || [ -h ~/.pnpmrc ]; then
-  rm -rf ~/.pnpmrc
-fi
-
-ln -s ~/.dotfiles/nodejs/.pnpmrc ~/.pnpmrc
-
-if [ ! -d ~/.nvm ] && [ ! -h ~/.nvm ]; then
-  mkdir -p ~/.nvm
-fi
-
-################################################################################
-# Oh-my-zsh
-################################################################################
-if [ -d ~/.zshrc ] || [ -h ~/.zshrc ]; then
-  rm -rf ~/.zshrc
-fi
-
-ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
-
-if [ -d ~/.oh-my-zsh ] || [ -h ~/.oh-my-zsh ]; then
-  rm -rf ~/.oh-my-zsh
-fi
-
-git clone --depth=1 https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
-
-# Zsh Syntax Highlighting plugin
-if [ -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting ]; then
-  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
-fi
-
-git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
-
-# Zsh Completions plugin
-if [ -d ~/.oh-my-zsh/custom/plugins/zsh-completions ] || [ -h ~/.oh-my-zsh/custom/plugins/zsh-completions ]; then
-  rm -rf ~/.oh-my-zsh/custom/plugins/zsh-completions
-fi
-
-git clone --depth=1 https://github.com/zsh-users/zsh-completions.git ~/.oh-my-zsh/custom/plugins/zsh-completions
-
-# Fzf Tab plugin
-if [ -d ~/.oh-my-zsh/custom/plugins/fzf-tab ] || [ -h ~/.oh-my-zsh/custom/plugins/fzf-tab ]; then
-  rm -rf ~/.oh-my-zsh/custom/plugins/fzf-tab
-fi
-
-git clone --depth=1 https://github.com/Aloxaf/fzf-tab.git ~/.oh-my-zsh/custom/plugins/fzf-tab
-
-# Spaceship theme
-if [ -d ~/.oh-my-zsh/custom/themes/spaceship-prompt ] || [ -h ~/.oh-my-zsh/custom/themes/spaceship-prompt ]; then
-  rm -rf ~/.oh-my-zsh/custom/themes/spaceship-prompt
-fi
-
-git clone --depth=1 https://github.com/denysdovhan/spaceship-prompt.git ~/.oh-my-zsh/custom/themes/spaceship-prompt
-
-if [ -d ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme ] || [ -h ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme ]; then
-  rm -rf ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme
-fi
-
-ln -s ~/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme
-
-################################################################################
+############################################################################
 # Git
-################################################################################
-if [ -d ~/.gitconfig ] || [ -h ~/.gitconfig ]; then
-  rm -rf ~/.gitconfig
-fi
+############################################################################
+log_info "Setting up Git..."
+safe_link "$HOME/.dotfiles/git/.gitconfig" "$HOME/.gitconfig"
 
-ln -s ~/.dotfiles/git/.gitconfig ~/.gitconfig
-
-################################################################################
+############################################################################
 # Vim
-################################################################################
-if [ -d ~/.vim ] || [ -h ~/.vim ]; then
-  rm -rf ~/.vim
-fi
+############################################################################
+log_info "Setting up Vim..."
+safe_link "$HOME/.dotfiles/vim" "$HOME/.vim"
+safe_link "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
 
-ln -s ~/.dotfiles/vim ~/.vim
-
-if [ -d ~/.vimrc ] || [ -h ~/.vimrc ]; then
-  rm -rf ~/.vimrc
-fi
-
-ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
-
-################################################################################
+############################################################################
 # GPG
-################################################################################
-if [ -d ~/.gnupg ] || [ -h ~/.gnupg ]; then
-  rm -rf ~/.gnupg
-fi
-
-ln -s ~/.dotfiles/gnupg ~/.gnupg
-chmod 700 ~/.gnupg
-chmod 400 ~/.gnupg/keys/*
-
-if [ -d ~/.gnupg/gpg-agent.conf ] || [ -h ~/.gnupg/gpg-agent.conf ]; then
-  rm -rf ~/.gnupg/gpg-agent.conf
-fi
+############################################################################
+log_info "Setting up GPG..."
+safe_link "$HOME/.dotfiles/gnupg" "$HOME/.gnupg"
+chmod 700 "$HOME/.gnupg" 2>/dev/null || true
+chmod 400 "$HOME/.gnupg/keys/"* 2>/dev/null || true
 
 case "$(uname)" in
   "Linux")
-    ln -s ~/.dotfiles/gnupg/gpg-agent-linux.conf ~/.gnupg/gpg-agent.conf
-
+    safe_link "$HOME/.dotfiles/gnupg/gpg-agent-linux.conf" "$HOME/.gnupg/gpg-agent.conf"
     ;;
   "Darwin")
-    ln -s ~/.dotfiles/gnupg/gpg-agent-macos-"$(uname -m)".conf ~/.gnupg/gpg-agent.conf
-
+    safe_link "$HOME/.dotfiles/gnupg/gpg-agent-macos-$(uname -m).conf" "$HOME/.gnupg/gpg-agent.conf"
     ;;
 esac
 
-# Import all public GPG keys
-for key in ~/.gnupg/keys/*.public.pgp; do
-  if [ -f "$key" ]; then
-    gpg --import "$key"
-  fi
+# Import GPG keys (idempotent - import is safe to repeat)
+for key in "$HOME/.gnupg/keys/"*.pgp; do
+  [ -f "$key" ] && gpg --batch --yes --quiet --import "$key" 2>/dev/null || true
 done
 
-# Import all private GPG keys
-for key in ~/.gnupg/keys/*.private.pgp; do
-  if [ -f "$key" ]; then
-    gpg --import "$key"
-  fi
-done
-
-################################################################################
+############################################################################
 # SSH
-################################################################################
-if [ -d ~/.ssh ] || [ -h ~/.ssh ]; then
-  rm -rf ~/.ssh
-fi
+############################################################################
+log_info "Setting up SSH..."
+safe_link "$HOME/.dotfiles/ssh" "$HOME/.ssh"
+chmod 700 "$HOME/.ssh" 2>/dev/null || true
+chmod 600 "$HOME/.ssh/config" 2>/dev/null || true
+chmod 400 "$HOME/.ssh/id_"* 2>/dev/null || true
+chmod 644 "$HOME/.ssh/"*.pub 2>/dev/null || true
 
-ln -s ~/.dotfiles/ssh ~/.ssh
-chmod 400 ~/.ssh/id_*
-
-################################################################################
+############################################################################
 # Neomutt
-################################################################################
-if [ -d ~/.muttrc ] || [ -h ~/.muttrc ]; then
-  rm -rf ~/.muttrc
-fi
+############################################################################
+log_info "Setting up Neomutt..."
+safe_link "$HOME/.dotfiles/mutt/.muttrc" "$HOME/.muttrc"
+safe_link "$HOME/.dotfiles/mutt" "$HOME/.mutt"
+safe_link "$HOME/.dotfiles/mailcap/.mailcap" "$HOME/.mailcap"
 
-ln -s ~/.dotfiles/mutt/.muttrc ~/.muttrc
-
-if [ -d ~/.mutt ] || [ -h ~/.mutt ]; then
-  rm -rf ~/.mutt
-fi
-
-ln -s ~/.dotfiles/mutt ~/.mutt
-
-if [ -d ~/.mailcap ] || [ -h ~/.mailcap ]; then
-  rm -rf ~/.mailcap
-fi
-
-ln -s ~/.dotfiles/mutt/.mailcap ~/.mailcap
-
-################################################################################
+############################################################################
 # Tmux
-################################################################################
-if [ -d ~/.tmux.conf ] || [ -h ~/.tmux.conf ]; then
-  rm -rf ~/.tmux.conf
-fi
+############################################################################
+log_info "Setting up Tmux..."
+safe_link "$HOME/.dotfiles/tmux/.tmux.conf" "$HOME/.tmux.conf"
+safe_link "$HOME/.dotfiles/tmux" "$HOME/.tmux"
 
-ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
-
-if [ -d ~/.tmux ] || [ -h ~/.tmux ]; then
-  rm -rf ~/.tmux
-fi
-
-ln -s ~/.dotfiles/tmux ~/.tmux
-
-################################################################################
+############################################################################
 # Curl
-################################################################################
-if [ -d ~/.curlrc ] || [ -h ~/.curlrc ]; then
-  rm -rf ~/.curlrc
-fi
+############################################################################
+log_info "Setting up Curl..."
+safe_link "$HOME/.dotfiles/curl/.curlrc" "$HOME/.curlrc"
 
-ln -s ~/.dotfiles/curl/.curlrc ~/.curlrc
-
-################################################################################
+############################################################################
 # Wget
-################################################################################
-if [ -d ~/.wgetrc ] || [ -h ~/.wgetrc ]; then
-  rm -rf ~/.wgetrc
-fi
+############################################################################
+log_info "Setting up Wget..."
+safe_link "$HOME/.dotfiles/wget/.wgetrc" "$HOME/.wgetrc"
 
-ln -s ~/.dotfiles/wget/.wgetrc ~/.wgetrc
-
-################################################################################
+############################################################################
 # Readline
-################################################################################
-if [ -d ~/.inputrc ] || [ -h ~/.inputrc ]; then
-  rm -rf ~/.inputrc
-fi
+############################################################################
+log_info "Setting up Readline..."
+safe_link "$HOME/.dotfiles/readline/.inputrc" "$HOME/.inputrc"
 
-ln -s ~/.dotfiles/readline/.inputrc ~/.inputrc
-
-################################################################################
-# Mailcap
-################################################################################
-if [ -d ~/.mailcap ] || [ -h ~/.mailcap ]; then
-  rm -rf ~/.mailcap
-fi
-
-ln -s ~/.dotfiles/mailcap/.mailcap ~/.mailcap
-
-################################################################################
+############################################################################
 # htop
-################################################################################
-if [ -d ~/.config/htop ] || [ -h ~/.config/htop ]; then
-  rm -rf ~/.config/htop
-fi
+############################################################################
+log_info "Setting up htop..."
+mkdir -p "$HOME/.config/htop"
+safe_link "$HOME/.dotfiles/htop/htoprc" "$HOME/.config/htop/htoprc"
 
-mkdir -p ~/.config/htop
-ln -s ~/.dotfiles/htop/htoprc ~/.config/htop/htoprc
-
-################################################################################
+############################################################################
 # Ripgrep
-################################################################################
-if [ -d ~/.ripgreprc ] || [ -h ~/.ripgreprc ]; then
-  rm -rf ~/.ripgreprc
-fi
+############################################################################
+log_info "Setting up Ripgrep..."
+safe_link "$HOME/.dotfiles/ripgrep/.ripgreprc" "$HOME/.ripgreprc"
 
-ln -s ~/.dotfiles/ripgrep/.ripgreprc ~/.ripgreprc
-
-################################################################################
+############################################################################
 # fd
-################################################################################
-if [ -d ~/.fdrc ] || [ -h ~/.fdrc ]; then
-  rm -rf ~/.fdrc
-fi
+############################################################################
+log_info "Setting up fd..."
+safe_link "$HOME/.dotfiles/fd/.fdrc" "$HOME/.fdrc"
 
-ln -s ~/.dotfiles/fd/.fdrc ~/.fdrc
-
-################################################################################
+############################################################################
 # Telnet
-################################################################################
-if [ -d ~/.telnetrc ] || [ -h ~/.telnetrc ]; then
-  rm -rf ~/.telnetrc
-fi
+############################################################################
+log_info "Setting up Telnet..."
+safe_link "$HOME/.dotfiles/telnet/.telnetrc" "$HOME/.telnetrc"
 
-ln -s ~/.dotfiles/telnet/.telnetrc ~/.telnetrc
-
-################################################################################
+############################################################################
 # Kitty
-################################################################################
-if [ -d ~/.config/kitty/kitty.conf ] || [ -h ~/.config/kitty/kitty.conf ]; then
-  rm -rf ~/.config/kitty/kitty.conf
-fi
+############################################################################
+log_info "Setting up Kitty..."
+mkdir -p "$HOME/.config/kitty"
+safe_link "$HOME/.dotfiles/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+safe_link "$HOME/.dotfiles/kitty/themes" "$HOME/.config/kitty/themes"
 
-mkdir -p ~/.config/kitty
-ln -s ~/.dotfiles/kitty/kitty.conf ~/.config/kitty/kitty.conf
+############################################################################
+# Cleanup
+############################################################################
+log_info "Cleaning up..."
+case "$(uname)" in
+  "Linux")
+    sudo apt autoremove -y -qq 2>/dev/null || true
+    sudo apt clean 2>/dev/null || true
+    ;;
+  "Darwin")
+    brew cleanup -s 2>/dev/null || true
+
+    # TRIM
+    if [ "$(system_profiler SPSerialATADataType 2>/dev/null | grep 'TRIM Support' | awk '{print $3}')" = "Yes" ]; then
+      log_warning "TRIM is supported. To enable, run: sudo trimforce enable"
+    fi
+    ;;
+esac
 
 ################################################################################
 # Finish
 ################################################################################
-case "$(uname)" in
-  "Linux")
-    # Clean the mess
-    sudo apt autoremove -y
-    sudo apt clean all -y
+# Calculate total execution time
+SCRIPT_END_TIME=$(date +%s)
+TOTAL_ELAPSED=$((SCRIPT_END_TIME - SCRIPT_START_TIME))
+TOTAL_MINS=$((TOTAL_ELAPSED / 60))
+TOTAL_SECS=$((TOTAL_ELAPSED % 60))
 
-    ;;
-  "Darwin")
-    # Clean the mess
-    brew cleanup -s
-
-    # Enable TRIM
-    if [ "$(system_profiler SPSerialATADataType | grep 'TRIM Support' | awk '{print $3}')" = "Yes" ]; then
-      yes | sudo trimforce enable
-    fi
-
-    ;;
-esac
-
-# Reboot
-sudo shutdown -r now
+echo ""
+log_success "==============================================================="
+log_success "Installation completed successfully!"
+log_success "==============================================================="
+echo ""
+log_info "Total execution time: ${TOTAL_MINS}m ${TOTAL_SECS}s"
+echo ""
+log_info "Next steps:"
+echo "  1. Review any warnings above"
+echo "  2. Restart your terminal or run: source ~/.zshrc"
+echo "  3. For Kitty: Press Cmd+F5 to reload config"
+echo ""
+log_warning "Some changes may require a reboot to take effect"
+log_info "To reboot now: sudo reboot"
+echo ""

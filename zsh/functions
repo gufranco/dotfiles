@@ -60,8 +60,12 @@ function f5() {
       mas upgrade
       sudo softwareupdate -i -a
 
-      sudo find 2> /dev/null /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +
-      killall Dock
+      # Only execute if macOS version is less than 26
+      if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
+        sudo find 2> /dev/null /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +
+
+        killall Dock
+      fi
 
       ;;
   esac

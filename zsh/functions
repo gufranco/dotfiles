@@ -66,291 +66,11 @@ function f5() {
       ;;
   esac
 
-  # Reload zsh settings
+  # Reload tmux and zsh settings
+  tmux source-file ~/.tmux.conf
+
   # shellcheck disable=SC1091
   source "$HOME/.zshrc"
-}
-
-################################################################################
-# Convert video to VCD format
-################################################################################
-function convert_to_vcd() {
-  local input_video="$1"
-  local subtitles="$2"
-  local overlap=60
-  local chunk_seconds=4800
-
-  # Validate input
-  if [ -z "$input_video" ]; then
-    echo "Error: no input video provided"
-    echo "Usage: convert_to_vcd <video.mp4|mkv> [subtitles.srt]"
-
-    return 1
-  fi
-
-  if [ ! -f "$input_video" ]; then
-    echo "Error: video file not found: $input_video"
-
-    return 1
-  fi
-
-  echo "Using 80 minute CDs (${chunk_seconds}s per disc)"
-
-  # Check required tools
-  for tool in ffmpeg vcdimager iconv file ffprobe; do
-    if ! command -v "$tool" >/dev/null 2>&1; then
-      echo "Error: required tool not found: $tool"
-
-      return 1
-    fi
-  done
-
-  # Prepare output file names (use only filename, not full path)
-  local video_name
-  video_name=$(basename "$input_video")
-  local basename="${video_name%.*}_disc"
-  local ass_file=""
-
-  # Process subtitles if provided
-  if [ -n "$subtitles" ]; then
-    if [ ! -f "$subtitles" ]; then
-      echo "Error: subtitle file not found: $subtitles"
-
-      return 1
-    fi
-
-    echo "Processing subtitles: $subtitles"
-
-    # Detect and convert subtitle encoding
-    local encoding
-    encoding=$(file -b --mime-encoding "$subtitles" 2>/dev/null)
-
-    if [ -z "$encoding" ]; then
-      encoding=$(file -I "$subtitles" 2>/dev/null | awk -F'charset=' '{print $2}')
-    fi
-
-    if [ -z "$encoding" ]; then
-      echo "Warning: could not detect subtitle encoding, assuming UTF-8"
-      encoding="utf-8"
-    fi
-
-    if [[ "$encoding" != "utf-8" && "$encoding" != "us-ascii" ]]; then
-      echo "Converting subtitle from $encoding to UTF-8..."
-      iconv -f "$encoding" -t UTF-8 "$subtitles" > "${basename}_utf8.srt" || {
-        echo "Error: failed to convert subtitle encoding"
-
-        return 1
-      }
-      subtitles="${basename}_utf8.srt"
-    fi
-
-    # Convert to ASS format with VCD-compatible styling
-    ass_file="${basename}.ass"
-    ffmpeg -y -v error -i "$subtitles" "$ass_file" || {
-      echo "Error: failed to convert subtitles to ASS format"
-      return 1
-    }
-
-    # Apply VCD-compatible styling
-    if [ -f "$ass_file" ] && [ -s "$ass_file" ]; then
-      local line_count
-      line_count=$(wc -l < "$ass_file")
-
-      if [ "$line_count" -ge 4 ]; then
-        {
-          printf '[Script Info]\nScriptType: v4.00+\nPlayResX: 352\nPlayResY: 240\nScaledBorderAndShadow: yes\n\n'
-          printf '[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n'
-          printf 'Style: Default,Arial,18,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2,1,2,10,10,10,1\n\n'
-          tail -n +4 "$ass_file"
-        } > "${ass_file}.tmp" && mv "${ass_file}.tmp" "$ass_file"
-      fi
-    fi
-  fi
-
-  # Get video duration
-  local duration
-  duration=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$input_video")
-
-  if [ -z "$duration" ] || [ "$duration" = "N/A" ]; then
-    echo "Error: failed to get video duration"
-
-    return 1
-  fi
-
-  duration=${duration%.*}
-
-  if [ "$duration" -le 0 ]; then
-    echo "Error: invalid video duration: $duration"
-
-    return 1
-  fi
-
-  echo "Video duration: ${duration}s"
-
-  # Process video in chunks
-  local start=0
-  local part=1
-
-  while [ "$start" -lt "$duration" ]; do
-    echo "Encoding part $part (start: ${start}s)..."
-
-    local out="${basename}${part}.mpg"
-    local bin="${basename}${part}.bin"
-    local cue="${basename}${part}.cue"
-
-    # Build professional broadcast-quality filter chain
-    local filter=""
-
-    # Add subtitles first (at source resolution for maximum clarity)
-    if [ -n "$ass_file" ]; then
-      local abs_ass_file
-      abs_ass_file=$(cd "$(dirname "$ass_file")" && pwd)/$(basename "$ass_file")
-      local escaped_ass
-      escaped_ass=$(printf '%s' "$abs_ass_file" | sed "s/\\\\/\\\\\\\\/g;s/:/\\\\:/g;s/'/\\\\\\\\'/g")
-      filter="subtitles='${escaped_ass}',"
-    fi
-
-    # Stage 1: Color space and deinterlacing
-    filter="${filter}format=yuv444p"  # Start with full chroma for processing
-    filter="${filter},yadif=1:-1:0"  # Full deinterlace (double framerate then decimate)
-
-    # Stage 2: Advanced temporal/spatial denoising (edge-preserving)
-    filter="${filter},hqdn3d=0.8:0.8:2.5:2.5"  # Conservative denoise preserving detail
-    filter="${filter},nlmeans=s=1.0:p=7:r=15"  # Non-local means (superior denoising)
-
-    # Stage 3: Color correction and optimization for MPEG-1
-    filter="${filter},eq=contrast=1.08:brightness=0.02:saturation=1.15:gamma=1.08"
-    filter="${filter},colorlevels=rimin=0.02:gimin=0.02:bimin=0.02:rimax=0.98:gimax=0.98:bimax=0.98"
-
-    # Stage 4: Pre-downscale sharpening and detail enhancement
-    filter="${filter},cas=0.7"  # Contrast Adaptive Sharpening
-    filter="${filter},unsharp=7:7:1.2:7:7:0.0"  # Strong luma pre-sharpening
-
-    # Stage 5: Professional downscaling with best algorithm
-    filter="${filter},scale=352:240:flags=lanczos+accurate_rnd+full_chroma_int+full_chroma_inp:force_original_aspect_ratio=decrease:param0=3"
-    filter="${filter},pad=352:240:(ow-iw)/2:(oh-ih)/2:color=black"
-
-    # Stage 6: Convert to 4:2:0 with high-quality chroma subsampling
-    filter="${filter},format=yuv420p,scale=352:240:flags=lanczos+accurate_rnd"
-
-    # Stage 7: Post-downscale sharpening optimized for VCD resolution
-    filter="${filter},unsharp=3:3:0.8:3:3:0.4"  # Balanced post-sharpening
-    filter="${filter},cas=0.5"  # Light adaptive sharpening
-
-    # Stage 8: Final adjustments for CRT display and MPEG-1 encoding
-    filter="${filter},eq=gamma=1.05:gamma_r=1.02:gamma_g=1.03:gamma_b=1.04"  # Per-channel gamma
-    filter="${filter},limiter=min=16:max=235"  # Ensure broadcast-safe levels
-
-    # Stage 9: Add subtle film grain to preserve texture and reduce banding
-    filter="${filter},noise=c0s=1:c0f=t"
-
-    # Ultimate quality 2-pass encoding with maximum settings
-    local pass_log="${basename}${part}_2pass"
-
-    # Common encoder parameters (absolute maximum quality for MPEG-1)
-    local encoder_params="-c:v mpeg1video \
-      -r 29.97 \
-      -g 18 \
-      -bf 2 \
-      -b_strategy 2 \
-      -sc_threshold 1000000000 \
-      -me_method epzs \
-      -me_range 63 \
-      -dia_size 7 \
-      -pre_dia_size 4 \
-      -last_pred 3 \
-      -mbd rd \
-      -mbcmp satd \
-      -precmp satd \
-      -cmp satd \
-      -subcmp satd \
-      -trellis 2 \
-      -mv0_threshold 0 \
-      -qmin 1 \
-      -qmax 6 \
-      -qdiff 1 \
-      -qcomp 0.8 \
-      -qblur 0.2 \
-      -i_qfactor 0.71428571 \
-      -b_qfactor 1.25 \
-      -dc 8 \
-      -lmin 1 \
-      -lmax 4 \
-      -skip_threshold 0 \
-      -b:v 1150000 \
-      -minrate 1150000 \
-      -maxrate 1150000 \
-      -bufsize 327680"
-
-    # Pass 1: Statistical analysis
-    echo "Pass 1/2: Analyzing complexity and motion..."
-    ffmpeg -y -v error -i "$input_video" -ss "$start" -t "$chunk_seconds" \
-      -vf "$filter" \
-      -pass 1 \
-      -passlogfile "$pass_log" \
-      "$encoder_params" \
-      -an \
-      -f rawvideo \
-      /dev/null || {
-      echo "Error: ffmpeg pass 1 failed for part $part"
-      rm -f "${pass_log}"*
-      return 1
-    }
-
-    # Pass 2: Final encoding with bit allocation
-    echo "Pass 2/2: Encoding with optimized bit distribution..."
-    ffmpeg -y -v warning -i "$input_video" -ss "$start" -t "$chunk_seconds" \
-      -vf "$filter" \
-      -pass 2 \
-      -passlogfile "$pass_log" \
-      "$encoder_params" \
-      -c:a mp2 \
-      -b:a 224k \
-      -ac 2 \
-      -ar 44100 \
-      -filter:a "volume=1.0,equalizer=f=100:t=q:w=1.0:g=1,equalizer=f=8000:t=q:w=1.0:g=1.5" \
-      -compression_level 0 \
-      -muxrate 1411200 \
-      -packetsize 2324 \
-      -f vcd "$out" || {
-      echo "Error: ffmpeg pass 2 failed for part $part"
-      rm -f "${pass_log}"*
-      return 1
-    }
-
-    # Cleanup pass log files
-    rm -f "${pass_log}"*
-
-    if [ ! -f "$out" ]; then
-      echo "Error: output file not created for part $part"
-
-      return 1
-    fi
-
-    # Generate BIN/CUE image
-    echo "Generating BIN/CUE for part $part..."
-    vcdimager -t vcd2 -c "$cue" -b "$bin" "$out" || {
-      echo "Error: vcdimager failed for part $part"
-      return 1
-    }
-
-    # Remove intermediate MPG file to save space
-    rm -f "$out"
-
-    start=$((start + chunk_seconds - overlap))
-    part=$((part + 1))
-  done
-
-  # Cleanup temporary files
-  if [ -n "$ass_file" ] && [ -f "$ass_file" ]; then
-    rm -f "$ass_file"
-  fi
-
-  if [ -f "${basename}_utf8.srt" ]; then
-    rm -f "${basename}_utf8.srt"
-  fi
-
-  echo "Completed. Total discs: $((part - 1))"
 }
 
 ################################################################################
@@ -373,6 +93,8 @@ function zero_fill_verify() {
     echo "Error: no device specified"
     echo "Usage: zero_fill_verify <device>"
     echo "       PASSES=N zero_fill_verify <device>"
+    echo "       CREATE=y zero_fill_verify <device>"
+    echo "       PASSES=N CREATE=y zero_fill_verify <device>"
     return 1
   fi
 
@@ -409,7 +131,7 @@ function zero_fill_verify() {
       }
 
     echo "Verifying 0xFF..."
-    sudo dd if="$disk" bs="$block_size" status=progress 2>&1 | head -c "$size" | \
+    sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
       cmp -s - <(head -c "$size" /dev/zero | tr '\000' '\377') || {
         echo "Error: failed to verify 0xFF."
 
@@ -425,7 +147,7 @@ function zero_fill_verify() {
       }
 
     echo "Verifying 0x00..."
-    sudo dd if="$disk" bs="$block_size" status=progress 2>&1 | head -c "$size" | \
+    sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
       cmp -s - <(head -c "$size" /dev/zero) || {
         echo "Error: failed to verify 0x00."
 
@@ -433,6 +155,21 @@ function zero_fill_verify() {
       }
   done
 
+  # Create partition only if CREATE=y
+  if [ "${CREATE}" = "y" ]; then
+    echo "Creating partition..."
+    local threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB
+
+    if [ "$size" -le "$threshold_bytes" ]; then
+      echo "Using FAT16 (<= 2 GB)..."
+      sudo diskutil eraseDisk "MS-DOS FAT16" "NO NAME" MBRFormat "$disk"
+    else
+      echo "Using FAT32 (> 2 GB)..."
+      sudo diskutil eraseDisk "MS-DOS FAT32" "NO NAME" MBRFormat "$disk"
+    fi
+  fi
+
+  echo "Ejecting device..."
   sudo diskutil eject "$disk"
 }
 
@@ -466,84 +203,41 @@ function __sync_redump() {
       --size-only \
       --delete-excluded \
       \
-      --filter "- *\(Beta*" \
-      --filter "- *Beta\)*" \
-      --filter "- *\(Proto*" \
-      --filter "- *Proto\)*" \
-      --filter "- *\(Prototype*" \
-      --filter "- *Prototype\)*" \
-      --filter "- *\(Sample*" \
-      --filter "- *Sample\)*" \
-      \
-      --filter "- *\(Demo*" \
-      --filter "- *Demo\)*" \
-      --filter "- *\(Kiosk*" \
-      --filter "- *Kiosk\)*" \
-      --filter "- *\(Preview*" \
-      --filter "- *Preview\)*" \
-      --filter "- *\(Promo*" \
-      --filter "- *Promo\)*" \
-      --filter "- *\(Promotional*" \
-      --filter "- *Promotional\)*" \
-      --filter "- *\(Trial*" \
-      --filter "- *Trial\)*" \
-      \
-      --filter "- *\ Demo Disc\ *" \
-      --filter "- *\ Interactive Multi-Game Demo Disc\ *" \
-      --filter "- *\ Interactive Sampler Disc\ *" \
-      --filter "- *\ Jam Pack\ *" \
-      --filter "- *\ PlayStation Underground\ *" \
-      --filter "- *\ Trial Edition\ *" \
-      --filter "- *\ Trial Version\ *" \
-      --filter "- *\ Taikenban\ *" \
-      \
-      --filter "- *\(Not for Sale*" \
-      --filter "- *\(GameCube Preview*" \
-      \
-      --filter "- *\(Bonus Disc*" \
-      --filter "- *Bonus Disc\)*" \
-      \
-      --filter "- *Magazine*" \
-      --filter "- *Disc Magazine*" \
-      --filter "- *Covermount*" \
-      --filter "- *Cover Disc*" \
-      \
-      --filter "- *Europe*" \
-      --filter "- *Germany*" \
-      --filter "- *France*" \
-      --filter "- *Spain*" \
-      --filter "- *Italy*" \
-      --filter "- *Netherlands*" \
-      --filter "- *Sweden*" \
-      --filter "- *Denmark*" \
-      --filter "- *Norway*" \
-      --filter "- *Finland*" \
-      --filter "- *Belgium*" \
-      --filter "- *Austria*" \
-      --filter "- *Switzerland*" \
-      --filter "- *Portugal*" \
-      --filter "- *Greece*" \
-      --filter "- *Poland*" \
-      --filter "- *Russia*" \
-      --filter "- *Czech*" \
-      --filter "- *Hungary*" \
-      --filter "- *Romania*" \
-      --filter "- *Croatia*" \
-      --filter "- *Serbia*" \
-      --filter "- *Slovakia*" \
-      --filter "- *Bulgaria*" \
-      --filter "- *Ireland*" \
-      --filter "- *Iceland*" \
-      --filter "- *UK*" \
-      --filter "- *Australia*" \
-      --filter "- *New Zealand*" \
-      --filter "- *Scandinavia*" \
-      \
-      --filter "- *Asia*" \
-      --filter "- *Korea*" \
-      --filter "- *China*" \
-      --filter "- *Taiwan*" \
-      --filter "- *Hong Kong*" \
+      --filter "- *Europe\)*" \
+      --filter "- *Germany\)*" \
+      --filter "- *France\)*" \
+      --filter "- *Spain\)*" \
+      --filter "- *Italy\)*" \
+      --filter "- *Netherlands\)*" \
+      --filter "- *Sweden\)*" \
+      --filter "- *Denmark\)*" \
+      --filter "- *Norway\)*" \
+      --filter "- *Finland\)*" \
+      --filter "- *Belgium\)*" \
+      --filter "- *Austria\)*" \
+      --filter "- *Switzerland\)*" \
+      --filter "- *Portugal\)*" \
+      --filter "- *Greece\)*" \
+      --filter "- *Poland\)*" \
+      --filter "- *Russia\)*" \
+      --filter "- *Czech\)*" \
+      --filter "- *Hungary\)*" \
+      --filter "- *Romania\)*" \
+      --filter "- *Croatia\)*" \
+      --filter "- *Serbia\)*" \
+      --filter "- *Slovakia\)*" \
+      --filter "- *Bulgaria\)*" \
+      --filter "- *Ireland\)*" \
+      --filter "- *Iceland\)*" \
+      --filter "- *UK\)*" \
+      --filter "- *Australia\)*" \
+      --filter "- *New Zealand\)*" \
+      --filter "- *Scandinavia\)*" \
+      --filter "- *Asia\)*" \
+      --filter "- *Korea\)*" \
+      --filter "- *China\)*" \
+      --filter "- *Taiwan\)*" \
+      --filter "- *Hong Kong\)*" \
       \
       --filter "+ *World\)*" \
       --filter "+ *USA\)*" \
@@ -697,66 +391,41 @@ function __sync_no_intro() {
       --size-only \
       --delete-excluded \
       \
-      --filter "- *\(Beta*" \
-      --filter "- *Beta\)*" \
-      --filter "- *\(Proto*" \
-      --filter "- *Proto\)*" \
-      --filter "- *\(Prototype*" \
-      --filter "- *Prototype\)*" \
-      --filter "- *\(Sample*" \
-      --filter "- *Sample\)*" \
-      \
-      --filter "- *\(Demo*" \
-      --filter "- *Demo\)*" \
-      \
-      --filter "- *\(Unl*" \
-      --filter "- *Unl\)*" \
-      --filter "- *\(Pirate*" \
-      --filter "- *Pirate\)*" \
-      --filter "- *\[b*" \
-      --filter "- *\[h*" \
-      --filter "- *\[x*" \
-      --filter "- *\[t*" \
-      --filter "- *\[f*" \
-      --filter "- *\[a*" \
-      --filter "- *\[o*" \
-      \
-      --filter "- *Europe*" \
-      --filter "- *Germany*" \
-      --filter "- *France*" \
-      --filter "- *Spain*" \
-      --filter "- *Italy*" \
-      --filter "- *Netherlands*" \
-      --filter "- *Sweden*" \
-      --filter "- *Denmark*" \
-      --filter "- *Norway*" \
-      --filter "- *Finland*" \
-      --filter "- *Belgium*" \
-      --filter "- *Austria*" \
-      --filter "- *Switzerland*" \
-      --filter "- *Portugal*" \
-      --filter "- *Greece*" \
-      --filter "- *Poland*" \
-      --filter "- *Russia*" \
-      --filter "- *Czech*" \
-      --filter "- *Hungary*" \
-      --filter "- *Romania*" \
-      --filter "- *Croatia*" \
-      --filter "- *Serbia*" \
-      --filter "- *Slovakia*" \
-      --filter "- *Bulgaria*" \
-      --filter "- *Ireland*" \
-      --filter "- *Iceland*" \
-      --filter "- *UK*" \
-      --filter "- *Australia*" \
-      --filter "- *New Zealand*" \
-      --filter "- *Scandinavia*" \
-      \
-      --filter "- *Asia*" \
-      --filter "- *Korea*" \
-      --filter "- *China*" \
-      --filter "- *Taiwan*" \
-      --filter "- *Hong Kong*" \
+      --filter "- *Europe\)*" \
+      --filter "- *Germany\)*" \
+      --filter "- *France\)*" \
+      --filter "- *Spain\)*" \
+      --filter "- *Italy\)*" \
+      --filter "- *Netherlands\)*" \
+      --filter "- *Sweden\)*" \
+      --filter "- *Denmark\)*" \
+      --filter "- *Norway\)*" \
+      --filter "- *Finland\)*" \
+      --filter "- *Belgium\)*" \
+      --filter "- *Austria\)*" \
+      --filter "- *Switzerland\)*" \
+      --filter "- *Portugal\)*" \
+      --filter "- *Greece\)*" \
+      --filter "- *Poland\)*" \
+      --filter "- *Russia\)*" \
+      --filter "- *Czech\)*" \
+      --filter "- *Hungary\)*" \
+      --filter "- *Romania\)*" \
+      --filter "- *Croatia\)*" \
+      --filter "- *Serbia\)*" \
+      --filter "- *Slovakia\)*" \
+      --filter "- *Bulgaria\)*" \
+      --filter "- *Ireland\)*" \
+      --filter "- *Iceland\)*" \
+      --filter "- *UK\)*" \
+      --filter "- *Australia\)*" \
+      --filter "- *New Zealand\)*" \
+      --filter "- *Scandinavia\)*" \
+      --filter "- *Asia\)*" \
+      --filter "- *Korea\)*" \
+      --filter "- *China\)*" \
+      --filter "- *Taiwan\)*" \
+      --filter "- *Hong Kong\)*" \
       \
       --filter "+ *World\)*" \
       --filter "+ *USA\)*" \

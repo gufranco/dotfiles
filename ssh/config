@@ -1,9 +1,16 @@
 ################################################################################
+# Container environments (MUST come first for proper precedence)
+################################################################################
+# Colima
+Include ~/.colima/ssh_config
+
+################################################################################
 # General settings
 ################################################################################
 Host *
   # Identity and authentication
   IdentityFile ~/.ssh/id_ed25519
+  IdentitiesOnly yes
   AddKeysToAgent yes
   UseKeychain yes
 
@@ -72,15 +79,6 @@ Host bitbucket.org
   ControlMaster auto
   ControlPersist 120
   ControlPath ~/.ssh/control-bitbucket-%r@%h:%p
-
-################################################################################
-# Container environments
-################################################################################
-# Colima
-Include ~/.colima/ssh_config
-
-# Orbstack
-Include ~/.orbstack/ssh/config
 
 ################################################################################
 # Security hardening

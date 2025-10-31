@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# Internal functions to calculate the cores, memory and disk size for VMs
+# Internal functions
 ################################################################################
 function __calculate_vm_cores() {
   # Percentage of total CPU cores to allocate
-  local percentage=25
+  local percentage=50
   # Minimum number of CPU cores to allocate
   local minimum=2
   # Maximum number of CPU cores to allocate
@@ -87,11 +87,11 @@ function __calculate_vm_memory() {
 
 function __calculate_vm_storage() {
   # Percentage of total storage to allocate
-  local percentage=10
+  local percentage=50
   # Minimum storage to allocate (in GiB)
-  local minimum=10
+  local minimum=25
   # Maximum storage to allocate (in GiB)
-  local maximum=50
+  local maximum=100
 
   case "$(uname -s)" in
     Darwin)
@@ -123,28 +123,212 @@ function __calculate_vm_storage() {
   echo "$result"
 }
 
+function __ensure_docker_compose_plugin() {
+  if ! command -v docker-compose > /dev/null 2>&1; then
+    return
+  fi
+
+  local plugin_dir="${HOME}/.docker/cli-plugins"
+
+  if [ ! -d "$plugin_dir" ]; then
+    mkdir -p "$plugin_dir"
+  fi
+
+  local plugin_path="${plugin_dir}/docker-compose"
+  # shellcheck disable=SC2155
+  local compose_bin="$(command -v docker-compose)"
+
+  # shellcheck disable=SC2155
+  if [ -L "$plugin_path" ]; then
+    local current_target="$(readlink "$plugin_path")"
+
+    if [ "$current_target" != "$compose_bin" ]; then
+      rm -f "$plugin_path"
+      ln -sf "$compose_bin" "$plugin_path"
+    fi
+  elif [ -e "$plugin_path" ]; then
+    rm -f "$plugin_path"
+    ln -sf "$compose_bin" "$plugin_path"
+  else
+    ln -sf "$compose_bin" "$plugin_path"
+  fi
+
+  if [ -L "$plugin_path" ] && [ ! -x "$plugin_path" ]; then
+    chmod +x "$plugin_path"
+  fi
+}
+
 ################################################################################
 # Colima VM
 ################################################################################
 function colima-start() {
+  # Ensure Docker Compose V2 plugin is properly configured
+  __ensure_docker_compose_plugin
+
   # shellcheck disable=SC2155
   local cores="$(__calculate_vm_cores)"
   # shellcheck disable=SC2155
   local memory="$(__calculate_vm_memory)"
   # shellcheck disable=SC2155
   local storage="$(__calculate_vm_storage)"
+  # shellcheck disable=SC2155
+  local os_type="$(uname -s)"
+  # shellcheck disable=SC2155
+  local arch="$(uname -m)"
 
-  echo "Starting Colima with ${cores} cores, ${memory}GiB RAM, ${storage}GiB disk..."
+  echo ""
+  echo "================================================================================"
+  echo "  Colima VM - Starting"
+  echo "================================================================================"
+  echo ""
+  echo "Platform: ${os_type} (${arch})"
+  echo ""
+  echo "Configuration:"
+  echo "  CPU Cores:      ${cores}"
+  echo "  Memory:         ${memory}GiB"
+  echo "  Disk:           ${storage}GiB"
+  echo ""
 
-  command colima start \
-    --cpu "${cores}" \
-    --memory "${memory}" \
-    --disk "${storage}" \
-    \
-    --runtime "docker" \
-    --vm-type "qemu" \
-    --mount "$HOME:w" \
-    --dns "1.1.1.1,8.8.8.8"
+  case "$os_type" in
+    "Darwin")
+      case "$arch" in
+        "x86_64")
+          # Intel Mac - Maximum performance with Virtualization.framework
+          echo "Runtime:"
+          echo "  Engine:         Docker"
+          echo "  VM Type:        Virtualization.framework (Apple native)"
+          echo "  Architecture:   x86_64 native (no emulation)"
+          echo "  Mount Type:     VirtioFS (kernel-level I/O)"
+          echo "  File Watching:  inotify enabled"
+          echo ""
+          echo "Network:"
+          echo "  DNS:            1.1.1.1, 8.8.8.8"
+          echo "  Address:        Reachable from host"
+          echo ""
+          echo "Performance:"
+          echo "  Auto Activate:  Enabled"
+          echo "  BuildKit:       Enabled (faster builds & I/O)"
+          echo "  Inline Cache:   Enabled (persistent cache)"
+          echo ""
+
+          command colima start \
+            --cpu "${cores}" \
+            --memory "${memory}" \
+            --disk "${storage}" \
+            \
+            --runtime "docker" \
+            --vm-type "vz" \
+            --arch "x86_64" \
+            \
+            --mount "$HOME:w" \
+            --mount-type "virtiofs" \
+            --mount-inotify \
+            \
+            --dns "1.1.1.1" \
+            --dns "8.8.8.8" \
+            \
+            --network-address \
+            --activate \
+            \
+            --env DOCKER_BUILDKIT=1 \
+            --env COMPOSE_DOCKER_CLI_BUILD=1 \
+            --env BUILDKIT_INLINE_CACHE=1
+
+          ;;
+        "arm64")
+          # Apple Silicon - Maximum performance with Rosetta 2 support
+          echo "Runtime:"
+          echo "  Engine:         Docker"
+          echo "  VM Type:        Virtualization.framework (Apple native)"
+          echo "  Architecture:   ARM64 native + x86_64 via Rosetta 2"
+          echo "  Mount Type:     VirtioFS (kernel-level I/O)"
+          echo "  File Watching:  inotify enabled"
+          echo "  Rosetta 2:      Enabled (x86_64 containers supported)"
+          echo ""
+          echo "Network:"
+          echo "  DNS:            1.1.1.1, 8.8.8.8"
+          echo "  Address:        Reachable from host"
+          echo ""
+          echo "Performance:"
+          echo "  Auto Activate:  Enabled"
+          echo "  Multi-Arch:     ARM64 + x86_64 simultaneously"
+          echo "  BuildKit:       Enabled (faster builds & I/O)"
+          echo "  Inline Cache:   Enabled (persistent cache)"
+          echo ""
+
+          command colima start \
+            --cpu "${cores}" \
+            --memory "${memory}" \
+            --disk "${storage}" \
+            \
+            --runtime "docker" \
+            --vm-type "vz" \
+            --arch "aarch64" \
+            --vz-rosetta \
+            \
+            --mount "$HOME:w" \
+            --mount-type "virtiofs" \
+            --mount-inotify \
+            \
+            --dns "1.1.1.1" \
+            --dns "8.8.8.8" \
+            \
+            --network-address \
+            --activate \
+            \
+            --env DOCKER_BUILDKIT=1 \
+            --env COMPOSE_DOCKER_CLI_BUILD=1 \
+            --env BUILDKIT_INLINE_CACHE=1
+
+          ;;
+      esac
+
+      ;;
+    "Linux")
+      # Linux x86_64 - Maximum performance with KVM
+      echo "Runtime:"
+      echo "  Engine:         Docker"
+      echo "  VM Type:        QEMU with KVM acceleration"
+      echo "  Architecture:   x86_64 native"
+      echo "  Mount Type:     9p (best for Linux)"
+      echo "  File Watching:  inotify enabled"
+      echo ""
+      echo "Network:"
+      echo "  DNS:            1.1.1.1, 8.8.8.8"
+      echo "  Address:        Reachable from host"
+      echo ""
+      echo "Performance:"
+      echo "  Auto Activate:  Enabled"
+      echo "  KVM:            Hardware acceleration enabled"
+      echo "  BuildKit:       Enabled (faster builds & I/O)"
+      echo "  Inline Cache:   Enabled (persistent cache)"
+      echo ""
+
+      command colima start \
+        --cpu "${cores}" \
+        --memory "${memory}" \
+        --disk "${storage}" \
+        \
+        --runtime "docker" \
+        --vm-type "qemu" \
+        --arch "x86_64" \
+        \
+        --mount "$HOME:w" \
+        --mount-type "9p" \
+        --mount-inotify \
+        \
+        --dns "1.1.1.1" \
+        --dns "8.8.8.8" \
+        \
+        --network-address \
+        --activate \
+        \
+        --env DOCKER_BUILDKIT=1 \
+        --env COMPOSE_DOCKER_CLI_BUILD=1 \
+        --env BUILDKIT_INLINE_CACHE=1
+
+      ;;
+  esac
 }
 
 function colima-stop() {
@@ -178,10 +362,29 @@ function mongo-init() {
     --hostname mongo \
     --name mongo \
     --restart unless-stopped \
+    \
+    --cpus "${cores:-2}" \
+    --memory "${memory:-2g}" \
+    --shm-size 256m \
+    \
     --env "MONGO_INITDB_ROOT_USERNAME=mongo" \
     --env "MONGO_INITDB_ROOT_PASSWORD=mongo" \
+    \
     --mount "type=bind,source=$HOME/Docker/Mongo,target=/external" \
+    --volume "mongo-data:/data/db" \
+    --volume "mongo-config:/data/configdb" \
+    \
     --publish "127.0.0.1:27017:27017" \
+    \
+    --log-driver "local" \
+    --log-opt "max-size=10m" \
+    --log-opt "max-file=3" \
+    \
+    --health-cmd "mongosh --eval 'db.adminCommand({ping: 1})' --quiet" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
     mongo:latest
 }
 
@@ -214,10 +417,28 @@ function postgres-init() {
     --hostname postgres \
     --name postgres \
     --restart unless-stopped \
+    \
+    --cpus "${cores:-2}" \
+    --memory "${memory:-2g}" \
+    --shm-size 256m \
+    \
     --env "POSTGRES_USER=postgres" \
     --env "POSTGRES_PASSWORD=postgres" \
+    \
     --mount "type=bind,source=$HOME/Docker/Postgres,target=/external" \
+    --volume "postgres-data:/var/lib/postgresql/data" \
+    \
     --publish "127.0.0.1:5432:5432" \
+    \
+    --log-driver "local" \
+    --log-opt "max-size=10m" \
+    --log-opt "max-file=3" \
+    \
+    --health-cmd "pg_isready -U postgres" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
     postgres:alpine
 }
 
@@ -250,9 +471,26 @@ function redis-init() {
     --hostname redis \
     --name redis \
     --restart unless-stopped \
+    \
+    --cpus "${cores:-1}" \
+    --memory "${memory:-512m}" \
+    \
     --mount "type=bind,source=$HOME/Docker/Redis,target=/external" \
+    --volume "redis-data:/data" \
+    \
     --publish "127.0.0.1:6379:6379" \
-    redis:alpine
+    \
+    --log-driver "local" \
+    --log-opt "max-size=10m" \
+    --log-opt "max-file=3" \
+    \
+    --health-cmd "redis-cli ping" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
+    redis:alpine \
+    redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 }
 
 function redis-start() {
@@ -284,9 +522,26 @@ function valkey-init() {
     --hostname valkey \
     --name valkey \
     --restart unless-stopped \
+    \
+    --cpus "${cores:-1}" \
+    --memory "${memory:-512m}" \
+    \
     --mount "type=bind,source=$HOME/Docker/Valkey,target=/external" \
+    --volume "valkey-data:/data" \
+    \
     --publish "127.0.0.1:7000:7000" \
-    valkey:alpine
+    \
+    --log-driver "local" \
+    --log-opt "max-size=10m" \
+    --log-opt "max-file=3" \
+    \
+    --health-cmd "valkey-cli -p 7000 ping" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
+    valkey/valkey:alpine \
+    valkey-server --port 7000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 }
 
 function valkey-start() {
@@ -318,9 +573,26 @@ function redict-init() {
     --hostname redict \
     --name redict \
     --restart unless-stopped \
+    \
+    --cpus "${cores:-1}" \
+    --memory "${memory:-512m}" \
+    \
     --mount "type=bind,source=$HOME/Docker/Redict,target=/external" \
+    --volume "redict-data:/data" \
+    \
     --publish "127.0.0.1:6379:6379" \
-    registry.redict.io/redict:alpine
+    \
+    --log-driver "local" \
+    --log-opt "max-size=10m" \
+    --log-opt "max-file=3" \
+    \
+    --health-cmd "redict-cli ping" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
+    registry.redict.io/redict:alpine \
+    redict-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 }
 
 function redict-start() {

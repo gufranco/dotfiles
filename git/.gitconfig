@@ -9,7 +9,7 @@
   autocrlf = input
   pager = less -FRSX
   whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
-  editor = vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72'
+  editor = vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd' -c 'syntax on' -c 'filetype on'
   preloadindex = true
   fscache = true
   untrackedCache = true

@@ -21,13 +21,13 @@ macro index <f4> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/
 # Editor
 ################################################################################
 set charset = "utf-8"
-set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup tw=72 ft=mail noautoindent fo=watqc cursorline number colorcolumn=72 nojs nosmartindent syntax=mail'"
+set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd noautoindent nojoinspaces nosmartindent formatoptions=watqc filetype=mail' -c 'syntax on'"
 
 ################################################################################
 # Status bar
 ################################################################################
 set status_chars  = " *%A"
-set status_format = "───[ Folder: %f ]───[%r%m messages%?n? (%n new)?%?d? (%d to delete)?%?t? (%t tagged)? ]───%>─%?p?( %p postponed )?───"
+set status_format = " %f - %r%m msgs%?n? - %n new?%?d? - %d del?%?t? - %t tag? %> %?p?%p postponed - ?%P "
 
 ################################################################################
 # Sidebar

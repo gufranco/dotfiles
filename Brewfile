@@ -257,7 +257,7 @@ cask 'font-victor-mono-nerd-font'
 cask 'font-zed-mono-nerd-font'
 
 # App Store - Apps
-mas 'Xcode', id: 497_799_835
+# mas 'Xcode', id: 497_799_835
 mas 'Amphetamine', id: 937_984_704
 mas 'Magnet', id: 441_258_766
 

@@ -55,7 +55,6 @@ function colima-start() {
           command colima start \
             --profile "${profile}" \
             --cpu "${cores}" \
-            --memory "${memory}" \
             --disk "${storage}" \
             \
             --runtime "docker" \
@@ -101,7 +100,6 @@ function colima-start() {
           command colima start \
             --profile "${profile}" \
             --cpu "${cores}" \
-            --memory "${memory}" \
             --disk "${storage}" \
             \
             --runtime "docker" \
@@ -150,7 +148,6 @@ function colima-start() {
       command colima start \
         --profile "${profile}" \
         --cpu "${cores}" \
-        --memory "${memory}" \
         --disk "${storage}" \
         \
         --runtime "docker" \
@@ -263,10 +260,6 @@ function mongo-init() {
     --name mongo \
     --restart unless-stopped \
     \
-    --cpus "${cores:-2}" \
-    --memory "${memory:-2g}" \
-    --shm-size 256m \
-    \
     --env "MONGO_INITDB_ROOT_USERNAME=mongo" \
     --env "MONGO_INITDB_ROOT_PASSWORD=mongo" \
     \
@@ -318,10 +311,6 @@ function postgres-init() {
     --name postgres \
     --restart unless-stopped \
     \
-    --cpus "${cores:-2}" \
-    --memory "${memory:-2g}" \
-    --shm-size 256m \
-    \
     --env "POSTGRES_USER=postgres" \
     --env "POSTGRES_PASSWORD=postgres" \
     \
@@ -372,9 +361,6 @@ function redis-init() {
     --name redis \
     --restart unless-stopped \
     \
-    --cpus "${cores:-1}" \
-    --memory "${memory:-512m}" \
-    \
     --mount "type=bind,source=$HOME/Docker/Redis,target=/external" \
     --volume "redis-data:/data" \
     \
@@ -422,9 +408,6 @@ function valkey-init() {
     --hostname valkey \
     --name valkey \
     --restart unless-stopped \
-    \
-    --cpus "${cores:-1}" \
-    --memory "${memory:-512m}" \
     \
     --mount "type=bind,source=$HOME/Docker/Valkey,target=/external" \
     --volume "valkey-data:/data" \
@@ -474,9 +457,6 @@ function redict-init() {
     --name redict \
     --restart unless-stopped \
     \
-    --cpus "${cores:-1}" \
-    --memory "${memory:-512m}" \
-    \
     --mount "type=bind,source=$HOME/Docker/Redict,target=/external" \
     --volume "redict-data:/data" \
     \
@@ -511,4 +491,44 @@ function redict-purge() {
 
 function redict-terminal() {
   command docker exec -it redict /bin/sh
+}
+
+################################################################################
+# Ubuntu
+################################################################################
+function ubuntu-init() {
+  mkdir -p "$HOME/Docker/Ubuntu"
+
+  command docker run \
+    --detach \
+    --hostname ubuntu \
+    --name ubuntu \
+    --restart unless-stopped \
+    \
+    --mount "type=bind,source=$HOME/Docker/Ubuntu,target=/external" \
+    --volume "ubuntu-data:/data" \
+    \
+    --log-driver "local" \
+    --log-opt "max-size=10m" \
+    --log-opt "max-file=3" \
+    \
+    ubuntu:24.04
+}
+
+function ubuntu-start() {
+  command docker start ubuntu
+}
+
+function ubuntu-stop() {
+  command docker stop ubuntu
+}
+
+function ubuntu-purge() {
+  ubuntu-stop 2>/dev/null || true
+  command docker rm ubuntu 2>/dev/null || true
+  rm -rf "$HOME/Docker/Ubuntu"
+}
+
+function ubuntu-terminal() {
+  command docker exec -it ubuntu /bin/bash
 }

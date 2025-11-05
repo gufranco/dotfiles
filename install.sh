@@ -5,99 +5,46 @@ set -Eeo pipefail
 ################################################################################
 # Global variables
 ################################################################################
-SUDO_KEEPALIVE_PID=""
 SCRIPT_START_TIME=$(date +%s)
+export SCRIPT_START_TIME
 
 ################################################################################
-# Helper functions
+# Load helper functions
 ################################################################################
-log_info() {
-  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-  local mins=$((elapsed / 60))
-  local secs=$((elapsed % 60))
-  printf "\033[0;34m[INFO]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-}
+# Try to load from local zsh/helpers first
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
 
-log_success() {
-  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-  local mins=$((elapsed / 60))
-  local secs=$((elapsed % 60))
-  printf "\033[0;32m[✓]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-}
-
-log_warning() {
-  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-  local mins=$((elapsed / 60))
-  local secs=$((elapsed % 60))
-  printf "\033[0;33m[!]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-}
-
-log_error() {
-  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-  local mins=$((elapsed / 60))
-  local secs=$((elapsed % 60))
-  printf "\033[0;31m[✗]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-}
-
-log_skip() {
-  local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-  local mins=$((elapsed / 60))
-  local secs=$((elapsed % 60))
-  printf "\033[0;90m[SKIP]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-}
-
-# Check if command exists
-cmd_exists() {
-  command -v "$1" >/dev/null 2>&1
-}
-
-# Check if package is installed (Debian/Ubuntu)
-pkg_installed() {
-  dpkg -l "$1" 2>/dev/null | grep -q "^ii"
-}
-
-# Check if snap package is installed
-snap_installed() {
-  snap list "$1" >/dev/null 2>&1
-}
-
-# Safe symlink - only creates if needed
-safe_link() {
-  local src="$1"
-  local dst="$2"
-
-  # Check if already correctly linked
-  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
-    log_skip "Link OK: $dst"
-    return 0
-  fi
-
-  # Remove if exists and is different
-  if [ -e "$dst" ] || [ -L "$dst" ]; then
-    rm -rf "$dst"
-  fi
-
-  ln -s "$src" "$dst"
-  log_success "Linked: $dst -> $src"
-}
-
-# Clone or update git repository
-git_sync() {
-  local url="$1"
-  local path="$2"
-  local depth="${3:-1}"
-
-  if [ -d "$path/.git" ]; then
-    log_info "Updating: $(basename "$path")"
-    git -C "$path" pull --quiet --no-edit 2>/dev/null || true
-    log_success "Updated: $(basename "$path")"
+# If helpers not available locally, download them temporarily
+if [ -z "$SCRIPT_DIR" ] || [ ! -f "$SCRIPT_DIR/zsh/helpers" ]; then
+  # Running via curl | bash - download helpers to temp location
+  TEMP_HELPERS=$(mktemp)
+  if curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/zsh/helpers -o "$TEMP_HELPERS" 2>/dev/null; then
+    # shellcheck source=/dev/null
+    source "$TEMP_HELPERS"
+    rm -f "$TEMP_HELPERS"
   else
-    log_info "Cloning: $(basename "$path")"
-    rm -rf "$path"
-    git clone --quiet --depth="$depth" "$url" "$path"
-    log_success "Cloned: $(basename "$path")"
+    echo "ERROR: Could not download helper functions"
+    exit 1
   fi
-}
+else
+  # Load from local file
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR/zsh/helpers"
+fi
+
+################################################################################
+# Wrapper functions (remove __ prefix for install.sh)
+################################################################################
+log_info() { __log_info "$@"; }
+log_success() { __log_success "$@"; }
+log_warning() { __log_warning "$@"; }
+log_error() { __log_error "$@"; }
+log_skip() { __log_skip "$@"; }
+cmd_exists() { __cmd_exists "$@"; }
+pkg_installed() { __pkg_installed "$@"; }
+snap_installed() { __snap_installed "$@"; }
+safe_link() { __safe_link "$@"; }
+git_sync() { __git_sync "$@"; }
 
 ################################################################################
 # Root password and keep-alive
@@ -113,33 +60,10 @@ log_warning "Then it will keep sudo alive for the entire duration"
 log_warning "You can leave it running overnight if needed"
 echo ""
 
-# Request sudo password
-sudo -v
+# Start sudo keep-alive using helper function
+__start_sudo_keepalive
 
-# Start sudo keep-alive in background
-# This will refresh sudo every 50 seconds (default timeout is 5 minutes)
-# It will run for the entire duration of the script
-(
-  while true; do
-    sleep 50
-    sudo -n true 2>/dev/null
-    kill -0 "$$" 2>/dev/null || exit
-  done
-) &
-SUDO_KEEPALIVE_PID=$!
-
-# Cleanup function to kill sudo keep-alive on exit
-cleanup_sudo() {
-  if [ -n "$SUDO_KEEPALIVE_PID" ]; then
-    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
-    wait "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
-  fi
-}
-
-# Register cleanup on exit
-trap cleanup_sudo EXIT INT TERM
-
-log_success "Sudo keep-alive started (PID: $SUDO_KEEPALIVE_PID)"
+log_success "Sudo keep-alive started (PID: $__SUDO_KEEPER_PID)"
 log_info "Script will run without asking for password again"
 echo ""
 

@@ -4,77 +4,197 @@
 # Update and upgrade everything
 ################################################################################
 function f5() {
+  SCRIPT_START_TIME=$(date +%s)
+  export SCRIPT_START_TIME
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "System Update (F5)"
+  __log_info "==============================================================="
+  echo ""
+
+  ################################################################################
+  # Request sudo password once and keep it alive
+  ################################################################################
+  __start_sudo_keepalive
+
+  ################################################################################
   # Dotfiles
-  git -C "$HOME/.dotfiles" pull-sub
-  git -C "$HOME/.dotfiles" submodule update --recursive --remote
-  git -C "$HOME/.dotfiles" fetch --prune
+  ################################################################################
+  __log_info "Updating dotfiles..."
+  if [ -d "$HOME/.dotfiles/.git" ]; then
+    git -C "$HOME/.dotfiles" pull-sub 2>/dev/null || git -C "$HOME/.dotfiles" pull 2>/dev/null || true
+    git -C "$HOME/.dotfiles" submodule update --recursive --remote 2>/dev/null || true
+    git -C "$HOME/.dotfiles" fetch --prune 2>/dev/null || true
+    __log_success "Dotfiles updated"
+  else
+    __log_skip "Dotfiles not a git repository"
+  fi
 
-  # Vim
-  vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall
+  ################################################################################
+  # Vim plugins
+  ################################################################################
+  if __cmd_exists vim; then
+    __log_info "Updating Vim plugins..."
+    vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall 2>/dev/null || true
+    __log_success "Vim plugins updated"
+  else
+    __log_skip "Vim not installed"
+  fi
 
-  # Plugins
+  ################################################################################
+  # Zsh and Tmux plugins
+  ################################################################################
+  __log_info "Updating Zsh and Tmux plugins..."
+  local plugin_count=0
+
   for dir in \
     "$HOME/.oh-my-zsh" \
     "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ \
     "$HOME/.tmux/plugins/"*/; do
 
-    if [ ! -d "$dir/.git" ]; then
-      continue
-    fi
+    # Skip if not a git repository
+    [ ! -d "$dir/.git" ] && continue
 
-    if [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]]; then
-      continue
-    fi
+    # Skip TPM (managed separately)
+    [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]] && continue
 
-    git -C "$dir" checkout "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null || echo "master")"
-    git -C "$dir" pull
-    git -C "$dir" fetch --prune
+    git -C "$dir" pull --quiet 2>/dev/null || true
+    git -C "$dir" fetch --prune --quiet 2>/dev/null || true
+
+    ((plugin_count++))
   done
 
-  # Node.js LTS Update
-  nvm install --lts
-  nvm use --lts
-  nvm alias default "lts/*"
+  __log_success "Updated $plugin_count plugins"
 
-  # Ruby Update (silently continue on failure)
-  ruby-install --update 2>/dev/null || true
-  ruby-install ruby 2>/dev/null || true
-  chruby ruby 2>/dev/null || true
+  ################################################################################
+  # Node.js LTS
+  ################################################################################
+  if __cmd_exists nvm; then
+    __log_info "Updating Node.js LTS..."
+    nvm install --lts >/dev/null 2>&1 || true
+    nvm use --lts >/dev/null 2>&1 || true
+    nvm alias default "lts/*" >/dev/null 2>&1 || true
+    __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
+  else
+    __log_skip "NVM not installed"
+  fi
 
+  ################################################################################
+  # Ruby
+  ################################################################################
+  # if command -v ruby-install >/dev/null 2>&1; then
+  #   __log_info "Checking Ruby..."
+  #   ruby-install --update >/dev/null 2>&1 || true
+
+  #   # Get latest available Ruby version (silently)
+  #   local latest_ruby
+  #   latest_ruby=$(ruby-install 2>&1 | grep -A1 "^\s*ruby:" | tail -n1 | awk '{print $NF}')
+
+  #   # Check if latest version is already installed
+  #   if [ -n "$latest_ruby" ] && [ -d "$HOME/.rubies/ruby-$latest_ruby" ]; then
+  #     __log_skip "Ruby $latest_ruby already installed"
+  #   elif [ -n "$latest_ruby" ]; then
+  #     __log_info "Installing Ruby $latest_ruby..."
+  #     ruby-install -c ruby "$latest_ruby" >/dev/null 2>&1 || true
+  #     rm -rf "$HOME/src" 2>/dev/null || true
+  #     __log_success "Ruby $latest_ruby installed"
+  #   else
+  #     __log_skip "Could not determine latest Ruby version"
+  #   fi
+
+  #   __cmd_exists chruby && chruby ruby 2>/dev/null || true
+  # else
+  #   __log_skip "Ruby-install not available"
+  # fi
+
+  ################################################################################
+  # System packages
+  ################################################################################
   case "$(uname)" in
     "Linux")
-      sudo apt update -y
-      sudo apt dist-upgrade -y
-      sudo apt autoremove -y
-      sudo apt clean all -y
-
+      __log_info "Updating Linux packages..."
+      sudo apt update -qq 2>/dev/null || sudo apt update
+      sudo apt dist-upgrade -y -qq 2>/dev/null || sudo apt dist-upgrade -y
+      sudo apt autoremove -y -qq 2>/dev/null || sudo apt autoremove -y
+      sudo apt clean 2>/dev/null || true
+      __log_success "Linux packages updated"
       ;;
+
     "Darwin")
-      brew update
-      brew bundle --file "$HOME/.dotfiles/Brewfile" --force cleanup
-      brew bundle --file "$HOME/.dotfiles/Brewfile"
-      brew upgrade
-      brew cu --all --yes --cleanup
-      brew cleanup -s
+      __log_info "Updating macOS packages..."
 
-      mas upgrade
-      sudo softwareupdate -i -a
+      # Homebrew
+      brew update 2>/dev/null || true
+      brew bundle --file "$HOME/.dotfiles/Brewfile" 2>/dev/null || true
+      brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" 2>/dev/null || true
+      brew upgrade 2>/dev/null || true
+      brew cu --all --yes --cleanup 2>/dev/null || true
+      brew cleanup -s 2>/dev/null || true
 
-      # Only execute if macOS version is less than 26
-      if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
-        sudo find 2> /dev/null /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +
-
-        killall Dock
+      # Mac App Store
+      if __cmd_exists mas; then
+        mas upgrade 2>/dev/null || true
       fi
 
+      # macOS system updates
+      # softwareupdate -i -a 2>/dev/null || true
+
+      # Launchpad cleanup (only for macOS < 26)
+      if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
+        __log_info "Cleaning Launchpad cache..."
+        sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} + 2>/dev/null || true
+        killall Dock 2>/dev/null || true
+      fi
+
+      __log_success "macOS packages updated"
       ;;
   esac
 
-  # Reload tmux and zsh settings
-  tmux source-file ~/.tmux.conf
+  ################################################################################
+  # Reload configurations
+  ################################################################################
+  __log_info "Reloading configurations..."
 
+  # Reload tmux config if tmux is running
+  if __cmd_exists tmux && [ -n "$TMUX" ]; then
+    if tmux source-file ~/.tmux.conf 2>/dev/null; then
+      __log_success "Tmux config reloaded"
+    else
+      __log_skip "Tmux reload failed"
+    fi
+  else
+    __log_skip "Not in tmux session"
+  fi
+
+  # Reload zsh config
   # shellcheck disable=SC1091
-  source "$HOME/.zshrc"
+  if source "$HOME/.zshrc" 2>/dev/null; then
+    __log_success "Zsh config reloaded"
+  else
+    __log_skip "Zsh reload failed"
+  fi
+
+  ################################################################################
+  # Summary
+  ################################################################################
+  local f5_end
+  local f5_total
+  local f5_mins
+  local f5_secs
+
+  f5_end=$(date +%s)
+  f5_total=$((f5_end - SCRIPT_START_TIME))
+  f5_mins=$((f5_total / 60))
+  f5_secs=$((f5_total % 60))
+
+  echo ""
+  __log_success "==============================================================="
+  __log_success "Update completed successfully!"
+  __log_success "==============================================================="
+  echo ""
+  __log_info "Total time: ${f5_mins}m ${f5_secs}s"
+  echo ""
 }
 
 ################################################################################
@@ -83,27 +203,29 @@ function f5() {
 function zero_fill_verify() {
   local disk="$1"
   local passes="${PASSES:-1}"
-  local block_size=$((1024 * 1024))  # 1 MB block size for better performance
+  local block_size
+
+  block_size=$((1024 * 1024))  # 1 MB block size for better performance
   local size
 
   # Validate passes parameter
   if ! [[ "$passes" =~ ^[0-9]+$ ]] || [ "$passes" -lt 1 ]; then
-    echo "Error: invalid PASSES value: $passes (must be a positive integer)"
+    __log_error "Invalid PASSES value: $passes (must be a positive integer)"
     return 1
   fi
 
   # Validate disk parameter
   if [ -z "$disk" ]; then
-    echo "Error: no device specified"
-    echo "Usage: zero_fill_verify <device>"
-    echo "       PASSES=N zero_fill_verify <device>"
-    echo "       CREATE=y zero_fill_verify <device>"
-    echo "       PASSES=N CREATE=y zero_fill_verify <device>"
+    __log_error "No device specified"
+    __log_info "Usage: zero_fill_verify <device>"
+    __log_info "       PASSES=N zero_fill_verify <device>"
+    __log_info "       CREATE=y zero_fill_verify <device>"
+    __log_info "       PASSES=N CREATE=y zero_fill_verify <device>"
     return 1
   fi
 
   if [ ! -b "$disk" ] && [ ! -c "$disk" ]; then
-    echo "Error: device not found or invalid: $disk"
+    __log_error "Device not found or invalid: $disk"
     return 1
   fi
 
@@ -111,70 +233,73 @@ function zero_fill_verify() {
   size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
 
   if [ -z "$size" ] || [ "$size" -eq 0 ]; then
-    echo "Error: unable to determine disk size for $disk"
+    __log_error "Unable to determine disk size for $disk"
     return 1
   fi
 
   printf "This will ERASE all data on %s. Continue? (y/N): " "$disk"
   IFS= read -r confirm
-  [ "$confirm" != "y" ] && { echo "Operation cancelled."; return 1; }
+  if [ "$confirm" != "y" ]; then
+    __log_warning "Operation cancelled"
+    return 1
+  fi
 
-  echo "Unmounting $disk..."
+  __log_info "Unmounting $disk..."
   sudo diskutil unmountDisk "$disk" 2>/dev/null
 
-  echo "Cleaning $disk..."
+  __log_info "Cleaning $disk..."
   for ((index=1; index <= passes; index++)); do
-    echo "- Pass $index of $passes"
+    __log_info "Pass $index of $passes"
 
-    echo "Writing 0xFF..."
-    head -c "$size" /dev/zero | tr '\000' '\377' | \
-      sudo dd of="$disk" bs="$block_size" status=progress 2>&1 || {
-        echo "Error: failed to write 0xFF."
+    __log_info "Writing 0xFF..."
+    if ! head -c "$size" /dev/zero | tr '\000' '\377' | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
+      __log_error "Failed to write 0xFF"
+      return 1
+    fi
 
-        return 1
-      }
+    __log_info "Verifying 0xFF..."
+    if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
+      cmp -s - <(head -c "$size" /dev/zero | tr '\000' '\377'); then
+      __log_error "Failed to verify 0xFF"
+      return 1
+    fi
 
-    echo "Verifying 0xFF..."
-    sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
-      cmp -s - <(head -c "$size" /dev/zero | tr '\000' '\377') || {
-        echo "Error: failed to verify 0xFF."
+    __log_info "Writing 0x00..."
+    if ! head -c "$size" /dev/zero | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
+      __log_error "Failed to write 0x00"
+      return 1
+    fi
 
-        return 1
-      }
+    __log_info "Verifying 0x00..."
+    if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
+      cmp -s - <(head -c "$size" /dev/zero); then
+      __log_error "Failed to verify 0x00"
+      return 1
+    fi
 
-    echo "Writing 0x00..."
-    head -c "$size" /dev/zero | \
-      sudo dd of="$disk" bs="$block_size" status=progress 2>&1 || {
-        echo "Error: failed to write 0x00."
-
-        return 1
-      }
-
-    echo "Verifying 0x00..."
-    sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
-      cmp -s - <(head -c "$size" /dev/zero) || {
-        echo "Error: failed to verify 0x00."
-
-        return 1
-      }
+    __log_success "Pass $index completed"
   done
 
   # Create partition only if CREATE=y
   if [ "${CREATE}" = "y" ]; then
-    echo "Creating partition..."
-    local threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB
+    __log_info "Creating partition..."
+    local threshold_bytes
+
+    threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB
 
     if [ "$size" -le "$threshold_bytes" ]; then
-      echo "Using FAT16 (<= 2 GB)..."
+      __log_info "Using FAT16 (<= 2 GB)..."
       sudo diskutil eraseDisk "MS-DOS FAT16" "NO NAME" MBRFormat "$disk"
     else
-      echo "Using FAT32 (> 2 GB)..."
+      __log_info "Using FAT32 (> 2 GB)..."
       sudo diskutil eraseDisk "MS-DOS FAT32" "NO NAME" MBRFormat "$disk"
     fi
+    __log_success "Partition created"
   fi
 
-  echo "Ejecting device..."
+  __log_info "Ejecting device..."
   sudo diskutil eject "$disk"
+  __log_success "Device ejected successfully"
 }
 
 ################################################################################

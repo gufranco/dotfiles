@@ -70,8 +70,10 @@ function f5() {
   ################################################################################
   # Node.js LTS
   ################################################################################
-  if __cmd_exists nvm; then
+  if __cmd_exists nvm || type __load_nvm >/dev/null 2>&1; then
     __log_info "Updating Node.js LTS..."
+    # Ensure NVM is fully loaded (for lazy loading setup)
+    type __load_nvm >/dev/null 2>&1 && __load_nvm
     nvm install --lts >/dev/null 2>&1 || true
     nvm use --lts >/dev/null 2>&1 || true
     nvm alias default "lts/*" >/dev/null 2>&1 || true
@@ -160,17 +162,6 @@ function f5() {
     __log_success "NPM token updated"
   else
     __log_skip "NPM token file not found"
-  fi
-
-  ################################################################################
-  # Workspace setup
-  ################################################################################
-  __log_info "Setting up workspace..."
-  if [ ! -e "$HOME/Workspace" ] && [ -d "$HOME/Dropbox/Workspace" ]; then
-    ln -s "$HOME/Dropbox/Workspace" "$HOME/Workspace"
-    __log_success "Workspace linked to Dropbox"
-  else
-    __log_skip "Workspace already configured"
   fi
 
   ################################################################################

@@ -56,8 +56,93 @@ export SPACESHIP_CHAR_SYMBOL="❯"
 export SPACESHIP_CHAR_SUFFIX=" "
 
 ################################################################################
-# Npm
+# NVM (lazy loading)
+################################################################################
+# Add current Node version to PATH immediately (if exists)
+if [ -s "$NVM_DIR/alias/default" ]; then
+  # shellcheck disable=SC2155
+  export PATH="$NVM_DIR/versions/node/$(cat "$NVM_DIR/alias/default")/bin:$PATH"
+elif [ -d "$NVM_DIR/versions/node" ]; then
+  # Fallback to latest installed version
+  # shellcheck disable=SC2155
+  export PATH="$NVM_DIR/versions/node/$(ls -1 "$NVM_DIR/versions/node" | tail -1)/bin:$PATH"
+fi
+
+# Create stub functions that trigger NVM loading on first use
+nvm() {
+  __load_nvm
+  nvm "$@"
+}
+
+node() {
+  __load_nvm
+  node "$@"
+}
+
+npm() {
+  __load_nvm
+  npm "$@"
+}
+
+npx() {
+  __load_nvm
+  npx "$@"
+}
+
+yarn() {
+  __load_nvm
+  yarn "$@"
+}
+
+pnpm() {
+  __load_nvm
+  pnpm "$@"
+}
+
+################################################################################
+# Chruby (lazy loading)
+################################################################################
+# Create stub functions that trigger Chruby loading on first use
+chruby() {
+  __load_chruby
+  chruby "$@"
+}
+
+ruby() {
+  __load_chruby
+  ruby "$@"
+}
+
+gem() {
+  __load_chruby
+  gem "$@"
+}
+
+bundle() {
+  __load_chruby
+  bundle "$@"
+}
+
+rake() {
+  __load_chruby
+  rake "$@"
+}
+
+rails() {
+  __load_chruby
+  rails "$@"
+}
+
+################################################################################
+# NPM
 ################################################################################
 if [ -z "$NPM_TOKEN" ]; then
   __update_npm_token
+fi
+
+################################################################################
+# Workspace folder
+################################################################################
+if [ ! -e "$HOME/Workspace" ] && [ -d "$HOME/Dropbox/Workspace" ]; then
+  ln -s "$HOME/Dropbox/Workspace" "$HOME/Workspace"
 fi

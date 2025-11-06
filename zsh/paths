@@ -41,14 +41,12 @@ case "$(uname)" in
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/openssl/bin:$PATH"
 
-    # Ruby
+    # Ruby (system)
     # shellcheck disable=SC2155
     export PATH="$HOMEBREW_PREFIX/opt/ruby/bin:$PATH"
 
     # NVM
     export NVM_DIR="$HOME/.nvm"
-    # shellcheck disable=SC1091
-    source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
 
     # Pnpm
     export PNPM_HOME="$HOME/Library/pnpm"
@@ -58,12 +56,6 @@ case "$(uname)" in
     export ANDROID_HOME="$HOME/Library/Android/sdk"
     # shellcheck disable=SC2155
     export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$HOMEBREW_PREFIX/opt/openjdk@11/bin:$PATH"
-
-    # Chruby
-    # shellcheck disable=SC1091
-    source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
-    # shellcheck disable=SC1091
-    source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
 
     # GNU Bc
     # shellcheck disable=SC2155

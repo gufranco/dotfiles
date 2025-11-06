@@ -59,22 +59,5 @@ export SPACESHIP_CHAR_SUFFIX=" "
 # Npm
 ################################################################################
 if [ -z "$NPM_TOKEN" ]; then
-  # shellcheck disable=SC2155
-  export NPM_TOKEN_CACHE_FILE="/tmp/npm_token_$(whoami).cache"
-
-  # Check if cache file exists and is not older than 24 hours (86400 seconds)
-  if [ ! -f "$NPM_TOKEN_CACHE_FILE" ] || [ "$(find "$NPM_TOKEN_CACHE_FILE" -mtime +1 2>/dev/null)" ]; then
-    gpg --quiet --batch --yes -d "$HOME/.dotfiles/nodejs/tokens/classic.gpg" | tr -d '\n' > "$NPM_TOKEN_CACHE_FILE"
-    chmod 600 "$NPM_TOKEN_CACHE_FILE"
-  fi
-
-  # shellcheck disable=SC2155
-  export NPM_TOKEN="$(cat "$NPM_TOKEN_CACHE_FILE")"
-fi
-
-################################################################################
-# Workspace
-################################################################################
-if [ ! -e "$HOME/Workspace" ] && [ -d "$HOME/Dropbox/Workspace" ]; then
-  ln -s "$HOME/Dropbox/Workspace" "$HOME/Workspace"
+  __update_npm_token
 fi

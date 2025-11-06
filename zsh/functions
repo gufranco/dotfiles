@@ -152,6 +152,28 @@ function f5() {
   esac
 
   ################################################################################
+  # NPM token
+  ################################################################################
+  __log_info "Updating NPM token..."
+  if [ -f "$HOME/.dotfiles/nodejs/tokens/classic.gpg" ]; then
+    __update_npm_token "true"
+    __log_success "NPM token updated"
+  else
+    __log_skip "NPM token file not found"
+  fi
+
+  ################################################################################
+  # Workspace setup
+  ################################################################################
+  __log_info "Setting up workspace..."
+  if [ ! -e "$HOME/Workspace" ] && [ -d "$HOME/Dropbox/Workspace" ]; then
+    ln -s "$HOME/Dropbox/Workspace" "$HOME/Workspace"
+    __log_success "Workspace linked to Dropbox"
+  else
+    __log_skip "Workspace already configured"
+  fi
+
+  ################################################################################
   # Reload configurations
   ################################################################################
   __log_info "Reloading configurations..."
@@ -171,7 +193,7 @@ function f5() {
   # shellcheck disable=SC1091
   if source "$HOME/.zshrc" 2>/dev/null; then
     __log_success "Zsh config reloaded"
-  else
+    else
     __log_skip "Zsh reload failed"
   fi
 

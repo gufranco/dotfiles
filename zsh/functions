@@ -23,8 +23,7 @@ function f5() {
   ################################################################################
   __log_info "Updating dotfiles..."
   if [ -d "$HOME/.dotfiles/.git" ]; then
-    git -C "$HOME/.dotfiles" pull-sub 2>/dev/null || git -C "$HOME/.dotfiles" pull 2>/dev/null || true
-    git -C "$HOME/.dotfiles" submodule update --recursive --remote 2>/dev/null || true
+    git -C "$HOME/.dotfiles" pull 2>/dev/null || true
     git -C "$HOME/.dotfiles" fetch --prune 2>/dev/null || true
     __log_success "Dotfiles updated"
   else

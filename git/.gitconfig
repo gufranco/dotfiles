@@ -124,13 +124,6 @@
 	fsckObjects = true
 
 ################################################################################
-# URL settings
-# Protocol substitution for security
-################################################################################
-[url "https://"]
-	insteadOf = git://
-
-################################################################################
 # Garbage collection settings
 # Automatic cleanup threshold
 ################################################################################
@@ -231,61 +224,61 @@
 	##############################################################################
 	# Short status with branch info
 	st = status -sb
-	
+
 	# List all tags
 	tags = tag -l
-	
+
 	# List all branches (local and remote)
 	branches = branch -a
-	
+
 	# List all remotes with URLs
 	remotes = remote -v
-	
+
 	# Show contributors ranked by number of commits
 	contributors = shortlog -sn --all --no-merges
-	
+
 	##############################################################################
 	# Branching
 	##############################################################################
 	# Create and checkout a new branch silently
 	fork = checkout -q -b
-	
+
 	# Short alias for branch
 	br = branch
-	
+
 	# Checkout silently
 	co = checkout -q
-	
+
 	##############################################################################
 	# Committing
 	##############################################################################
 	# Short alias for commit
 	ci = commit
-	
+
 	# Amend last commit without editing message
 	amend = commit --amend --no-edit --quiet
-	
+
 	# Create fixup commit (use with rebase -i --autosquash)
 	fixup = commit --fixup
-	
+
 	# Undo last commit but keep changes staged
 	undo-commit = reset --soft HEAD^
-	
+
 	##############################################################################
 	# Staging
 	##############################################################################
 	# Short alias for add
 	a = add
-	
+
 	# Add all changes (modified, deleted, new files)
 	aa = add --all
-	
+
 	# Remove files from staging area
 	unstage = reset -q HEAD --
-	
+
 	# Discard changes in working directory
 	undo = checkout -q --
-	
+
 	##############################################################################
 	# Pulling and fetching
 	##############################################################################
@@ -305,96 +298,96 @@
 		done 2>/dev/null; \
 		git stash list | grep -q 'stash@{0}' && git stash pop -q 2>/dev/null; \
 	}; f"
-	
+
 	##############################################################################
 	# Pushing
 	##############################################################################
 	# Push current branch and set upstream
 	publish = push -u origin HEAD
-	
+
 	# Force push with lease (safer than --force)
 	force = push --force-with-lease
-	
+
 	##############################################################################
 	# Logging
 	##############################################################################
 	# Pretty log with graph, colors and compact info
 	lg = log --color --graph --decorate --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-	
+
 	# Show last commit
 	last = log -1 --quiet HEAD
-	
+
 	# Show full history of a file with diffs
 	history = log --follow -p --
-	
+
 	# Compact changelog without merge commits
 	changelog = log --oneline --no-merges
-	
+
 	##############################################################################
 	# Diff
 	##############################################################################
 	# Short alias for diff
 	df = diff
-	
+
 	# Diff of staged changes
 	dfs = diff --staged
-	
+
 	##############################################################################
 	# Stash
 	##############################################################################
 	# Save changes to stash
 	save = stash save
-	
+
 	# Apply and remove most recent stash
 	pop = stash pop
-	
+
 	##############################################################################
 	# Cleanup
 	##############################################################################
 	# Delete local branches that have been merged (except main/master/develop)
 	cleanup = !git branch --merged | grep -v '\\*\\|main\\|master\\|develop' | xargs -n 1 git branch -d
-	
+
 	# Prune remote branches and aggressive garbage collection
 	prune-all = !git remote prune origin && git gc --aggressive --prune=now
-	
+
 	##############################################################################
 	# Search
 	##############################################################################
 	# Search for text in commit history
 	find = log --all --oneline --graph --decorate -S
-	
+
 	# Advanced search in entire history with source
 	grep-history = log --all --source --full-history -S
-	
+
 	##############################################################################
 	# Information
 	##############################################################################
 	# List contributors sorted by commit count
 	committers = !git log --quiet | grep Author | sort | uniq -c | sort -n -r
-	
+
 	# Show contributors with emails
 	who = shortlog -sne
-	
+
 	# Rank contributors by commits (no merges)
 	rank = shortlog -sn --no-merges
-	
+
 	##############################################################################
 	# Misc
 	##############################################################################
 	# Ignore changes to a tracked file locally
 	ignore = update-index --assume-unchanged
-	
+
 	# Stop ignoring changes to a file
 	unignore = update-index --no-assume-unchanged
-	
+
 	# List files being ignored locally
 	ignored = !git ls-files -v | grep '^[[:lower:]]'
-	
+
 	# Alias for ignore (assume file hasn't changed)
 	assume = update-index --assume-unchanged
-	
+
 	# Alias for unignore
 	unassume = update-index --no-assume-unchanged
-	
+
 	# Alias for ignored (list assumed files)
 	assumed = !git ls-files -v | grep '^[[:lower:]]'

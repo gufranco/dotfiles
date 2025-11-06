@@ -22,7 +22,7 @@ Host *
   ServerAliveCountMax 10
 
   # Security settings
-  LogLevel INFO
+  LogLevel ERROR
   StrictHostKeyChecking ask
   IgnoreUnknown UseKeychain
   Protocol 2

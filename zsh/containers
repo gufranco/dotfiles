@@ -55,6 +55,7 @@ function colima-start() {
           command colima start \
             --profile "${profile}" \
             --cpu "${cores}" \
+            --memory "${memory}" \
             --disk "${storage}" \
             \
             --runtime "docker" \
@@ -100,6 +101,7 @@ function colima-start() {
           command colima start \
             --profile "${profile}" \
             --cpu "${cores}" \
+            --memory "${memory}" \
             --disk "${storage}" \
             \
             --runtime "docker" \
@@ -148,6 +150,7 @@ function colima-start() {
       command colima start \
         --profile "${profile}" \
         --cpu "${cores}" \
+        --memory "${memory}" \
         --disk "${storage}" \
         \
         --runtime "docker" \

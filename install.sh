@@ -155,17 +155,17 @@ case "$(uname)" in
     fi
 
     ############################################################################
-    # Node.js 22
+    # Node.js 24
     ############################################################################
-    if ! cmd_exists node || [ "$(node --version | cut -d. -f1 | tr -d v)" -lt 22 ]; then
-      log_info "Installing Node.js 22..."
+    if ! cmd_exists node || [ "$(node --version | cut -d. -f1 | tr -d v)" -lt 24 ]; then
+      log_info "Installing Node.js 24..."
       curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq nodejs
       log_success "Node.js installed"
     else
-      log_skip "Node.js 22+ already installed"
+      log_skip "Node.js 24+ already installed"
     fi
 
     ############################################################################
@@ -530,7 +530,6 @@ safe_link "$HOME/.dotfiles/readline/.inputrc" "$HOME/.inputrc"
 # htop
 ############################################################################
 log_info "Setting up htop..."
-mkdir -p "$HOME/.config/htop"
 safe_link "$HOME/.dotfiles/htop/htoprc" "$HOME/.config/htop/htoprc"
 
 ############################################################################
@@ -555,9 +554,18 @@ safe_link "$HOME/.dotfiles/telnet/.telnetrc" "$HOME/.telnetrc"
 # Kitty
 ############################################################################
 log_info "Setting up Kitty..."
-mkdir -p "$HOME/.config/kitty"
 safe_link "$HOME/.dotfiles/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 safe_link "$HOME/.dotfiles/kitty/themes" "$HOME/.config/kitty/themes"
+
+############################################################################
+# Bat
+############################################################################
+log_info "Setting up Bat..."
+safe_link "$HOME/.dotfiles/bat/.batrc" "$HOME/.config/bat/config"
+safe_link "$HOME/.dotfiles/bat/themes" "$HOME/.config/bat/themes"
+
+# Rebuild bat cache to include themes
+cmd_exists bat && bat cache --build >/dev/null 2>&1 || true
 
 ############################################################################
 # Cleanup

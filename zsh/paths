@@ -52,10 +52,14 @@ case "$(uname)" in
     export PNPM_HOME="$HOME/Library/pnpm"
     export PATH="$PNPM_HOME:$PATH"
 
+    # Java
+    export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@17"
+    export PATH="$JAVA_HOME/bin:$PATH"
+
     # Android SDK
     export ANDROID_HOME="$HOME/Library/Android/sdk"
-    # shellcheck disable=SC2155
-    export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$HOMEBREW_PREFIX/opt/openjdk@11/bin:$PATH"
+    export PATH="$ANDROID_HOME/platform-tools:$PATH"
+    export PATH="$ANDROID_HOME/emulator:$PATH"
 
     # GNU Bc
     # shellcheck disable=SC2155

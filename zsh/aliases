@@ -67,14 +67,7 @@ case "$(uname)" in
 
     ;;
   "Darwin")
-    # ls aliases - prefer eza, fallback to GNU ls, then BSD ls
-    if command eza --version > /dev/null 2>&1; then
-      # Colorized ls using eza
-      alias ls="command eza --color"
-
-      # List all files in long format using eza
-      alias la="command eza --color --long"
-    elif command ls --color > /dev/null 2>&1; then
+    if command ls --color > /dev/null 2>&1; then
       # Colorized ls using GNU coreutils
       alias ls="command ls --color"
 

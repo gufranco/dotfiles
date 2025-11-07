@@ -23,9 +23,12 @@ function f5() {
   ################################################################################
   __log_info "Updating dotfiles..."
   if [ -d "$HOME/.dotfiles/.git" ]; then
-    git -C "$HOME/.dotfiles" pull 2>/dev/null || true
-    git -C "$HOME/.dotfiles" fetch --prune 2>/dev/null || true
-    __log_success "Dotfiles updated"
+    if git -C "$HOME/.dotfiles" pull --quiet >/dev/null 2>&1; then
+      git -C "$HOME/.dotfiles" fetch --prune --quiet >/dev/null 2>&1 || true
+      __log_success "Dotfiles updated"
+    else
+      __log_warning "Failed to update dotfiles"
+    fi
   else
     __log_skip "Dotfiles not a git repository"
   fi
@@ -35,8 +38,11 @@ function f5() {
   ################################################################################
   if __cmd_exists vim; then
     __log_info "Updating Vim plugins..."
-    vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall 2>/dev/null || true
-    __log_success "Vim plugins updated"
+    if vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall >/dev/null 2>&1; then
+      __log_success "Vim plugins updated"
+    else
+      __log_warning "Failed to update Vim plugins"
+    fi
   else
     __log_skip "Vim not installed"
   fi
@@ -46,6 +52,7 @@ function f5() {
   ################################################################################
   __log_info "Updating Zsh and Tmux plugins..."
   local plugin_count=0
+  local plugin_errors=0
 
   for dir in \
     "$HOME/.oh-my-zsh" \
@@ -58,13 +65,19 @@ function f5() {
     # Skip TPM (managed separately)
     [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]] && continue
 
-    git -C "$dir" pull --quiet 2>/dev/null || true
-    git -C "$dir" fetch --prune --quiet 2>/dev/null || true
-
-    ((plugin_count++))
+    if git -C "$dir" pull --quiet >/dev/null 2>&1; then
+      git -C "$dir" fetch --prune --quiet >/dev/null 2>&1 || true
+      ((plugin_count++))
+    else
+      ((plugin_errors++))
+    fi
   done
 
-  __log_success "Updated $plugin_count plugins"
+  if [ "$plugin_errors" -gt 0 ]; then
+    __log_warning "Updated $plugin_count plugins ($plugin_errors failed)"
+  else
+    __log_success "Updated $plugin_count plugins"
+  fi
 
   ################################################################################
   # Node.js LTS
@@ -73,10 +86,12 @@ function f5() {
     __log_info "Updating Node.js LTS..."
     # Ensure NVM is fully loaded (for lazy loading setup)
     type __load_nvm >/dev/null 2>&1 && __load_nvm
-    nvm install --lts >/dev/null 2>&1 || true
-    nvm use --lts >/dev/null 2>&1 || true
-    nvm alias default "lts/*" >/dev/null 2>&1 || true
-    __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
+
+    if nvm install --lts >/dev/null 2>&1 && nvm use --lts >/dev/null 2>&1 && nvm alias default "lts/*" >/dev/null 2>&1; then
+      __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
+    else
+      __log_warning "Failed to update Node.js LTS"
+    fi
   else
     __log_skip "NVM not installed"
   fi
@@ -115,53 +130,52 @@ function f5() {
   case "$(uname)" in
     "Linux")
       __log_info "Updating Linux packages..."
-      sudo apt update -qq 2>/dev/null || sudo apt update
-      sudo apt dist-upgrade -y -qq 2>/dev/null || sudo apt dist-upgrade -y
-      sudo apt autoremove -y -qq 2>/dev/null || sudo apt autoremove -y
-      sudo apt clean 2>/dev/null || true
-      __log_success "Linux packages updated"
+      if sudo apt update -qq >/dev/null 2>&1 || sudo apt update; then
+        sudo apt dist-upgrade -y -qq >/dev/null 2>&1 || sudo apt dist-upgrade -y
+        sudo apt autoremove -y -qq >/dev/null 2>&1 || sudo apt autoremove -y
+        sudo apt clean >/dev/null 2>&1 || true
+        __log_success "Linux packages updated"
+      else
+        __log_error "Failed to update Linux packages"
+      fi
       ;;
 
     "Darwin")
       __log_info "Updating macOS packages..."
 
       # Homebrew
-      brew update 2>/dev/null || true
-      brew bundle --file "$HOME/.dotfiles/Brewfile" 2>/dev/null || true
-      brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" 2>/dev/null || true
-      brew upgrade 2>/dev/null || true
-      brew cu --all --yes --cleanup 2>/dev/null || true
-      brew cleanup -s 2>/dev/null || true
+      if brew update >/dev/null 2>&1; then
+        brew bundle --file "$HOME/.dotfiles/Brewfile" >/dev/null 2>&1 || __log_warning "Brewfile sync failed"
+        brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" >/dev/null 2>&1 || true
+        brew upgrade >/dev/null 2>&1 || __log_warning "Brew upgrade failed"
+        brew cu --all --yes --cleanup >/dev/null 2>&1 || true
+        brew cleanup -s >/dev/null 2>&1 || true
+      else
+        __log_warning "Brew update failed"
+      fi
 
       # Mac App Store
       if __cmd_exists mas; then
-        mas upgrade 2>/dev/null || true
+        if mas upgrade >/dev/null 2>&1; then
+          __log_success "Mac App Store apps updated"
+        fi
       fi
 
       # macOS system updates
-      # softwareupdate -i -a 2>/dev/null || true
+      # softwareupdate -i -a >/dev/null 2>&1 || true
 
       # Launchpad cleanup (only for macOS < 26)
       if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
         __log_info "Cleaning Launchpad cache..."
-        sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} + 2>/dev/null || true
-        killall Dock 2>/dev/null || true
+        if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} + >/dev/null 2>&1; then
+          killall Dock >/dev/null 2>&1 || true
+          __log_success "Launchpad cache cleaned"
+        fi
       fi
 
       __log_success "macOS packages updated"
       ;;
   esac
-
-  ################################################################################
-  # NPM token
-  ################################################################################
-  __log_info "Updating NPM token..."
-  if [ -f "$HOME/.dotfiles/nodejs/tokens/classic.gpg" ]; then
-    __update_npm_token "true"
-    __log_success "NPM token updated"
-  else
-    __log_skip "NPM token file not found"
-  fi
 
   ################################################################################
   # Reload configurations
@@ -170,10 +184,10 @@ function f5() {
 
   # Reload tmux config if tmux is running
   if __cmd_exists tmux && [ -n "$TMUX" ]; then
-    if tmux source-file ~/.tmux.conf 2>/dev/null; then
+    if tmux source-file ~/.tmux.conf >/dev/null 2>&1; then
       __log_success "Tmux config reloaded"
     else
-      __log_skip "Tmux reload failed"
+      __log_warning "Tmux reload failed"
     fi
   else
     __log_skip "Not in tmux session"
@@ -181,10 +195,10 @@ function f5() {
 
   # Reload zsh config
   # shellcheck disable=SC1091
-  if source "$HOME/.zshrc" 2>/dev/null; then
+  if source "$HOME/.zshrc" >/dev/null 2>&1; then
     __log_success "Zsh config reloaded"
-    else
-    __log_skip "Zsh reload failed"
+  else
+    __log_warning "Zsh reload failed"
   fi
 
   ################################################################################
@@ -257,7 +271,11 @@ function zero_fill_verify() {
   fi
 
   __log_info "Unmounting $disk..."
-  sudo diskutil unmountDisk "$disk" 2>/dev/null
+  if sudo diskutil unmountDisk "$disk" >/dev/null 2>&1; then
+    __log_success "Disk unmounted"
+  else
+    __log_warning "Failed to unmount disk (may not be mounted)"
+  fi
 
   __log_info "Cleaning $disk..."
   for ((index=1; index <= passes; index++)); do
@@ -268,6 +286,7 @@ function zero_fill_verify() {
       __log_error "Failed to write 0xFF"
       return 1
     fi
+    __log_success "Write 0xFF completed"
 
     __log_info "Verifying 0xFF..."
     if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
@@ -275,12 +294,14 @@ function zero_fill_verify() {
       __log_error "Failed to verify 0xFF"
       return 1
     fi
+    __log_success "Verify 0xFF completed"
 
     __log_info "Writing 0x00..."
     if ! head -c "$size" /dev/zero | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
       __log_error "Failed to write 0x00"
       return 1
     fi
+    __log_success "Write 0x00 completed"
 
     __log_info "Verifying 0x00..."
     if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
@@ -288,30 +309,39 @@ function zero_fill_verify() {
       __log_error "Failed to verify 0x00"
       return 1
     fi
+    __log_success "Verify 0x00 completed"
 
-    __log_success "Pass $index completed"
+    __log_success "Pass $index/$passes completed"
   done
 
   # Create partition only if CREATE=y
   if [ "${CREATE}" = "y" ]; then
     __log_info "Creating partition..."
-    local threshold_bytes
-
-    threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB
+    local threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB
+    local fs_type="MS-DOS FAT32"
 
     if [ "$size" -le "$threshold_bytes" ]; then
+      fs_type="MS-DOS FAT16"
       __log_info "Using FAT16 (<= 2 GB)..."
-      sudo diskutil eraseDisk "MS-DOS FAT16" "NO NAME" MBRFormat "$disk"
     else
       __log_info "Using FAT32 (> 2 GB)..."
-      sudo diskutil eraseDisk "MS-DOS FAT32" "NO NAME" MBRFormat "$disk"
     fi
-    __log_success "Partition created"
+
+    if sudo diskutil eraseDisk "$fs_type" "NO NAME" MBRFormat "$disk" >/dev/null 2>&1; then
+      __log_success "Partition created ($fs_type)"
+    else
+      __log_error "Failed to create partition"
+      return 1
+    fi
   fi
 
   __log_info "Ejecting device..."
-  sudo diskutil eject "$disk"
-  __log_success "Device ejected successfully"
+  if sudo diskutil eject "$disk" >/dev/null 2>&1; then
+    __log_success "Device ejected successfully"
+  else
+    __log_error "Failed to eject device"
+    return 1
+  fi
 }
 
 ################################################################################
@@ -333,9 +363,19 @@ function __sync_redump() {
     "Video CD"
   )
 
+  local total=${#folders[@]}
+  local current=0
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Syncing $group ($total collections)"
+  __log_info "==============================================================="
+  echo ""
+
   for folder in "${folders[@]}"; do
+    ((current++))
     mkdir -p "./$group/$folder/"
-    printf "\nProcessing: %s\n" "$folder"
+    __log_info "[$current/$total] $folder"
 
     rclone sync \
       --progress \
@@ -389,8 +429,12 @@ function __sync_redump() {
       \
       --http-url "https://myrient.erista.me/files/$group/" \
       ":http:$folder/" \
-      "./$group/$folder/"
+      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
   done
+
+  echo ""
+  __log_success "$group sync completed ($total collections)"
+  echo ""
 }
 
 function __sync_internet_archive() {
@@ -409,9 +453,19 @@ function __sync_internet_archive() {
     "romhacking.net-20240801"
   )
 
+  local total=${#folders[@]}
+  local current=0
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Syncing $group ($total collections)"
+  __log_info "==============================================================="
+  echo ""
+
   for folder in "${folders[@]}"; do
+    ((current++))
     mkdir -p "./$group/$folder/"
-    printf "\nProcessing: %s\n" "$folder"
+    __log_info "[$current/$total] $folder"
 
     rclone sync \
       --progress \
@@ -423,8 +477,12 @@ function __sync_internet_archive() {
       --exclude "*.{torrent,xml,sqlite,png,jpg,jpeg,gif,bmp,nfo,diz,txt,md,pdf,html,htm}" \
       \
       "archive.org:$folder/" \
-      "./$group/$folder/"
+      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
   done
+
+  echo ""
+  __log_success "$group sync completed ($total collections)"
+  echo ""
 }
 
 function __sync_no_intro() {
@@ -521,9 +579,19 @@ function __sync_no_intro() {
     "Seta - Aleck64 (BigEndian)"
   )
 
+  local total=${#folders[@]}
+  local current=0
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Syncing $group ($total collections)"
+  __log_info "==============================================================="
+  echo ""
+
   for folder in "${folders[@]}"; do
+    ((current++))
     mkdir -p "./$group/$folder/"
-    printf "\nProcessing: %s\n" "$folder"
+    __log_info "[$current/$total] $folder"
 
     rclone sync \
       --progress \
@@ -577,14 +645,25 @@ function __sync_no_intro() {
       \
       --http-url "https://myrient.erista.me/files/$group/" \
       ":http:$folder/" \
-      "./$group/$folder/"
+      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
   done
+
+  echo ""
+  __log_success "$group sync completed ($total collections)"
+  echo ""
 }
 
 function __sync_ossc() {
   local folder="OSSC"
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Syncing $folder (firmware)"
+  __log_info "==============================================================="
+  echo ""
+
   mkdir -p "./$folder/"
-  printf "\nProcessing: %s\n" "$folder"
+  __log_info "Downloading OSSC firmware..."
 
   rclone sync \
     --progress \
@@ -595,12 +674,39 @@ function __sync_ossc() {
     --exclude "*.{jic,txt}" \
     --http-url "http://www.infocult.com/m/ossc/fw/v1-series/" \
     ":http:" \
-    "./$folder"
+    "./$folder" && __log_success "OSSC firmware sync completed" || __log_warning "OSSC firmware sync failed"
+
+  echo ""
 }
 
 function sync_games() {
+  local START_TIME
+  START_TIME=$(date +%s)
+
+  echo ""
+  echo ""
+  __log_info "================================================================"
+  __log_info "  GAME LIBRARY SYNC - Starting"
+  __log_info "================================================================"
+  echo ""
+
   __sync_redump
   __sync_internet_archive
   __sync_no_intro
   __sync_ossc
+
+  local END_TIME
+  END_TIME=$(date +%s)
+  local TOTAL_TIME=$((END_TIME - START_TIME))
+  local MINUTES=$((TOTAL_TIME / 60))
+  local SECONDS=$((TOTAL_TIME % 60))
+
+  echo ""
+  __log_success "================================================================"
+  __log_success "  GAME LIBRARY SYNC - Completed"
+  __log_success "================================================================"
+  echo ""
+  __log_info "Total execution time: ${MINUTES}m ${SECONDS}s"
+  echo ""
+  echo ""
 }

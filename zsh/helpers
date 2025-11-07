@@ -3,95 +3,52 @@
 ################################################################################
 # Terminal output helpers
 ################################################################################
-function __log_info() {
-  local elapsed=0
-  local mins=0
-  local secs=0
+function __log_with_time() {
+  local prefix="$1"
+  shift
 
   if [ -n "${SCRIPT_START_TIME:-}" ]; then
-    elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-    mins=$((elapsed / 60))
-    secs=$((elapsed % 60))
-    printf "\033[0;34m[INFO]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
+    local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
+    local mins=$((elapsed / 60))
+    local secs=$((elapsed % 60))
+    echo -e "${prefix} [$(printf '%02d:%02d' "$mins" "$secs")] $*"
   else
-    printf "\033[0;34m[INFO]\033[0m %s\n" "$*"
+    echo -e "${prefix} $*"
   fi
+}
+
+function __log_info() {
+  __log_with_time "\033[0;34m[INFO]\033[0m" "$@"
 }
 
 function __log_success() {
-  local elapsed=0
-  local mins=0
-  local secs=0
-
-  if [ -n "${SCRIPT_START_TIME:-}" ]; then
-    elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-    mins=$((elapsed / 60))
-    secs=$((elapsed % 60))
-    printf "\033[0;32m[✓]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-  else
-    printf "\033[0;32m[✓]\033[0m %s\n" "$*"
-  fi
+  __log_with_time "\033[0;32m[✓]\033[0m" "$@"
 }
 
 function __log_warning() {
-  local elapsed=0
-  local mins=0
-  local secs=0
-
-  if [ -n "${SCRIPT_START_TIME:-}" ]; then
-    elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-    mins=$((elapsed / 60))
-    secs=$((elapsed % 60))
-    printf "\033[0;33m[!]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-  else
-    printf "\033[0;33m[!]\033[0m %s\n" "$*"
-  fi
+  __log_with_time "\033[0;33m[!]\033[0m" "$@"
 }
 
 function __log_error() {
-  local elapsed=0
-  local mins=0
-  local secs=0
-
-  if [ -n "${SCRIPT_START_TIME:-}" ]; then
-    elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-    mins=$((elapsed / 60))
-    secs=$((elapsed % 60))
-    printf "\033[0;31m[✗]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-  else
-    printf "\033[0;31m[✗]\033[0m %s\n" "$*"
-  fi
+  __log_with_time "\033[0;31m[✗]\033[0m" "$@"
 }
 
 function __log_skip() {
-  local elapsed=0
-  local mins=0
-  local secs=0
-
-  if [ -n "${SCRIPT_START_TIME:-}" ]; then
-    elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-    mins=$((elapsed / 60))
-    secs=$((elapsed % 60))
-    printf "\033[0;90m[SKIP]\033[0m [%02d:%02d] %s\n" "$mins" "$secs" "$*"
-  else
-    printf "\033[0;90m[SKIP]\033[0m %s\n" "$*"
-  fi
+  __log_with_time "\033[0;90m[SKIP]\033[0m" "$@"
 }
 
 ################################################################################
 # System helpers
 ################################################################################
-
-################################################################################
-# Sudo keep-alive helper
-################################################################################
 # Global variable to store the sudo keeper PID
 export __SUDO_KEEPER_PID=""
 
-# Start sudo keep-alive in background
 function __start_sudo_keepalive() {
   # Request sudo password once
-  sudo -v || return 1
+  if ! sudo -v; then
+    __log_error "Failed to obtain sudo privileges"
+    return 1
+  fi
 
   # Get current shell PID to monitor
   local parent_pid=$$
@@ -106,17 +63,17 @@ function __start_sudo_keepalive() {
       # Exit if parent process is dead
       kill -0 "$parent_pid" 2>/dev/null || exit 0
     done
-  } &!
+  } &
   __SUDO_KEEPER_PID=$!
   export __SUDO_KEEPER_PID
 
   # Register cleanup on exit
   trap '__stop_sudo_keepalive' EXIT INT TERM
 
+  __log_success "Sudo keep-alive started"
   return 0
 }
 
-# Stop sudo keep-alive
 function __stop_sudo_keepalive() {
   if [ -n "$__SUDO_KEEPER_PID" ]; then
     kill "$__SUDO_KEEPER_PID" 2>/dev/null || true
@@ -150,6 +107,9 @@ function __safe_link() {
     rm -rf "$dst"
   fi
 
+  # Create parent directory if it doesn't exist
+  mkdir -p "$(dirname "$dst")"
+
   ln -s "$src" "$dst"
   __log_success "Linked: $dst -> $(basename "$src")"
 }
@@ -162,12 +122,22 @@ function __git_sync() {
   repo_name=$(basename "$path")
 
   if [ -d "$path/.git" ]; then
-    git -C "$path" pull --quiet --no-edit 2>/dev/null || true
-    __log_success "Updated: $repo_name"
+    if git -C "$path" pull --quiet --no-edit >/dev/null 2>&1; then
+      __log_success "Updated: $repo_name"
+      return 0
+    else
+      __log_warning "Failed to update: $repo_name"
+      return 1
+    fi
   else
     rm -rf "$path"
-    git clone --quiet --depth="$depth" "$url" "$path" 2>/dev/null || true
-    __log_success "Cloned: $repo_name"
+    if git clone --quiet --depth="$depth" "$url" "$path" >/dev/null 2>&1; then
+      __log_success "Cloned: $repo_name"
+      return 0
+    else
+      __log_error "Failed to clone: $repo_name"
+      return 1
+    fi
   fi
 }
 
@@ -204,19 +174,23 @@ function __calculate_vm_cores() {
     result=$(( result + 1 ))
   fi
 
-  # Cap at maximum
+  # Apply maximum limit
   if [ "$result" -gt "$maximum" ]; then
-    result="$maximum"
+    echo "$maximum"
+
+    return
   fi
 
-  # Apply minimum, but never exceed total available cores
+  # Apply minimum limit, but never exceed total available cores
   if [ "$result" -lt "$minimum" ]; then
     if [ "$total" -ge "$minimum" ]; then
-      result="$minimum"
+      echo "$minimum"
     else
       # If total cores < minimum, use total (don't allocate more than available)
-      result="$total"
+      echo "$total"
     fi
+
+    return
   fi
 
   echo "$result"
@@ -245,23 +219,29 @@ function __calculate_vm_memory() {
 
   local result
 
-
   result=$(( total * percentage / 100 ))
 
-  # Round up to nearest power of 2 up to maximum
+  # Round up to nearest power of 2
   local rounded=1
-  while [ "$rounded" -lt "$result" ] && [ "$rounded" -lt "$maximum" ]; do
+  while [ "$rounded" -lt "$result" ]; do
     rounded=$(( rounded * 2 ))
   done
 
+  # Apply maximum limit
   if [ "$rounded" -gt "$maximum" ]; then
     echo "$maximum"
 
     return
   fi
 
+  # Apply minimum limit, but never exceed total available memory
   if [ "$rounded" -lt "$minimum" ]; then
-    echo "$minimum"
+    if [ "$total" -ge "$minimum" ]; then
+      echo "$minimum"
+    else
+      # If total memory < minimum, use total (don't allocate more than available)
+      echo "$total"
+    fi
 
     return
   fi
@@ -299,19 +279,28 @@ function __calculate_vm_storage() {
   local result
   result=$(( total * percentage / 100 ))
 
-  # Round up to nearest power of 2 up to maximum
+  # Round up to nearest power of 2
   local rounded=1
-  while [ "$rounded" -lt "$result" ] && [ "$rounded" -lt "$maximum" ]; do
+  while [ "$rounded" -lt "$result" ]; do
     rounded=$(( rounded * 2 ))
   done
 
+  # Apply maximum limit
   if [ "$rounded" -gt "$maximum" ]; then
     echo "$maximum"
+
     return
   fi
 
+  # Apply minimum limit, but never exceed total available storage
   if [ "$rounded" -lt "$minimum" ]; then
-    echo "$minimum"
+    if [ "$total" -ge "$minimum" ]; then
+      echo "$minimum"
+    else
+      # If total storage < minimum, use total (don't allocate more than available)
+      echo "$total"
+    fi
+
     return
   fi
 
@@ -319,40 +308,16 @@ function __calculate_vm_storage() {
 }
 
 function __ensure_docker_compose_plugin() {
-  if ! command -v docker-compose > /dev/null 2>&1; then
+  if ! __cmd_exists docker-compose; then
+    __log_skip "docker-compose not found, skipping plugin setup"
     return
   fi
 
-  local plugin_dir="${HOME}/.docker/cli-plugins"
-
-  if [ ! -d "$plugin_dir" ]; then
-    mkdir -p "$plugin_dir"
-  fi
-
-  local plugin_path="${plugin_dir}/docker-compose"
   local compose_bin
   compose_bin="$(command -v docker-compose)"
 
-  if [ -L "$plugin_path" ]; then
-    local current_target
-    current_target="$(readlink "$plugin_path")"
-
-    if [ "$current_target" != "$compose_bin" ]; then
-      rm -f "$plugin_path"
-
-      ln -sf "$compose_bin" "$plugin_path"
-    fi
-  elif [ -e "$plugin_path" ]; then
-    rm -f "$plugin_path"
-
-    ln -sf "$compose_bin" "$plugin_path"
-  else
-    ln -sf "$compose_bin" "$plugin_path"
-  fi
-
-  if [ -L "$plugin_path" ] && [ ! -x "$plugin_path" ]; then
-    chmod +x "$plugin_path"
-  fi
+  __safe_link "$compose_bin" "${HOME}/.docker/cli-plugins/docker-compose"
+  chmod +x "${HOME}/.docker/cli-plugins/docker-compose" 2>/dev/null
 }
 
 function __confirm_colima_config() {
@@ -395,6 +360,11 @@ function __confirm_colima_config() {
 # Node.js / NPM helpers
 ################################################################################
 function __load_nvm() {
+  if [ ! -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ]; then
+    __log_skip "NVM not found, skipping initialization"
+    return
+  fi
+
   # Remove stub functions if they exist
   unset -f nvm 2>/dev/null
   unset -f node 2>/dev/null
@@ -402,12 +372,14 @@ function __load_nvm() {
   unset -f npx 2>/dev/null
   unset -f yarn 2>/dev/null
   unset -f pnpm 2>/dev/null
-  
+
   # Load NVM
   # shellcheck disable=SC1091
-  [ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
+  source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
   # shellcheck disable=SC1091
   [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && source "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
+
+  __log_success "NVM loaded"
 }
 
 function __update_npm_token() {
@@ -417,10 +389,20 @@ function __update_npm_token() {
 
   # Force update or check if cache file exists and is not older than 24 hours
   if [ "$force" = "true" ] || [ ! -f "$NPM_TOKEN_CACHE_FILE" ] || [ "$(find "$NPM_TOKEN_CACHE_FILE" -mtime +1 2>/dev/null)" ]; then
-    if [ -f "$HOME/.dotfiles/nodejs/tokens/classic.gpg" ]; then
-      gpg --quiet --batch --yes -d "$HOME/.dotfiles/nodejs/tokens/classic.gpg" | tr -d '\n' > "$NPM_TOKEN_CACHE_FILE" 2>/dev/null
-      chmod 600 "$NPM_TOKEN_CACHE_FILE" 2>/dev/null
+    if [ ! -f "$HOME/.dotfiles/nodejs/tokens/classic.gpg" ]; then
+      __log_skip "NPM token file not found, skipping"
+      return
     fi
+
+    if gpg --quiet --batch --yes -d "$HOME/.dotfiles/nodejs/tokens/classic.gpg" 2>/dev/null | tr -d '\n' > "$NPM_TOKEN_CACHE_FILE"; then
+      chmod 600 "$NPM_TOKEN_CACHE_FILE" 2>/dev/null
+      __log_success "NPM token updated"
+    else
+      __log_error "Failed to decrypt NPM token"
+      return 1
+    fi
+  else
+    __log_skip "Using cached NPM token"
   fi
 
   # Export token if cache file exists
@@ -434,6 +416,11 @@ function __update_npm_token() {
 # Ruby / Chruby helpers
 ################################################################################
 function __load_chruby() {
+  if [ ! -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh" ]; then
+    __log_skip "Chruby not found, skipping initialization"
+    return
+  fi
+
   # Remove stub functions if they exist
   unset -f chruby 2>/dev/null
   unset -f ruby 2>/dev/null
@@ -441,10 +428,12 @@ function __load_chruby() {
   unset -f bundle 2>/dev/null
   unset -f rake 2>/dev/null
   unset -f rails 2>/dev/null
-  
+
   # Load Chruby
   # shellcheck disable=SC1091
-  [ -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh" ] && source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
+  source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
   # shellcheck disable=SC1091
   [ -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh" ] && source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
+
+  __log_success "Chruby loaded"
 }

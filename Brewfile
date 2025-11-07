@@ -72,7 +72,6 @@ brew 'helm'
 brew 'htop'
 brew 'httpie'
 brew 'hyperfine'
-brew 'java11'
 brew 'jq'
 brew 'kubectl'
 brew 'libpq'
@@ -91,6 +90,7 @@ brew 'nmap'
 brew 'node', link: true
 brew 'nowplaying-cli'
 brew 'nvm'
+brew 'openjdk@17'
 brew 'openssl'
 brew 'oven-sh/bun/bun', link: true
 brew 'p7zip'
@@ -123,6 +123,7 @@ brew 'unzip'
 brew 'urlview'
 brew 'vim'
 brew 'vint'
+brew 'watchman'
 brew 'wget'
 brew 'yarn'
 brew 'zip'
@@ -257,7 +258,7 @@ cask 'font-victor-mono-nerd-font'
 cask 'font-zed-mono-nerd-font'
 
 # App Store - Apps
-# mas 'Xcode', id: 497_799_835
+mas 'Xcode', id: 497_799_835
 mas 'Amphetamine', id: 937_984_704
 mas 'Magnet', id: 441_258_766
 

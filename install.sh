@@ -9,27 +9,27 @@ SCRIPT_START_TIME=$(date +%s)
 export SCRIPT_START_TIME
 
 ################################################################################
-# Load helper functions
+# Load utility functions
 ################################################################################
-# Try to load from local zsh/helpers first
+# Try to load from local zsh/utilities first
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
 
-# If helpers not available locally, download them temporarily
-if [ -z "$SCRIPT_DIR" ] || [ ! -f "$SCRIPT_DIR/zsh/helpers" ]; then
-  # Running via curl | bash - download helpers to temp location
-  TEMP_HELPERS=$(mktemp)
-  if curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/zsh/helpers -o "$TEMP_HELPERS" 2>/dev/null; then
+# If utilities not available locally, download them temporarily
+if [ -z "$SCRIPT_DIR" ] || [ ! -f "$SCRIPT_DIR/zsh/utilities" ]; then
+  # Running via curl | bash - download utilities to temp location
+  TEMP_UTILITIES=$(mktemp)
+  if curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/zsh/utilities -o "$TEMP_UTILITIES" 2>/dev/null; then
     # shellcheck source=/dev/null
-    source "$TEMP_HELPERS"
-    rm -f "$TEMP_HELPERS"
+    source "$TEMP_UTILITIES"
+    rm -f "$TEMP_UTILITIES"
   else
-    echo "ERROR: Could not download helper functions"
+    echo "ERROR: Could not download utility functions"
     exit 1
   fi
 else
   # Load from local file
   # shellcheck source=/dev/null
-  source "$SCRIPT_DIR/zsh/helpers"
+  source "$SCRIPT_DIR/zsh/utilities"
 fi
 
 ################################################################################
@@ -45,26 +45,19 @@ pkg_installed() { __pkg_installed "$@"; }
 snap_installed() { __snap_installed "$@"; }
 safe_link() { __safe_link "$@"; }
 git_sync() { __git_sync "$@"; }
+apt_install_if_missing() { __apt_install_if_missing "$@"; }
+apt_add_key_and_repo() { __apt_add_key_and_repo "$@"; }
+brew_install_if_missing() { __brew_install_if_missing "$@"; }
+brew_install_cask_if_missing() { __brew_install_cask_if_missing "$@"; }
+git_clone_or_update() { __git_clone_or_update "$@"; }
 
 ################################################################################
-# Root password and keep-alive
+# Installation
 ################################################################################
-# Ask for password only once at the beginning
 echo ""
 log_info "==============================================================="
 log_info "Dotfiles Installation Script"
 log_info "==============================================================="
-echo ""
-log_warning "This script will ask for your sudo password ONCE"
-log_warning "Then it will keep sudo alive for the entire duration"
-log_warning "You can leave it running overnight if needed"
-echo ""
-
-# Start sudo keep-alive using helper function
-__start_sudo_keepalive
-
-log_success "Sudo keep-alive started (PID: $__SUDO_KEEPER_PID)"
-log_info "Script will run without asking for password again"
 echo ""
 
 ################################################################################
@@ -97,7 +90,7 @@ case "$(uname)" in
       unrar unzip vim wget xsel zip)
 
     for pkg in "${BASIC_PKGS[@]}"; do
-      pkg_installed "$pkg" || sudo apt install -y -qq "$pkg"
+      apt_install_if_missing "$pkg"
     done
     log_success "Basic packages installed"
 
@@ -105,23 +98,17 @@ case "$(uname)" in
     # Dotfiles repository
     ############################################################################
     log_info "Setting up dotfiles..."
-    if [ -d "$HOME/.dotfiles/.git" ]; then
-      git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git 2>/dev/null || true
+    git_clone_or_update "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles"
       git -C "$HOME/.dotfiles" checkout -f master 2>/dev/null || true
-      git -C "$HOME/.dotfiles" pull --no-edit 2>/dev/null || true
       git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
-      log_success "Dotfiles updated"
-    else
-      git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"
-      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
-      log_success "Dotfiles cloned"
-    fi
+    log_success "Dotfiles configured"
 
     ############################################################################
     # Zsh
     ############################################################################
     log_info "Installing Zsh..."
-    pkg_installed zsh || sudo apt install -y -qq zsh zsh-syntax-highlighting
+    apt_install_if_missing zsh
+    apt_install_if_missing zsh-syntax-highlighting
 
     if ! grep -q "$(command -v zsh)" /etc/shells 2>/dev/null; then
       command -v zsh | sudo tee -a /etc/shells >/dev/null
@@ -139,11 +126,12 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists docker; then
       log_info "Installing Docker..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq docker-ce
+      apt_add_key_and_repo \
+        "https://download.docker.com/linux/ubuntu/gpg" \
+        "/etc/apt/keyrings/docker.gpg" \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+        "/etc/apt/sources.list.d/docker.list" \
+        "docker-ce"
       log_success "Docker installed"
     else
       log_skip "Docker already installed"
@@ -263,7 +251,8 @@ case "$(uname)" in
     ############################################################################
     # GPG
     ############################################################################
-    pkg_installed gpg || sudo apt install -y -qq gpg pinentry-curses
+    apt_install_if_missing gpg
+    apt_install_if_missing pinentry-curses
 
     ############################################################################
     # Nerd Fonts
@@ -561,10 +550,9 @@ safe_link "$HOME/.dotfiles/kitty/themes" "$HOME/.config/kitty/themes"
 # Bat
 ############################################################################
 log_info "Setting up Bat..."
-safe_link "$HOME/.dotfiles/bat/.batrc" "$HOME/.config/bat/config"
+safe_link "$HOME/.dotfiles/bat/config" "$HOME/.config/bat/config"
 safe_link "$HOME/.dotfiles/bat/themes" "$HOME/.config/bat/themes"
 
-# Rebuild bat cache to include themes
 cmd_exists bat && bat cache --build >/dev/null 2>&1 || true
 
 ############################################################################

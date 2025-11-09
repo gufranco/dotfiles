@@ -40,48 +40,6 @@ function __log_skip() {
 ################################################################################
 # System helpers
 ################################################################################
-# Global variable to store the sudo keeper PID
-export __SUDO_KEEPER_PID=""
-
-function __start_sudo_keepalive() {
-  # Request sudo password once
-  if ! sudo -v; then
-    __log_error "Failed to obtain sudo privileges"
-    return 1
-  fi
-
-  # Get current shell PID to monitor
-  local parent_pid=$$
-
-  # Start sudo keep-alive in background
-  # This will refresh sudo every 50 seconds (default timeout is 5 minutes)
-  {
-    while true; do
-      sleep 50
-      # Use sudo -v to refresh the timestamp (must not use -n)
-      sudo -v 2>/dev/null
-      # Exit if parent process is dead
-      kill -0 "$parent_pid" 2>/dev/null || exit 0
-    done
-  } &
-  __SUDO_KEEPER_PID=$!
-  export __SUDO_KEEPER_PID
-
-  # Register cleanup on exit
-  trap '__stop_sudo_keepalive' EXIT INT TERM
-
-  __log_success "Sudo keep-alive started"
-  return 0
-}
-
-function __stop_sudo_keepalive() {
-  if [ -n "$__SUDO_KEEPER_PID" ]; then
-    kill "$__SUDO_KEEPER_PID" 2>/dev/null || true
-    wait "$__SUDO_KEEPER_PID" 2>/dev/null || true
-    __SUDO_KEEPER_PID=""
-  fi
-}
-
 function __cmd_exists() {
   command -v "$1" >/dev/null 2>&1
 }
@@ -357,6 +315,26 @@ function __confirm_colima_config() {
 }
 
 ################################################################################
+# Lazy loading helpers
+################################################################################
+function __create_lazy_stub() {
+  local command_name="$1"
+  local loader_function="$2"
+
+  eval "${command_name}() { ${loader_function}; ${command_name} \"\$@\"; }"
+}
+
+function __create_lazy_stubs() {
+  local loader_function="$1"
+  shift
+  local commands=("$@")
+
+  for cmd in "${commands[@]}"; do
+    __create_lazy_stub "$cmd" "$loader_function"
+  done
+}
+
+################################################################################
 # Node.js / NPM helpers
 ################################################################################
 function __load_nvm() {
@@ -436,4 +414,275 @@ function __load_chruby() {
   [ -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh" ] && source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
 
   __log_success "Chruby loaded"
+}
+
+################################################################################
+# Package management helpers
+################################################################################
+function __apt_install_if_missing() {
+  local package="$1"
+  __pkg_installed "$package" || sudo apt install -y -qq "$package"
+}
+
+function __apt_add_key_and_repo() {
+  local key_url="$1"
+  local key_file="$2"
+  local repo_line="$3"
+  local repo_file="$4"
+  local package="${5:-}"
+
+  if [ ! -f "$key_file" ]; then
+    sudo mkdir -p "$(dirname "$key_file")" 2>/dev/null || true
+    curl -fsSL "$key_url" | sudo gpg --dearmor --yes -o "$key_file" 2>/dev/null || true
+    echo "$repo_line" | sudo tee "$repo_file" >/dev/null
+    sudo apt update -qq
+
+    # Install package if provided
+    if [ -n "$package" ]; then
+      sudo apt install -y -qq "$package"
+    fi
+  fi
+}
+
+function __brew_install_if_missing() {
+  local package="$1"
+  brew list "$package" >/dev/null 2>&1 || brew install "$package"
+}
+
+function __brew_install_cask_if_missing() {
+  local cask="$1"
+  brew list --cask "$cask" >/dev/null 2>&1 || brew install --cask "$cask"
+}
+
+################################################################################
+# Git repository helpers
+################################################################################
+function __git_clone_or_update() {
+  local url="$1"
+  local target="$2"
+  local remote_name="${3:-origin}"
+
+  if [ -d "$target/.git" ]; then
+    git -C "$target" remote set-url "$remote_name" "$url" 2>/dev/null || true
+    git -C "$target" pull --no-edit 2>/dev/null || true
+  else
+    git clone --recursive --depth=1 "$url" "$target"
+  fi
+}
+
+################################################################################
+# Path management helpers
+################################################################################
+function __add_to_path() {
+  export PATH="$1:$PATH"
+}
+
+function __add_gnu_tool() {
+  local tool="$1"
+  local subpath="${2:-bin}"
+  __add_to_path "$HOMEBREW_PREFIX/opt/$tool/$subpath"
+}
+
+function __setup_homebrew() {
+  local prefix="$1"
+
+  export HOMEBREW_PREFIX="$prefix"
+  export HOMEBREW_CELLAR="$prefix/Cellar"
+  export HOMEBREW_REPOSITORY="$prefix"
+  [ "$prefix" = "/opt/homebrew" ] && export HOMEBREW_REPOSITORY="/opt/homebrew"
+  [ "$prefix" = "/usr/local" ] && export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+  export HOMEBREW_SHELLENV_PREFIX="$prefix"
+  export PATH="$prefix/bin:$prefix/sbin${PATH+:$PATH}"
+  export MANPATH="$prefix/share/man${MANPATH+:$MANPATH}:"
+  export INFOPATH="$prefix/share/info:${INFOPATH:-}"
+}
+
+################################################################################
+# Alias management helpers
+################################################################################
+function __alias_if_exists() {
+  local cmd="$1"
+  local alias_name="$2"
+  local alias_value="$3"
+
+  # shellcheck disable=SC2139
+  command -v "$cmd" > /dev/null && alias "$alias_name"="$alias_value"
+}
+
+################################################################################
+# Docker container helpers
+################################################################################
+function __docker_container_start() {
+  local container_name="$1"
+  command docker start "$container_name"
+}
+
+function __docker_container_stop() {
+  local container_name="$1"
+  command docker stop "$container_name"
+}
+
+function __docker_container_purge() {
+  local container_name="$1"
+  local data_dir="$HOME/Docker/${container_name^}"
+
+  __docker_container_stop "$container_name" 2>/dev/null || true
+  command docker rm "$container_name" 2>/dev/null || true
+  rm -rf "$data_dir"
+}
+
+function __docker_container_terminal() {
+  local container_name="$1"
+  local shell="${2:-/bin/sh}"
+  command docker exec -it "$container_name" "$shell"
+}
+
+function __ensure_directory() {
+  local dir_path="$1"
+  mkdir -p "$dir_path"
+}
+
+function __docker_run_detached() {
+  local container_name="$1"
+  shift
+
+  command docker run \
+    --detach \
+    --hostname "$container_name" \
+    --name "$container_name" \
+    --restart unless-stopped \
+    \
+    --log-driver "local" \
+    --log-opt "max-size=10m" \
+    --log-opt "max-file=3" \
+    \
+    "$@"
+}
+
+################################################################################
+# Docker container initialization helpers
+################################################################################
+function __docker_init_with_health() {
+  local container_name="$1"
+  local health_cmd="$2"
+  shift 2
+
+  __docker_run_detached "$container_name" \
+    --health-cmd "$health_cmd" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    "$@"
+}
+
+function __docker_setup_data_dir_and_mount() {
+  local service_name="$1"
+  local data_dir="$HOME/Docker/${service_name}"
+
+  __ensure_directory "$data_dir"
+  echo "--mount type=bind,source=$data_dir,target=/external"
+}
+
+################################################################################
+# User confirmation helper
+################################################################################
+function __confirm_operation() {
+  local prompt="${1:-Do you want to continue?}"
+
+  if [[ "${CI:-0}" = "1" ]]; then
+    echo "CI mode detected - auto-confirming..."
+    echo ""
+    return 0
+  fi
+
+  read -r "?${prompt} (y/N): "
+  echo ""
+
+  if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+################################################################################
+# Display helpers
+################################################################################
+function __show_header() {
+  local title="$1"
+  local subtitle="${2:-}"
+
+  echo ""
+  echo "================================================================================"
+  if [ -n "$subtitle" ]; then
+    echo "  ${title} - ${subtitle}"
+  else
+    echo "  ${title}"
+  fi
+  echo "================================================================================"
+  echo ""
+}
+
+function __show_runtime_info() {
+  local vm_type="$1"
+  local arch_desc="$2"
+  local mount_type="$3"
+  local extra_info="${4:-}"
+
+  echo "Runtime:"
+  echo "  Engine:         Docker"
+  echo "  VM Type:        ${vm_type}"
+  echo "  Architecture:   ${arch_desc}"
+  echo "  Mount Type:     ${mount_type}"
+  echo "  File Watching:  inotify enabled"
+  [ -n "$extra_info" ] && echo "  ${extra_info}"
+  echo ""
+  echo "Network:"
+  echo "  DNS:            1.1.1.1, 8.8.8.8"
+  echo "  Address:        Reachable from host"
+  echo ""
+}
+
+function __show_performance_info() {
+  local extra_info="${1:-}"
+
+  echo "Performance:"
+  echo "  Auto Activate:  Enabled"
+  [ -n "$extra_info" ] && echo "  ${extra_info}"
+  echo "  BuildKit:       Enabled (faster builds & I/O)"
+  echo "  Inline Cache:   Enabled (persistent cache)"
+  echo ""
+}
+
+function __vm_start() {
+  local profile="$1"
+  local cores="$2"
+  local memory="$3"
+  local storage="$4"
+  local arch="$5"
+  shift 5
+
+  command colima start \
+    --profile "${profile}" \
+    --cpu "${cores}" \
+    --memory "${memory}" \
+    --disk "${storage}" \
+    \
+    --runtime "docker" \
+    --arch "${arch}" \
+    \
+    --mount "$HOME:w" \
+    --mount-inotify \
+    \
+    --dns "1.1.1.1" \
+    --dns "8.8.8.8" \
+    \
+    --network-address \
+    --activate \
+    \
+    --env DOCKER_BUILDKIT=1 \
+    --env COMPOSE_DOCKER_CLI_BUILD=1 \
+    --env BUILDKIT_INLINE_CACHE=1 \
+    \
+    "$@"
 }

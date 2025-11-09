@@ -4,8 +4,202 @@
 # Update and upgrade everything
 ################################################################################
 function f5() {
+  __run_cmd() {
+    if [ "$DEBUG" = "1" ]; then
+      "$@"
+    else
+      "$@" >/dev/null 2>&1
+    fi
+  }
+
+  __update_git_repo() {
+    local repo_dir="$1"
+    local quiet_flag=""
+
+    [ "$DEBUG" != "1" ] && quiet_flag="--quiet"
+
+    if [ "$DEBUG" = "1" ]; then
+      git -C "$repo_dir" pull && git -C "$repo_dir" fetch --prune
+    else
+      git -C "$repo_dir" pull $quiet_flag >/dev/null 2>&1 && \
+      git -C "$repo_dir" fetch --prune $quiet_flag >/dev/null 2>&1
+    fi
+  }
+
+  __update_dotfiles() {
+    __log_info "Updating dotfiles..."
+
+    if [ ! -d "$HOME/.dotfiles/.git" ]; then
+      __log_skip "Dotfiles not a git repository"
+      return
+    fi
+
+    if __update_git_repo "$HOME/.dotfiles"; then
+      __log_success "Dotfiles updated"
+    else
+      __log_warning "Failed to update dotfiles"
+    fi
+  }
+
+  __update_vim() {
+    if ! __cmd_exists vim; then
+      __log_skip "Vim not installed"
+      return
+    fi
+
+    __log_info "Updating Vim plugins..."
+    if __run_cmd vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall; then
+      __log_success "Vim plugins updated"
+    else
+      __log_warning "Failed to update Vim plugins"
+    fi
+  }
+
+  __update_plugins() {
+    __log_info "Updating Zsh and Tmux plugins..."
+
+    local plugin_count=0
+    local plugin_errors=0
+
+    for dir in \
+      "$HOME/.oh-my-zsh" \
+      "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ \
+      "$HOME/.tmux/plugins/"*/; do
+
+      [ ! -d "$dir/.git" ] && continue
+      [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]] && continue
+
+      [ "$DEBUG" = "1" ] && echo "Updating plugin: $dir"
+
+      if __update_git_repo "$dir"; then
+        ((plugin_count++))
+      else
+        ((plugin_errors++))
+      fi
+    done
+
+    if [ "$plugin_errors" -gt 0 ]; then
+      __log_warning "Updated $plugin_count plugins ($plugin_errors failed)"
+    else
+      __log_success "Updated $plugin_count plugins"
+    fi
+  }
+
+  __update_nodejs() {
+    if ! __cmd_exists nvm && ! type __load_nvm >/dev/null 2>&1; then
+      __log_skip "NVM not installed"
+      return
+    fi
+
+    __log_info "Updating Node.js LTS..."
+    type __load_nvm >/dev/null 2>&1 && __load_nvm
+
+    if __run_cmd nvm install --lts && \
+       __run_cmd nvm use --lts && \
+       __run_cmd nvm alias default "lts/*"; then
+      __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
+    else
+      __log_warning "Failed to update Node.js LTS"
+    fi
+  }
+
+  __update_linux() {
+    __log_info "Updating Linux packages..."
+
+    local quiet_flag="-qq"
+    [ "$DEBUG" = "1" ] && quiet_flag=""
+
+    if [ "$DEBUG" = "1" ]; then
+      if sudo apt update; then
+        sudo apt dist-upgrade -y
+        sudo apt autoremove -y
+        sudo apt clean || true
+        __log_success "Linux packages updated"
+      else
+        __log_error "Failed to update Linux packages"
+      fi
+    else
+      if sudo apt update $quiet_flag >/dev/null 2>&1 || sudo apt update; then
+        sudo apt dist-upgrade -y $quiet_flag >/dev/null 2>&1 || sudo apt dist-upgrade -y
+        sudo apt autoremove -y $quiet_flag >/dev/null 2>&1 || sudo apt autoremove -y
+        sudo apt clean >/dev/null 2>&1 || true
+        __log_success "Linux packages updated"
+      else
+        __log_error "Failed to update Linux packages"
+      fi
+    fi
+  }
+
+  __update_macos() {
+    __log_info "Updating macOS packages..."
+
+    if __run_cmd brew update; then
+      __run_cmd brew bundle --file "$HOME/.dotfiles/Brewfile" || __log_warning "Brewfile sync failed"
+      __run_cmd brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
+      __run_cmd brew upgrade || __log_warning "Brew upgrade failed"
+      __run_cmd brew cu --all --yes --cleanup || true
+      __run_cmd brew cleanup -s || true
+    else
+      __log_warning "Brew update failed"
+    fi
+
+    if __cmd_exists mas; then
+      __run_cmd mas upgrade && __log_success "Mac App Store apps updated"
+    fi
+
+    if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
+      __log_info "Cleaning Launchpad cache..."
+      if __run_cmd sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
+        __run_cmd killall Dock || true
+        __log_success "Launchpad cache cleaned"
+      fi
+    fi
+
+    __log_success "macOS packages updated"
+  }
+
+  __reload_configs() {
+    __log_info "Reloading configurations..."
+
+    if __cmd_exists tmux && [ -n "$TMUX" ]; then
+      if __run_cmd tmux source-file ~/.tmux.conf; then
+        __log_success "Tmux config reloaded"
+      else
+        __log_warning "Tmux reload failed"
+      fi
+    else
+      __log_skip "Not in tmux session"
+    fi
+
+    # shellcheck disable=SC1091
+    if __run_cmd source "$HOME/.zshrc"; then
+      __log_success "Zsh config reloaded"
+    else
+      __log_warning "Zsh reload failed"
+    fi
+  }
+
+  __show_summary() {
+    local f5_end f5_total f5_mins f5_secs
+
+    f5_end=$(date +%s)
+    f5_total=$((f5_end - SCRIPT_START_TIME))
+    f5_mins=$((f5_total / 60))
+    f5_secs=$((f5_total % 60))
+
+    echo ""
+    __log_success "==============================================================="
+    __log_success "Update completed successfully!"
+    __log_success "==============================================================="
+    echo ""
+    __log_info "Total time: ${f5_mins}m ${f5_secs}s"
+    echo ""
+  }
+
   SCRIPT_START_TIME=$(date +%s)
   export SCRIPT_START_TIME
+
+  [ "$DEBUG" = "1" ] && __log_info "DEBUG mode enabled - showing all command output"
 
   echo ""
   __log_info "==============================================================="
@@ -13,311 +207,161 @@ function f5() {
   __log_info "==============================================================="
   echo ""
 
-  ################################################################################
-  # Request sudo password once and keep it alive
-  ################################################################################
-  __start_sudo_keepalive
+  __update_dotfiles
+  __update_vim
+  __update_plugins
+  __update_nodejs
 
-  ################################################################################
-  # Dotfiles
-  ################################################################################
-  __log_info "Updating dotfiles..."
-  if [ -d "$HOME/.dotfiles/.git" ]; then
-    if git -C "$HOME/.dotfiles" pull --quiet >/dev/null 2>&1; then
-      git -C "$HOME/.dotfiles" fetch --prune --quiet >/dev/null 2>&1 || true
-      __log_success "Dotfiles updated"
-    else
-      __log_warning "Failed to update dotfiles"
-    fi
-  else
-    __log_skip "Dotfiles not a git repository"
-  fi
-
-  ################################################################################
-  # Vim plugins
-  ################################################################################
-  if __cmd_exists vim; then
-    __log_info "Updating Vim plugins..."
-    if vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall >/dev/null 2>&1; then
-      __log_success "Vim plugins updated"
-    else
-      __log_warning "Failed to update Vim plugins"
-    fi
-  else
-    __log_skip "Vim not installed"
-  fi
-
-  ################################################################################
-  # Zsh and Tmux plugins
-  ################################################################################
-  __log_info "Updating Zsh and Tmux plugins..."
-  local plugin_count=0
-  local plugin_errors=0
-
-  for dir in \
-    "$HOME/.oh-my-zsh" \
-    "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ \
-    "$HOME/.tmux/plugins/"*/; do
-
-    # Skip if not a git repository
-    [ ! -d "$dir/.git" ] && continue
-
-    # Skip TPM (managed separately)
-    [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]] && continue
-
-    if git -C "$dir" pull --quiet >/dev/null 2>&1; then
-      git -C "$dir" fetch --prune --quiet >/dev/null 2>&1 || true
-      ((plugin_count++))
-    else
-      ((plugin_errors++))
-    fi
-  done
-
-  if [ "$plugin_errors" -gt 0 ]; then
-    __log_warning "Updated $plugin_count plugins ($plugin_errors failed)"
-  else
-    __log_success "Updated $plugin_count plugins"
-  fi
-
-  ################################################################################
-  # Node.js LTS
-  ################################################################################
-  if __cmd_exists nvm || type __load_nvm >/dev/null 2>&1; then
-    __log_info "Updating Node.js LTS..."
-    # Ensure NVM is fully loaded (for lazy loading setup)
-    type __load_nvm >/dev/null 2>&1 && __load_nvm
-
-    if nvm install --lts >/dev/null 2>&1 && nvm use --lts >/dev/null 2>&1 && nvm alias default "lts/*" >/dev/null 2>&1; then
-      __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
-    else
-      __log_warning "Failed to update Node.js LTS"
-    fi
-  else
-    __log_skip "NVM not installed"
-  fi
-
-  ################################################################################
-  # Ruby
-  ################################################################################
-  # if command -v ruby-install >/dev/null 2>&1; then
-  #   __log_info "Checking Ruby..."
-  #   ruby-install --update >/dev/null 2>&1 || true
-
-  #   # Get latest available Ruby version (silently)
-  #   local latest_ruby
-  #   latest_ruby=$(ruby-install 2>&1 | grep -A1 "^\s*ruby:" | tail -n1 | awk '{print $NF}')
-
-  #   # Check if latest version is already installed
-  #   if [ -n "$latest_ruby" ] && [ -d "$HOME/.rubies/ruby-$latest_ruby" ]; then
-  #     __log_skip "Ruby $latest_ruby already installed"
-  #   elif [ -n "$latest_ruby" ]; then
-  #     __log_info "Installing Ruby $latest_ruby..."
-  #     ruby-install -c ruby "$latest_ruby" >/dev/null 2>&1 || true
-  #     rm -rf "$HOME/src" 2>/dev/null || true
-  #     __log_success "Ruby $latest_ruby installed"
-  #   else
-  #     __log_skip "Could not determine latest Ruby version"
-  #   fi
-
-  #   __cmd_exists chruby && chruby ruby 2>/dev/null || true
-  # else
-  #   __log_skip "Ruby-install not available"
-  # fi
-
-  ################################################################################
-  # System packages
-  ################################################################################
   case "$(uname)" in
-    "Linux")
-      __log_info "Updating Linux packages..."
-      if sudo apt update -qq >/dev/null 2>&1 || sudo apt update; then
-        sudo apt dist-upgrade -y -qq >/dev/null 2>&1 || sudo apt dist-upgrade -y
-        sudo apt autoremove -y -qq >/dev/null 2>&1 || sudo apt autoremove -y
-        sudo apt clean >/dev/null 2>&1 || true
-        __log_success "Linux packages updated"
-      else
-        __log_error "Failed to update Linux packages"
-      fi
-      ;;
-
-    "Darwin")
-      __log_info "Updating macOS packages..."
-
-      # Homebrew
-      if brew update >/dev/null 2>&1; then
-        brew bundle --file "$HOME/.dotfiles/Brewfile" >/dev/null 2>&1 || __log_warning "Brewfile sync failed"
-        brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" >/dev/null 2>&1 || true
-        brew upgrade >/dev/null 2>&1 || __log_warning "Brew upgrade failed"
-        brew cu --all --yes --cleanup >/dev/null 2>&1 || true
-        brew cleanup -s >/dev/null 2>&1 || true
-      else
-        __log_warning "Brew update failed"
-      fi
-
-      # Mac App Store
-      if __cmd_exists mas; then
-        if mas upgrade >/dev/null 2>&1; then
-          __log_success "Mac App Store apps updated"
-        fi
-      fi
-
-      # macOS system updates
-      # softwareupdate -i -a >/dev/null 2>&1 || true
-
-      # Launchpad cleanup (only for macOS < 26)
-      if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
-        __log_info "Cleaning Launchpad cache..."
-        if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} + >/dev/null 2>&1; then
-          killall Dock >/dev/null 2>&1 || true
-          __log_success "Launchpad cache cleaned"
-        fi
-      fi
-
-      __log_success "macOS packages updated"
-      ;;
+    "Linux") __update_linux ;;
+    "Darwin") __update_macos ;;
   esac
 
-  ################################################################################
-  # Reload configurations
-  ################################################################################
-  __log_info "Reloading configurations..."
-
-  # Reload tmux config if tmux is running
-  if __cmd_exists tmux && [ -n "$TMUX" ]; then
-    if tmux source-file ~/.tmux.conf >/dev/null 2>&1; then
-      __log_success "Tmux config reloaded"
-    else
-      __log_warning "Tmux reload failed"
-    fi
-  else
-    __log_skip "Not in tmux session"
-  fi
-
-  # Reload zsh config
-  # shellcheck disable=SC1091
-  if source "$HOME/.zshrc" >/dev/null 2>&1; then
-    __log_success "Zsh config reloaded"
-  else
-    __log_warning "Zsh reload failed"
-  fi
-
-  ################################################################################
-  # Summary
-  ################################################################################
-  local f5_end
-  local f5_total
-  local f5_mins
-  local f5_secs
-
-  f5_end=$(date +%s)
-  f5_total=$((f5_end - SCRIPT_START_TIME))
-  f5_mins=$((f5_total / 60))
-  f5_secs=$((f5_total % 60))
-
-  echo ""
-  __log_success "==============================================================="
-  __log_success "Update completed successfully!"
-  __log_success "==============================================================="
-  echo ""
-  __log_info "Total time: ${f5_mins}m ${f5_secs}s"
-  echo ""
+  __reload_configs
+  __show_summary
 }
 
 ################################################################################
 # Zero fill and verify a storage device
 ################################################################################
 function zero_fill_verify() {
-  local disk="$1"
-  local passes="${PASSES:-1}"
-  local block_size
+  __validate_params() {
+    local disk="$1"
+    local passes="$2"
 
-  block_size=$((1024 * 1024))  # 1 MB block size for better performance
-  local size
+    if ! [[ "$passes" =~ ^[0-9]+$ ]] || [ "$passes" -lt 1 ]; then
+      __log_error "Invalid PASSES value: $passes (must be a positive integer)"
+      return 1
+    fi
 
-  # Validate passes parameter
-  if ! [[ "$passes" =~ ^[0-9]+$ ]] || [ "$passes" -lt 1 ]; then
-    __log_error "Invalid PASSES value: $passes (must be a positive integer)"
-    return 1
-  fi
+    if [ -z "$disk" ]; then
+      __log_error "No device specified"
+      __log_info "Usage: zero_fill_verify <device>"
+      __log_info "       PASSES=N zero_fill_verify <device>"
+      __log_info "       CREATE=y zero_fill_verify <device>"
+      __log_info "       PASSES=N CREATE=y zero_fill_verify <device>"
+      return 1
+    fi
 
-  # Validate disk parameter
-  if [ -z "$disk" ]; then
-    __log_error "No device specified"
-    __log_info "Usage: zero_fill_verify <device>"
-    __log_info "       PASSES=N zero_fill_verify <device>"
-    __log_info "       CREATE=y zero_fill_verify <device>"
-    __log_info "       PASSES=N CREATE=y zero_fill_verify <device>"
-    return 1
-  fi
+    if [ ! -b "$disk" ] && [ ! -c "$disk" ]; then
+      __log_error "Device not found or invalid: $disk"
+      return 1
+    fi
 
-  if [ ! -b "$disk" ] && [ ! -c "$disk" ]; then
-    __log_error "Device not found or invalid: $disk"
-    return 1
-  fi
+    return 0
+  }
 
-  # Get disk size from diskutil
-  size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
+  __get_disk_size() {
+    local disk="$1"
+    local size
 
-  if [ -z "$size" ] || [ "$size" -eq 0 ]; then
-    __log_error "Unable to determine disk size for $disk"
-    return 1
-  fi
+    size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
 
-  printf "This will ERASE all data on %s. Continue? (y/N): " "$disk"
-  IFS= read -r confirm
-  if [ "$confirm" != "y" ]; then
-    __log_warning "Operation cancelled"
-    return 1
-  fi
+    if [ -z "$size" ] || [ "$size" -eq 0 ]; then
+      __log_error "Unable to determine disk size for $disk"
+      return 1
+    fi
 
-  __log_info "Unmounting $disk..."
-  if sudo diskutil unmountDisk "$disk" >/dev/null 2>&1; then
-    __log_success "Disk unmounted"
-  else
-    __log_warning "Failed to unmount disk (may not be mounted)"
-  fi
+    echo "$size"
+  }
 
-  __log_info "Cleaning $disk..."
-  for ((index=1; index <= passes; index++)); do
+  __confirm() {
+    local disk="$1"
+    local confirm
+
+    printf "This will ERASE all data on %s. Continue? (y/N): " "$disk"
+    IFS= read -r confirm
+
+    if [ "$confirm" != "y" ]; then
+      __log_warning "Operation cancelled"
+      return 1
+    fi
+
+    return 0
+  }
+
+  __unmount() {
+    local disk="$1"
+
+    __log_info "Unmounting $disk..."
+    if sudo diskutil unmountDisk "$disk" >/dev/null 2>&1; then
+      __log_success "Disk unmounted"
+    else
+      __log_warning "Failed to unmount disk (may not be mounted)"
+    fi
+  }
+
+  __generate_pattern() {
+    local size="$1"
+    local pattern="$2"
+
+    if [ "$pattern" = "0xFF" ]; then
+      head -c "$size" /dev/zero | tr '\000' '\377'
+    else
+      head -c "$size" /dev/zero
+    fi
+  }
+
+  __write_pattern() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local pattern="$4"
+
+    __log_info "Writing $pattern..."
+
+    if ! __generate_pattern "$size" "$pattern" | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
+      __log_error "Failed to write $pattern"
+      return 1
+    fi
+
+    __log_success "Write $pattern completed"
+    return 0
+  }
+
+  __verify_pattern() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local pattern="$4"
+
+    __log_info "Verifying $pattern..."
+
+    if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
+      cmp -s - <(__generate_pattern "$size" "$pattern"); then
+      __log_error "Failed to verify $pattern"
+      return 1
+    fi
+
+    __log_success "Verify $pattern completed"
+    return 0
+  }
+
+  __execute_pass() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local index="$4"
+    local passes="$5"
+
     __log_info "Pass $index of $passes"
 
-    __log_info "Writing 0xFF..."
-    if ! head -c "$size" /dev/zero | tr '\000' '\377' | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
-      __log_error "Failed to write 0xFF"
-      return 1
-    fi
-    __log_success "Write 0xFF completed"
-
-    __log_info "Verifying 0xFF..."
-    if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
-      cmp -s - <(head -c "$size" /dev/zero | tr '\000' '\377'); then
-      __log_error "Failed to verify 0xFF"
-      return 1
-    fi
-    __log_success "Verify 0xFF completed"
-
-    __log_info "Writing 0x00..."
-    if ! head -c "$size" /dev/zero | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
-      __log_error "Failed to write 0x00"
-      return 1
-    fi
-    __log_success "Write 0x00 completed"
-
-    __log_info "Verifying 0x00..."
-    if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
-      cmp -s - <(head -c "$size" /dev/zero); then
-      __log_error "Failed to verify 0x00"
-      return 1
-    fi
-    __log_success "Verify 0x00 completed"
+    __write_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
+    __verify_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
+    __write_pattern "$disk" "$size" "$block_size" "0x00" || return 1
+    __verify_pattern "$disk" "$size" "$block_size" "0x00" || return 1
 
     __log_success "Pass $index/$passes completed"
-  done
+    return 0
+  }
 
-  # Create partition only if CREATE=y
-  if [ "${CREATE}" = "y" ]; then
+  __create_partition() {
+    local disk="$1"
+    local size="$2"
+
     __log_info "Creating partition..."
-    local threshold_bytes=$((2 * 1024 * 1024 * 1024))  # 2 GB
+
+    local threshold_bytes=$((2 * 1024 * 1024 * 1024))
     local fs_type="MS-DOS FAT32"
 
     if [ "$size" -le "$threshold_bytes" ]; then
@@ -333,21 +377,51 @@ function zero_fill_verify() {
       __log_error "Failed to create partition"
       return 1
     fi
-  fi
 
-  __log_info "Ejecting device..."
-  if sudo diskutil eject "$disk" >/dev/null 2>&1; then
-    __log_success "Device ejected successfully"
-  else
-    __log_error "Failed to eject device"
-    return 1
-  fi
+    return 0
+  }
+
+  __eject() {
+    local disk="$1"
+
+    __log_info "Ejecting device..."
+    if sudo diskutil eject "$disk" >/dev/null 2>&1; then
+      __log_success "Device ejected successfully"
+    else
+      __log_error "Failed to eject device"
+      return 1
+    fi
+
+    return 0
+  }
+
+  local disk="$1"
+  local passes="${PASSES:-1}"
+  local block_size=$((1024 * 1024))
+  local size
+
+  __validate_params "$disk" "$passes" || return 1
+
+  size=$(__get_disk_size "$disk") || return 1
+
+  __confirm "$disk" || return 1
+  __unmount "$disk"
+
+  __log_info "Cleaning $disk..."
+  for ((index=1; index <= passes; index++)); do
+    __execute_pass "$disk" "$size" "$block_size" "$index" "$passes" || return 1
+  done
+
+  [ "${CREATE}" = "y" ] && __create_partition "$disk" "$size"
+
+  __eject "$disk"
 }
 
 ################################################################################
 # Sync games library
 ################################################################################
-function __sync_redump() {
+function sync_games() {
+  __sync_redump() {
   local group="Redump"
   local folders=(
     "NEC - PC Engine CD & TurboGrafx CD"
@@ -435,9 +509,9 @@ function __sync_redump() {
   echo ""
   __log_success "$group sync completed ($total collections)"
   echo ""
-}
+  }
 
-function __sync_internet_archive() {
+  __sync_internet_archive() {
   local group="Internet Archive"
   local folders=(
     "desktop_20240424"
@@ -483,9 +557,9 @@ function __sync_internet_archive() {
   echo ""
   __log_success "$group sync completed ($total collections)"
   echo ""
-}
+  }
 
-function __sync_no_intro() {
+  __sync_no_intro() {
   local group="No-Intro"
   local folders=(
     "Bandai - WonderSwan"
@@ -651,9 +725,9 @@ function __sync_no_intro() {
   echo ""
   __log_success "$group sync completed ($total collections)"
   echo ""
-}
+  }
 
-function __sync_ossc() {
+  __sync_ossc() {
   local folder="OSSC"
 
   echo ""
@@ -677,9 +751,8 @@ function __sync_ossc() {
     "./$folder" && __log_success "OSSC firmware sync completed" || __log_warning "OSSC firmware sync failed"
 
   echo ""
-}
+  }
 
-function sync_games() {
   local START_TIME
   START_TIME=$(date +%s)
 

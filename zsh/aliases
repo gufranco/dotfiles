@@ -3,23 +3,16 @@
 ################################################################################
 # General aliases
 ################################################################################
-# Always create parent folders if needed
-command -v mkdir > /dev/null && alias mkdir="command mkdir -p -v"
+__alias_if_exists mkdir mkdir "command mkdir -p -v"
+__alias_if_exists neomutt mutt "command neomutt"
+__alias_if_exists tty-clock tty-clock "command tty-clock -Dcs"
+__alias_if_exists find findf "command find . -type f -name"
+__alias_if_exists find findd "command find . -type d -name"
 
-# Use neomutt when available
-command -v neomutt > /dev/null && alias mutt="command neomutt"
-
-# FZF with bat preview
-command -v fzf > /dev/null && command -v bat > /dev/null && alias fzf="command fzf --preview 'command bat --color=never --style=numbers --line-range=:500 {}'"
-
-# TTY Clock with custom options
-command -v tty-clock > /dev/null && alias tty-clock="command tty-clock -Dcs"
-
-# Find files
-command -v find > /dev/null && alias findf="command find . -type f -name"
-
-# Find directories
-command -v find > /dev/null && alias findd="command find . -type d -name"
+# FZF with bat preview (requires both commands)
+if command -v fzf > /dev/null && command -v bat > /dev/null; then
+  alias fzf="command fzf --preview 'command bat --color=never --style=numbers --line-range=:500 {}'"
+fi
 
 ################################################################################
 # System specific aliases
@@ -27,25 +20,20 @@ command -v find > /dev/null && alias findd="command find . -type d -name"
 case "$(uname)" in
   "Linux")
     # ls aliases
-    if command -v ls > /dev/null; then
-      # Colorized ls
-      alias ls="command ls --color"
-
-      # List all files colorized in long format, excluding . and ..
-      alias la="command ls -lAF --color"
-    fi
+    __alias_if_exists ls ls "command ls --color"
+    __alias_if_exists ls la "command ls -lAF --color"
 
     # Colorized grep
-    command -v grep > /dev/null && alias grep="command grep --color"
+    __alias_if_exists grep grep "command grep --color"
 
     # Find executable files
-    command -v find > /dev/null && alias findx="command find . -type f -executable"
+    __alias_if_exists find findx "command find . -type f -executable"
 
     # Verbose time output
-    command -v time > /dev/null && alias time="command time -v"
+    __alias_if_exists time time "command time -v"
 
     # Show all instances of a command
-    command -v which > /dev/null && alias which="command which -a"
+    __alias_if_exists which which "command which -a"
 
     # Clipboard (macOS-style commands for Linux)
     if command -v xclip > /dev/null; then
@@ -57,59 +45,49 @@ case "$(uname)" in
     fi
 
     # Open files/URLs (macOS-style command for Linux)
-    command -v xdg-open > /dev/null && alias open="command xdg-open"
+    __alias_if_exists xdg-open open "command xdg-open"
 
     # Lock the screen (when going AFK)
-    command -v gnome-screensaver-command > /dev/null || alias afk="command gnome-screensaver-command --lock"
+    __alias_if_exists gnome-screensaver-command afk "command gnome-screensaver-command --lock"
 
     # Browser
-    command -v google-chrome > /dev/null || alias chrome="/opt/google/chrome/google-chrome"
-
+    __alias_if_exists google-chrome chrome "/opt/google/chrome/google-chrome"
     ;;
   "Darwin")
+    # ls aliases (GNU coreutils or BSD fallback)
     if command ls --color > /dev/null 2>&1; then
-      # Colorized ls using GNU coreutils
       alias ls="command ls --color"
-
-      # List all files colorized in long format, excluding . and ..
       alias la="command ls -lAF --color"
     else
-      # Colorized ls using BSD
       alias ls="command ls -G"
-
-      # List all files colorized in long format, excluding . and ..
       alias la="command ls -lAF -G"
     fi
 
-    # Find executable files
+    # Find executable files (GNU findutils or BSD fallback)
     if command find --version > /dev/null 2>&1; then
       alias findx="command find . -type f -executable"
     else
       alias findx="command find . -type f -perm +111"
     fi
 
-    # Verbose time output (GNU only)
-    command time --version > /dev/null 2>&1 && alias time="command time -v"
-
-    # Show all instances of a command (GNU only)
-    command which --version > /dev/null 2>&1 && alias which="command which -a"
-
-    # Colorized grep
+    # Colorized grep (GNU or BSD fallback)
     if command grep --version > /dev/null 2>&1; then
       alias grep="command grep --color"
     else
       alias grep="command grep -G"
     fi
 
-    # macOS has no `md5sum`, so use `md5` as a fallback
-    command -v md5sum > /dev/null || alias md5sum="command md5"
+    # GNU-specific tools (only if GNU versions are available)
+    command time --version > /dev/null 2>&1 && alias time="command time -v"
+    command which --version > /dev/null 2>&1 && alias which="command which -a"
 
-    # macOS has no `sha*sum` commands, so use `shasum` as a fallback
+    # Compatibility aliases for missing macOS commands
+    command -v md5sum > /dev/null || alias md5sum="command md5"
     command -v sha1sum > /dev/null || alias sha1sum="command shasum"
     command -v sha256sum > /dev/null || alias sha256sum="command shasum -a 256"
     command -v sha512sum > /dev/null || alias sha512sum="command shasum -a 512"
 
-    # macOS readlink doesn't support -f flag, use realpath or greadlink
+    # macOS readlink fallback to realpath or greadlink
     if ! readlink -f / >/dev/null 2>&1; then
       if command -v realpath > /dev/null; then
         alias readlink="command realpath"
@@ -118,17 +96,10 @@ case "$(uname)" in
       fi
     fi
 
-    # Use sd (find & replace) instead of sed when available
-    command -v sd > /dev/null && alias sed="command sd"
-
-    # Use broot (better tree) instead of tree when available
-    command -v br > /dev/null && alias tree="command br"
-
-    # Use tokei for code statistics
-    command -v tokei > /dev/null && alias stats="command tokei"
-
-    # Use gping (graphical ping) instead of ping when available
-    command -v gping > /dev/null && alias ping="command gping"
-
+    # Modern tool replacements
+    __alias_if_exists sd sed "command sd"
+    __alias_if_exists br tree "command br"
+    __alias_if_exists tokei stats "command tokei"
+    __alias_if_exists gping ping "command gping"
     ;;
 esac

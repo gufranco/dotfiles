@@ -1,16 +1,17 @@
 # frozen_string_literal: true
 
-# System specs
+################################################################################
+# System specifications
+################################################################################
 architecture = `uname -m`.strip
 cpu = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
 storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824) + 255) / 256) * 256
 
-# Serials
-macbook_retina_12_2017_serial = 'C02TW09THH29'
-macbook_pro_13_mid_2012_serial = 'C02J332HDV30'
-
+################################################################################
+# Homebrew taps
+################################################################################
 tap 'aws/tap'
 tap 'buo/cask-upgrade'
 tap 'neomutt/neomutt'
@@ -19,7 +20,9 @@ tap 'stripe/stripe-cli'
 tap 'UltimateNova1203/maxcso'
 tap 'universal-ctags/universal-ctags'
 
-# Terminal
+################################################################################
+# Homebrew packages
+################################################################################
 brew 'ack'
 brew 'act'
 brew 'asciinema'
@@ -44,7 +47,6 @@ brew 'docker-compose'
 brew 'docker-credential-helper'
 brew 'docker'
 brew 'dust'
-brew 'eza'
 brew 'fastfetch'
 brew 'fatsort'
 brew 'fd'
@@ -131,10 +133,11 @@ brew 'zlib'
 brew 'zsh-syntax-highlighting'
 brew 'zsh'
 
-# Apps
+################################################################################
+# Homebrew casks
+################################################################################
 cask '1password'
 cask '8bitdo-ultimate-software'
-cask 'aldente' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
 cask 'android-studio'
 cask 'arc'
 cask 'balenaetcher'
@@ -164,12 +167,12 @@ cask 'kitty'
 cask 'lastpass'
 cask 'linear-linear'
 cask 'maccy'
+cask 'macs-fan-control' unless /\AApple M[\d]\z/.match?(cpu)
 cask 'maestral'
 cask 'mongodb-compass'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
 cask 'nordvpn'
-cask 'opencore-patcher' if [macbook_retina_12_2017_serial, macbook_pro_13_mid_2012_serial].include?(serial)
 cask 'openlens'
 cask 'parallels' if architecture == 'arm64'
 cask 'postman'
@@ -183,7 +186,9 @@ cask 'tunnelblick'
 cask 'visual-studio-code'
 cask 'vlc'
 
-# Fonts
+################################################################################
+# Homebrew fonts
+################################################################################
 cask 'font-0xproto-nerd-font'
 cask 'font-3270-nerd-font'
 cask 'font-adwaita-mono-nerd-font'
@@ -257,17 +262,37 @@ cask 'font-ubuntu-sans-nerd-font'
 cask 'font-victor-mono-nerd-font'
 cask 'font-zed-mono-nerd-font'
 
+################################################################################
 # App Store - Apps
+################################################################################
 mas 'Xcode', id: 497_799_835
 mas 'Amphetamine', id: 937_984_704
 mas 'Magnet', id: 441_258_766
 
+################################################################################
 # App Store - Games
-mas 'Cyberpunk 2077', id: 6_633_429_424 if architecture == 'arm64' && storage >= 512
-mas 'Death Stranding', id: 6_449_748_961 if architecture == 'arm64' && storage >= 512
-mas 'Resident Evil 2', id: 1_640_632_432 if architecture == 'arm64' && storage >= 512
-mas 'Resident Evil 3', id: 1_640_630_077 if architecture == 'arm64' && storage >= 512
-mas 'Resident Evil 4', id: 6_462_360_082 if architecture == 'arm64' && storage >= 512
-mas 'Resident Evil 7', id: 1_640_629_241 if architecture == 'arm64' && storage >= 512
-mas 'Resident Evil 8', id: 1_640_627_334 if architecture == 'arm64' && storage >= 512
-mas 'Stray', id: 6_451_498_949 if architecture == 'arm64' && storage >= 512
+################################################################################
+if architecture == 'arm64' && storage >= 512
+  mas 'Cyberpunk 2077', id: 6_633_429_424
+  mas 'Death Stranding', id: 6_449_748_961
+  mas 'Resident Evil 2', id: 1_640_632_432
+  mas 'Resident Evil 3', id: 1_640_630_077
+  mas 'Resident Evil 4', id: 6_462_360_082
+  mas 'Resident Evil 7', id: 1_640_629_241
+  mas 'Resident Evil 8', id: 1_640_627_334
+  mas 'Stray', id: 6_451_498_949
+end
+
+################################################################################
+# Unsupported systems
+#
+# Macbook Pro 13 Mid 2012:  C02J332HDV30
+# Macbook Retina 12 2017:   C02TW09THH29
+################################################################################
+if ['C02J332HDV30', 'C02TW09THH29'].include?(serial)
+  ##############################################################################
+  # Homebrew casks
+  ##############################################################################
+  cask 'aldente'
+  cask 'opencore-patcher'
+end

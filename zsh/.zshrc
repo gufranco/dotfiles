@@ -1,27 +1,19 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# Helpers
+# Utilities (must load first - provides helper functions)
 ################################################################################
-source "$HOME/.dotfiles/zsh/helpers"
+source "$HOME/.dotfiles/zsh/utilities"
+
+################################################################################
+# Startup
+################################################################################
+source "$HOME/.dotfiles/zsh/startup"
 
 ################################################################################
 # Paths
 ################################################################################
 source "$HOME/.dotfiles/zsh/paths"
-
-################################################################################
-# Terminal Colors & Tmux
-################################################################################
-# Enable True Color support (24-bit)
-export COLORTERM=truecolor
-
-# Tmux integration
-if [ -z "$TMUX" ] && [ "$TERM_PROGRAM" != "vscode" ]; then
-  tmux new-session -s $$ -d && tmux attach-session -t $$
-elif [ -n "$TMUX" ] && [ "$TERM_PROGRAM" != "kitty" ]; then
-  export TERM="tmux-256color"
-fi
 
 ################################################################################
 # Settings
@@ -44,6 +36,6 @@ source "$HOME/.dotfiles/zsh/aliases"
 source "$HOME/.dotfiles/zsh/functions"
 
 ################################################################################
-# Containers
+# Infrastructure (VMs & Containers)
 ################################################################################
-source "$HOME/.dotfiles/zsh/containers"
+source "$HOME/.dotfiles/zsh/infrastructure"

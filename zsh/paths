@@ -5,141 +5,53 @@
 ################################################################################
 case "$(uname)" in
   "Linux")
-    # Neomutt
-    export PATH="/usr/libexec/neomutt:$PATH"
-
+    __add_to_path "/usr/libexec/neomutt"
     ;;
+
   "Darwin")
+    # Setup Homebrew based on architecture
     case "$(uname -m)" in
-      "arm64")
-        export HOMEBREW_PREFIX="/opt/homebrew";
-        export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
-        export HOMEBREW_REPOSITORY="/opt/homebrew";
-        export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew";
-        export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
-        export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
-        export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
-
-        ;;
-      "x86_64")
-        export HOMEBREW_PREFIX="/usr/local";
-        export HOMEBREW_CELLAR="/usr/local/Cellar";
-        export HOMEBREW_REPOSITORY="/usr/local/Homebrew";
-        export HOMEBREW_SHELLENV_PREFIX="/usr/local";
-        export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}";
-        export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:";
-        export INFOPATH="/usr/local/share/info:${INFOPATH:-}";
-
-        ;;
+      "arm64")  __setup_homebrew "/opt/homebrew" ;;
+      "x86_64") __setup_homebrew "/usr/local" ;;
     esac
 
-    # cURL
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/curl/bin:$PATH"
+    # Homebrew packages
+    __add_gnu_tool "curl"
+    __add_gnu_tool "openssl"
+    __add_gnu_tool "ruby"
 
-    # OpenSSL
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/openssl/bin:$PATH"
-
-    # Ruby (system)
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/ruby/bin:$PATH"
-
-    # NVM
+    # Development environments
     export NVM_DIR="$HOME/.nvm"
-
-    # Pnpm
     export PNPM_HOME="$HOME/Library/pnpm"
-    export PATH="$PNPM_HOME:$PATH"
+    __add_to_path "$PNPM_HOME"
 
-    # Java
     export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@17"
-    export PATH="$JAVA_HOME/bin:$PATH"
+    __add_to_path "$JAVA_HOME/bin"
 
-    # Android SDK
     export ANDROID_HOME="$HOME/Library/Android/sdk"
-    export PATH="$ANDROID_HOME/platform-tools:$PATH"
-    export PATH="$ANDROID_HOME/emulator:$PATH"
+    __add_to_path "$ANDROID_HOME/platform-tools"
+    __add_to_path "$ANDROID_HOME/emulator"
 
-    # GNU Bc
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/bc/bin:$PATH"
-
-    # GNU Coreutils
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin:$PATH"
-
-    # GNU Gawk
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/gawk/libexec/gnubin:$PATH"
-
-    # GNU Sed
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/gnu-sed/libexec/gnubin:$PATH"
-
-    # GNU Findutils
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/findutils/libexec/gnubin:$PATH"
-
-    # GNU Grep
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/grep/libexec/gnubin:$PATH"
-
-    # GNU Binutils
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/binutils/bin:$PATH"
-
-    # GNU Make
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/make/libexec/gnubin:$PATH"
-
-    # GNU Tar
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/gnu-tar/libexec/gnubin:$PATH"
-
-    # GNU Which
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/which/bin:$PATH"
-
-    # GNU Diffutils
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/diffutils/bin:$PATH"
-
-    # GNU Patch
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/patch/bin:$PATH"
-
-    # GNU Time
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/gnu-time/libexec/gnubin:$PATH"
-
-    # GNU Which
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/gnu-which/libexec/gnubin:$PATH"
-
-    # GNU Units
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/gnu-units/bin:$PATH"
-
-    # GNU Indent
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/gnu-indent/libexec/gnubin:$PATH"
-
-    # GNU Inetutils
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/inetutils/libexec/gnubin:$PATH"
-
-    # GNU Mailutils
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/mailutils/bin:$PATH"
-
-    # GNU Moreutils
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/moreutils/bin:$PATH"
-
-    # GNU Patchutils
-    # shellcheck disable=SC2155
-    export PATH="$HOMEBREW_PREFIX/opt/patchutils/bin:$PATH"
-
+    # GNU utilities (replacing BSD versions)
+    __add_gnu_tool "bc"
+    __add_gnu_tool "coreutils" "libexec/gnubin"
+    __add_gnu_tool "gawk" "libexec/gnubin"
+    __add_gnu_tool "gnu-sed" "libexec/gnubin"
+    __add_gnu_tool "findutils" "libexec/gnubin"
+    __add_gnu_tool "grep" "libexec/gnubin"
+    __add_gnu_tool "binutils"
+    __add_gnu_tool "make" "libexec/gnubin"
+    __add_gnu_tool "gnu-tar" "libexec/gnubin"
+    __add_gnu_tool "which"
+    __add_gnu_tool "diffutils"
+    __add_gnu_tool "patch"
+    __add_gnu_tool "gnu-time" "libexec/gnubin"
+    __add_gnu_tool "gnu-which" "libexec/gnubin"
+    __add_gnu_tool "gnu-units"
+    __add_gnu_tool "gnu-indent" "libexec/gnubin"
+    __add_gnu_tool "inetutils" "libexec/gnubin"
+    __add_gnu_tool "mailutils"
+    __add_gnu_tool "moreutils"
+    __add_gnu_tool "patchutils"
     ;;
 esac

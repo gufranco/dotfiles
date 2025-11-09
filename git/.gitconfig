@@ -1,6 +1,5 @@
 ################################################################################
-# User settings
-# Personal identification and GPG signing configuration
+# User
 ################################################################################
 [user]
 	name = Gustavo Franco
@@ -9,8 +8,7 @@
 	signingkey = 8D7317357C473E2F
 
 ################################################################################
-# Core settings
-# Basic Git behavior, performance optimizations and editor configuration
+# Core
 ################################################################################
 [core]
 	excludesfile = ~/.dotfiles/git/.gitignore_global
@@ -25,23 +23,20 @@
 	compression = 1
 
 ################################################################################
-# Init settings
-# Default branch name for new repositories
+# Init
 ################################################################################
 [init]
 	defaultBranch = main
 
 ################################################################################
-# Commit settings
-# GPG signing and commit message template
+# Commit
 ################################################################################
 [commit]
 	gpgsign = true
 	template = ~/.dotfiles/git/.gitmessage
 
 ################################################################################
-# Color settings
-# UI colors for better readability in terminal
+# Color
 ################################################################################
 [color]
 	ui = auto
@@ -63,331 +58,158 @@
 	new = green
 
 ################################################################################
-# Branch settings
-# Automatic rebase setup for new branches
+# Workflow
 ################################################################################
 [branch]
 	autosetuprebase = always
 
-################################################################################
-# Rebase settings
-# Automatic stashing and squashing during rebase
-################################################################################
 [rebase]
 	autoStash = true
 	autoSquash = true
 	quiet = true
 
-################################################################################
-# Rerere settings
-# Reuse recorded resolution of conflicted merges
-################################################################################
 [rerere]
 	enabled = true
 
-################################################################################
-# Pull settings
-# Use rebase instead of merge when pulling
-################################################################################
 [pull]
 	rebase = true
 
-################################################################################
-# Push settings
-# Push tags with commits and GPG signing
-################################################################################
 [push]
 	followTags = true
 	default = current
 	gpgSign = if-asked
 
 ################################################################################
-# Fetch settings
-# Prune deleted remote branches and verify objects
+# Network & Objects
 ################################################################################
 [fetch]
 	prune = true
 	fsckObjects = true
 
-################################################################################
-# Transfer settings
-# Verify objects during network transfers
-################################################################################
 [transfer]
 	fsckObjects = true
 
-################################################################################
-# Receive settings
-# Verify objects when receiving data
-################################################################################
 [receive]
 	fsckObjects = true
 
 ################################################################################
-# Garbage collection settings
-# Automatic cleanup threshold
+# Performance
 ################################################################################
 [gc]
 	auto = 256
 
-################################################################################
-# Pack settings
-# Optimization for repository packing
-################################################################################
 [pack]
 	threads = 0
 	windowMemory = 256m
 
-################################################################################
-# Index settings
-# Index file format version
-################################################################################
 [index]
 	version = 4
 
 ################################################################################
-# Status settings
-# Enhanced status output with submodules and untracked files
+# Display
 ################################################################################
 [status]
 	submoduleSummary = true
 	showUntrackedFiles = all
 
-################################################################################
-# Diff settings
-# Better diff algorithm and visualization
-################################################################################
 [diff]
 	algorithm = histogram
 	colorMoved = default
 	colorMovedWS = allow-indentation-change
 	renames = copies
 
-################################################################################
-# Merge settings
-# Improved conflict resolution and logging
-################################################################################
 [merge]
 	conflictStyle = zdiff3
 	log = true
 
-################################################################################
-# Tag settings
-# GPG signing and semantic versioning sort
-################################################################################
 [tag]
 	gpgSign = true
 	sort = version:refname
 
-################################################################################
-# Log settings
-# ISO date format for better readability
-################################################################################
 [log]
 	date = iso
 
 ################################################################################
-# Submodule settings
-# Automatic recursive operations on submodules
+# Submodules
 ################################################################################
 [submodule]
 	recurse = true
 
 ################################################################################
-# Credential settings
-# Cache credentials for 1 hour to avoid repeated authentication
+# Credential & Help
 ################################################################################
 [credential]
 	helper = cache --timeout=3600
 
-################################################################################
-# Help settings
-# Disable auto-correct to avoid verbose warnings
-################################################################################
 [help]
 	autocorrect = never
 
-################################################################################
-# Advice settings
-# Disable all Git hints and tips for cleaner output
-################################################################################
 [advice]
 	all = false
 
 ################################################################################
 # Aliases
-# Custom shortcuts for common Git operations
 ################################################################################
 [alias]
-	##############################################################################
-	# Status and information
-	##############################################################################
-	# Short status with branch info
+	# Status & Info
 	st = status -sb
-
-	# List all tags
 	tags = tag -l
-
-	# List all branches (local and remote)
 	branches = branch -a
-
-	# List all remotes with URLs
 	remotes = remote -v
-
-	# Show contributors ranked by number of commits
 	contributors = shortlog -sn --all --no-merges
 
-	##############################################################################
 	# Branching
-	##############################################################################
-	# Create and checkout a new branch silently
 	fork = checkout -q -b
-
-	# Short alias for branch
 	br = branch
-
-	# Checkout silently
 	co = checkout -q
 
-	##############################################################################
 	# Committing
-	##############################################################################
-	# Short alias for commit
 	ci = commit
-
-	# Amend last commit without editing message
 	amend = commit --amend --no-edit --quiet
-
-	# Create fixup commit (use with rebase -i --autosquash)
 	fixup = commit --fixup
-
-	# Undo last commit but keep changes staged
 	undo-commit = reset --soft HEAD^
 
-	##############################################################################
 	# Staging
-	##############################################################################
-	# Short alias for add
 	a = add
-
-	# Add all changes (modified, deleted, new files)
 	aa = add --all
-
-	# Remove files from staging area
 	unstage = reset -q HEAD --
-
-	# Discard changes in working directory
 	undo = checkout -q --
 
-	##############################################################################
-	# Pulling and fetching
-	##############################################################################
-	# Sync all branches with remotes (stashes changes, updates all, restores stash)
-	# 1. Auto-stash if there are changes
-	# 2. Fetch from all remotes and prune deleted branches
-	# 3. Update current branch with pull, other branches with fast-forward
-	# 4. Restore stashed changes
-	sync = "!f() { \
-		git diff-index --quiet HEAD -- 2>/dev/null || git stash -q; \
-		git fetch --all --prune -q; \
-		c=$(git symbolic-ref --short HEAD); \
-		git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads | \
-		while read local remote; do \
-			[ -z \"$remote\" ] && continue; \
-			[ \"$local\" = \"$c\" ] && git pull -q || git fetch -q . \"$remote:$local\"; \
-		done 2>/dev/null; \
-		git stash list | grep -q 'stash@{0}' && git stash pop -q 2>/dev/null; \
-	}; f"
-
-	##############################################################################
 	# Pushing
-	##############################################################################
-	# Push current branch and set upstream
 	publish = push -u origin HEAD
-
-	# Force push with lease (safer than --force)
 	force = push --force-with-lease
 
-	##############################################################################
 	# Logging
-	##############################################################################
-	# Pretty log with graph, colors and compact info
 	lg = log --color --graph --decorate --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-
-	# Show last commit
 	last = log -1 --quiet HEAD
-
-	# Show full history of a file with diffs
 	history = log --follow -p --
-
-	# Compact changelog without merge commits
 	changelog = log --oneline --no-merges
 
-	##############################################################################
 	# Diff
-	##############################################################################
-	# Short alias for diff
 	df = diff
-
-	# Diff of staged changes
 	dfs = diff --staged
 
-	##############################################################################
 	# Stash
-	##############################################################################
-	# Save changes to stash
 	save = stash save
-
-	# Apply and remove most recent stash
 	pop = stash pop
 
-	##############################################################################
 	# Cleanup
-	##############################################################################
-	# Delete local branches that have been merged (except main/master/develop)
 	cleanup = !git branch --merged | grep -v '\\*\\|main\\|master\\|develop' | xargs -n 1 git branch -d
-
-	# Prune remote branches and aggressive garbage collection
 	prune-all = !git remote prune origin && git gc --aggressive --prune=now
 
-	##############################################################################
 	# Search
-	##############################################################################
-	# Search for text in commit history
 	find = log --all --oneline --graph --decorate -S
-
-	# Advanced search in entire history with source
 	grep-history = log --all --source --full-history -S
 
-	##############################################################################
-	# Information
-	##############################################################################
-	# List contributors sorted by commit count
+	# Info
 	committers = !git log --quiet | grep Author | sort | uniq -c | sort -n -r
-
-	# Show contributors with emails
 	who = shortlog -sne
-
-	# Rank contributors by commits (no merges)
 	rank = shortlog -sn --no-merges
 
-	##############################################################################
-	# Misc
-	##############################################################################
-	# Ignore changes to a tracked file locally
+	# Track/Untrack
 	ignore = update-index --assume-unchanged
-
-	# Stop ignoring changes to a file
 	unignore = update-index --no-assume-unchanged
-
-	# List files being ignored locally
 	ignored = !git ls-files -v | grep '^[[:lower:]]'
-
-	# Alias for ignore (assume file hasn't changed)
 	assume = update-index --assume-unchanged
-
-	# Alias for unignore
 	unassume = update-index --no-assume-unchanged
-
-	# Alias for ignored (list assumed files)
 	assumed = !git ls-files -v | grep '^[[:lower:]]'

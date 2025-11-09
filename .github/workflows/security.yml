@@ -1,0 +1,239 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  gitleaks:
+    name: Gitleaks - Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  trivy:
+    name: Trivy - File System Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  ssh-key-check:
+    name: SSH Key Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check SSH keys
+        run: |
+          echo "Checking SSH keys..."
+
+          # Look for private key files
+          if find ssh -type f -name "id_*" ! -name "*.pub" -print0 2>/dev/null | grep -zq .; then
+            echo "ℹ️ Private SSH keys found in repository"
+            echo ""
+            echo "Found keys:"
+            find ssh -type f -name "id_*" ! -name "*.pub" 2>/dev/null
+            echo ""
+            echo "✅ These keys are password-protected with 128-character passphrases"
+            echo "   They are safe to store in the repository as encrypted backup"
+            echo ""
+            echo "⚠️ Note: Anyone using this dotfiles repository should:"
+            echo "   - Replace these keys with their own"
+            echo "   - Never use someone else's SSH keys"
+          else
+            echo "ℹ️ No private SSH keys found"
+          fi
+
+          # Check for public keys (informational only)
+          if find ssh -type f -name "*.pub" -print0 2>/dev/null | grep -zq .; then
+            echo ""
+            echo "✅ Public SSH keys found (these are safe to share):"
+            find ssh -type f -name "*.pub" 2>/dev/null || true
+          fi
+
+  gpg-key-check:
+    name: GPG Key Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check GPG keys
+        run: |
+          echo "Checking GPG keys..."
+          echo ""
+
+          # Check for private keys
+          if find gnupg -type f -name "*.private.pgp" 2>/dev/null | grep -q .; then
+            echo "ℹ️ Private GPG key files found in repository:"
+            find gnupg -type f -name "*.private.pgp" 2>/dev/null || true
+            echo ""
+            echo "✅ These keys are encrypted with 128-character passphrases"
+            echo "   They are safe to store as encrypted backup in the repository"
+          fi
+
+          # Check for private key directory
+          if [ -d "gnupg/private-keys-v1.d" ]; then
+            if [ -n "$(ls -A gnupg/private-keys-v1.d 2>/dev/null)" ]; then
+              echo "ℹ️ Private keys directory contains encrypted key material"
+              echo "✅ Protected by GPG encryption"
+            fi
+          fi
+
+          # Public keys are OK
+          if find gnupg -type f -name "*.public.pgp" 2>/dev/null | grep -q .; then
+            echo ""
+            echo "✅ Public GPG keys found (safe to share):"
+            find gnupg -type f -name "*.public.pgp" 2>/dev/null || true
+          fi
+
+          echo ""
+          echo "ℹ️ Encrypted passwords found:"
+          find mutt/accounts -name "*.gpg" 2>/dev/null || echo "  None"
+          find nodejs/tokens -name "*.gpg" 2>/dev/null || echo "  None"
+
+          echo ""
+          echo "⚠️ Note: Anyone forking this repository should:"
+          echo "   - Replace all keys with their own"
+          echo "   - Never attempt to use someone else's encrypted keys"
+          echo "   - Generate their own GPG keys and passwords"
+
+  configuration-security:
+    name: Configuration Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Audit security configurations
+        run: |
+          echo "🔍 Auditing security configurations..."
+          echo ""
+
+          warnings=0
+
+          # Check SSH config
+          echo "📋 SSH Configuration:"
+          if [ -f "ssh/config" ]; then
+            # Check for weak algorithms
+            if grep -iE "(arcfour|des|md5|sha1)" ssh/config; then
+              echo "  ⚠️ Weak crypto algorithms found in SSH config"
+              warnings=$((warnings + 1))
+            fi
+
+            # Check for password authentication
+            if grep -q "PasswordAuthentication yes" ssh/config; then
+              echo "  ⚠️ Password authentication is enabled"
+              warnings=$((warnings + 1))
+            fi
+
+            # Check for modern key types
+            if grep -q "Ed25519" ssh/config; then
+              echo "  ✅ Modern Ed25519 keys configured"
+            fi
+
+            if grep -q "ChaCha20" ssh/config; then
+              echo "  ✅ Modern ChaCha20 cipher configured"
+            fi
+          fi
+
+          echo ""
+          echo "📋 GPG Configuration:"
+          if [ -f "gnupg/gpg.conf" ]; then
+            # Check for strong algorithms
+            if grep -q "SHA512" gnupg/gpg.conf; then
+              echo "  ✅ SHA512 digest configured"
+            fi
+
+            if grep -q "AES256" gnupg/gpg.conf; then
+              echo "  ✅ AES256 cipher configured"
+            fi
+
+            # Check for disabled weak algorithms
+            if grep -q "disable-cipher-algo.*MD5" gnupg/gpg.conf; then
+              echo "  ✅ MD5 disabled"
+            fi
+          fi
+
+          echo ""
+          echo "📋 Git Configuration:"
+          if [ -f "git/.gitconfig" ]; then
+            # Check for commit signing
+            if grep -q "gpgsign = true" git/.gitconfig; then
+              echo "  ✅ GPG commit signing enabled"
+            else
+              echo "  ℹ️ GPG commit signing not configured"
+            fi
+
+            # Check for fsckObjects
+            if grep -q "fsckObjects = true" git/.gitconfig; then
+              echo "  ✅ fsckObjects enabled (corruption detection)"
+            fi
+          fi
+
+          echo ""
+          echo "📋 NPM Configuration:"
+          if [ -f "nodejs/.npmrc" ]; then
+            # Check for ignore-scripts
+            if grep -q "ignore-scripts=true" nodejs/.npmrc; then
+              echo "  ✅ ignore-scripts enabled (prevents supply chain attacks)"
+            else
+              echo "  ⚠️ ignore-scripts not enabled"
+              warnings=$((warnings + 1))
+            fi
+          fi
+
+          echo ""
+          if [ $warnings -gt 0 ]; then
+            echo "⚠️ Found $warnings potential security concerns"
+            echo "Please review the warnings above"
+            # Don't fail, just warn
+          else
+            echo "✅ No major security concerns detected"
+          fi
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+

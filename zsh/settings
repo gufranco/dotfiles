@@ -31,6 +31,12 @@ export HISTIGNORE="cd:ls:[bf]g:clear:exit"
 export LANG=pt_BR.UTF-8
 
 ################################################################################
+# Terminal
+################################################################################
+# Enable True Color support (24-bit)
+export COLORTERM=truecolor
+
+################################################################################
 # Oh-my-zsh
 ################################################################################
 export ZSH="$HOME/.oh-my-zsh"
@@ -69,69 +75,13 @@ elif [ -d "$NVM_DIR/versions/node" ]; then
 fi
 
 # Create stub functions that trigger NVM loading on first use
-nvm() {
-  __load_nvm
-  nvm "$@"
-}
-
-node() {
-  __load_nvm
-  node "$@"
-}
-
-npm() {
-  __load_nvm
-  npm "$@"
-}
-
-npx() {
-  __load_nvm
-  npx "$@"
-}
-
-yarn() {
-  __load_nvm
-  yarn "$@"
-}
-
-pnpm() {
-  __load_nvm
-  pnpm "$@"
-}
+__create_lazy_stubs __load_nvm nvm node npm npx yarn pnpm
 
 ################################################################################
 # Chruby (lazy loading)
 ################################################################################
 # Create stub functions that trigger Chruby loading on first use
-chruby() {
-  __load_chruby
-  chruby "$@"
-}
-
-ruby() {
-  __load_chruby
-  ruby "$@"
-}
-
-gem() {
-  __load_chruby
-  gem "$@"
-}
-
-bundle() {
-  __load_chruby
-  bundle "$@"
-}
-
-rake() {
-  __load_chruby
-  rake "$@"
-}
-
-rails() {
-  __load_chruby
-  rails "$@"
-}
+__create_lazy_stubs __load_chruby chruby ruby gem bundle rake rails
 
 ################################################################################
 # NPM

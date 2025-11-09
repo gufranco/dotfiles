@@ -1,56 +1,30 @@
 ################################################################################
-# Security settings
+# Security
 ################################################################################
-# Disable automatic login for security
 set autologin off
-
-# Disable echo of passwords and sensitive data
 set echo off
-
-# Disable automatic character conversion for security
 set binary off
-
-# Enable line mode for better security and control
 set line on
-
-# Disable telnet escape character (Ctrl+]) for security
 set escape off
-
-# Disable automatic flush to prevent data leakage
 set flush off
 
 ################################################################################
-# Connection settings
+# Connection
 ################################################################################
-# Set connection timeout (in seconds)
 set timeout 30
 
 ################################################################################
-# Terminal settings
+# Terminal
 ################################################################################
-# Set terminal type for compatibility
 set term vt100
-
-# Set window size (columns x rows)
 set window 80 24
-
-# Enable terminal capabilities
 set termcap on
-
-# Set terminal speed
 set speed 9600
 
 ################################################################################
-# Input/Output settings
+# Input/Output
 ################################################################################
-# Enable local echo for better control
 set localecho on
-
-# Set input mode to character mode for security
 set inputmode char
-
-# Disable automatic CR/LF conversion
 set crlf off
-
-# Enable case sensitivity
 set case on

@@ -556,6 +556,12 @@ safe_link "$HOME/.dotfiles/bat/themes" "$HOME/.config/bat/themes"
 cmd_exists bat && bat cache --build >/dev/null 2>&1 || true
 
 ############################################################################
+# cmus
+############################################################################
+log_info "Setting up cmus..."
+safe_link "$HOME/.dotfiles/cmus/rc" "$HOME/.config/cmus/rc"
+
+############################################################################
 # Cleanup
 ############################################################################
 log_info "Cleaning up..."

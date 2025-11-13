@@ -213,3 +213,12 @@
 	assume = update-index --assume-unchanged
 	unassume = update-index --no-assume-unchanged
 	assumed = !git ls-files -v | grep '^[[:lower:]]'
+
+################################################################################
+# Conditional Includes
+################################################################################
+[includeIf "gitdir/i:**/onyxodds/"]
+	path = ~/.dotfiles/git/.gitconfig-onyx
+
+[includeIf "gitdir/i:**/onyx odds/"]
+	path = ~/.dotfiles/git/.gitconfig-onyx

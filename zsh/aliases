@@ -77,6 +77,10 @@ case "$(uname)" in
       alias grep="command grep -G"
     fi
 
+    # Multiple Cursor profiles
+    __alias_if_exists cursor cursor-coperniq "command cursor --user-data-dir=$HOME/.cursor-coperniq --extensions-dir=$HOME/.cursor-coperniq/extensions"
+    __alias_if_exists cursor cursor-onyx "command cursor --user-data-dir=$HOME/.cursor-onyx --extensions-dir=$HOME/.cursor-onyx/extensions"
+
     # GNU-specific tools (only if GNU versions are available)
     command time --version > /dev/null 2>&1 && alias time="command time -v"
     command which --version > /dev/null 2>&1 && alias which="command which -a"

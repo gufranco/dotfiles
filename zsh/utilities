@@ -104,7 +104,7 @@ function __git_sync() {
 ################################################################################
 function __calculate_vm_cores() {
   # Percentage of total CPU cores to allocate
-  local percentage=25
+  local percentage=50
   # Minimum number of CPU cores to allocate
   local minimum=2
   # Maximum number of CPU cores to allocate
@@ -160,7 +160,7 @@ function __calculate_vm_memory() {
   # Minimum memory to allocate (in GiB)
   local minimum=2
   # Maximum memory to allocate (in GiB)
-  local maximum=16
+  local maximum=8
   # Total memory (in GiB)
   local total
 

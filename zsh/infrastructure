@@ -6,12 +6,42 @@
 function colima-start() {
   __ensure_docker_compose_plugin
 
-  local profile="${1:-default}"
-  local cores="$(__calculate_vm_cores)"
-  local memory="$(__calculate_vm_memory)"
-  local storage="$(__calculate_vm_storage)"
+  local profile="default"
+  local cores=""
+  local memory=""
+  local storage=""
   local os_type="$(uname -s)"
   local arch="$(uname -m)"
+
+  # Parse arguments: first non-flag argument is the profile, then optional flags
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --cores)
+        cores="$2"
+        shift 2
+        ;;
+      --memory)
+        memory="$2"
+        shift 2
+        ;;
+      --storage)
+        storage="$2"
+        shift 2
+        ;;
+      *)
+        # First non-flag argument is the profile
+        if [[ "$profile" == "default" && "$1" != "--"* ]]; then
+          profile="$1"
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  # Use provided values or calculate defaults
+  cores="${cores:-$(__calculate_vm_cores)}"
+  memory="${memory:-$(__calculate_vm_memory)}"
+  storage="${storage:-$(__calculate_vm_storage)}"
 
   __confirm_colima_config "$profile" "$cores" "$memory" "$storage" "$os_type" "$arch" || return 1
   __show_header "Colima VM" "Starting"

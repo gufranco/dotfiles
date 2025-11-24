@@ -44,8 +44,7 @@ export ZSH_THEME="spaceship"
 export DISABLE_AUTO_UPDATE="true"
 export HIST_STAMPS="dd/mm/yyyy"
 
-# SSH Agent plugin configuration (for non-standard key names)
-zstyle :omz:plugins:ssh-agent identities id_ed25519_personal id_ed25519_onyx id_rsa_personal
+zstyle :omz:plugins:ssh-agent identities id_rsa_personal id_ed25519_personal id_ed25519_onyx
 
 export plugins=(
   gpg-agent

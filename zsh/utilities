@@ -356,8 +356,6 @@ function __load_nvm() {
   source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
   # shellcheck disable=SC1091
   [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && source "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
-
-  __log_success "NVM loaded"
 }
 
 function __update_npm_token() {
@@ -365,23 +363,22 @@ function __update_npm_token() {
   # shellcheck disable=SC2155
   export NPM_TOKEN_CACHE_FILE="/tmp/npm_token_$(whoami).cache"
 
-  # Force update or check if cache file exists and is not older than 24 hours
-  if [ "$force" = "true" ] || [ ! -f "$NPM_TOKEN_CACHE_FILE" ] || [ "$(find "$NPM_TOKEN_CACHE_FILE" -mtime +1 2>/dev/null)" ]; then
-    if [ ! -f "$HOME/.dotfiles/nodejs/tokens/classic.gpg" ]; then
-      return
-    fi
-
-    if gpg --quiet --batch --yes -d "$HOME/.dotfiles/nodejs/tokens/classic.gpg" 2>/dev/null | tr -d '\n' > "$NPM_TOKEN_CACHE_FILE"; then
-      chmod 600 "$NPM_TOKEN_CACHE_FILE" 2>/dev/null
-    else
-      return 1
-    fi
+  # If cache exists and not forcing, load from cache
+  if [ "$force" != "true" ] && [ -f "$NPM_TOKEN_CACHE_FILE" ]; then
+    local token_content
+    token_content="$(cat "$NPM_TOKEN_CACHE_FILE" 2>/dev/null | tr -d '\n')"
+    export NPM_TOKEN="$token_content"
+    return
   fi
 
-  # Export token if cache file exists
-  if [ -f "$NPM_TOKEN_CACHE_FILE" ]; then
-    # shellcheck disable=SC2155
-    export NPM_TOKEN="$(cat "$NPM_TOKEN_CACHE_FILE")"
+  # Decrypt and save to cache
+  if [ -f "$HOME/.dotfiles/nodejs/tokens/classic.gpg" ]; then
+    if gpg --quiet --batch --yes -d "$HOME/.dotfiles/nodejs/tokens/classic.gpg" 2>/dev/null | tr -d '\n' > "$NPM_TOKEN_CACHE_FILE"; then
+      chmod 600 "$NPM_TOKEN_CACHE_FILE" 2>/dev/null
+      local token_content
+      token_content="$(cat "$NPM_TOKEN_CACHE_FILE" 2>/dev/null | tr -d '\n')"
+      export NPM_TOKEN="$token_content"
+    fi
   fi
 }
 
@@ -394,7 +391,6 @@ function __load_chruby() {
     return
   fi
 
-  # Remove stub functions if they exist
   unset -f chruby 2>/dev/null
   unset -f ruby 2>/dev/null
   unset -f gem 2>/dev/null
@@ -402,7 +398,6 @@ function __load_chruby() {
   unset -f rake 2>/dev/null
   unset -f rails 2>/dev/null
 
-  # Load Chruby
   # shellcheck disable=SC1091
   source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
   # shellcheck disable=SC1091

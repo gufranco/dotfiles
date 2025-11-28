@@ -18,7 +18,10 @@ case "$(uname)" in
     # Homebrew packages
     __add_gnu_tool "curl"
     __add_gnu_tool "openssl"
+
+    # Ruby
     __add_gnu_tool "ruby"
+    # __add_to_path "$HOMEBREW_PREFIX/lib/ruby/gems/3.4.0/bin"
 
     # Development environments
     export NVM_DIR="$HOME/.nvm"

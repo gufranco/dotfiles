@@ -169,6 +169,22 @@ nmap <Leader>s :source $MYVIMRC<CR>
 nmap <Leader>v :edit $MYVIMRC<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Terminal & Colors
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Enable true color support (24-bit colors)
+if has('termguicolors')
+  set termguicolors
+endif
+
+" Enable 256 colors
+if &term =~# '^screen' || &term =~# '^tmux'
+  let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+  let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
+
+  set termguicolors
+endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Theme / GUI
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 try

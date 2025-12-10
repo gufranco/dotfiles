@@ -86,10 +86,35 @@ __create_lazy_stubs __load_nvm nvm node npm npx yarn pnpm
 __create_lazy_stubs __load_chruby chruby ruby gem bundle rake rails
 
 ################################################################################
-# NPM
+# NPM Token
 ################################################################################
 if [ -z "$NPM_TOKEN" ]; then
-  __update_npm_token
+  if __update_npm_token; then
+    # Verify token was loaded successfully (double-check)
+    if [ -z "${NPM_TOKEN:-}" ]; then
+      # Token loading failed silently, ensure it's unset
+      unset NPM_TOKEN
+    fi
+  else
+    # Function returned error, ensure NPM_TOKEN is unset
+    unset NPM_TOKEN 2>/dev/null || true
+  fi
+fi
+
+################################################################################
+# GitHub Token
+################################################################################
+if [ -z "$GITHUB_PAT" ]; then
+  if __update_github_token; then
+    # Verify token was loaded successfully (double-check)
+    if [ -z "${GITHUB_PAT:-}" ]; then
+      # Token loading failed silently, ensure it's unset
+      unset GITHUB_PAT
+    fi
+  else
+    # Function returned error, ensure GITHUB_PAT is unset
+    unset GITHUB_PAT 2>/dev/null || true
+  fi
 fi
 
 ################################################################################

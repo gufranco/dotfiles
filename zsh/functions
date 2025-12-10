@@ -4,15 +4,6 @@
 # Update and upgrade everything
 ################################################################################
 function f5() {
-  __run_cmd() {
-    if [ "$DEBUG" = "1" ]; then
-      NO_COLOR="" FORCE_COLOR=1 CLICOLOR=1 CLICOLOR_FORCE=1 \
-        HOMEBREW_QUIET="" "$@"
-    else
-      "$@" >/dev/null 2>&1
-    fi
-  }
-
   __update_git_repo() {
     local repo_dir="$1"
     local quiet_flag=""
@@ -52,7 +43,7 @@ function f5() {
     fi
 
     __log_info "Updating Vim plugins..."
-    if __run_cmd vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall; then
+    if vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall; then
       __log_success "Vim plugins updated"
     else
       __log_warning "Failed to update Vim plugins"
@@ -98,9 +89,9 @@ function f5() {
     __log_info "Updating Node.js LTS..."
     type __load_nvm >/dev/null 2>&1 && __load_nvm
 
-    if __run_cmd nvm install --lts && \
-       __run_cmd nvm use --lts && \
-       __run_cmd nvm alias default "lts/*"; then
+    if nvm install --lts && \
+       nvm use --lts && \
+       nvm alias default "lts/*"; then
       __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
     else
       __log_warning "Failed to update Node.js LTS"
@@ -137,24 +128,24 @@ function f5() {
   __update_macos() {
     __log_info "Updating macOS packages..."
 
-    if __run_cmd brew update; then
-      __run_cmd brew bundle --file "$HOME/.dotfiles/Brewfile" || __log_warning "Brewfile sync failed"
-      __run_cmd brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
-      __run_cmd brew upgrade || __log_warning "Brew upgrade failed"
-      __run_cmd brew cu --all --yes --cleanup || true
-      __run_cmd brew cleanup -s || true
+    if brew update; then
+      brew bundle --file "$HOME/.dotfiles/Brewfile" || __log_warning "Brewfile sync failed"
+      brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
+      brew upgrade || __log_warning "Brew upgrade failed"
+      brew cu --all --yes --cleanup || true
+      brew cleanup -s || true
     else
       __log_warning "Brew update failed"
     fi
 
     if __cmd_exists mas; then
-      __run_cmd mas upgrade && __log_success "Mac App Store apps updated"
+      mas upgrade && __log_success "Mac App Store apps updated"
     fi
 
     if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
       __log_info "Cleaning Launchpad cache..."
-      if __run_cmd sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
-        __run_cmd killall Dock || true
+      if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
+        killall Dock || true
         __log_success "Launchpad cache cleaned"
       fi
     fi
@@ -166,7 +157,7 @@ function f5() {
     __log_info "Reloading configurations..."
 
     if __cmd_exists tmux && [ -n "$TMUX" ]; then
-      if __run_cmd tmux source-file ~/.tmux.conf; then
+      if tmux source-file ~/.tmux.conf; then
         __log_success "Tmux config reloaded"
       else
         __log_warning "Tmux reload failed"
@@ -176,7 +167,7 @@ function f5() {
     fi
 
     # shellcheck disable=SC1091
-    if __run_cmd source "$HOME/.zshrc"; then
+    if source "$HOME/.zshrc"; then
       __log_success "Zsh config reloaded"
     else
       __log_warning "Zsh reload failed"

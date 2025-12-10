@@ -133,10 +133,22 @@ function docker-purge() {
   # shellcheck disable=SC2155
   local context="$([[ "${profile}" = "default" ]] && echo "colima" || echo "colima-${profile}")"
 
-  DOCKER_CONTEXT="${context}" command docker stop "$(DOCKER_CONTEXT="${context}" command docker ps -aq)" 2>/dev/null || true
+  # Stop all containers (only if there are any)
+  container_ids="$(DOCKER_CONTEXT="${context}" command docker ps -aq 2>/dev/null)"
+  if [ -n "$container_ids" ]; then
+    DOCKER_CONTEXT="${context}" command docker stop $container_ids 2>/dev/null || true
+  fi
+
   DOCKER_CONTEXT="${context}" command docker system prune -af --volumes --filter "label!=keep" 2>/dev/null || true
   DOCKER_CONTEXT="${context}" command docker builder prune -af 2>/dev/null || true
-  DOCKER_CONTEXT="${context}" command docker images -q | xargs -r docker rmi -f 2>/dev/null || true
+
+  # Remove all images (only if there are any, POSIX-compatible)
+  image_ids="$(DOCKER_CONTEXT="${context}" command docker images -q 2>/dev/null)"
+  if [ -n "$image_ids" ]; then
+    echo "$image_ids" | while IFS= read -r image_id; do
+      [ -n "$image_id" ] && DOCKER_CONTEXT="${context}" command docker rmi -f "$image_id" 2>/dev/null || true
+    done
+  fi
 }
 
 ################################################################################

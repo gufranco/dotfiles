@@ -335,7 +335,7 @@ function __create_lazy_stubs() {
 }
 
 ################################################################################
-# Node.js / NPM helpers
+# NVM helpers
 ################################################################################
 function __load_nvm() {
   if [ ! -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ]; then
@@ -358,28 +358,82 @@ function __load_nvm() {
   [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && source "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
 }
 
-function __update_npm_token() {
+################################################################################
+# Tokens helpers
+################################################################################
+function __update_token() {
   local force="${1:-false}"
-  # shellcheck disable=SC2155
-  export NPM_TOKEN_CACHE_FILE="/tmp/npm_token_$(whoami).cache"
+  local env_var_name="$2"
+  local gpg_file="$3"
+  local cache_file_name="$4"
 
-  # If cache exists and not forcing, load from cache
-  if [ "$force" != "true" ] && [ -f "$NPM_TOKEN_CACHE_FILE" ]; then
-    local token_content
-    token_content="$(cat "$NPM_TOKEN_CACHE_FILE" 2>/dev/null | tr -d '\n')"
-    export NPM_TOKEN="$token_content"
-    return
+  # Validate parameters
+  if [ -z "$env_var_name" ] || [ -z "$gpg_file" ] || [ -z "$cache_file_name" ]; then
+    return 1
   fi
 
-  # Decrypt and save to cache
-  if [ -f "$HOME/.dotfiles/nodejs/tokens/classic.gpg" ]; then
-    if gpg --quiet --batch --yes -d "$HOME/.dotfiles/nodejs/tokens/classic.gpg" 2>/dev/null | tr -d '\n' > "$NPM_TOKEN_CACHE_FILE"; then
-      chmod 600 "$NPM_TOKEN_CACHE_FILE" 2>/dev/null
-      local token_content
-      token_content="$(cat "$NPM_TOKEN_CACHE_FILE" 2>/dev/null | tr -d '\n')"
-      export NPM_TOKEN="$token_content"
+  # shellcheck disable=SC2155
+  local cache_file="/tmp/${cache_file_name}_$(whoami).cache"
+  local token_content
+
+  # Try to load from cache first (unless force is true)
+  if [ "$force" != "true" ] && [ -f "$cache_file" ]; then
+    token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
+    # Validate that token is not empty
+    if [ -n "$token_content" ]; then
+      export "${env_var_name}"="$token_content"
+      return 0
+    else
+      # Cache file exists but is empty, remove it and try to reload
+      rm -f "$cache_file" 2>/dev/null
     fi
   fi
+
+  # Check if GPG is available
+  if ! command -v gpg >/dev/null 2>&1; then
+    return 1
+  fi
+
+  # Check if GPG file exists
+  if [ ! -f "$gpg_file" ]; then
+    return 1
+  fi
+
+  # Decrypt GPG file and save to cache
+  if ! gpg --quiet --batch --yes -d "$gpg_file" 2>/dev/null | tr -d '\n' > "$cache_file"; then
+    # GPG decryption failed, remove invalid cache file
+    rm -f "$cache_file" 2>/dev/null
+    return 1
+  fi
+
+  # Set proper permissions on cache file
+  chmod 600 "$cache_file" 2>/dev/null
+
+  # Read token from cache and validate
+  token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
+  if [ -z "$token_content" ]; then
+    # Token is empty, remove invalid cache file
+    rm -f "$cache_file" 2>/dev/null
+    return 1
+  fi
+
+  # Export token
+  export "${env_var_name}"="$token_content"
+  return 0
+}
+
+function __update_npm_token() {
+  __update_token "${1:-false}" \
+    "NPM_TOKEN" \
+    "$HOME/.dotfiles/nodejs/tokens/npm.gpg" \
+    "npm_token"
+}
+
+function __update_github_token() {
+  __update_token "${1:-false}" \
+    "GITHUB_PAT" \
+    "$HOME/.dotfiles/git/tokens/github.gpg" \
+    "github_token"
 }
 
 ################################################################################

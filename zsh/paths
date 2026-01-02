@@ -17,6 +17,7 @@ case "$(uname)" in
 
     # Homebrew packages
     __add_gnu_tool "curl"
+    __add_gnu_tool "libpq"
     __add_gnu_tool "openssl"
 
     # Ruby

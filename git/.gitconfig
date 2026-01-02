@@ -13,7 +13,7 @@
 [core]
 	excludesfile = ~/.dotfiles/git/.gitignore_global
 	autocrlf = input
-	pager = less -FRSX
+  pager = delta
 	whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
 	editor = vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd' -c 'syntax on' -c 'filetype on'
 	preloadindex = true
@@ -106,6 +106,16 @@
 	version = 4
 
 ################################################################################
+# Background Maintenance
+################################################################################
+[maintenance]
+	auto = true
+	strategy = incremental
+
+[feature]
+	manyFiles = true
+
+################################################################################
 # Display
 ################################################################################
 [status]
@@ -128,6 +138,28 @@
 
 [log]
 	date = iso
+
+################################################################################
+# Delta (diff pager)
+################################################################################
+[interactive]
+  diffFilter = delta --color-only
+
+[delta]
+  navigate = true
+  line-numbers = true
+  side-by-side = false
+  syntax-theme = tokyonight_night
+  dark = true
+  hyperlinks = true
+  file-style = bold yellow ul
+  file-decoration-style = yellow ul
+  hunk-header-style = file line-number syntax
+  hunk-header-decoration-style = blue box
+  minus-style = syntax "#3a273a"
+  minus-emph-style = syntax "#6b2e43"
+  plus-style = syntax "#273849"
+  plus-emph-style = syntax "#305f6f"
 
 ################################################################################
 # Submodules
@@ -181,7 +213,7 @@
 
 	# Logging
 	lg = log --color --graph --decorate --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-	last = log -1 --quiet HEAD
+  last = log -1 HEAD
 	history = log --follow -p --
 	changelog = log --oneline --no-merges
 

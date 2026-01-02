@@ -23,7 +23,7 @@ call plug#begin()
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug 'tpope/vim-sensible'
 Plug 'rstacruz/vim-opinion'
-Plug 'tmux-plugins/vim-tmux-focus-events'
+" Plug 'tmux-plugins/vim-tmux-focus-events'  " DISABLED: Already integrated in Vim 8.2+
 Plug 'tmux-plugins/vim-tmux'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -42,7 +42,7 @@ Plug 'ryanoasis/vim-devicons'
 Plug 'simeji/winresizer', { 'on': 'WinResizerStartResize' }
 Plug 'thaerkh/vim-indentguides'
 Plug 'vim-scripts/CursorLineCurrentWindow'
-Plug 'vim-scripts/ZoomWin', { 'on': 'ZoomWin' }
+" Plug 'vim-scripts/ZoomWin', { 'on': 'ZoomWin' }  " DISABLED: Abandoned since 2014
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Languages support
@@ -63,7 +63,7 @@ Plug 'tpope/vim-fugitive'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Editing
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-Plug 'roxma/vim-paste-easy'
+" Plug 'roxma/vim-paste-easy'  " DISABLED: Duplicate functionality with vim-pasta
 Plug 'sickill/vim-pasta'
 Plug 'mg979/vim-visual-multi', { 'branch': 'master' }
 Plug 'tpope/vim-commentary'
@@ -73,7 +73,7 @@ Plug 'tpope/vim-surround'
 " Clipboard
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug 'svermeulen/vim-easyclip'
-Plug 'Shougo/denite.nvim'
+" Plug 'Shougo/denite.nvim'  " DISABLED: Using ctrlp.vim instead
 Plug 'Shougo/neoyank.vim'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -85,7 +85,7 @@ Plug 'editorconfig/editorconfig-vim'
 Plug 'ervandew/supertab'
 Plug 'liuchengxu/vim-which-key', { 'on': ['WhichKey', 'WhichKey!'] }
 Plug 'ntpeters/vim-better-whitespace'
-Plug 'tmhedberg/matchit'
+" Plug 'tmhedberg/matchit'  " DISABLED: Already included in Vim 8+
 Plug 'tpope/vim-repeat'
 
 call plug#end()
@@ -327,11 +327,6 @@ else
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Vim Multiple Cursors
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:multi_cursor_quit_key = '<Esc>'
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " EasyMotion
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:EasyMotion_do_mapping = 0
@@ -347,11 +342,6 @@ let g:EasyClipAlwaysMoveCursorToEndOfPaste = 1
 " WinResizer
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map <leader>r :WinResizerStartResize<CR>
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" ZoomWin
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <leader>z :ZoomWin<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Supertab

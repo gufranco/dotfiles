@@ -518,7 +518,8 @@ function __git_clone_or_update() {
 # Path management helpers
 ################################################################################
 function __add_to_path() {
-  export PATH="$1:$PATH"
+  # Only add if not already in PATH (prevents duplicates in subshells)
+  [[ ":$PATH:" != *":$1:"* ]] && export PATH="$1:$PATH"
 }
 
 function __add_gnu_tool() {
@@ -729,4 +730,194 @@ function __vm_start() {
     --env BUILDKIT_INLINE_CACHE=1 \
     \
     "$@"
+}
+
+################################################################################
+# F5 Update helpers
+################################################################################
+function __f5_update_git_repo() {
+  local repo_dir="$1"
+  local quiet_flag=""
+
+  [ "$DEBUG" != "1" ] && quiet_flag="--quiet"
+
+  if [ "$DEBUG" = "1" ]; then
+    NO_COLOR="" FORCE_COLOR=1 CLICOLOR=1 CLICOLOR_FORCE=1 \
+      git -C "$repo_dir" pull && \
+    NO_COLOR="" FORCE_COLOR=1 CLICOLOR=1 CLICOLOR_FORCE=1 \
+      git -C "$repo_dir" fetch --prune
+  else
+    git -C "$repo_dir" pull $quiet_flag >/dev/null 2>&1 && \
+    git -C "$repo_dir" fetch --prune $quiet_flag >/dev/null 2>&1
+  fi
+}
+
+function __f5_update_dotfiles() {
+  __log_info "Updating dotfiles..."
+
+  if [ ! -d "$HOME/.dotfiles/.git" ]; then
+    __log_skip "Dotfiles not a git repository"
+    return
+  fi
+
+  if __f5_update_git_repo "$HOME/.dotfiles"; then
+    __log_success "Dotfiles updated"
+  else
+    __log_warning "Failed to update dotfiles"
+  fi
+}
+
+function __f5_update_vim() {
+  if ! __cmd_exists vim; then
+    __log_skip "Vim not installed"
+    return
+  fi
+
+  __log_info "Updating Vim plugins..."
+  if vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall; then
+    __log_success "Vim plugins updated"
+  else
+    __log_warning "Failed to update Vim plugins"
+  fi
+}
+
+function __f5_update_plugins() {
+  __log_info "Updating Zsh and Tmux plugins..."
+
+  local plugin_count=0
+  local plugin_errors=0
+
+  for dir in \
+    "$HOME/.oh-my-zsh" \
+    "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ \
+    "$HOME/.tmux/plugins/"*/; do
+
+    [ ! -d "$dir/.git" ] && continue
+    [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]] && continue
+
+    [ "$DEBUG" = "1" ] && echo "Updating plugin: $dir"
+
+    if __f5_update_git_repo "$dir"; then
+      ((plugin_count++))
+    else
+      ((plugin_errors++))
+    fi
+  done
+
+  if [ "$plugin_errors" -gt 0 ]; then
+    __log_warning "Updated $plugin_count plugins ($plugin_errors failed)"
+  else
+    __log_success "Updated $plugin_count plugins"
+  fi
+}
+
+function __f5_update_nodejs() {
+  if ! __cmd_exists nvm && ! type __load_nvm >/dev/null 2>&1; then
+    __log_skip "NVM not installed"
+    return
+  fi
+
+  __log_info "Updating Node.js LTS..."
+  type __load_nvm >/dev/null 2>&1 && __load_nvm
+
+  if nvm install --lts && \
+     nvm use --lts && \
+     nvm alias default "lts/*"; then
+    __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
+  else
+    __log_warning "Failed to update Node.js LTS"
+  fi
+}
+
+function __f5_update_linux() {
+  __log_info "Updating Linux packages..."
+
+  local quiet_flag="-qq"
+  [ "$DEBUG" = "1" ] && quiet_flag=""
+
+  if [ "$DEBUG" = "1" ]; then
+    if sudo apt update; then
+      sudo apt dist-upgrade -y
+      sudo apt autoremove -y
+      sudo apt clean || true
+      __log_success "Linux packages updated"
+    else
+      __log_error "Failed to update Linux packages"
+    fi
+  else
+    if sudo apt update $quiet_flag >/dev/null 2>&1 || sudo apt update; then
+      sudo apt dist-upgrade -y $quiet_flag >/dev/null 2>&1 || sudo apt dist-upgrade -y
+      sudo apt autoremove -y $quiet_flag >/dev/null 2>&1 || sudo apt autoremove -y
+      sudo apt clean >/dev/null 2>&1 || true
+      __log_success "Linux packages updated"
+    else
+      __log_error "Failed to update Linux packages"
+    fi
+  fi
+}
+
+function __f5_update_macos() {
+  __log_info "Updating macOS packages..."
+
+  if brew update; then
+    brew bundle --file "$HOME/.dotfiles/Brewfile" || __log_warning "Brewfile sync failed"
+    brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
+    brew upgrade || __log_warning "Brew upgrade failed"
+    brew cu --all --yes --cleanup || true
+    brew cleanup -s || true
+  else
+    __log_warning "Brew update failed"
+  fi
+
+  if __cmd_exists mas; then
+    mas upgrade && __log_success "Mac App Store apps updated"
+  fi
+
+  if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
+    __log_info "Cleaning Launchpad cache..."
+    if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
+      killall Dock || true
+      __log_success "Launchpad cache cleaned"
+    fi
+  fi
+
+  __log_success "macOS packages updated"
+}
+
+function __f5_reload_configs() {
+  __log_info "Reloading configurations..."
+
+  if __cmd_exists tmux && [ -n "$TMUX" ]; then
+    if tmux source-file ~/.tmux.conf; then
+      __log_success "Tmux config reloaded"
+    else
+      __log_warning "Tmux reload failed"
+    fi
+  else
+    __log_skip "Not in tmux session"
+  fi
+
+  # shellcheck disable=SC1091
+  if source "$HOME/.zshrc"; then
+    __log_success "Zsh config reloaded"
+  else
+    __log_warning "Zsh reload failed"
+  fi
+}
+
+function __f5_show_summary() {
+  local f5_end f5_total f5_mins f5_secs
+
+  f5_end=$(date +%s)
+  f5_total=$((f5_end - SCRIPT_START_TIME))
+  f5_mins=$((f5_total / 60))
+  f5_secs=$((f5_total % 60))
+
+  echo ""
+  __log_success "==============================================================="
+  __log_success "Update completed successfully!"
+  __log_success "==============================================================="
+  echo ""
+  __log_info "Total time: ${f5_mins}m ${f5_secs}s"
+  echo ""
 }

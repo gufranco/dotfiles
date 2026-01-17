@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+
+################################################################################
+# System specific settings
+################################################################################
+case "$(uname)" in
+  "Linux")
+
+    ;;
+  "Darwin")
+    # Zsh
+    export ZSH_DISABLE_COMPFIX=true
+
+    # Homebrew
+    export HOMEBREW_NO_ANALYTICS=true
+    export HOMEBREW_NO_ENV_HINTS=true
+    export HOMEBREW_NO_AUTO_UPDATE=true
+    export HOMEBREW_QUIET=true
+
+    # Docker
+    # export DOCKER_DEFAULT_PLATFORM="linux/amd64"
+
+    ;;
+esac
+
+################################################################################
+# Shell
+################################################################################
+export HISTCONTROL=ignoredups
+export HISTIGNORE="cd:ls:[bf]g:clear:exit"
+export LANG=pt_BR.UTF-8
+
+################################################################################
+# Terminal
+################################################################################
+# Enable True Color support (24-bit)
+export COLORTERM=truecolor
+
+################################################################################
+# eza
+################################################################################
+export EZA_CONFIG_DIR="$HOME/.config/eza"
+
+################################################################################
+# Oh-my-zsh
+################################################################################
+export ZSH="$HOME/.oh-my-zsh"
+export ZSH_THEME="spaceship"
+export DISABLE_AUTO_UPDATE="true"
+export HIST_STAMPS="dd/mm/yyyy"
+export DISABLE_MAGIC_FUNCTIONS=true
+export DISABLE_AUTO_TITLE=true
+export ZSH_COMPDUMP="${ZSH_CACHE_DIR:-$HOME/.cache}/.zcompdump-${HOST}-${ZSH_VERSION}"
+
+# SSH Agent
+zstyle :omz:plugins:ssh-agent lazy yes
+zstyle :omz:plugins:ssh-agent identities id_rsa_personal id_ed25519_personal id_ed25519_onyx
+
+# NVM
+zstyle :omz:plugins:nvm lazy yes
+
+# Plugins
+export plugins=(
+  gpg-agent
+  ssh-agent
+
+  nvm
+
+  fzf
+  fzf-tab
+  zsh-syntax-highlighting
+)
+
+################################################################################
+# Spaceship
+################################################################################
+export SPACESHIP_USER_SHOW=always
+export SPACESHIP_PROMPT_ADD_NEWLINE=false
+export SPACESHIP_CHAR_SYMBOL="❯"
+export SPACESHIP_CHAR_SUFFIX=" "
+
+################################################################################
+# Chruby (lazy loading)
+################################################################################
+# Create stub functions that trigger Chruby loading on first use
+__create_lazy_stubs __load_chruby chruby ruby gem bundle rake rails
+
+################################################################################
+# NPM Token
+################################################################################
+if [ -z "$NPM_TOKEN" ]; then
+  if __update_npm_token; then
+    # Verify token was loaded successfully (double-check)
+    if [ -z "${NPM_TOKEN:-}" ]; then
+      # Token loading failed silently, ensure it's unset
+      unset NPM_TOKEN
+    fi
+  else
+    # Function returned error, ensure NPM_TOKEN is unset
+    unset NPM_TOKEN 2>/dev/null || true
+  fi
+fi
+
+################################################################################
+# GitHub Token
+################################################################################
+if [ -z "$GITHUB_PAT" ]; then
+  if __update_github_token; then
+    # Verify token was loaded successfully (double-check)
+    if [ -z "${GITHUB_PAT:-}" ]; then
+      # Token loading failed silently, ensure it's unset
+      unset GITHUB_PAT
+    fi
+  else
+    # Function returned error, ensure GITHUB_PAT is unset
+    unset GITHUB_PAT 2>/dev/null || true
+  fi
+fi
+
+################################################################################
+# Workspace folder
+################################################################################
+if [ ! -e "$HOME/Workspace" ] && [ -d "$HOME/Dropbox/Workspace" ]; then
+  ln -s "$HOME/Dropbox/Workspace" "$HOME/Workspace"
+fi

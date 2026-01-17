@@ -1,0 +1,371 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Colima VM
+################################################################################
+function colima-start() {
+  __ensure_docker_compose_plugin
+
+  local profile="default"
+  local cores=""
+  local memory=""
+  local storage=""
+  local os_type="$(uname -s)"
+  local arch="$(uname -m)"
+
+  # Parse arguments: first non-flag argument is the profile, then optional flags
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --cores)
+        cores="$2"
+        shift 2
+        ;;
+      --memory)
+        memory="$2"
+        shift 2
+        ;;
+      --storage)
+        storage="$2"
+        shift 2
+        ;;
+      *)
+        # First non-flag argument is the profile
+        if [[ "$profile" == "default" && "$1" != "--"* ]]; then
+          profile="$1"
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  # Use provided values or calculate defaults
+  cores="${cores:-$(__calculate_vm_cores)}"
+  memory="${memory:-$(__calculate_vm_memory)}"
+  storage="${storage:-$(__calculate_vm_storage)}"
+
+  __confirm_colima_config "$profile" "$cores" "$memory" "$storage" "$os_type" "$arch" || return 1
+  __show_header "Colima VM" "Starting"
+
+  case "$os_type" in
+    "Darwin")
+      case "$arch" in
+        "x86_64")
+          __show_runtime_info \
+            "Virtualization.framework (Apple native)" \
+            "x86_64 native (no emulation)" \
+            "VirtioFS (kernel-level I/O)"
+          __show_performance_info
+
+          __vm_start "$profile" "$cores" "$memory" "$storage" "x86_64" \
+            --vm-type "vz" \
+            --mount-type "virtiofs"
+          ;;
+
+        "arm64")
+          __show_runtime_info \
+            "Virtualization.framework (Apple native)" \
+            "ARM64 native + x86_64 via Rosetta 2" \
+            "VirtioFS (kernel-level I/O)" \
+            "Rosetta 2:      Enabled (x86_64 containers supported)"
+          __show_performance_info "Multi-Arch:     ARM64 + x86_64 simultaneously"
+
+          __vm_start "$profile" "$cores" "$memory" "$storage" "aarch64" \
+            --vm-type "vz" \
+            --vz-rosetta \
+            --mount-type "virtiofs"
+          ;;
+      esac
+      ;;
+
+    "Linux")
+      __show_runtime_info \
+        "QEMU with KVM acceleration" \
+        "x86_64 native" \
+        "9p (best for Linux)"
+      __show_performance_info "KVM:            Hardware acceleration enabled"
+
+      __vm_start "$profile" "$cores" "$memory" "$storage" "x86_64" \
+        --vm-type "qemu" \
+        --mount-type "9p"
+      ;;
+  esac
+}
+
+function colima-stop() {
+  local profile="${1:-default}"
+
+  __show_header "Colima VM" "Stop"
+  echo "Profile:         ${profile}"
+  echo ""
+
+  __confirm_operation "Do you want to stop this VM?" || return 1
+
+  command colima stop --profile "${profile}"
+}
+
+function colima-purge() {
+  local profile="${1:-default}"
+
+  __show_header "Colima VM" "Purge (WARNING: Destructive Operation)"
+  echo "Profile:         ${profile}"
+  echo ""
+  echo "This operation will:"
+  echo "  - Stop all Docker containers"
+  echo "  - Remove all Docker images, volumes, and networks"
+  echo "  - Stop the Colima VM"
+  echo "  - Delete the Colima VM and all its data"
+  echo ""
+  echo "WARNING: This action cannot be undone!"
+  echo ""
+
+  __confirm_operation "Are you sure you want to continue?" || return 1
+
+  docker-purge "${profile}"
+  command colima stop --profile "${profile}" --force 2>/dev/null || true
+  command colima delete --profile "${profile}" --force 2>/dev/null || true
+}
+
+################################################################################
+# Docker purge
+################################################################################
+function docker-purge() {
+  local profile="${1:-default}"
+  # shellcheck disable=SC2155
+  local context="$([[ "${profile}" = "default" ]] && echo "colima" || echo "colima-${profile}")"
+
+  # Stop all containers (only if there are any)
+  container_ids="$(DOCKER_CONTEXT="${context}" command docker ps -aq 2>/dev/null)"
+  if [ -n "$container_ids" ]; then
+    DOCKER_CONTEXT="${context}" command docker stop $container_ids 2>/dev/null || true
+  fi
+
+  DOCKER_CONTEXT="${context}" command docker system prune -af --volumes --filter "label!=keep" 2>/dev/null || true
+  DOCKER_CONTEXT="${context}" command docker builder prune -af 2>/dev/null || true
+
+  # Remove all images (only if there are any, POSIX-compatible)
+  image_ids="$(DOCKER_CONTEXT="${context}" command docker images -q 2>/dev/null)"
+  if [ -n "$image_ids" ]; then
+    echo "$image_ids" | while IFS= read -r image_id; do
+      [ -n "$image_id" ] && DOCKER_CONTEXT="${context}" command docker rmi -f "$image_id" 2>/dev/null || true
+    done
+  fi
+}
+
+################################################################################
+# Mongo
+################################################################################
+function mongo-init() {
+  __ensure_directory "$HOME/Docker/Mongo"
+
+  __docker_run_detached "mongo" \
+    --env "MONGO_INITDB_ROOT_USERNAME=mongo" \
+    --env "MONGO_INITDB_ROOT_PASSWORD=mongo" \
+    \
+    --mount "type=bind,source=$HOME/Docker/Mongo,target=/external" \
+    --volume "mongo-data:/data/db" \
+    --volume "mongo-config:/data/configdb" \
+    \
+    --publish "127.0.0.1:27017:27017" \
+    \
+    --health-cmd "mongosh --eval 'db.adminCommand({ping: 1})' --quiet" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
+    mongo:latest
+}
+
+function mongo-start() {
+  __docker_container_start "mongo"
+}
+
+function mongo-stop() {
+  __docker_container_stop "mongo"
+}
+
+function mongo-purge() {
+  __docker_container_purge "mongo"
+}
+
+function mongo-terminal() {
+  __docker_container_terminal "mongo"
+}
+
+################################################################################
+# Postgres
+################################################################################
+function postgres-init() {
+  __ensure_directory "$HOME/Docker/Postgres"
+
+  __docker_run_detached "postgres" \
+    --env "POSTGRES_USER=postgres" \
+    --env "POSTGRES_PASSWORD=postgres" \
+    \
+    --mount "type=bind,source=$HOME/Docker/Postgres,target=/external" \
+    --volume "postgres-data:/var/lib/postgresql/data" \
+    \
+    --publish "127.0.0.1:5432:5432" \
+    \
+    --health-cmd "pg_isready -U postgres" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
+    postgres:alpine
+}
+
+function postgres-start() {
+  __docker_container_start "postgres"
+}
+
+function postgres-stop() {
+  __docker_container_stop "postgres"
+}
+
+function postgres-purge() {
+  __docker_container_purge "postgres"
+}
+
+function postgres-terminal() {
+  __docker_container_terminal "postgres"
+}
+
+################################################################################
+# Redis
+################################################################################
+function redis-init() {
+  __ensure_directory "$HOME/Docker/Redis"
+
+  __docker_run_detached "redis" \
+    --mount "type=bind,source=$HOME/Docker/Redis,target=/external" \
+    --volume "redis-data:/data" \
+    \
+    --publish "127.0.0.1:6379:6379" \
+    \
+    --health-cmd "redis-cli ping" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
+    redis:alpine \
+    redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+}
+
+function redis-start() {
+  __docker_container_start "redis"
+}
+
+function redis-stop() {
+  __docker_container_stop "redis"
+}
+
+function redis-purge() {
+  __docker_container_purge "redis"
+}
+
+function redis-terminal() {
+  __docker_container_terminal "redis"
+}
+
+################################################################################
+# Valkey
+################################################################################
+function valkey-init() {
+  __ensure_directory "$HOME/Docker/Valkey"
+
+  __docker_run_detached "valkey" \
+    --mount "type=bind,source=$HOME/Docker/Valkey,target=/external" \
+    --volume "valkey-data:/data" \
+    \
+    --publish "127.0.0.1:7000:7000" \
+    \
+    --health-cmd "valkey-cli -p 7000 ping" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
+    valkey/valkey:alpine \
+    valkey-server --port 7000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+}
+
+function valkey-start() {
+  __docker_container_start "valkey"
+}
+
+function valkey-stop() {
+  __docker_container_stop "valkey"
+}
+
+function valkey-purge() {
+  __docker_container_purge "valkey"
+}
+
+function valkey-terminal() {
+  __docker_container_terminal "valkey"
+}
+
+################################################################################
+# Redict
+################################################################################
+function redict-init() {
+  __ensure_directory "$HOME/Docker/Redict"
+
+  __docker_run_detached "redict" \
+    --mount "type=bind,source=$HOME/Docker/Redict,target=/external" \
+    --volume "redict-data:/data" \
+    \
+    --publish "127.0.0.1:6379:6379" \
+    \
+    --health-cmd "redict-cli ping" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    \
+    registry.redict.io/redict:alpine \
+    redict-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+}
+
+function redict-start() {
+  __docker_container_start "redict"
+}
+
+function redict-stop() {
+  __docker_container_stop "redict"
+}
+
+function redict-purge() {
+  __docker_container_purge "redict"
+}
+
+function redict-terminal() {
+  __docker_container_terminal "redict"
+}
+
+################################################################################
+# Ubuntu
+################################################################################
+function ubuntu-init() {
+  __ensure_directory "$HOME/Docker/Ubuntu"
+
+  __docker_run_detached "ubuntu" \
+    --mount "type=bind,source=$HOME/Docker/Ubuntu,target=/external" \
+    --volume "ubuntu-data:/data" \
+    \
+    ubuntu:24.04
+}
+
+function ubuntu-start() {
+  __docker_container_start "ubuntu"
+}
+
+function ubuntu-stop() {
+  __docker_container_stop "ubuntu"
+}
+
+function ubuntu-purge() {
+  __docker_container_purge "ubuntu"
+}
+
+function ubuntu-terminal() {
+  __docker_container_terminal "ubuntu" "/bin/bash"
+}

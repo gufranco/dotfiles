@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+
+################################################################################
+# General aliases
+################################################################################
+__alias_if_exists mkdir mkdir "command mkdir -p -v"
+__alias_if_exists neomutt mutt "command neomutt"
+__alias_if_exists tty-clock tty-clock "command tty-clock -Dcs"
+__alias_if_exists find findf "command find . -type f -name"
+__alias_if_exists find findd "command find . -type d -name"
+
+# FZF with bat preview (requires both commands)
+if command -v fzf > /dev/null && command -v bat > /dev/null; then
+  alias fzf="command fzf --preview 'command bat --color=never --style=numbers --line-range=:500 {}'"
+fi
+
+################################################################################
+# eza / ls
+################################################################################
+if command -v eza > /dev/null; then
+  alias ls="command eza --icons=auto --group-directories-first"
+  alias la="command eza --icons=auto --group-directories-first -la --git"
+  alias ll="command eza --icons=auto --group-directories-first -l --git"
+  alias lt="command eza --icons=auto --group-directories-first --tree --level=2"
+  alias lta="command eza --icons=auto --group-directories-first --tree --level=2 -a"
+elif command ls --color=auto / > /dev/null 2>&1; then
+  alias ls="command ls --color=auto"
+  alias la="command ls -lAF --color=auto"
+  alias ll="command ls -lF --color=auto"
+else
+  alias ls="command ls -G"
+  alias la="command ls -lAF -G"
+  alias ll="command ls -lF -G"
+fi
+
+################################################################################
+# System specific aliases
+################################################################################
+case "$(uname)" in
+  "Linux")
+    __alias_if_exists grep grep "command grep --color"
+    __alias_if_exists find findx "command find . -type f -executable"
+    __alias_if_exists time time "command time -v"
+    __alias_if_exists which which "command which -a"
+    __alias_if_exists xdg-open open "command xdg-open"
+    __alias_if_exists gnome-screensaver-command afk "command gnome-screensaver-command --lock"
+    __alias_if_exists google-chrome chrome "/opt/google/chrome/google-chrome"
+
+    # Clipboard (macOS-style commands)
+    __alias_if_exists xclip pbcopy "command xclip -selection clipboard"
+    __alias_if_exists xclip pbpaste "command xclip -selection clipboard -o"
+    if ! command -v xclip > /dev/null; then
+      __alias_if_exists xsel pbcopy "command xsel --clipboard --input"
+      __alias_if_exists xsel pbpaste "command xsel --clipboard --output"
+    fi
+    ;;
+
+  "Darwin")
+    # GNU tools (preferred) or BSD fallback
+    if command grep --version > /dev/null 2>&1; then
+      alias grep="command grep --color"
+    else
+      alias grep="command grep -G"
+    fi
+
+    if command find --version > /dev/null 2>&1; then
+      alias findx="command find . -type f -executable"
+    else
+      alias findx="command find . -type f -perm +111"
+    fi
+
+    # GNU-specific tools (only if available)
+    command time --version > /dev/null 2>&1 && alias time="command time -v"
+    command which --version > /dev/null 2>&1 && alias which="command which -a"
+
+    # BSD compatibility (create aliases for missing commands)
+    command -v md5sum > /dev/null || alias md5sum="command md5"
+    command -v sha1sum > /dev/null || alias sha1sum="command shasum"
+    command -v sha256sum > /dev/null || alias sha256sum="command shasum -a 256"
+    command -v sha512sum > /dev/null || alias sha512sum="command shasum -a 512"
+
+    # readlink fallback
+    if ! readlink -f / > /dev/null 2>&1; then
+      __alias_if_exists realpath readlink "command realpath"
+      command -v realpath > /dev/null || __alias_if_exists greadlink readlink "command greadlink"
+    fi
+
+    # Multiple Cursor profiles
+    __alias_if_exists cursor cursor-coperniq "command cursor --user-data-dir=$HOME/.cursor-coperniq --extensions-dir=$HOME/.cursor-coperniq/extensions"
+    __alias_if_exists cursor cursor-onyx "command cursor --user-data-dir=$HOME/.cursor-onyx --extensions-dir=$HOME/.cursor-onyx/extensions"
+
+    # Modern tool replacements
+    __alias_if_exists sd sed "command sd"
+    __alias_if_exists br tree "command br"
+    __alias_if_exists tokei stats "command tokei"
+    __alias_if_exists gping ping "command gping"
+    ;;
+esac

@@ -1,0 +1,593 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Update and upgrade everything
+################################################################################
+function f5() {
+  SCRIPT_START_TIME=$(date +%s)
+  export SCRIPT_START_TIME
+
+  [ "$DEBUG" = "1" ] && __log_info "DEBUG mode enabled - showing all command output"
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "System Update (F5)"
+  __log_info "==============================================================="
+  echo ""
+
+  __f5_update_dotfiles
+  __f5_update_vim
+  __f5_update_plugins
+  __f5_update_nodejs
+
+  case "$(uname)" in
+    "Linux") __f5_update_linux ;;
+    "Darwin") __f5_update_macos ;;
+  esac
+
+  __f5_reload_configs
+  __f5_show_summary
+}
+
+################################################################################
+# Zero fill and verify a storage device
+################################################################################
+function zero_fill_verify() {
+  __validate_params() {
+    local disk="$1"
+    local passes="$2"
+
+    if ! [[ "$passes" =~ ^[0-9]+$ ]] || [ "$passes" -lt 1 ]; then
+      __log_error "Invalid PASSES value: $passes (must be a positive integer)"
+      return 1
+    fi
+
+    if [ -z "$disk" ]; then
+      __log_error "No device specified"
+      __log_info "Usage: zero_fill_verify <device>"
+      __log_info "       PASSES=N zero_fill_verify <device>"
+      __log_info "       CREATE=y zero_fill_verify <device>"
+      __log_info "       PASSES=N CREATE=y zero_fill_verify <device>"
+      return 1
+    fi
+
+    if [ ! -b "$disk" ] && [ ! -c "$disk" ]; then
+      __log_error "Device not found or invalid: $disk"
+      return 1
+    fi
+
+    return 0
+  }
+
+  __get_disk_size() {
+    local disk="$1"
+    local size
+
+    size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
+
+    if [ -z "$size" ] || [ "$size" -eq 0 ]; then
+      __log_error "Unable to determine disk size for $disk"
+      return 1
+    fi
+
+    echo "$size"
+  }
+
+  __confirm() {
+    local disk="$1"
+    local confirm
+
+    printf "This will ERASE all data on %s. Continue? (y/N): " "$disk"
+    IFS= read -r confirm
+
+    if [ "$confirm" != "y" ]; then
+      __log_warning "Operation cancelled"
+      return 1
+    fi
+
+    return 0
+  }
+
+  __unmount() {
+    local disk="$1"
+
+    __log_info "Unmounting $disk..."
+    if sudo diskutil unmountDisk "$disk" >/dev/null 2>&1; then
+      __log_success "Disk unmounted"
+    else
+      __log_warning "Failed to unmount disk (may not be mounted)"
+    fi
+  }
+
+  __generate_pattern() {
+    local size="$1"
+    local pattern="$2"
+
+    if [ "$pattern" = "0xFF" ]; then
+      head -c "$size" /dev/zero | tr '\000' '\377'
+    else
+      head -c "$size" /dev/zero
+    fi
+  }
+
+  __write_pattern() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local pattern="$4"
+
+    __log_info "Writing $pattern..."
+
+    if ! __generate_pattern "$size" "$pattern" | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
+      __log_error "Failed to write $pattern"
+      return 1
+    fi
+
+    __log_success "Write $pattern completed"
+    return 0
+  }
+
+  __verify_pattern() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local pattern="$4"
+
+    __log_info "Verifying $pattern..."
+
+    if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
+      cmp -s - <(__generate_pattern "$size" "$pattern"); then
+      __log_error "Failed to verify $pattern"
+      return 1
+    fi
+
+    __log_success "Verify $pattern completed"
+    return 0
+  }
+
+  __execute_pass() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local index="$4"
+    local passes="$5"
+
+    __log_info "Pass $index of $passes"
+
+    __write_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
+    __verify_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
+    __write_pattern "$disk" "$size" "$block_size" "0x00" || return 1
+    __verify_pattern "$disk" "$size" "$block_size" "0x00" || return 1
+
+    __log_success "Pass $index/$passes completed"
+    return 0
+  }
+
+  __create_partition() {
+    local disk="$1"
+    local size="$2"
+
+    __log_info "Creating partition..."
+
+    local threshold_bytes=$((2 * 1024 * 1024 * 1024))
+    local fs_type="MS-DOS FAT32"
+
+    if [ "$size" -le "$threshold_bytes" ]; then
+      fs_type="MS-DOS FAT16"
+      __log_info "Using FAT16 (<= 2 GB)..."
+    else
+      __log_info "Using FAT32 (> 2 GB)..."
+    fi
+
+    if sudo diskutil eraseDisk "$fs_type" "NO NAME" MBRFormat "$disk" >/dev/null 2>&1; then
+      __log_success "Partition created ($fs_type)"
+    else
+      __log_error "Failed to create partition"
+      return 1
+    fi
+
+    return 0
+  }
+
+  __eject() {
+    local disk="$1"
+
+    __log_info "Ejecting device..."
+    if sudo diskutil eject "$disk" >/dev/null 2>&1; then
+      __log_success "Device ejected successfully"
+    else
+      __log_error "Failed to eject device"
+      return 1
+    fi
+
+    return 0
+  }
+
+  local disk="$1"
+  local passes="${PASSES:-1}"
+  local block_size=$((1024 * 1024))
+  local size
+
+  __validate_params "$disk" "$passes" || return 1
+
+  size=$(__get_disk_size "$disk") || return 1
+
+  __confirm "$disk" || return 1
+  __unmount "$disk"
+
+  __log_info "Cleaning $disk..."
+  for ((index=1; index <= passes; index++)); do
+    __execute_pass "$disk" "$size" "$block_size" "$index" "$passes" || return 1
+  done
+
+  [ "${CREATE}" = "y" ] && __create_partition "$disk" "$size"
+
+  __eject "$disk"
+}
+
+################################################################################
+# Sync games library
+################################################################################
+function sync_games() {
+  __sync_redump() {
+  local group="Redump"
+  local folders=(
+    "NEC - PC Engine CD & TurboGrafx CD"
+    "Nintendo - GameCube - NKit RVZ [zstd-19-128k]"
+    "Sega - Dreamcast - GDI Files"
+    "Sega - Dreamcast"
+    "Sega - Mega CD & Sega CD"
+    "Sega - Saturn"
+    "SNK - Neo Geo CD"
+    "Sony - PlayStation"
+    "Sony - PlayStation Portable"
+    "Sony - PlayStation 2"
+    "Video CD"
+  )
+
+  local total=${#folders[@]}
+  local current=0
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Syncing $group ($total collections)"
+  __log_info "==============================================================="
+  echo ""
+
+  for folder in "${folders[@]}"; do
+    ((current++))
+    mkdir -p "./$group/$folder/"
+    __log_info "[$current/$total] $folder"
+
+    rclone sync \
+      --progress \
+      --ignore-case \
+      --multi-thread-streams=0 \
+      --size-only \
+      --delete-excluded \
+      \
+      --filter "- *Europe\)*" \
+      --filter "- *Germany\)*" \
+      --filter "- *France\)*" \
+      --filter "- *Spain\)*" \
+      --filter "- *Italy\)*" \
+      --filter "- *Netherlands\)*" \
+      --filter "- *Sweden\)*" \
+      --filter "- *Denmark\)*" \
+      --filter "- *Norway\)*" \
+      --filter "- *Finland\)*" \
+      --filter "- *Belgium\)*" \
+      --filter "- *Austria\)*" \
+      --filter "- *Switzerland\)*" \
+      --filter "- *Portugal\)*" \
+      --filter "- *Greece\)*" \
+      --filter "- *Poland\)*" \
+      --filter "- *Russia\)*" \
+      --filter "- *Czech\)*" \
+      --filter "- *Hungary\)*" \
+      --filter "- *Romania\)*" \
+      --filter "- *Croatia\)*" \
+      --filter "- *Serbia\)*" \
+      --filter "- *Slovakia\)*" \
+      --filter "- *Bulgaria\)*" \
+      --filter "- *Ireland\)*" \
+      --filter "- *Iceland\)*" \
+      --filter "- *UK\)*" \
+      --filter "- *Australia\)*" \
+      --filter "- *New Zealand\)*" \
+      --filter "- *Scandinavia\)*" \
+      --filter "- *Asia\)*" \
+      --filter "- *Korea\)*" \
+      --filter "- *China\)*" \
+      --filter "- *Taiwan\)*" \
+      --filter "- *Hong Kong\)*" \
+      \
+      --filter "+ *World\)*" \
+      --filter "+ *USA\)*" \
+      --filter "+ *Japan\)*" \
+      --filter "+ *Brazil\)*" \
+      \
+      --filter "- *" \
+      \
+      --http-url "https://myrient.erista.me/files/$group/" \
+      ":http:$folder/" \
+      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
+  done
+
+  echo ""
+  __log_success "$group sync completed ($total collections)"
+  echo ""
+  }
+
+  __sync_internet_archive() {
+  local group="Internet Archive"
+  local folders=(
+    "desktop_20240424"
+    "htgdb-gamepacks"
+    "mdplus_collection_22_04_16"
+    "neo-geo-aes-romset"
+    "Neo-geoRomCollectionByGhostware"
+    "neogeoaesmvscomplete"
+    "RetroarchSystemFiles/Retroarch-System/"
+    "ric64s-neosd-rom-archive"
+    "rom_scene_collection"
+    "rom-hack-patch-archive"
+    "romhacking.net-20240801"
+  )
+
+  local total=${#folders[@]}
+  local current=0
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Syncing $group ($total collections)"
+  __log_info "==============================================================="
+  echo ""
+
+  for folder in "${folders[@]}"; do
+    ((current++))
+    mkdir -p "./$group/$folder/"
+    __log_info "[$current/$total] $folder"
+
+    rclone sync \
+      --progress \
+      --ignore-case \
+      --multi-thread-streams=0 \
+      --size-only \
+      --delete-excluded \
+      \
+      --exclude "*.{torrent,xml,sqlite,png,jpg,jpeg,gif,bmp,nfo,diz,txt,md,pdf,html,htm}" \
+      \
+      "archive.org:$folder/" \
+      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
+  done
+
+  echo ""
+  __log_success "$group sync completed ($total collections)"
+  echo ""
+  }
+
+  __sync_no_intro() {
+  local group="No-Intro"
+  local folders=(
+    "Bandai - WonderSwan"
+    "Bandai - WonderSwan Color"
+    "Bandai - WonderSwan Color (Aftermarket)"
+    "Microsoft - MSX"
+    "Microsoft - MSX (Aftermarket)"
+    "Microsoft - MSX2"
+    "Microsoft - MSX2 (Aftermarket)"
+    "NEC - PC Engine - TurboGrafx-16"
+    "NEC - PC Engine - TurboGrafx-16 (Aftermarket)"
+    "NEC - PC Engine - TurboGrafx-16 (Private)"
+    "NEC - PC Engine SuperGrafx"
+    "Nintendo - Family Computer Disk System (FDS)"
+    "Nintendo - Family Computer Disk System (FDS) (Aftermarket)"
+    "Nintendo - Family Computer Disk System (QD)"
+    "Nintendo - Game Boy"
+    "Nintendo - Game Boy (Aftermarket)"
+    "Nintendo - Game Boy (Private)"
+    "Nintendo - Game Boy Advance"
+    "Nintendo - Game Boy Advance (Aftermarket)"
+    "Nintendo - Game Boy Advance (Multiboot)"
+    "Nintendo - Game Boy Advance (Play-Yan)"
+    "Nintendo - Game Boy Advance (Private)"
+    "Nintendo - Game Boy Advance (Video)"
+    "Nintendo - Game Boy Advance (Video) (Aftermarket)"
+    "Nintendo - Game Boy Advance (Video) (Private)"
+    "Nintendo - Game Boy Advance (e-Reader)"
+    "Nintendo - Game Boy Advance (e-Reader) (Aftermarket)"
+    "Nintendo - Game Boy Color"
+    "Nintendo - Game Boy Color (Aftermarket)"
+    "Nintendo - Game Boy Color (Private)"
+    "Nintendo - New Nintendo 3DS (Decrypted)"
+    "Nintendo - Nintendo 3DS (Decrypted)"
+    "Nintendo - Nintendo 64 (BigEndian)"
+    "Nintendo - Nintendo 64 (BigEndian) (Aftermarket)"
+    "Nintendo - Nintendo 64 (BigEndian) (Private)"
+    "Nintendo - Nintendo 64DD"
+    "Nintendo - Nintendo DS (Decrypted)"
+    "Nintendo - Nintendo DS (Decrypted) (Aftermarket)"
+    "Nintendo - Nintendo DS (Decrypted) (Private)"
+    "Nintendo - Nintendo DSi (Decrypted)"
+    "Nintendo - Nintendo DSi (Digital)"
+    "Nintendo - Nintendo DSi (Digital) (CDN) (Decrypted)"
+    "Nintendo - Nintendo Entertainment System (Headered)"
+    "Nintendo - Nintendo Entertainment System (Headered) (Aftermarket)"
+    "Nintendo - Nintendo Entertainment System (Headered) (Private)"
+    "Nintendo - Nintendo Entertainment System (Headerless)"
+    "Nintendo - Nintendo Entertainment System (Headerless) (Aftermarket)"
+    "Nintendo - Nintendo Entertainment System (Headerless) (Private)"
+    "Nintendo - Satellaview"
+    "Nintendo - Satellaview (Aftermarket)"
+    "Nintendo - Sufami Turbo"
+    "Nintendo - Super Nintendo Entertainment System"
+    "Nintendo - Super Nintendo Entertainment System (Aftermarket)"
+    "Nintendo - Super Nintendo Entertainment System (Private)"
+    "Nintendo - Virtual Boy"
+    "Nintendo - Virtual Boy (Aftermarket)"
+    "Nintendo - Virtual Boy (Private)"
+    "Non-Redump - NEC - PC Engine CD + TurboGrafx CD"
+    "Non-Redump - NEC - PC Engine CD + TurboGrafx CD (Aftermarket)"
+    "Non-Redump - Nintendo - Nintendo GameCube"
+    "Non-Redump - Nintendo - Nintendo GameCube (Aftermarket)"
+    "Non-Redump - Nintendo - Nintendo GameCube (Private)"
+    "Non-Redump - Nintendo - Wii"
+    "Non-Redump - Panasonic - 3DO Interactive Multiplayer"
+    "Non-Redump - Sega - Dreamcast"
+    "Non-Redump - Sega - Dreamcast (Aftermarket)"
+    "Non-Redump - Sega - Dreamcast (Private)"
+    "Non-Redump - Sega - Sega Mega CD + Sega CD"
+    "Non-Redump - Sega - Sega Mega CD + Sega CD (Aftermarket)"
+    "Non-Redump - Sega - Sega Saturn"
+    "Non-Redump - Sony - PlayStation"
+    "Non-Redump - Sony - PlayStation 2"
+    "Non-Redump - Sony - PlayStation Portable"
+    "SNK - NeoGeo Pocket"
+    "SNK - NeoGeo Pocket Color"
+    "Sega - 32X"
+    "Sega - 32X (Aftermarket)"
+    "Sega - Dreamcast (Visual Memory Unit)"
+    "Sega - Game Gear"
+    "Sega - Game Gear (Aftermarket)"
+    "Sega - Master System - Mark III"
+    "Sega - Master System - Mark III (Aftermarket)"
+    "Sega - Master System - Mark III (Private)"
+    "Sega - Mega Drive - Genesis"
+    "Sega - Mega Drive - Genesis (Aftermarket)"
+    "Sega - Mega Drive - Genesis (Private)"
+    "Sega - SG-1000"
+    "Sega - SG-1000 (Aftermarket)"
+    "Seta - Aleck64 (BigEndian)"
+  )
+
+  local total=${#folders[@]}
+  local current=0
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Syncing $group ($total collections)"
+  __log_info "==============================================================="
+  echo ""
+
+  for folder in "${folders[@]}"; do
+    ((current++))
+    mkdir -p "./$group/$folder/"
+    __log_info "[$current/$total] $folder"
+
+    rclone sync \
+      --progress \
+      --ignore-case \
+      --multi-thread-streams=0 \
+      --size-only \
+      --delete-excluded \
+      \
+      --filter "- *Europe\)*" \
+      --filter "- *Germany\)*" \
+      --filter "- *France\)*" \
+      --filter "- *Spain\)*" \
+      --filter "- *Italy\)*" \
+      --filter "- *Netherlands\)*" \
+      --filter "- *Sweden\)*" \
+      --filter "- *Denmark\)*" \
+      --filter "- *Norway\)*" \
+      --filter "- *Finland\)*" \
+      --filter "- *Belgium\)*" \
+      --filter "- *Austria\)*" \
+      --filter "- *Switzerland\)*" \
+      --filter "- *Portugal\)*" \
+      --filter "- *Greece\)*" \
+      --filter "- *Poland\)*" \
+      --filter "- *Russia\)*" \
+      --filter "- *Czech\)*" \
+      --filter "- *Hungary\)*" \
+      --filter "- *Romania\)*" \
+      --filter "- *Croatia\)*" \
+      --filter "- *Serbia\)*" \
+      --filter "- *Slovakia\)*" \
+      --filter "- *Bulgaria\)*" \
+      --filter "- *Ireland\)*" \
+      --filter "- *Iceland\)*" \
+      --filter "- *UK\)*" \
+      --filter "- *Australia\)*" \
+      --filter "- *New Zealand\)*" \
+      --filter "- *Scandinavia\)*" \
+      --filter "- *Asia\)*" \
+      --filter "- *Korea\)*" \
+      --filter "- *China\)*" \
+      --filter "- *Taiwan\)*" \
+      --filter "- *Hong Kong\)*" \
+      \
+      --filter "+ *World\)*" \
+      --filter "+ *USA\)*" \
+      --filter "+ *Japan\)*" \
+      --filter "+ *Brazil\)*" \
+      \
+      --filter "- *" \
+      \
+      --http-url "https://myrient.erista.me/files/$group/" \
+      ":http:$folder/" \
+      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
+  done
+
+  echo ""
+  __log_success "$group sync completed ($total collections)"
+  echo ""
+  }
+
+  __sync_ossc() {
+  local folder="OSSC"
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Syncing $folder (firmware)"
+  __log_info "==============================================================="
+  echo ""
+
+  mkdir -p "./$folder/"
+  __log_info "Downloading OSSC firmware..."
+
+  rclone sync \
+    --progress \
+    --ignore-case \
+    --multi-thread-streams=0 \
+    --size-only \
+    --delete-excluded \
+    --exclude "*.{jic,txt}" \
+    --http-url "http://www.infocult.com/m/ossc/fw/v1-series/" \
+    ":http:" \
+    "./$folder" && __log_success "OSSC firmware sync completed" || __log_warning "OSSC firmware sync failed"
+
+  echo ""
+  }
+
+  local START_TIME
+  START_TIME=$(date +%s)
+
+  echo ""
+  echo ""
+  __log_info "================================================================"
+  __log_info "  GAME LIBRARY SYNC - Starting"
+  __log_info "================================================================"
+  echo ""
+
+  __sync_redump
+  __sync_internet_archive
+  __sync_no_intro
+  __sync_ossc
+
+  local END_TIME
+  END_TIME=$(date +%s)
+  local TOTAL_TIME=$((END_TIME - START_TIME))
+  local MINUTES=$((TOTAL_TIME / 60))
+  local SECONDS=$((TOTAL_TIME % 60))
+
+  echo ""
+  __log_success "================================================================"
+  __log_success "  GAME LIBRARY SYNC - Completed"
+  __log_success "================================================================"
+  echo ""
+  __log_info "Total execution time: ${MINUTES}m ${SECONDS}s"
+  echo ""
+  echo ""
+}

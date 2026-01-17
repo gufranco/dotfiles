@@ -1,0 +1,50 @@
+conky.config = {
+  alignment = 'top_right',
+  border_inner_margin = 5,
+  border_outer_margin = 0,
+  cpu_avg_samples = 2,
+  default_color = 'white',
+  double_buffer = true,
+  draw_borders = false,
+  draw_graph_borders = false,
+  draw_outline = false,
+  draw_shades = false,
+  font = 'JetBrains Mono Nerd Font:size=12',
+  gap_x = 0,
+  gap_y = 33,
+  imlib_cache_size = 0,
+  minimum_height = 0,
+  minimum_width = 300,
+  net_avg_samples = 2,
+  no_buffers = true,
+  out_to_console = false,
+  override_utf8_locale = true,
+  own_window = true,
+  own_window_argb_value = 50,
+  own_window_argb_visual = true,
+  own_window_colour = '#000000',
+  own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+  own_window_type = 'normal',
+  text_buffer_size = 32768,
+  update_interval = 5,
+  uppercase = false,
+  use_xft = true,
+  xftalpha = 0.8,
+  xinerama_head = 1,
+};
+
+conky.text = [[
+  ${font JetBrains Mono Nerd Font:bold:size=12}CPU ${hr 2}
+  ${font JetBrains Mono Nerd Font:normal:size=10}${execi 1000 grep model /proc/cpuinfo | cut -d : -f2 | tail -1 | sed 's/\s//'}
+  ${cpu cpu0}% ${cpubar cpu0}
+
+  ${font JetBrains Mono Nerd Font:bold:size=12}MEMORY ${hr 2}
+  ${font JetBrains Mono Nerd Font:normal:size=10}RAM $alignc $mem / $memmax $alignr $memperc%
+  $membar
+
+  ${font JetBrains Mono Nerd Font:bold:size=12}DISK ${hr 2}
+  ${font JetBrains Mono Nerd Font:normal:size=10}/ $alignc ${fs_used /} / ${fs_size /} $alignr ${fs_used_perc /}%
+  ${fs_bar /}
+  ${font JetBrains Mono Nerd Font:normal:size=10}/home $alignc ${fs_used /home} / ${fs_size /home} $alignr ${fs_used_perc /home}%
+  ${fs_bar /home}
+]];

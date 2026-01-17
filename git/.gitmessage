@@ -1,0 +1,53 @@
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Type (required)
+# ─────────────────────────────────────────────────────────────────────────────
+# feat:     A new feature
+# fix:      A bug fix
+# docs:     Documentation only changes
+# style:    Formatting, missing semicolons, etc (no code change)
+# refactor: Code change that neither fixes a bug nor adds a feature
+# perf:     Code change that improves performance
+# test:     Adding missing tests or correcting existing tests
+# build:    Changes to build system or dependencies (npm, gradle, etc)
+# ci:       Changes to CI configuration files and scripts
+# chore:    Other changes that don't modify src or test files
+# revert:   Reverts a previous commit
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Scope (optional)
+# ─────────────────────────────────────────────────────────────────────────────
+# The scope provides additional context, like the module or component affected.
+# Examples: feat(auth), fix(api), docs(readme)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Subject (required)
+# ─────────────────────────────────────────────────────────────────────────────
+# - Use imperative mood: "add" not "added" or "adds"
+# - Don't capitalize the first letter
+# - No period at the end
+# - Max 50 characters
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Body (optional)
+# ─────────────────────────────────────────────────────────────────────────────
+# - Wrap at 72 characters
+# - Explain WHAT and WHY, not HOW
+# - Separate from subject with a blank line
+# - Use bullet points if needed (- or *)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Footer (optional)
+# ─────────────────────────────────────────────────────────────────────────────
+# BREAKING CHANGE: <description>
+#
+# Closes #123
+# Fixes #456
+# Refs #789
+#
+# Co-authored-by: Name <email@example.com>

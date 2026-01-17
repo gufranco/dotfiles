@@ -1,0 +1,354 @@
+################################################################################
+# User
+################################################################################
+[user]
+  name = Gustavo Franco
+  email = gufranco@users.noreply.github.com
+  useConfigOnly = true
+  signingkey = 8D7317357C473E2F
+
+################################################################################
+# Core
+################################################################################
+[core]
+  excludesfile = ~/.dotfiles/git/.gitignore_global
+  autocrlf = input
+  pager = delta
+  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+  editor = vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd' -c 'syntax on' -c 'filetype on'
+  preloadindex = true
+  fscache = true
+  untrackedCache = true
+  fsmonitor = true
+  compression = 1
+
+################################################################################
+# Init
+################################################################################
+[init]
+  defaultBranch = main
+
+################################################################################
+# Commit
+################################################################################
+[commit]
+  gpgsign = true
+  template = ~/.dotfiles/git/.gitmessage
+  verbose = true
+
+################################################################################
+# Color (Tokyo Night palette)
+################################################################################
+[color]
+  ui = auto
+
+[color "status"]
+  added = "#9ece6a"
+  changed = "#e0af68"
+  untracked = "#f7768e"
+  branch = "#bb9af7" bold
+  nobranch = "#f7768e" bold
+  unmerged = "#ff9e64"
+
+[color "branch"]
+  current = "#bb9af7" bold
+  local = "#7dcfff"
+  remote = "#9ece6a"
+  upstream = "#2ac3de"
+  plain = "#a9b1d6"
+
+[color "diff"]
+  meta = "#e0af68" bold
+  frag = "#bb9af7" bold
+  func = "#2ac3de"
+  context = "#565f89"
+  old = "#f7768e"
+  new = "#9ece6a"
+  oldMoved = "#ff9e64" italic
+  newMoved = "#73daca" italic
+  commit = "#e0af68" bold
+  whitespace = "#f7768e" reverse
+
+[color "decorate"]
+  HEAD = "#bb9af7" bold
+  branch = "#9ece6a" bold
+  remoteBranch = "#f7768e"
+  tag = "#e0af68" bold
+  stash = "#7aa2f7"
+  grafted = "#ff9e64" bold italic
+
+[color "interactive"]
+  prompt = "#7dcfff" bold
+  header = "#bb9af7"
+  help = "#565f89"
+  error = "#f7768e" bold
+
+[color "remote"]
+  hint = "#565f89"
+  warning = "#e0af68"
+  success = "#9ece6a"
+  error = "#f7768e"
+
+[color "grep"]
+  context = "#a9b1d6"
+  filename = "#7dcfff" bold
+  function = "#bb9af7"
+  linenumber = "#565f89"
+  column = "#565f89"
+  match = "#e0af68" bold
+  selected = "#9ece6a"
+  separator = "#3b4261"
+
+################################################################################
+# Workflow
+################################################################################
+[branch]
+  autosetuprebase = always
+
+[rebase]
+  autoStash = true
+  autoSquash = true
+  quiet = true
+  instructionFormat = (%an) %s
+  updateRefs = true
+
+[rerere]
+  enabled = true
+
+[pull]
+  rebase = true
+
+[push]
+  followTags = true
+  default = current
+  gpgSign = if-asked
+
+################################################################################
+# Network & Objects
+################################################################################
+[fetch]
+  prune = true
+  fsckObjects = true
+  parallel = 0
+  writeCommitGraph = true
+
+[transfer]
+  fsckObjects = true
+
+[receive]
+  fsckObjects = true
+
+################################################################################
+# Performance
+################################################################################
+[gc]
+  auto = 256
+
+[pack]
+  threads = 0
+  windowMemory = 256m
+
+[index]
+  version = 4
+
+################################################################################
+# Background Maintenance
+################################################################################
+[maintenance]
+  auto = true
+  strategy = incremental
+
+[feature]
+  manyFiles = true
+
+################################################################################
+# Display
+################################################################################
+[column]
+  ui = auto
+
+[status]
+  submoduleSummary = true
+  showUntrackedFiles = all
+
+[diff]
+  algorithm = histogram
+  colorMoved = default
+  colorMovedWS = allow-indentation-change
+  renames = copies
+  submodule = log
+
+[stash]
+  showPatch = true
+
+[blame]
+  ignoreRevsFile = .git-blame-ignore-revs
+  markIgnoredLines = true
+  markUnblamableLines = true
+  coloring = highlightRecent
+
+[merge]
+  conflictStyle = zdiff3
+  log = true
+
+[tag]
+  gpgSign = true
+  sort = version:refname
+
+[log]
+  date = iso
+
+################################################################################
+# Delta (diff pager)
+################################################################################
+[interactive]
+  diffFilter = delta --color-only
+
+[delta]
+  navigate = true
+  line-numbers = true
+  side-by-side = false
+  syntax-theme = tokyonight_night
+  dark = true
+  hyperlinks = true
+  file-style = bold yellow ul
+  file-decoration-style = yellow ul
+  hunk-header-style = file line-number syntax
+  hunk-header-decoration-style = blue box
+  minus-style = syntax "#3a273a"
+  minus-emph-style = syntax "#6b2e43"
+  plus-style = syntax "#273849"
+  plus-emph-style = syntax "#305f6f"
+
+################################################################################
+# Submodules
+################################################################################
+[submodule]
+  recurse = true
+
+################################################################################
+# Credential & Help
+################################################################################
+[credential]
+  helper = cache --timeout=3600
+
+[help]
+  autocorrect = never
+
+[advice]
+  all = false
+
+################################################################################
+# Aliases
+################################################################################
+[alias]
+  # Status & Info
+  st = status -sb
+  tags = tag -l
+  branches = branch -a
+  remotes = remote -v
+  contributors = shortlog -sn --all --no-merges
+
+  # Branching
+  fork = checkout -q -b
+  br = branch
+  co = checkout -q
+
+  # Committing
+  ci = commit
+  amend = commit --amend --no-edit --quiet
+  fixup = commit --fixup
+  undo-commit = reset --soft HEAD^
+
+  # Staging
+  a = add
+  aa = add --all
+  unstage = reset -q HEAD --
+  undo = checkout -q --
+
+  # Pushing
+  publish = push -u origin HEAD
+  force = push --force-with-lease
+
+  # Logging
+  lg = log --color --graph --decorate --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  last = log -1 HEAD
+  history = log --follow -p --
+  changelog = log --oneline --no-merges
+
+  # Diff
+  df = diff
+  dfs = diff --staged
+
+  # Stash
+  save = stash save
+  pop = stash pop
+
+  # Cleanup
+  cleanup = !git branch --merged | grep -v '\\*\\|main\\|master\\|develop' | xargs -n 1 git branch -d
+  prune-all = !git remote prune origin && git gc --aggressive --prune=now
+
+  # Search
+  find = log --all --oneline --graph --decorate -S
+  grep-history = log --all --source --full-history -S
+
+  # Info
+  committers = !git log --quiet | grep Author | sort | uniq -c | sort -n -r
+  who = shortlog -sne
+  rank = shortlog -sn --no-merges
+
+  # Track/Untrack
+  ignore = update-index --assume-unchanged
+  unignore = update-index --no-assume-unchanged
+  ignored = !git ls-files -v | grep '^[[:lower:]]'
+  assume = update-index --assume-unchanged
+  unassume = update-index --no-assume-unchanged
+  assumed = !git ls-files -v | grep '^[[:lower:]]'
+
+  # Modern Commands (switch/restore instead of checkout)
+  sw = switch
+  swc = switch -c
+  rs = restore
+  rss = restore --staged
+
+  # Quick Workflow
+  wip = !git add -A && git commit -m 'WIP [skip ci]'
+  unwip = reset HEAD~1
+  uncommit = reset --soft HEAD~1
+
+  # Navigation
+  root = rev-parse --show-toplevel
+
+  # Info
+  aliases = config --get-regexp ^alias\\.
+  current = rev-parse --abbrev-ref HEAD
+  upstream = rev-parse --abbrev-ref --symbolic-full-name @{u}
+
+  # Stash Improved
+  stash-all = stash save --include-untracked
+  sl = stash list --pretty=format:'%C(yellow)%gd%C(reset) - %C(green)(%cr)%C(reset) %s'
+
+  # Worktree
+  wt = worktree
+  wtl = worktree list
+  wta = worktree add
+
+  # Diff Improved
+  diff-stat = diff --stat
+  diff-words = diff --word-diff
+
+  # Log Extras
+  today = log --since=midnight --oneline
+  week = log --since='1 week ago' --oneline
+
+  # Recovery
+  recover = !git fsck --unreachable | grep commit | cut -d' ' -f3 | xargs git log --merges --no-walk
+
+################################################################################
+# Conditional Includes
+################################################################################
+[includeIf "gitdir/i:**/onyxodds/"]
+  path = ~/.dotfiles/git/.gitconfig-onyx
+
+[includeIf "gitdir/i:**/onyx odds/"]
+  path = ~/.dotfiles/git/.gitconfig-onyx

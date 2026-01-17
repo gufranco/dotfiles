@@ -1,0 +1,132 @@
+# Auto-detect text files and normalize line endings to LF
+* text=auto eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
+
+# Configuration files
+*.conf text eol=lf
+*.config text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+
+# Dotfiles (no extension)
+.zshrc text eol=lf
+.bashrc text eol=lf
+.vimrc text eol=lf
+.tmux.conf text eol=lf
+.gitconfig text eol=lf
+.gitignore text eol=lf
+.npmrc text eol=lf
+.curlrc text eol=lf
+.wgetrc text eol=lf
+.ripgreprc text eol=lf
+.fdrc text eol=lf
+.inputrc text eol=lf
+.mailcap text eol=lf
+.muttrc text eol=lf
+.telnetrc text eol=lf
+
+# Ruby
+*.rb text eol=lf
+Brewfile text eol=lf
+Gemfile text eol=lf
+Rakefile text eol=lf
+
+# Markdown
+*.md text eol=lf
+*.markdown text eol=lf
+
+# Documentation
+LICENSE text eol=lf
+README* text eol=lf
+CHANGELOG* text eol=lf
+CONTRIBUTING* text eol=lf
+SECURITY* text eol=lf
+
+# Git
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.gitmodules text eol=lf
+.mailmap text eol=lf
+
+# CI/CD
+.github/** text eol=lf
+.gitlab-ci.yml text eol=lf
+.travis.yml text eol=lf
+
+# Editor configs
+.editorconfig text eol=lf
+.prettierrc text eol=lf
+.eslintrc text eol=lf
+.stylelintrc text eol=lf
+
+# Binary files (do not normalize)
+*.gpg binary
+*.asc binary
+*.pgp binary
+*.p12 binary
+*.pfx binary
+*.cer binary
+*.der binary
+
+# SSH keys (treat as binary to preserve format)
+id_rsa binary
+id_dsa binary
+id_ecdsa binary
+id_ed25519 binary
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.webp binary
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+*.tgz binary
+*.bz2 binary
+*.7z binary
+*.rar binary
+
+# Fonts
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+
+# Theme files
+*.tmTheme text eol=lf
+*.itermcolors text eol=lf
+
+# Vim
+*.vim text eol=lf
+
+# Python
+*.py text eol=lf
+*.pyc binary
+
+# Git LFS (if used in the future)
+# *.psd filter=lfs diff=lfs merge=lfs -text
+# *.ai filter=lfs diff=lfs merge=lfs -text
+
+# Export ignore (files not included in git archive)
+.gitattributes export-ignore
+.gitignore export-ignore
+.github export-ignore
+.vscode export-ignore
+.idea export-ignore
+

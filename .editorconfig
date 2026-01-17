@@ -1,0 +1,156 @@
+# EditorConfig - Maintain consistent coding styles across different editors
+# https://editorconfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Shell scripts
+[*.{sh,bash,zsh,fish}]
+indent_size = 2
+indent_style = space
+
+# Shell configs (files without extension)
+[{.zshrc,.bashrc,.bash_profile,.profile}]
+indent_size = 2
+indent_style = space
+
+# Zsh configuration files
+[zsh/{aliases,functions,utilities,infrastructure,paths,settings,startup}]
+indent_size = 2
+indent_style = space
+
+# Vim
+[*.vim]
+indent_size = 2
+indent_style = space
+
+[.vimrc]
+indent_size = 2
+indent_style = space
+
+# Python
+[*.py]
+indent_size = 4
+indent_style = space
+max_line_length = 88
+
+# Ruby
+[*.rb]
+indent_size = 2
+indent_style = space
+
+[{Brewfile,Gemfile,Rakefile}]
+indent_size = 2
+indent_style = space
+
+# YAML
+[*.{yml,yaml}]
+indent_size = 2
+indent_style = space
+
+# JSON
+[*.json]
+indent_size = 2
+indent_style = space
+
+# TOML
+[*.toml]
+indent_size = 2
+indent_style = space
+
+# Markdown
+[*.{md,markdown}]
+trim_trailing_whitespace = false
+indent_size = 2
+max_line_length = 120
+
+# Git
+[{.gitconfig,.gitignore,.gitattributes}]
+indent_size = 2
+indent_style = space
+
+[git/{.gitconfig,.gitignore_global,.gitmessage}]
+indent_size = 2
+indent_style = space
+
+# Make
+[{Makefile,*.mk}]
+indent_style = tab
+indent_size = 4
+
+# Go
+[*.go]
+indent_style = tab
+indent_size = 4
+
+# Configuration files
+[*.{conf,config,cfg,ini}]
+indent_size = 2
+indent_style = space
+
+[{.tmux.conf,.curlrc,.wgetrc,.ripgreprc,.fdrc,.inputrc}]
+indent_size = 2
+indent_style = space
+
+[kitty/kitty.conf]
+indent_size = 2
+indent_style = space
+
+# SSH config
+[ssh/config]
+indent_size = 2
+indent_style = space
+
+# GPG config
+[gnupg/{gpg.conf,gpg-agent*.conf}]
+indent_size = 2
+indent_style = space
+
+# Mutt
+[{.muttrc,.mailcap}]
+indent_size = 2
+indent_style = space
+
+[mutt/**/*.muttrc]
+indent_size = 2
+indent_style = space
+
+# NPM/Yarn/PNPM
+[{.npmrc,.yarnrc,.yarnrc.yml,.pnpmrc,package.json}]
+indent_size = 2
+indent_style = space
+
+# Batch files (Windows)
+[*.{bat,cmd}]
+end_of_line = crlf
+indent_size = 2
+indent_style = space
+
+# Binary files - no formatting
+[*.{gpg,asc,pgp,p12,pfx,cer,der}]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+# Images - no formatting
+[*.{png,jpg,jpeg,gif,ico,webp,svg}]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+# Archives - no formatting
+[*.{zip,tar,gz,tgz,bz2,7z,rar}]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+# Fonts - no formatting
+[*.{ttf,otf,woff,woff2,eot}]
+insert_final_newline = false
+trim_trailing_whitespace = false

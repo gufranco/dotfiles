@@ -1,0 +1,64 @@
+################################################################################
+# Normalize settings
+################################################################################
+source "~/.mutt/normalize.muttrc"
+
+################################################################################
+# GPG
+################################################################################
+set pgp_sign_as = 61F3AB36DA0E9FAF
+
+################################################################################
+# E-mail
+################################################################################
+set realname = "Gustavo Franco"
+set from = "gustavocfranco@gmail.com"
+
+################################################################################
+# IMAP / SMTP
+################################################################################
+set imap_check_subscribed
+set imap_idle
+set imap_keepalive = 60
+set imap_list_subscribed
+unset imap_passive
+set imap_user = "gustavocfranco@gmail.com"
+set smtp_authenticators = "gssapi:login"
+set smtp_url = "smtps://gustavocfranco@gmail.com@smtp.gmail.com:465/"
+
+################################################################################
+# Password
+################################################################################
+source "gpg --quiet --batch --yes -d ~/.mutt/accounts/com.gmail.gustavocfranco/password.gpg |"
+
+################################################################################
+# Security
+################################################################################
+set ssl_force_tls
+set ssl_starttls
+unset ssl_use_sslv3
+unset ssl_use_tlsv1
+unset ssl_use_tlsv1_1
+set ssl_use_tlsv1_2
+set ssl_verify_dates
+set ssl_verify_host
+
+################################################################################
+# Folders
+################################################################################
+set folder = "imaps://imap.gmail.com:993/"
+set spoolfile = "+INBOX"
+set postponed = "+[Gmail]/Rascunhos"
+set trash = "+[Gmail]/Lixeira"
+set record = "+[Gmail]/E-mails enviados"
+
+################################################################################
+# Cache
+################################################################################
+set header_cache = "~/.mutt/accounts/com.gmail.gustavocfranco/cache/headers"
+set message_cachedir = "~/.mutt/accounts/com.gmail.gustavocfranco/cache/bodies"
+
+################################################################################
+# Signature
+################################################################################
+set signature = "~/.mutt/signatures/personal"

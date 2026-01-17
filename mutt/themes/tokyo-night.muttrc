@@ -1,0 +1,39 @@
+################################################################################
+# Tokyo Night Theme for Neomutt
+################################################################################
+# Text colors (background uses terminal default)
+color error red default
+color message cyan default
+color markers red default
+color attachment red default
+color search brightyellow default
+color status brightwhite default
+color hdrdefault brightwhite default
+color quoted brightgreen default
+color signature brightgreen default
+color bold brightwhite default
+color underline brightwhite default
+color normal brightwhite default
+
+# Index colors
+color index brightwhite default
+color index_author brightblue default
+color index_subject brightwhite default
+color index_date brightcyan default
+color index_size brightgreen default
+color index_flags brightred default
+
+# Message colors
+color header brightblue default
+color body brightwhite default
+color attachment brightred default
+color signature brightgreen default
+
+# Sidebar colors
+color sidebar_highlight brightblue default
+color sidebar_divider brightwhite default
+color sidebar_indicator brightred default
+color sidebar_new brightgreen default
+color sidebar_flagged brightred default
+color sidebar_unread brightyellow default
+color sidebar_ordinary brightwhite default

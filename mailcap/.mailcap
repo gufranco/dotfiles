@@ -1,0 +1,84 @@
+################################################################################
+# HTML & Web
+################################################################################
+text/html; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.html
+application/xhtml+xml; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.xhtml
+application/xml; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.xml
+image/svg+xml; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.svg
+
+################################################################################
+# Text
+################################################################################
+text/plain; cat %s; copiousoutput; needsterminal
+text/richtext; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.rtf
+text/markdown; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.md
+text/csv; column -t -s, %s; copiousoutput; needsterminal; nametemplate=%s.csv
+application/json; python3 -m json.tool %s; copiousoutput; needsterminal; nametemplate=%s.json
+
+################################################################################
+# Images
+################################################################################
+image/jpeg; file %s; copiousoutput; needsterminal; nametemplate=%s.jpg
+image/png; file %s; copiousoutput; needsterminal; nametemplate=%s.png
+image/gif; file %s; copiousoutput; needsterminal; nametemplate=%s.gif
+image/webp; file %s; copiousoutput; needsterminal; nametemplate=%s.webp
+image/bmp; file %s; copiousoutput; needsterminal; nametemplate=%s.bmp
+image/tiff; file %s; copiousoutput; needsterminal; nametemplate=%s.tiff
+
+################################################################################
+# Documents
+################################################################################
+application/pdf; file %s; copiousoutput; needsterminal; nametemplate=%s.pdf
+application/postscript; file %s; copiousoutput; needsterminal; nametemplate=%s.ps
+application/msword; file %s; copiousoutput; needsterminal; nametemplate=%s.doc
+application/vnd.ms-excel; file %s; copiousoutput; needsterminal; nametemplate=%s.xls
+application/vnd.ms-powerpoint; file %s; copiousoutput; needsterminal; nametemplate=%s.ppt
+application/vnd.oasis.opendocument.text; file %s; copiousoutput; needsterminal; nametemplate=%s.odt
+application/vnd.oasis.opendocument.spreadsheet; file %s; copiousoutput; needsterminal; nametemplate=%s.ods
+application/vnd.oasis.opendocument.presentation; file %s; copiousoutput; needsterminal; nametemplate=%s.odp
+
+################################################################################
+# Archives
+################################################################################
+application/zip; unzip -l %s; copiousoutput; needsterminal; nametemplate=%s.zip
+application/x-tar; tar -tf %s; copiousoutput; needsterminal; nametemplate=%s.tar
+application/gzip; gunzip -c %s; copiousoutput; needsterminal; nametemplate=%s.gz
+application/x-bzip2; bunzip2 -c %s; copiousoutput; needsterminal; nametemplate=%s.bz2
+application/x-7z-compressed; 7z l %s; copiousoutput; needsterminal; nametemplate=%s.7z
+application/x-rar; file %s; copiousoutput; needsterminal; nametemplate=%s.rar
+
+################################################################################
+# Audio
+################################################################################
+audio/mpeg; file %s; copiousoutput; needsterminal; nametemplate=%s.mp3
+audio/wav; file %s; copiousoutput; needsterminal; nametemplate=%s.wav
+audio/ogg; file %s; copiousoutput; needsterminal; nametemplate=%s.ogg
+audio/flac; file %s; copiousoutput; needsterminal; nametemplate=%s.flac
+audio/aac; file %s; copiousoutput; needsterminal; nametemplate=%s.aac
+
+################################################################################
+# Video
+################################################################################
+video/mp4; file %s; copiousoutput; needsterminal; nametemplate=%s.mp4
+video/x-msvideo; file %s; copiousoutput; needsterminal; nametemplate=%s.avi
+video/quicktime; file %s; copiousoutput; needsterminal; nametemplate=%s.mov
+video/webm; file %s; copiousoutput; needsterminal; nametemplate=%s.webm
+video/x-matroska; file %s; copiousoutput; needsterminal; nametemplate=%s.mkv
+
+################################################################################
+# Code
+################################################################################
+text/x-python; python3 -m py_compile %s; copiousoutput; needsterminal; nametemplate=%s.py
+text/javascript; node -c %s; copiousoutput; needsterminal; nametemplate=%s.js
+text/css; cat %s; copiousoutput; needsterminal; nametemplate=%s.css
+text/x-sh; bash -n %s; copiousoutput; needsterminal; nametemplate=%s.sh
+text/x-c; gcc -fsyntax-only %s; copiousoutput; needsterminal; nametemplate=%s.c
+text/x-c++; g++ -fsyntax-only %s; copiousoutput; needsterminal; nametemplate=%s.cpp
+text/x-java; javac -Xlint %s; copiousoutput; needsterminal; nametemplate=%s.java
+text/x-go; go build -o /dev/null %s; copiousoutput; needsterminal; nametemplate=%s.go
+text/x-rust; rustc --crate-type bin %s; copiousoutput; needsterminal; nametemplate=%s.rs
+
+################################################################################
+# Fallback
+################################################################################
+*/*; cat %s; copiousoutput; needsterminal

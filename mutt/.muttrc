@@ -1,0 +1,157 @@
+################################################################################
+# Theme
+################################################################################
+source ~/.dotfiles/mutt/themes/tokyo-night.muttrc
+
+################################################################################
+# Accounts
+################################################################################
+folder-hook "com.gmail.gustavocfranco" "source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc"
+folder-hook "com.live.gufranco" "source ~/.mutt/accounts/com.live.gufranco/config.muttrc"
+folder-hook "com.icloud.gufranco" "source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc"
+
+macro index <f2> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc<enter><change-folder>!<enter>"
+macro index <f3> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.live.gufranco/config.muttrc<enter><change-folder>!<enter>"
+macro index <f4> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc<enter><change-folder>!<enter>"
+
+################################################################################
+# Editor
+################################################################################
+set charset = "utf-8"
+set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd noautoindent nojoinspaces nosmartindent formatoptions=watqc filetype=mail' -c 'syntax on'"
+
+################################################################################
+# Status & Sidebar
+################################################################################
+set status_chars  = " *%A"
+set status_format = " %f - %r%m msgs%?n? - %n new?%?d? - %d del?%?t? - %t tag? %> %?p?%p postponed - ?%P "
+
+set sidebar_format = "%B%?F? [%F]?%* %?N?%N/?%S"
+unset sidebar_new_mail_only
+set sidebar_next_new_wrap
+set sidebar_sort_method = "name"
+set sidebar_visible
+set sidebar_width = 35
+
+################################################################################
+# Key Bindings
+################################################################################
+bind index,pager H sidebar-toggle-visible
+bind index,pager J sidebar-next
+bind index,pager K sidebar-prev
+bind index,pager L sidebar-open
+bind index,pager G imap-fetch-mail
+
+################################################################################
+# MIME & Auto-view
+################################################################################
+auto_view application/msword
+auto_view application/octet-stream
+auto_view application/RTF
+auto_view application/x-gunzip
+auto_view application/x-gzip
+auto_view application/x-perl
+auto_view application/x-sh
+auto_view application/x-tar-gz
+auto_view application/x-tcl
+auto_view application/x-zip-compressed
+auto_view application/zip
+auto_view image/tiff
+auto_view image/jpeg
+auto_view image/png
+auto_view image/gif
+auto_view application/pdf
+auto_view text/html
+auto_view text/x-vcard
+auto_view text/calendar
+
+alternative_order text/plain text/enriched text/html
+
+################################################################################
+# Headers
+################################################################################
+ignore *
+unignore From: To: CC: Date: Subject:
+unhdr_order *
+hdr_order From: To: CC: Date: Subject:
+
+################################################################################
+# Crypto
+################################################################################
+unset crypt_use_gpgme
+set crypt_autosign
+set crypt_replyencrypt
+set crypt_replysign
+set crypt_replysignencrypted
+set crypt_verify_sig
+set pgp_check_gpg_decrypt_status_fd
+set pgp_clearsign_command="gpg --no-verbose --batch --quiet --output - %?p?--passphrase-fd 0? --armor --textmode --clearsign %?a?-u %a? %f"
+set pgp_decode_command="gpg --status-fd=2 %?p?--passphrase-fd 0? --no-verbose --quiet --batch --output - %f"
+set pgp_decrypt_command="gpg --status-fd=2 %?p?--passphrase-fd 0? --no-verbose --quiet --batch --output - %f"
+set pgp_encrypt_only_command="pgpewrap gpg --batch --quiet --no-verbose --output - --encrypt --textmode --armor --always-trust -- -r %r -- %f"
+set pgp_encrypt_sign_command="pgpewrap gpg %?p?--passphrase-fd 0? --batch --quiet --no-verbose --textmode --output - --encrypt --sign %?a?-u %a? --armor --always-trust -- -r %r -- %f"
+set pgp_export_command="gpg --no-verbose --export --armor %r"
+set pgp_good_sign="^\\[GNUPG:\\] GOODSIG"
+set pgp_import_command="gpg --no-verbose --import %f"
+set pgp_list_pubring_command="gpg --no-verbose --batch --quiet --with-colons --list-keys %r"
+set pgp_list_secring_command="gpg --no-verbose --batch --quiet --with-colons --list-secret-keys %r"
+set pgp_sign_command="gpg --no-verbose --batch --quiet --output - %?p?--passphrase-fd 0? --armor --detach-sign --textmode %?a?-u %a? %f"
+set pgp_timeout = 3600
+set pgp_use_gpg_agent
+set pgp_verify_command="gpg --status-fd=2 --no-verbose --quiet --batch --output - --verify %s %f"
+set pgp_verify_key_command="gpg --verbose --batch --fingerprint --check-sigs %r"
+unset pgp_show_unusable
+
+################################################################################
+# Behavior
+################################################################################
+set text_flowed
+set sig_on_top
+unset record
+unset copy
+set use_from
+set envelope_from
+
+################################################################################
+# Display
+################################################################################
+set date_format = "%Y-%m-%d %H:%M"
+set index_format = "[%Z] %D %-20.20F %s"
+set reply_regexp = "^(([Rr][Ee]?(\[[0-9]+\])?: *)?(\[[^]]+\] *)?)*"
+set sort = threads
+set sort_aux = reverse-last-date-received
+set sort_re
+set uncollapse_jump
+set collapse_unread
+unset markers
+set menu_scroll
+set pager_context = 3
+set pager_index_lines = 10
+set pager_stop
+set tilde
+
+################################################################################
+# Performance
+################################################################################
+set mail_check = 60
+set mail_check_stats
+set sleep_time = 0
+set fast_reply
+set include
+
+################################################################################
+# UI
+################################################################################
+unset beep
+unset wait_key
+push <show-version>
+
+################################################################################
+# Alternates
+################################################################################
+alternates gustavocfranco@gmail.com gufranco@live.com gufranco@icloud.com gufranco@protonmail.ch
+
+################################################################################
+# Default Account
+################################################################################
+source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc

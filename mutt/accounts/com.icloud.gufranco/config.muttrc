@@ -1,0 +1,67 @@
+################################################################################
+# Normalize settings
+################################################################################
+source "~/.mutt/normalize.muttrc"
+
+################################################################################
+# GPG
+################################################################################
+set pgp_sign_as = EF3A156101B1D466
+
+################################################################################
+# E-mail
+################################################################################
+set realname = "Gustavo Franco"
+set from = "gufranco@icloud.com"
+
+################################################################################
+# IMAP / SMTP
+################################################################################
+set imap_idle
+set imap_keepalive = 60
+set imap_list_subscribed
+set imap_pipeline_depth = 0
+set imap_user = "gufranco@icloud.com"
+set smtp_url = "smtp://gufranco@smtp.mail.me.com:587/"
+
+################################################################################
+# Password
+################################################################################
+source "gpg --quiet --batch --yes -d ~/.mutt/accounts/com.icloud.gufranco/password.gpg |"
+
+################################################################################
+# Security
+################################################################################
+set ssl_force_tls
+set ssl_starttls
+unset ssl_use_sslv3 = no
+unset ssl_use_tlsv1 = no
+unset ssl_use_tlsv1_1 = no
+set ssl_use_tlsv1_2
+set ssl_verify_dates
+set ssl_verify_host
+
+################################################################################
+# Folders
+################################################################################
+set folder = "imaps://gufranco@imap.mail.me.com/"
+set spoolfile = "+INBOX"
+set postponed = "+Drafts"
+set trash = "+Deleted Messages"
+set record = "+Sent Messages"
+mailboxes +INBOX \
+          +Deleted\ Messages \
+          +Drafts \
+          +Junk \
+          +Sent\ Messages
+
+################################################################################
+# Cache
+################################################################################
+set header_cache = "~/.mutt/accounts/com.icloud.gufranco/cache/headers"
+set message_cachedir = "~/.mutt/accounts/com.icloud.gufranco/cache/bodies"
+
+################################################################################
+# Signature
+################################################################################
+set signature = "~/.mutt/signatures/personal"

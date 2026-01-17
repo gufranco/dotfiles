@@ -1,7 +1,30 @@
-# Cursor Rules for Dotfiles
+# Cursor Rules
 
 ## Language
 - Always respond in American English, regardless of the language the user uses
+
+---
+
+## Planning & Before Coding
+
+### Pre-Implementation Requirements
+- Study the relevant parts of the codebase before making changes
+- Create a detailed plan and highlight uncertainties
+- Verify implementation requirements with high certainty before proceeding
+- If something is unclear, ask for clarification before proceeding
+- Follow SOLID principles while maintaining pragmatism
+
+### Approach
+- Leverage existing patterns before creating new solutions
+- Consult before introducing new dependencies or technologies
+- Focus only on task-relevant code areas
+- Never introduce new abstractions, helpers, utilities, or architectural patterns without explicit approval
+
+### What to Avoid
+- Guessing implementation details
+- Starting implementation without understanding the full context
+- Creating new patterns when existing ones work
+- Over-engineering simple solutions
 
 ---
 
@@ -234,10 +257,31 @@ Fixes ENG-3324
 ---
 
 ## Code Style
+
+### General Principles
+- Write clear, simple solutions over clever ones
 - Follow existing patterns in the codebase
-- Use `__` prefix for internal helper functions in shell scripts
-- Keep configurations organized with clear section headers using `#` comments
 - Prefer DRY, SOLID, and KISS principles
+- Consider architectural impact before making changes
+- Work within established patterns before suggesting alternatives
+
+### Implementation Rules
+- Only modify code that is directly necessary for the task
+- Do not change formatting, style, or syntax of existing code unless required
+- Preserve exact formatting and style of surrounding code
+- Match indentation, bracket placement, and stylistic choices of the file
+- Never run formatters/linters on code you did not create as part of the task
+- All new code must match import order, naming conventions, and style of the repository
+
+### Shell Scripts Specific
+- Use `__` prefix for internal helper functions
+- Keep configurations organized with clear section headers using `#` comments
+
+### What NOT to Do
+- Modify unrelated code while fixing a bug
+- "Improve" code style of existing files
+- Add unnecessary abstractions
+- Refactor without explicit request
 
 ---
 
@@ -283,6 +327,14 @@ Fixes ENG-3324
 - Integration tests: Test component interactions (20%)
 - E2E tests: Critical user journeys only (10%)
 
+### AAA Pattern
+Structure all tests with clear sections:
+```
+// Arrange - Set up test data and conditions
+// Act - Execute the code being tested
+// Assert - Verify the results
+```
+
 ### Guidelines
 - Write tests before fixing bugs (regression prevention)
 - Test behavior, not implementation
@@ -290,11 +342,48 @@ Fixes ENG-3324
 - One assertion per test (when practical)
 - Avoid testing private methods directly
 - Mock external services, not your own code
+- Use faker libraries for test data generation (avoid hardcoded values)
+
+### Test Isolation
+- Every test must be fully isolated
+- Tests must not share state with other tests
+- Never connect to real databases or external services in tests
+- Always use mocks, fakes, or test-specific utilities
+- Avoid `beforeAll`/`beforeEach` unless required by existing patterns
+- Clean up test data after each test
+
+### File Naming
+- Name test files after the module they test: `moduleName.test.ts`, `moduleName.spec.ts`
+- Keep test files alongside source files or in a dedicated `__tests__` directory
 
 ### Coverage
 - Aim for 80%+ coverage on critical paths
 - 100% coverage is not a goal; meaningful tests are
 - New code should not decrease overall coverage
+- Run tests to confirm they pass before completing the task
+
+---
+
+## Input Validation
+
+### Principles
+- Validate all user inputs at the entry point (controller/handler layer)
+- Follow existing validation patterns in the codebase
+- Return appropriate HTTP status codes (400 for validation, 401 for auth, etc.)
+- Log validation failures with appropriate context
+
+### What to Validate
+- Required fields presence
+- Data types and formats
+- Value ranges and lengths
+- Business rule constraints
+- File uploads (type, size, content)
+
+### Error Responses
+- Return clear, actionable error messages
+- Include field-level errors when applicable
+- Never expose internal implementation details
+- Use consistent error response format across the API
 
 ---
 
@@ -306,6 +395,14 @@ Fixes ENG-3324
 - Never swallow exceptions silently
 - Include context in error messages
 - Use custom error types for domain errors
+- Use existing error classes before creating new ones
+- Extend existing error types if needed
+
+### Error Responses
+- Follow existing API response format
+- Never expose internal error details to clients in production
+- Sanitize error messages appropriately
+- Include request context in logs (userId, requestId, etc.)
 
 ---
 
@@ -414,7 +511,32 @@ For significant decisions, document:
 
 ---
 
+## Type Safety (TypeScript)
+
+### Guidelines
+- Ensure all TypeScript types are properly defined and used
+- Avoid `any` types; use `unknown` with type guards when necessary
+- Leverage existing type definitions from shared packages
+- Ensure type safety in all database queries and API responses
+- Resolve all TypeScript errors before completing the task
+
+### Type Guards
+```typescript
+// Prefer type guards over type assertions
+function isUser(obj: unknown): obj is User {
+  return typeof obj === 'object' && obj !== null && 'id' in obj;
+}
+```
+
+---
+
 ## Database
+
+### ORM Usage
+- Always use ORM's native methods for database operations
+- Query Builder or raw SQL only when ORM doesn't support the operation
+- State explicitly when using non-ORM approaches and why
+- Use eager/lazy loading appropriately
 
 ### Migrations
 - Always use migrations (never manual DDL in production)
@@ -422,6 +544,9 @@ For significant decisions, document:
 - One logical change per migration
 - Name descriptively: `20240115_add_email_index_to_users`
 - Test migrations on production-like data
+- Never modify migrations already applied to production
+- Backup data before destructive migrations (DROP, DELETE, etc.)
+- Document migration rationale in name or description
 
 ### Query Guidelines
 - Use indexes for frequently queried columns
@@ -430,6 +555,8 @@ For significant decisions, document:
 - Avoid N+1 queries (use eager loading)
 - Use transactions for related operations
 - Set query timeouts
+- Keep transactions as short as possible
+- Select only required fields
 
 ### Naming
 - Tables: plural, snake_case (`user_accounts`)
@@ -515,3 +642,32 @@ Follow [SemVer](https://semver.org/): `MAJOR.MINOR.PATCH`
 ### Changelog
 - Keep a `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/)
 - Sections: Added, Changed, Deprecated, Removed, Fixed, Security
+
+---
+
+## Task Completion
+
+### Pre-Completion Checklist
+- [ ] Changes maintain system integrity and backward compatibility
+- [ ] Implementation matches existing patterns in the codebase
+- [ ] No unnecessary formatting or style changes to existing code
+- [ ] All errors properly handled and logged
+- [ ] Input validation implemented for user-facing endpoints
+- [ ] TypeScript/language compilation passes without errors
+- [ ] Database queries optimized (no N+1, appropriate eager loading)
+- [ ] No sensitive data logged or exposed
+- [ ] Tests written and passing
+- [ ] Documentation updated if needed
+
+### Delivery Summary
+After completing a task, provide:
+1. **Modified files**: List of all changed files
+2. **Changes description**: What was done and why
+3. **Tests**: Tests created/modified and coverage confirmation
+4. **Risks/Notes**: Any concerns, edge cases, or follow-up items
+
+### Version Control Behavior
+- Create branches following the branching strategy
+- Make atomic commits (one logical change per commit)
+- Never commit sensitive data or credentials
+- User handles final commit and push unless specified otherwise

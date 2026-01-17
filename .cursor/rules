@@ -14,17 +14,45 @@
 - If something is unclear, ask for clarification before proceeding
 - Follow SOLID principles while maintaining pragmatism
 
+### Discovery Phase
+Before writing code, understand:
+
+| Question | Why It Matters |
+|----------|----------------|
+| What problem are we solving? | Ensures solution addresses actual need |
+| Who are the stakeholders? | Identifies who to consult |
+| What are the acceptance criteria? | Defines "done" |
+| What are the edge cases? | Prevents bugs before they happen |
+| What could go wrong? | Risk assessment |
+| What's the rollback plan? | Safety net for failures |
+
+### Technical Investigation
+- Review related code and recent changes in the area
+- Check for existing utilities/helpers that solve similar problems
+- Understand the data flow (input → processing → output)
+- Identify integration points with other systems
+- Consider backwards compatibility requirements
+
+### Estimation Considerations
+- Break large tasks into smaller, estimable pieces
+- Account for testing, documentation, and code review time
+- Consider unknowns and add buffer for investigation
+- Spike/prototype when uncertainty is high
+
 ### Approach
 - Leverage existing patterns before creating new solutions
 - Consult before introducing new dependencies or technologies
 - Focus only on task-relevant code areas
 - Never introduce new abstractions, helpers, utilities, or architectural patterns without explicit approval
+- Prefer incremental changes over big-bang rewrites
 
 ### What to Avoid
 - Guessing implementation details
 - Starting implementation without understanding the full context
 - Creating new patterns when existing ones work
 - Over-engineering simple solutions
+- Scope creep (adding features not in requirements)
+- Premature abstraction
 
 ---
 
@@ -53,18 +81,18 @@ When making commits, follow these conventions based on ~/.dotfiles/git/.gitmessa
 - `chore`: Other changes that don't modify src or test files
 - `revert`: Reverts a previous commit
 
-### Scopes (optional, for this dotfiles repo)
-- `zsh`: Shell configuration (aliases, functions, settings, paths)
-- `brew`: Brewfile changes
-- `install`: install.sh changes
-- `git`: Git configuration
-- `vim`: Vim/Neovim configuration
-- `tmux`: Tmux configuration
-- `eza`: eza configuration
-- `bat`: bat configuration
-- `kitty`: Kitty terminal configuration
-- `gpg`: GPG/SSH configuration
+### Scopes (optional)
+Scopes are project-specific. Define them based on the project structure.
+
+Example scopes:
+- `api`: API layer changes
+- `db`: Database changes
+- `auth`: Authentication/authorization
+- `ui`: User interface changes
+- `config`: Configuration changes
 - No scope for general changes
+
+> **Note**: Each project should define its own relevant scopes based on its architecture.
 
 ### Subject (required)
 - Use imperative mood: "add" not "added" or "adds"
@@ -169,7 +197,7 @@ Examples:
 
 ---
 
-## Pull Requests
+## Pull Requests / Merge Requests
 
 ### Title Format
 ```
@@ -178,18 +206,207 @@ Examples:
 
 Example: `ENG-3324: prevent advisory lock exhaustion by moving HTTP calls outside transactions`
 
-### Creating PR with GitHub CLI
+### CLI Tools for Automation
+
+**Always prefer CLI tools over web UI for creating PRs/MRs.** It's faster, scriptable, and ensures consistency.
+
+#### Available CLI Tools
+| Platform | CLI Tool | Install |
+|----------|----------|---------|
+| GitHub | `gh` | `brew install gh` |
+| GitLab | `glab` | `brew install glab` |
+| Azure DevOps | `az repos` | `brew install azure-cli` |
+| Bitbucket | `bb` | `pip install bitbucket-cli` |
+| Jira | `jira` | `brew install jira-cli` |
+| Linear | `linear` | `npm install -g @linear/cli` |
+
+### Creating PR/MR with CLI
+
+#### GitHub CLI (`gh`)
 ```bash
+# Create PR
 gh pr create \
   --title "<TICKET-ID>: <description>" \
-  --body "<description with markdown>" \
+  --body-file pr-description.md \
   --assignee "@me" \
+  --reviewer "teammate1,teammate2" \
+  --label "enhancement" \
   --base staging
+
+# Create PR with auto-generated body from commits
+gh pr create --fill --base staging
+
+# Create draft PR
+gh pr create --draft --title "<TICKET-ID>: WIP" --base staging
+
+# View PR status
+gh pr status
+
+# Check out PR locally
+gh pr checkout 123
+
+# Merge PR
+gh pr merge 123 --squash --delete-branch
+
+# List PRs
+gh pr list --state open --assignee "@me"
+
+# Add reviewers to existing PR
+gh pr edit 123 --add-reviewer "teammate1"
 ```
 
-### After Creating
+#### GitLab CLI (`glab`)
+```bash
+# Create MR
+glab mr create \
+  --title "<TICKET-ID>: <description>" \
+  --description "$(cat mr-description.md)" \
+  --assignee "@me" \
+  --reviewer "teammate1,teammate2" \
+  --label "enhancement" \
+  --target-branch staging
+
+# Create MR with auto-fill from commits
+glab mr create --fill --target-branch staging
+
+# Create draft MR
+glab mr create --draft --title "<TICKET-ID>: WIP"
+
+# View MR status
+glab mr list --state opened
+
+# Check out MR locally
+glab mr checkout 123
+
+# Merge MR
+glab mr merge 123 --squash --remove-source-branch
+
+# Approve MR
+glab mr approve 123
+
+# Add comment to MR
+glab mr note 123 --message "LGTM!"
+```
+
+#### Azure DevOps CLI (`az repos`)
+```bash
+# Create PR
+az repos pr create \
+  --title "<TICKET-ID>: <description>" \
+  --description "$(cat pr-description.md)" \
+  --source-branch feature/my-branch \
+  --target-branch staging \
+  --reviewers "teammate1@email.com" \
+  --work-items 1234
+
+# List PRs
+az repos pr list --status active
+
+# Approve PR
+az repos pr set-vote --id 123 --vote approve
+
+# Complete PR
+az repos pr update --id 123 --status completed
+```
+
+#### Bitbucket CLI
+```bash
+# Create PR
+bb pr create \
+  --title "<TICKET-ID>: <description>" \
+  --source feature/my-branch \
+  --destination staging \
+  --reviewers teammate1
+```
+
+### Issue/Ticket CLI Integration
+
+#### Jira CLI
+```bash
+# View issue details
+jira issue view ENG-1234
+
+# Transition issue to "In Review"
+jira issue move ENG-1234 "In Review"
+
+# Add comment
+jira issue comment add ENG-1234 "PR created: https://..."
+
+# Assign to self
+jira issue assign ENG-1234 $(jira me)
+```
+
+#### Linear CLI
+```bash
+# View issue
+linear issue view ENG-1234
+
+# Update issue status
+linear issue update ENG-1234 --status "In Review"
+
+# Create branch name from issue
+linear issue branch ENG-1234
+```
+
+#### GitHub Issues CLI
+```bash
+# Create issue
+gh issue create --title "Bug: description" --label bug
+
+# Link PR to issue
+gh pr create --title "Fix #123: description"
+
+# Close issue
+gh issue close 123 --comment "Fixed in #456"
+
+# List issues assigned to me
+gh issue list --assignee "@me" --state open
+```
+
+### Automated PR Workflow Example
+
+```bash
+#!/bin/bash
+# Example: Create PR from current branch
+
+TICKET_ID=$(git branch --show-current | grep -oE '[A-Z]+-[0-9]+')
+BRANCH=$(git branch --show-current)
+
+# Generate PR body from template
+cat > /tmp/pr-body.md << EOF
+## Summary
+<!-- Brief description -->
+
+## Problem
+Fixes ${TICKET_ID}
+
+## Solution
+<!-- Numbered list of changes -->
+
+## Testing
+- [ ] Unit tests
+- [ ] E2E tests
+- [ ] Manual testing
+EOF
+
+# Create PR
+gh pr create \
+  --title "${TICKET_ID}: $(git log -1 --pretty=%s)" \
+  --body-file /tmp/pr-body.md \
+  --assignee "@me" \
+  --base staging
+
+# Update Jira status (if using Jira)
+jira issue move ${TICKET_ID} "In Review" 2>/dev/null || true
+
+echo "✅ PR created and ticket updated"
+```
+
+### After Creating PR/MR
 - Add Copilot as reviewer manually via GitHub UI (not supported via CLI)
 - Base branch is always `staging` unless specified otherwise
+- Update ticket status in project management tool
+- Notify team if urgent
 
 ### PR Description Template
 Include these sections in the body:
@@ -214,15 +431,36 @@ HTTP calls inside transactions were causing advisory locks to be held for too lo
 3. Configured connection pool timeouts
 
 ## Files Changed
-- `src/services/payment.ts` - moved HTTP calls
-- `src/config/database.ts` - updated pool settings
+- `src/services/payment` - moved HTTP calls
+- `src/config/database` - updated pool settings
 
 ## Testing
-- Unit tests for retry logic
-- Load testing with 1000 concurrent requests
+- [ ] Unit tests for retry logic
+- [ ] E2E tests for payment flow
+- [ ] Load testing with 1000 concurrent requests
 
 ## Linked Issue
 Fixes ENG-3324
+```
+
+### Useful CLI Aliases
+
+Add to your shell configuration:
+```bash
+# GitHub
+alias prc="gh pr create --fill --base staging"
+alias prs="gh pr status"
+alias prv="gh pr view --web"
+alias prm="gh pr merge --squash --delete-branch"
+
+# GitLab
+alias mrc="glab mr create --fill --target-branch staging"
+alias mrs="glab mr list --state opened"
+alias mrv="glab mr view --web"
+alias mrm="glab mr merge --squash --remove-source-branch"
+
+# Quick PR from current branch
+alias qpr="gh pr create --title \"\$(git log -1 --pretty=%s)\" --body '' --base staging"
 ```
 
 ---
@@ -230,29 +468,385 @@ Fixes ENG-3324
 ## Code Review
 
 ### As Author
-- Self-review before requesting reviews
+
+#### Before Requesting Review
+- Self-review the entire diff line by line
+- Run all tests locally
+- Verify the build passes
+- Check for debugging code, console logs, commented code
+- Ensure commit history is clean and logical
+- Write a clear PR description
+
+#### PR Best Practices
 - Keep PRs small (< 400 lines ideally, max 1000)
+- One logical change per PR
+- Include before/after screenshots for UI changes
+- Link to relevant tickets/issues
 - Respond to all comments, even if just "Done"
-- Don't take feedback personally
+- Don't take feedback personally—it's about the code, not you
+
+#### Splitting Large PRs
+| Original PR | Split Into |
+|-------------|------------|
+| Feature + Refactor | 1. Refactor PR → 2. Feature PR |
+| Multiple features | Separate PR per feature |
+| Migration + Code | 1. Migration PR → 2. Code PR |
 
 ### As Reviewer
-- Review within 24 hours (business hours)
-- Be constructive, not critical
-- Prefix comments with intent:
-  - `nit:` - Minor, non-blocking suggestions
-  - `suggestion:` - Optional improvement
-  - `question:` - Seeking clarification
-  - `issue:` - Must be addressed before merge
-  - `praise:` - Highlight good practices
-- Approve with comments if only nits remain
 
-### What to Look For
-- Logic errors and edge cases
-- Security vulnerabilities
-- Performance implications
-- Test coverage
-- Documentation updates needed
-- Breaking changes
+#### Response Time
+- Review within 24 hours (business hours)
+- If you can't review soon, communicate that
+- Prioritize unblocking teammates
+
+#### Comment Prefixes
+| Prefix | Meaning | Blocking? |
+|--------|---------|-----------|
+| `issue:` | Must be addressed before merge | ✅ Yes |
+| `question:` | Need clarification to proceed | ✅ Yes |
+| `suggestion:` | Optional improvement | ❌ No |
+| `nit:` | Minor style/preference | ❌ No |
+| `praise:` | Highlight good practices | ❌ No |
+| `thought:` | Food for thought, no action needed | ❌ No |
+
+#### Review Mindset
+- Be constructive, not critical
+- Assume good intent
+- Explain the "why" behind suggestions
+- Offer solutions, not just problems
+- Approve with comments if only nits remain
+- Use "we" instead of "you" ("we should" vs "you should")
+
+### Review Checklist
+
+#### Correctness
+- [ ] Does the code do what it's supposed to do?
+- [ ] Are edge cases handled?
+- [ ] Are error cases handled appropriately?
+- [ ] Is the logic correct?
+
+#### Security
+- [ ] No hardcoded secrets or credentials
+- [ ] Input validation present
+- [ ] No SQL injection vulnerabilities
+- [ ] No XSS vulnerabilities
+- [ ] Proper authorization checks
+
+#### Performance
+- [ ] No N+1 queries
+- [ ] No unnecessary database calls
+- [ ] No blocking operations in async context
+- [ ] Appropriate use of caching
+- [ ] No memory leaks
+
+#### Maintainability
+- [ ] Code is readable and self-documenting
+- [ ] Follows existing patterns
+- [ ] No code duplication
+- [ ] Appropriate abstractions
+- [ ] Good naming conventions
+
+#### Testing
+- [ ] Tests cover the changes
+- [ ] Tests cover edge cases
+- [ ] Tests are readable and maintainable
+- [ ] No flaky tests introduced
+
+#### Documentation
+- [ ] Public APIs are documented
+- [ ] Complex logic has explanatory comments
+- [ ] README updated if needed
+- [ ] Breaking changes documented
+
+---
+
+## Architecture
+
+### Default Approach
+When creating new code or projects (unless the project already has an established architecture):
+
+1. **Domain-Driven Design (DDD)**: Structure code around business domains
+2. **Functional-First**: Prefer functional programming patterns when the language supports it
+
+> **Important**: Always follow existing project architecture first. Only apply these patterns to new code that doesn't conflict with project conventions.
+
+---
+
+## Domain-Driven Design (DDD)
+
+### Strategic Design
+
+#### Ubiquitous Language
+- Use the same terminology as domain experts (business stakeholders)
+- Code should read like business documentation
+- Avoid technical jargon in domain layer; use business terms
+- Document the glossary of terms per bounded context
+
+#### Bounded Contexts
+- A boundary within which a domain model is consistent
+- Each bounded context has its own ubiquitous language
+- Same term can mean different things in different contexts (e.g., "Account" in Banking vs Authentication)
+- Prefer separate modules/services per bounded context
+
+#### Context Mapping
+Relationships between bounded contexts:
+
+| Pattern | Description | Use When |
+|---------|-------------|----------|
+| **Shared Kernel** | Shared subset of domain model | Teams closely collaborate |
+| **Customer-Supplier** | Upstream provides, downstream consumes | Clear dependency direction |
+| **Conformist** | Downstream conforms to upstream model | No influence over upstream |
+| **Anti-Corruption Layer (ACL)** | Translation layer between contexts | Protect domain from external models |
+| **Open Host Service** | Well-defined protocol for integration | Multiple consumers |
+| **Published Language** | Shared language for integration (JSON Schema, Protobuf) | External integrations |
+
+### Tactical Design
+
+#### Entities
+- Objects with a unique **identity** that persists over time
+- Identity matters more than attributes
+- Can change state over time
+- Mutable (but prefer controlled mutation)
+
+```
+Example: User, Order, Product
+- User with ID "123" is the same user even if name changes
+```
+
+#### Value Objects
+- Objects defined only by their **attributes** (no identity)
+- **Immutable**: never change after creation
+- **Equality by value**: two VOs with same attributes are equal
+- Replace instead of modify
+
+```
+Example: Email, Money, Address, DateRange
+- Money(100, "USD") == Money(100, "USD")
+```
+
+#### Aggregates
+- Cluster of entities and value objects treated as a **single unit**
+- Has one **Aggregate Root** (entry point)
+- External objects can only reference the aggregate root
+- Consistency boundary: all changes within aggregate are atomic
+- Keep aggregates small (prefer smaller over larger)
+
+```
+Example: Order (root) contains OrderItems
+- Access OrderItems only through Order
+- Order ensures business invariants (e.g., total calculation)
+```
+
+#### Aggregate Design Rules
+1. Reference other aggregates by ID only, not by object reference
+2. One aggregate per transaction (eventual consistency between aggregates)
+3. Design around business invariants, not data relationships
+4. Aggregate root controls all access and enforces rules
+
+#### Domain Events
+- Record of something significant that happened in the domain
+- Named in past tense: `OrderPlaced`, `PaymentReceived`, `UserRegistered`
+- Immutable (facts cannot change)
+- Use for communication between aggregates and bounded contexts
+- Enable eventual consistency and audit trails
+
+```
+Example: OrderPlacedEvent { orderId, customerId, items, totalAmount, occurredAt }
+```
+
+#### Domain Services
+- **Stateless** operations that don't belong to any entity or value object
+- Encapsulate domain logic involving multiple aggregates
+- Named after domain actions (verbs)
+- Part of the domain layer
+
+```
+Example: PricingService, TransferService, InventoryAllocationService
+```
+
+#### Application Services (Use Cases)
+- Orchestrate domain objects to perform a task
+- Handle transactions, authorization, and infrastructure concerns
+- One public method per use case (Single Responsibility)
+- Should not contain business logic (delegate to domain)
+- Part of the application layer
+
+```
+Example: PlaceOrderUseCase, RegisterUserUseCase, ProcessPaymentUseCase
+```
+
+#### Repositories
+- Abstraction for data access (interface in domain, implementation in infrastructure)
+- One repository per **aggregate root** only
+- Mimic a collection: `add`, `remove`, `findById`, `findByCriteria`
+- Domain layer defines interface; infrastructure implements
+
+```
+Example: UserRepository, OrderRepository (not OrderItemRepository)
+```
+
+#### Factories
+- Encapsulate complex object creation
+- Use when constructor logic becomes complex
+- Can return different implementations based on input
+- Keep creation logic out of entities
+
+### Layered Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│              Presentation / API                 │  ← Controllers, GraphQL, CLI
+├─────────────────────────────────────────────────┤
+│              Application Layer                  │  ← Use Cases, DTOs, Ports
+├─────────────────────────────────────────────────┤
+│                Domain Layer                     │  ← Entities, VOs, Domain Services
+├─────────────────────────────────────────────────┤
+│             Infrastructure Layer                │  ← Repositories, External APIs, DB
+└─────────────────────────────────────────────────┘
+```
+
+#### Dependency Rule
+- Dependencies point **inward** (toward domain)
+- Domain layer has **no dependencies** on other layers
+- Infrastructure implements interfaces defined by domain
+- Application orchestrates but doesn't contain business rules
+
+### Project Structure
+
+```
+src/
+├── modules/                      # Bounded Contexts
+│   ├── identity/                 # Identity & Access Context
+│   │   ├── domain/
+│   │   │   ├── entities/
+│   │   │   │   └── user.ts
+│   │   │   ├── value-objects/
+│   │   │   │   ├── email.ts
+│   │   │   │   └── password.ts
+│   │   │   ├── events/
+│   │   │   │   └── user-registered.event.ts
+│   │   │   ├── repositories/
+│   │   │   │   └── user.repository.ts       # Interface only
+│   │   │   └── services/
+│   │   │       └── password-hasher.ts       # Interface only
+│   │   ├── application/
+│   │   │   ├── use-cases/
+│   │   │   │   ├── register-user.use-case.ts
+│   │   │   │   └── authenticate-user.use-case.ts
+│   │   │   ├── dtos/
+│   │   │   └── ports/                       # Input/Output ports
+│   │   └── infrastructure/
+│   │       ├── persistence/
+│   │       │   └── user.repository.impl.ts  # Implementation
+│   │       ├── services/
+│   │       │   └── bcrypt-password-hasher.ts
+│   │       └── http/
+│   │           └── user.controller.ts
+│   │
+│   ├── orders/                   # Orders Context
+│   │   ├── domain/
+│   │   ├── application/
+│   │   └── infrastructure/
+│   │
+│   └── payments/                 # Payments Context
+│
+├── shared/                       # Shared Kernel
+│   ├── domain/
+│   │   ├── base-entity.ts
+│   │   ├── base-value-object.ts
+│   │   ├── domain-event.ts
+│   │   └── result.ts
+│   └── infrastructure/
+│       ├── event-bus/
+│       ├── logger/
+│       └── database/
+│
+└── main.ts                       # Composition Root
+```
+
+### DDD Anti-Patterns to Avoid
+
+| Anti-Pattern | Problem | Solution |
+|--------------|---------|----------|
+| **Anemic Domain Model** | Entities are just data containers; all logic in services | Put behavior in entities and value objects |
+| **Fat Services** | Services with too much logic | Distribute logic to appropriate domain objects |
+| **Leaking Domain** | Domain objects exposed to presentation layer | Use DTOs for external communication |
+| **Repository per Entity** | Repositories for non-root entities | Only aggregate roots have repositories |
+| **God Aggregate** | One huge aggregate with everything | Break into smaller aggregates; use eventual consistency |
+| **Tight Coupling Between Contexts** | Direct dependencies between bounded contexts | Use ACL, events, or published language |
+| **Ignoring Ubiquitous Language** | Technical names instead of business terms | Collaborate with domain experts; use their terminology |
+
+### When to Use DDD
+
+| Scenario | Recommendation |
+|----------|----------------|
+| Complex business logic | ✅ Use DDD |
+| Multiple bounded contexts | ✅ Use DDD |
+| Long-term maintainability needed | ✅ Use DDD |
+| Simple CRUD application | ❌ Overkill; use simpler patterns |
+| Prototype/MVP | ❌ Too much upfront investment |
+| Small scripts/utilities | ❌ Not applicable |
+
+---
+
+## Functional Programming
+
+### When to Apply
+Use functional patterns when the language supports them. Combine with DDD for powerful, maintainable code.
+
+### Core Principles
+
+#### Pure Functions
+- Same input always produces same output
+- No side effects (no mutation, no I/O)
+- Easier to test, reason about, and parallelize
+
+#### Immutability
+- Never mutate data; create new instances
+- Use immutable data structures when available
+- Entities can have controlled mutation; value objects must be immutable
+
+#### Composition
+- Build complex behavior from simple functions
+- Prefer `pipe` / `compose` over nested calls
+- Small, focused functions that do one thing
+
+#### Higher-Order Functions
+- Functions that take or return functions
+- Use `map`, `filter`, `reduce` over imperative loops
+- Avoid manual iteration when possible
+
+#### Avoid Shared State
+- Pass dependencies explicitly (dependency injection)
+- Avoid global variables and singletons
+- Use pure functions for business logic
+
+#### Result Types for Error Handling
+- Use `Result<T, E>` / `Either<L, R>` / `Option<T>` for expected errors
+- Reserve exceptions for unexpected errors (bugs, infrastructure failures)
+- Makes error paths explicit in the type system
+
+### Functional Patterns in Domain
+
+| Pattern | Description |
+|---------|-------------|
+| **Railway-Oriented Programming** | Chain operations that can fail using Result types |
+| **Smart Constructors** | Factory functions that validate and return Result |
+| **Specification Pattern** | Composable business rules as functions |
+| **Event Sourcing** | Store events, derive state (naturally functional) |
+
+---
+
+## Architecture Decision Guidelines
+
+| Scenario | Approach |
+|----------|----------|
+| New project/module with business logic | DDD + Functional |
+| Existing project with architecture | Follow existing patterns |
+| Small script/utility | Keep it simple |
+| Legacy codebase | Respect existing structure |
+| Adding feature to DDD project | Follow established bounded contexts |
+| Integrating external system | Use Anti-Corruption Layer |
 
 ---
 
@@ -264,6 +858,37 @@ Fixes ENG-3324
 - Prefer DRY, SOLID, and KISS principles
 - Consider architectural impact before making changes
 - Work within established patterns before suggesting alternatives
+
+### Immutability by Default
+**Prefer immutable data structures and patterns whenever possible:**
+
+- **Variables**: Use `const`, `final`, `readonly`, `let` (not `var`) by default
+- **Data structures**: Prefer immutable collections and objects
+- **Functions**: Return new instances instead of mutating input
+- **State changes**: Create new state objects instead of modifying existing ones
+
+| Language | Immutable Declaration | Mutable (avoid) |
+|----------|----------------------|-----------------|
+| JavaScript/TS | `const`, `readonly`, `as const` | `let`, `var` |
+| Python | `tuple`, `frozenset`, `@dataclass(frozen=True)` | `list`, `dict` |
+| Java | `final`, `record`, `List.of()` | mutable fields |
+| Kotlin | `val`, `listOf()`, `data class` | `var`, `mutableListOf()` |
+| Go | return new structs | pointer mutation |
+| Rust | default immutable, `let` | `let mut` |
+| C# | `readonly`, `init`, `record` | mutable properties |
+
+**When mutation is acceptable:**
+- Performance-critical hot paths (measure first)
+- Builder patterns during construction
+- Internal implementation details (keep interface immutable)
+- When the language/framework requires it
+
+**Benefits:**
+- Easier to reason about (no hidden state changes)
+- Thread-safe by default
+- Simpler debugging (state is predictable)
+- Enables undo/redo and time-travel debugging
+- Prevents accidental side effects
 
 ### Implementation Rules
 - Only modify code that is directly necessary for the task
@@ -322,18 +947,63 @@ Fixes ENG-3324
 
 ## Testing
 
-### Test Pyramid
-- Unit tests: Fast, isolated, mock dependencies (70%)
-- Integration tests: Test component interactions (20%)
-- E2E tests: Critical user journeys only (10%)
+### MANDATORY: Test Every Change
+- **Always write tests for all code developed**
+- **Run tests and ensure they pass before completing any task**
+- No task is complete until tests are written and passing
+
+### Test Priority (in order of preference)
+1. **E2E tests** (preferred): Test the full flow through the system
+2. **Integration tests**: When E2E is not feasible for the specific case
+3. **Unit tests** (fallback): Only when E2E/integration tests are technically impossible
+
+### When to Use Each Type
+| Type | Use When |
+|------|----------|
+| **E2E** | Testing API endpoints, user flows, full features |
+| **Integration** | Testing service interactions, database operations |
+| **Unit** | Pure functions, utilities, complex algorithms, isolated logic |
+
+### Mocks & Stubs Policy
+- **Minimize mocks and stubs as much as possible**
+- Prefer real implementations over mocks
+- Only mock what is absolutely necessary:
+  - External third-party APIs (payment gateways, email services)
+  - Services with side effects that cannot be controlled (SMS, external webhooks)
+  - Time-dependent operations (use fake timers instead of mocking Date)
+- **Never mock**:
+  - Your own code/services (test the real implementation)
+  - Database operations (use test database)
+  - Internal APIs (test the actual integration)
 
 ### AAA Pattern
 Structure all tests with clear sections:
-```
-// Arrange - Set up test data and conditions
-// Act - Execute the code being tested
-// Assert - Verify the results
-```
+- **Arrange**: Set up test data and conditions
+- **Act**: Execute the code being tested
+- **Assert**: Verify the results
+
+Use comments to clearly separate these sections in your tests (e.g., `// Arrange`, `# Arrange`, `-- Arrange` depending on language).
+
+### Test Data Generation
+- **Always use faker libraries to generate test data** (never hardcode strings, numbers, emails, etc.)
+- Generates realistic, random data that catches edge cases
+- Avoids false positives from coincidental hardcoded values
+- Use the appropriate faker library for your language
+
+| Language | Library |
+|----------|---------|
+| JavaScript/TypeScript | `@faker-js/faker` |
+| Python | `Faker` |
+| Go | `gofakeit` |
+| Ruby | `Faker` |
+| Java/Kotlin | `JavaFaker` / `kotlin-faker` |
+| PHP | `fakerphp/faker` |
+| Rust | `fake` |
+| C#/.NET | `Bogus` |
+| Elixir | `Faker` |
+| Swift | `Fakery` |
+
+**Principle**: Replace all hardcoded test values (names, emails, numbers, dates, etc.) with faker-generated data.
 
 ### Guidelines
 - Write tests before fixing bugs (regression prevention)
@@ -341,26 +1011,40 @@ Structure all tests with clear sections:
 - Use descriptive test names: `should_return_error_when_user_not_found`
 - One assertion per test (when practical)
 - Avoid testing private methods directly
-- Mock external services, not your own code
-- Use faker libraries for test data generation (avoid hardcoded values)
+- Test edge cases and error scenarios, not just happy paths
 
 ### Test Isolation
 - Every test must be fully isolated
 - Tests must not share state with other tests
-- Never connect to real databases or external services in tests
-- Always use mocks, fakes, or test-specific utilities
+- Use test database for database operations
 - Avoid `beforeAll`/`beforeEach` unless required by existing patterns
 - Clean up test data after each test
 
 ### File Naming
-- Name test files after the module they test: `moduleName.test.ts`, `moduleName.spec.ts`
-- Keep test files alongside source files or in a dedicated `__tests__` directory
+- Name test files after the module they test
+- Follow the project's existing test file naming convention
+- Common patterns by language:
+  - JS/TS: `moduleName.test.js`, `moduleName.spec.ts`
+  - Python: `test_module_name.py`, `module_name_test.py`
+  - Go: `module_name_test.go`
+  - Java: `ModuleNameTest.java`
+  - Ruby: `module_name_spec.rb`
+  - Rust: `mod tests` in same file or `tests/` directory
+- E2E tests: typically in `e2e/`, `integration/`, or with `.e2e.` in filename
+- Keep test files alongside source files or in a dedicated test directory (follow project convention)
 
 ### Coverage
 - Aim for 80%+ coverage on critical paths
 - 100% coverage is not a goal; meaningful tests are
 - New code should not decrease overall coverage
-- Run tests to confirm they pass before completing the task
+- **Run tests and confirm all pass before marking task complete**
+
+### Pre-Completion Test Checklist
+- [ ] E2E tests written (or justified why unit tests were used instead)
+- [ ] All new code paths are covered
+- [ ] Edge cases and error scenarios tested
+- [ ] All tests pass locally
+- [ ] No mocks for internal code/services
 
 ---
 
@@ -389,68 +1073,439 @@ Structure all tests with clear sections:
 
 ## Error Handling
 
-### Principles
+### Philosophy
 - Fail fast, fail loudly in development
 - Fail gracefully in production
+- Errors are not exceptional—they're expected
 - Never swallow exceptions silently
 - Include context in error messages
-- Use custom error types for domain errors
-- Use existing error classes before creating new ones
-- Extend existing error types if needed
 
-### Error Responses
-- Follow existing API response format
-- Never expose internal error details to clients in production
-- Sanitize error messages appropriately
-- Include request context in logs (userId, requestId, etc.)
+### Error Categories
+
+| Category | Description | Handling Strategy |
+|----------|-------------|-------------------|
+| **Validation Errors** | Invalid user input | Return 400, list field errors |
+| **Business Errors** | Rule violations | Return 422, explain the rule |
+| **Authentication Errors** | Identity issues | Return 401, prompt re-auth |
+| **Authorization Errors** | Permission denied | Return 403, don't leak info |
+| **Not Found Errors** | Resource missing | Return 404 |
+| **Conflict Errors** | State conflicts | Return 409, explain conflict |
+| **Infrastructure Errors** | System failures | Return 500, retry logic |
+| **External Service Errors** | Third-party failures | Circuit breaker, fallback |
+
+### Custom Error Types
+
+#### Structure
+Create domain-specific error types:
+```
+BaseError
+├── ValidationError
+├── BusinessError
+│   ├── InsufficientFundsError
+│   ├── OrderAlreadyShippedError
+│   └── DuplicateEmailError
+├── AuthenticationError
+├── AuthorizationError
+├── NotFoundError
+└── InfrastructureError
+    ├── DatabaseError
+    └── ExternalServiceError
+```
+
+#### Error Properties
+Every error should include:
+- **Code**: Machine-readable identifier (`INSUFFICIENT_FUNDS`)
+- **Message**: Human-readable description
+- **Context**: Relevant data for debugging
+- **Timestamp**: When it occurred
+- **RequestId**: For correlation
+
+### Error Handling Patterns
+
+#### Result/Either Pattern
+Use Result types for expected errors (instead of exceptions):
+```
+Result<User, ValidationError>
+Either<Error, Success>
+Optional<Value>
+```
+
+Benefits:
+- Makes error paths explicit in types
+- Forces handling at compile time
+- Enables railway-oriented programming
+
+#### Exception Guidelines
+Use exceptions for:
+- Unexpected errors (bugs)
+- Infrastructure failures
+- Truly exceptional conditions
+
+Don't use exceptions for:
+- Validation errors (expected)
+- Business rule violations (expected)
+- Flow control
+
+### Retry Strategies
+
+#### When to Retry
+- Network timeouts
+- Rate limiting (429)
+- Service unavailable (503)
+- Database deadlocks
+- Transient infrastructure errors
+
+#### When NOT to Retry
+- Validation errors (400)
+- Authentication errors (401)
+- Authorization errors (403)
+- Not found errors (404)
+- Business logic errors (422)
+
+#### Retry Configuration
+```
+Max retries: 3-5
+Initial delay: 100-500ms
+Backoff: Exponential (2x each retry)
+Max delay: 30-60 seconds
+Jitter: Add randomness to prevent thundering herd
+```
+
+### Circuit Breaker Pattern
+
+Prevent cascading failures when external services fail:
+
+| State | Behavior |
+|-------|----------|
+| **Closed** | Normal operation, requests pass through |
+| **Open** | Requests fail immediately, no external calls |
+| **Half-Open** | Limited requests to test recovery |
+
+Configuration:
+- Failure threshold: 5-10 failures
+- Reset timeout: 30-60 seconds
+- Half-open requests: 1-3
+
+### Error Response Format
+
+#### API Error Response
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "The request contains invalid data",
+    "details": [
+      {
+        "field": "email",
+        "code": "INVALID_FORMAT",
+        "message": "Email must be a valid email address"
+      },
+      {
+        "field": "age",
+        "code": "OUT_OF_RANGE",
+        "message": "Age must be between 18 and 120"
+      }
+    ],
+    "requestId": "req-abc-123",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "documentation": "https://api.example.com/docs/errors#VALIDATION_ERROR"
+  }
+}
+```
+
+### Error Logging
+
+#### What to Log
+- Error type and code
+- Full stack trace (in development)
+- Sanitized stack trace (in production)
+- Request context (userId, requestId)
+- Input that caused the error (sanitized)
+- Timestamp
+
+#### What NOT to Log
+- Sensitive data (passwords, tokens)
+- PII unless necessary
+- Full stack traces in client responses
+
+### Graceful Degradation
+
+When external services fail:
+1. **Cache fallback**: Return cached data if available
+2. **Default values**: Return safe defaults
+3. **Partial response**: Return what you can
+4. **Queue for retry**: Process later when service recovers
+5. **Alternative service**: Use backup provider
+
+### Error Handling Checklist
+- [ ] Custom error types defined for domain
+- [ ] All errors logged with context
+- [ ] Sensitive data sanitized in error responses
+- [ ] Retry logic for transient failures
+- [ ] Circuit breakers for external services
+- [ ] Graceful degradation strategy defined
+- [ ] Error monitoring and alerting configured
 
 ---
 
-## Logging
+## Observability
 
-### Log Levels
-- `ERROR`: Application errors requiring attention
-- `WARN`: Unexpected but handled situations
-- `INFO`: Significant business events
-- `DEBUG`: Detailed diagnostic information (dev only)
+### Three Pillars
+1. **Logs**: Discrete events with context
+2. **Metrics**: Numeric measurements over time
+3. **Traces**: Request flow across services
 
-### What to Log
+### Logging
+
+#### Log Levels
+| Level | Purpose | Example |
+|-------|---------|---------|
+| `FATAL` | Application cannot continue | Database connection failed, out of memory |
+| `ERROR` | Operation failed, needs attention | Payment processing failed, API error |
+| `WARN` | Unexpected but handled | Rate limit approached, retry succeeded |
+| `INFO` | Significant business events | User registered, order placed |
+| `DEBUG` | Diagnostic information | Function entry/exit, variable values |
+| `TRACE` | Very detailed debugging | Loop iterations, raw payloads |
+
+**Production**: INFO and above | **Development**: DEBUG and above
+
+#### Structured Logging
+Always use structured logging (JSON format):
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "level": "INFO",
+  "message": "Order placed successfully",
+  "service": "order-service",
+  "requestId": "abc-123",
+  "userId": "user-456",
+  "orderId": "order-789",
+  "amount": 99.99,
+  "duration_ms": 150
+}
+```
+
+#### Correlation IDs
+- Generate unique request ID at entry point
+- Pass through all service calls
+- Include in all logs for that request
+- Use headers: `X-Request-ID`, `X-Correlation-ID`
+
+#### What to Log
 - Request/response for external APIs (sanitized)
 - Authentication events (login, logout, failures)
-- Business-critical operations
+- Business-critical operations (orders, payments)
 - Performance metrics for slow operations
+- Errors with full context (stack traces in dev)
+- State transitions in workflows
+- Background job execution
 
-### What NOT to Log
-- Passwords, tokens, PII
-- Full credit card numbers
+#### What NOT to Log
+- Passwords, tokens, API keys
+- Full credit card numbers (mask: `****1234`)
+- PII without necessity (emails, SSN)
 - Health check endpoints (unless failing)
 - High-frequency events without sampling
+- Request/response bodies with sensitive data
+
+### Metrics
+
+#### Types of Metrics
+| Type | Description | Example |
+|------|-------------|---------|
+| **Counter** | Monotonically increasing | Total requests, errors |
+| **Gauge** | Point-in-time value | Active connections, queue size |
+| **Histogram** | Distribution of values | Response time percentiles |
+| **Summary** | Similar to histogram, pre-calculated | Request duration |
+
+#### Key Metrics (RED Method)
+| Metric | What to Measure |
+|--------|-----------------|
+| **Rate** | Requests per second |
+| **Errors** | Error rate (%, count) |
+| **Duration** | Response time (p50, p95, p99) |
+
+#### Key Metrics (USE Method - for resources)
+| Metric | What to Measure |
+|--------|-----------------|
+| **Utilization** | Percentage of resource used |
+| **Saturation** | Work waiting (queue depth) |
+| **Errors** | Error count for resource |
+
+#### Standard Metrics to Implement
+- HTTP request count (by endpoint, method, status)
+- HTTP request duration (histogram)
+- Database query duration
+- Cache hit/miss ratio
+- Queue depth and processing time
+- External API latency and errors
+- Business metrics (orders, signups, etc.)
+
+### Distributed Tracing
+
+#### Concepts
+- **Trace**: Full journey of a request
+- **Span**: Single operation within a trace
+- **Context Propagation**: Passing trace info between services
+
+#### When to Add Spans
+- Incoming HTTP requests
+- Outgoing HTTP requests
+- Database queries
+- Cache operations
+- Message queue publish/consume
+- Significant business operations
+
+#### Tracing Best Practices
+- Include business context in spans (userId, orderId)
+- Set appropriate span names (verb + noun)
+- Add error details to spans
+- Use sampling for high-volume services
+- Implement context propagation headers
+
+### Alerting
+
+#### Alert Principles
+- Alert on symptoms, not causes
+- Alert on user-facing impact
+- Every alert should be actionable
+- Avoid alert fatigue (too many alerts)
+
+#### Alert Levels
+| Level | Response Time | Example |
+|-------|---------------|---------|
+| **Critical** | Immediate | Service down, data loss |
+| **Warning** | Hours | Error rate elevated, disk 80% |
+| **Info** | Next business day | Unusual patterns |
+
+### Dashboards
+
+#### Essential Dashboards
+- **Service Health**: Overall status, error rates, latency
+- **Infrastructure**: CPU, memory, disk, network
+- **Business Metrics**: KPIs, conversions, revenue
+- **Dependencies**: External API status, database health
 
 ---
 
 ## Security
 
+### OWASP Top 10 Awareness
+Always be aware of common vulnerabilities:
+
+| Vulnerability | Prevention |
+|---------------|------------|
+| **Injection** (SQL, NoSQL, Command) | Parameterized queries, input validation, escape user input |
+| **Broken Authentication** | Strong password policies, MFA, secure session management |
+| **Sensitive Data Exposure** | Encrypt at rest and in transit, minimize data collection |
+| **XML External Entities (XXE)** | Disable DTDs, use simple data formats (JSON) |
+| **Broken Access Control** | Deny by default, validate permissions on every request |
+| **Security Misconfiguration** | Secure defaults, remove unused features, update regularly |
+| **Cross-Site Scripting (XSS)** | Output encoding, Content Security Policy, sanitize HTML |
+| **Insecure Deserialization** | Validate input, use safe serialization formats |
+| **Known Vulnerabilities** | Keep dependencies updated, use security scanners |
+| **Insufficient Logging** | Log security events, monitor for anomalies |
+
 ### Secrets Management
 - NEVER commit secrets, tokens, or credentials
-- Use environment variables or secret managers
+- Use environment variables or secret managers (AWS Secrets Manager, HashiCorp Vault, etc.)
 - Add sensitive patterns to `.gitignore`
 - Rotate compromised secrets immediately
 - Use `git-secrets` or `gitleaks` for pre-commit hooks
-
-### Secure Coding
-- Validate and sanitize all inputs
-- Use parameterized queries (prevent SQL injection)
-- Escape output (prevent XSS)
-- Implement proper authentication and authorization
-- Use HTTPS everywhere
-- Keep dependencies updated (use Dependabot/Renovate)
-- Follow principle of least privilege
+- Use different secrets per environment (dev/staging/prod)
+- Never log secrets, even partially
 
 ### Sensitive Files to Never Commit
-- `.env`, `.env.*` (except `.env.example`)
-- `*.pem`, `*.key`, `*.p12`
-- `credentials.json`, `serviceAccount.json`
-- `id_rsa`, `id_ed25519` (private keys)
+```
+# Environment files
+.env, .env.*, .env.local (except .env.example)
+
+# Keys and certificates
+*.pem, *.key, *.p12, *.pfx, *.crt
+id_rsa, id_ed25519, id_dsa (private keys)
+
+# Credentials
+credentials.json, serviceAccount.json
+**/secrets/*, **/private/*
+
+# Database
+*.sqlite, *.db (if contains real data)
+```
+
+### Authentication Best Practices
+- Use established libraries (don't roll your own crypto)
+- Hash passwords with bcrypt, scrypt, or Argon2 (never MD5/SHA1)
+- Implement rate limiting on auth endpoints
+- Use secure session management
+- Implement account lockout after failed attempts
+- Support multi-factor authentication (MFA)
+- Use short-lived tokens with refresh mechanism
+
+### Authorization Best Practices
+- Deny by default, explicitly grant permissions
+- Check permissions on every request (not just UI)
+- Use role-based (RBAC) or attribute-based (ABAC) access control
+- Never trust client-side authorization checks
+- Log authorization failures
+- Implement proper resource ownership checks
+
+### Input Validation & Sanitization
+```
+1. Validate type (string, number, boolean)
+2. Validate format (email, URL, UUID)
+3. Validate range (min/max length, value bounds)
+4. Sanitize for context (HTML, SQL, shell)
+5. Reject unexpected fields (whitelist approach)
+```
+
+### Output Encoding
+| Context | Encoding |
+|---------|----------|
+| HTML body | HTML entity encoding |
+| HTML attributes | Attribute encoding |
+| JavaScript | JavaScript encoding |
+| URL parameters | URL encoding |
+| CSS | CSS encoding |
+| JSON | JSON encoding (built-in) |
+
+### Security Headers
+```
+Content-Security-Policy: default-src 'self'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-XSS-Protection: 1; mode=block
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: geolocation=(), microphone=()
+```
+
+### API Security
+- Always use HTTPS (TLS 1.2+)
+- Implement rate limiting
+- Use API keys or OAuth 2.0 for authentication
+- Validate Content-Type headers
+- Implement request size limits
+- Use CORS appropriately
+- Don't expose internal error details
+
+### Dependency Security
+- Use tools like `npm audit`, `pip-audit`, `cargo audit`
+- Enable Dependabot or Renovate for automatic updates
+- Review security advisories before upgrading
+- Use lockfiles to ensure reproducible builds
+- Consider using a private registry for internal packages
+
+### Secure Coding Checklist
+- [ ] All user input is validated and sanitized
+- [ ] Parameterized queries used for all database operations
+- [ ] Output is properly encoded for its context
+- [ ] Authentication and authorization checks on all endpoints
+- [ ] Sensitive data encrypted at rest and in transit
+- [ ] No secrets in code or version control
+- [ ] Security headers configured
+- [ ] Dependencies are up to date
+- [ ] Logging doesn't include sensitive data
+- [ ] Error messages don't expose implementation details
 
 ---
 
@@ -460,7 +1515,7 @@ Structure all tests with clear sections:
 - Explain WHY, not WHAT (code shows what)
 - Document non-obvious decisions
 - Keep comments updated with code
-- Use TODO/FIXME with ticket numbers: `// TODO(ENG-1234): refactor this`
+- Use TODO/FIXME with ticket numbers: `TODO(ENG-1234): refactor this`
 - Delete commented-out code
 
 ### README Requirements
@@ -482,51 +1537,219 @@ For significant decisions, document:
 ## API Design
 
 ### REST Conventions
+
+#### Resource Naming
 - Use nouns for resources: `/users`, `/orders`
-- Use HTTP methods correctly:
-  - `GET`: Read (idempotent)
-  - `POST`: Create
-  - `PUT`: Full update (idempotent)
-  - `PATCH`: Partial update
-  - `DELETE`: Remove (idempotent)
 - Use plural nouns: `/users` not `/user`
+- Use kebab-case for multi-word: `/user-profiles`
 - Nest for relationships: `/users/{id}/orders`
+- Avoid deep nesting (max 2 levels): `/users/{id}/orders` not `/users/{id}/orders/{orderId}/items/{itemId}`
+- Use query params for filtering: `/orders?status=pending`
+
+#### HTTP Methods
+| Method | Purpose | Idempotent | Safe | Request Body | Response Body |
+|--------|---------|------------|------|--------------|---------------|
+| `GET` | Read resource(s) | ✅ | ✅ | ❌ | ✅ |
+| `POST` | Create resource | ❌ | ❌ | ✅ | ✅ |
+| `PUT` | Full update (replace) | ✅ | ❌ | ✅ | ✅ |
+| `PATCH` | Partial update | ❌* | ❌ | ✅ | ✅ |
+| `DELETE` | Remove resource | ✅ | ❌ | ❌ | ❌/✅ |
+| `HEAD` | Get headers only | ✅ | ✅ | ❌ | ❌ |
+| `OPTIONS` | Get allowed methods | ✅ | ✅ | ❌ | ✅ |
+
+*PATCH can be idempotent if implemented correctly
 
 ### HTTP Status Codes
-- `200`: Success
-- `201`: Created
-- `204`: No Content (successful DELETE)
-- `400`: Bad Request (client error)
-- `401`: Unauthorized (not authenticated)
-- `403`: Forbidden (not authorized)
-- `404`: Not Found
-- `409`: Conflict
-- `422`: Unprocessable Entity (validation error)
-- `500`: Internal Server Error
 
-### Versioning
-- Use URL path: `/api/v1/users`
+#### Success (2xx)
+| Code | Meaning | When to Use |
+|------|---------|-------------|
+| `200` | OK | Successful GET, PUT, PATCH |
+| `201` | Created | Successful POST (include Location header) |
+| `202` | Accepted | Request accepted for async processing |
+| `204` | No Content | Successful DELETE, or PUT/PATCH with no response body |
+
+#### Client Errors (4xx)
+| Code | Meaning | When to Use |
+|------|---------|-------------|
+| `400` | Bad Request | Malformed request syntax |
+| `401` | Unauthorized | Missing or invalid authentication |
+| `403` | Forbidden | Authenticated but not authorized |
+| `404` | Not Found | Resource doesn't exist |
+| `405` | Method Not Allowed | HTTP method not supported for resource |
+| `409` | Conflict | State conflict (duplicate, version mismatch) |
+| `410` | Gone | Resource permanently deleted |
+| `422` | Unprocessable Entity | Validation errors |
+| `429` | Too Many Requests | Rate limit exceeded |
+
+#### Server Errors (5xx)
+| Code | Meaning | When to Use |
+|------|---------|-------------|
+| `500` | Internal Server Error | Unexpected server error |
+| `502` | Bad Gateway | Invalid response from upstream |
+| `503` | Service Unavailable | Server temporarily down |
+| `504` | Gateway Timeout | Upstream timeout |
+
+### Request/Response Patterns
+
+#### Standard Response Envelope
+```json
+{
+  "data": { ... },
+  "meta": {
+    "requestId": "uuid",
+    "timestamp": "ISO-8601"
+  }
+}
+```
+
+#### Error Response Format
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Human readable message",
+    "details": [
+      {
+        "field": "email",
+        "message": "Invalid email format",
+        "code": "INVALID_FORMAT"
+      }
+    ]
+  },
+  "meta": {
+    "requestId": "uuid",
+    "timestamp": "ISO-8601"
+  }
+}
+```
+
+#### Collection Response with Pagination
+```json
+{
+  "data": [ ... ],
+  "pagination": {
+    "page": 1,
+    "perPage": 20,
+    "total": 100,
+    "totalPages": 5
+  },
+  "links": {
+    "self": "/users?page=1",
+    "next": "/users?page=2",
+    "prev": null,
+    "first": "/users?page=1",
+    "last": "/users?page=5"
+  }
+}
+```
+
+### Pagination Strategies
+
+| Strategy | Pros | Cons | Use When |
+|----------|------|------|----------|
+| **Offset/Limit** | Simple, random access | Slow on large datasets, inconsistent with changes | Small datasets, admin panels |
+| **Cursor-based** | Consistent, performant | No random access, complex | Large datasets, feeds, infinite scroll |
+| **Keyset** | Very performant | Limited sorting options | Time-series data, logs |
+
+### Filtering, Sorting & Search
+
+```
+# Filtering
+GET /orders?status=pending&created_after=2024-01-01
+
+# Sorting (prefix with - for descending)
+GET /users?sort=created_at    # ascending
+GET /users?sort=-created_at   # descending
+GET /users?sort=-created_at,name  # multiple fields
+
+# Field selection (sparse fieldsets)
+GET /users?fields=id,name,email
+
+# Search
+GET /users?q=john
+
+# Complex filters (use brackets or dot notation)
+GET /products?price[gte]=100&price[lte]=500
+GET /products?filter[price][gte]=100
+```
+
+### API Versioning
+
+| Strategy | Example | Pros | Cons |
+|----------|---------|------|------|
+| **URL Path** | `/api/v1/users` | Clear, easy to route | URL changes |
+| **Header** | `Accept: application/vnd.api+json;version=1` | Clean URLs | Hidden, harder to test |
+| **Query Param** | `/users?version=1` | Easy to test | Pollutes URL |
+
+**Recommended**: URL Path (`/api/v1/`) for simplicity
+
+### Versioning Rules
 - Never break existing versions
-- Deprecate with headers and documentation
+- Deprecate with headers: `Deprecation: true`, `Sunset: <date>`
+- Provide migration guides
+- Support at least 2 versions simultaneously
+- Communicate deprecation timeline (minimum 6 months)
+
+### Rate Limiting
+Include headers in responses:
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1609459200
+Retry-After: 60  (on 429 response)
+```
+
+### HATEOAS (Hypermedia)
+Include related actions in responses:
+```json
+{
+  "data": {
+    "id": "123",
+    "status": "pending"
+  },
+  "links": {
+    "self": "/orders/123",
+    "cancel": "/orders/123/cancel",
+    "items": "/orders/123/items"
+  }
+}
+```
+
+### GraphQL Considerations
+When to prefer GraphQL over REST:
+- Complex, nested data requirements
+- Multiple client types with different data needs
+- Rapid iteration on data requirements
+- When over-fetching/under-fetching is a problem
+
+When to prefer REST:
+- Simple CRUD operations
+- Caching is critical (HTTP caching)
+- File uploads/downloads
+- Team familiarity with REST
 
 ---
 
-## Type Safety (TypeScript)
+## Type Safety
 
-### Guidelines
-- Ensure all TypeScript types are properly defined and used
-- Avoid `any` types; use `unknown` with type guards when necessary
+### Guidelines (for statically typed languages)
+- Ensure all types are properly defined and used
+- Avoid escape hatches (`any` in TS, `Object` in Java, `interface{}` in Go)
+- Use type guards, pattern matching, or equivalent when narrowing types
 - Leverage existing type definitions from shared packages
 - Ensure type safety in all database queries and API responses
-- Resolve all TypeScript errors before completing the task
+- Resolve all compilation/type errors before completing the task
 
-### Type Guards
-```typescript
-// Prefer type guards over type assertions
-function isUser(obj: unknown): obj is User {
-  return typeof obj === 'object' && obj !== null && 'id' in obj;
-}
-```
+### Language-Specific Notes
+| Language | Avoid | Prefer |
+|----------|-------|--------|
+| TypeScript | `any` | `unknown` + type guards |
+| Java | raw types, `Object` | generics, sealed classes |
+| Go | `interface{}` | concrete types, generics |
+| Rust | excessive `.unwrap()` | `Result`, `Option` handling |
+| C# | `dynamic`, `object` | generics, pattern matching |
+| Python | no type hints | type hints + mypy/pyright |
 
 ---
 
@@ -537,19 +1760,86 @@ function isUser(obj: unknown): obj is User {
 - Query Builder or raw SQL only when ORM doesn't support the operation
 - State explicitly when using non-ORM approaches and why
 - Use eager/lazy loading appropriately
+- Understand the SQL generated by your ORM (enable query logging)
+
+### Schema Design Principles
+
+#### Normalization
+- Start with 3NF (Third Normal Form) for most cases
+- Denormalize intentionally for read performance (document why)
+- Avoid redundant data unless for performance
+
+#### Data Types
+- Use appropriate types (not everything should be VARCHAR)
+- Use ENUM/CHECK constraints for fixed values
+- Use UUID for distributed systems; auto-increment for simple cases
+- Store dates in UTC, convert on display
+- Use JSONB sparingly (for truly dynamic data)
+
+#### Common Patterns
+| Pattern | Use Case |
+|---------|----------|
+| **Soft Deletes** | Audit trail, data recovery (`deleted_at` column) |
+| **Timestamps** | Always include `created_at`, `updated_at` |
+| **Versioning** | Optimistic locking (`version` column) |
+| **Polymorphic** | `*_type` + `*_id` for flexible relations |
+| **Audit Log** | Separate table for change history |
 
 ### Migrations
+
+#### Rules
 - Always use migrations (never manual DDL in production)
 - Migrations must be reversible when possible
 - One logical change per migration
 - Name descriptively: `20240115_add_email_index_to_users`
 - Test migrations on production-like data
 - Never modify migrations already applied to production
-- Backup data before destructive migrations (DROP, DELETE, etc.)
-- Document migration rationale in name or description
+- Backup data before destructive migrations
 
-### Query Guidelines
-- Use indexes for frequently queried columns
+#### Safe Migration Practices
+| Operation | Safe Approach |
+|-----------|---------------|
+| Add column | Add as nullable first, backfill, then add constraint |
+| Remove column | Stop reading → deploy → remove column |
+| Rename column | Add new → copy data → migrate code → remove old |
+| Add index | Use `CONCURRENTLY` (Postgres) or online DDL |
+| Change type | Add new column → migrate data → swap → remove old |
+
+#### Large Table Migrations
+- Use batched updates for data migrations
+- Run during low-traffic periods
+- Consider online schema migration tools (gh-ost, pt-osc)
+- Monitor lock wait times and replication lag
+
+### Indexing
+
+#### When to Add Indexes
+- Columns in WHERE clauses
+- Columns in JOIN conditions
+- Columns in ORDER BY
+- Columns with high selectivity
+- Foreign key columns (usually automatic)
+
+#### Index Types
+| Type | Use Case |
+|------|----------|
+| **B-tree** | Default, range queries, equality |
+| **Hash** | Equality only, faster for exact matches |
+| **GIN** | Array, JSONB, full-text search |
+| **GiST** | Geometric, full-text, ranges |
+| **BRIN** | Very large tables with natural ordering |
+
+#### Index Best Practices
+- Index columns in order of selectivity (most selective first)
+- Consider composite indexes for common query patterns
+- Don't over-index (slows writes, uses storage)
+- Monitor unused indexes and remove them
+- Use partial indexes for filtered queries
+- Use covering indexes to avoid table lookups
+
+### Query Optimization
+
+#### Guidelines
 - Avoid `SELECT *`; specify columns
 - Use pagination for large datasets
 - Avoid N+1 queries (use eager loading)
@@ -558,48 +1848,416 @@ function isUser(obj: unknown): obj is User {
 - Keep transactions as short as possible
 - Select only required fields
 
-### Naming
-- Tables: plural, snake_case (`user_accounts`)
-- Columns: singular, snake_case (`created_at`)
-- Indexes: `idx_<table>_<columns>`
-- Foreign keys: `fk_<table>_<referenced_table>`
+#### N+1 Query Problem
+```
+# Bad (N+1 queries)
+users = User.all()
+for user in users:
+    print(user.orders)  # Query per user
+
+# Good (eager loading)
+users = User.includes(:orders).all()
+for user in users:
+    print(user.orders)  # No additional queries
+```
+
+#### Query Performance Checklist
+- [ ] Using appropriate indexes?
+- [ ] Avoiding full table scans?
+- [ ] Using EXPLAIN/ANALYZE to verify execution plan?
+- [ ] Pagination implemented for lists?
+- [ ] Timeouts configured?
+- [ ] Connection pool sized appropriately?
+
+### Transactions
+
+#### ACID Properties
+- **Atomicity**: All or nothing
+- **Consistency**: Valid state to valid state
+- **Isolation**: Concurrent transactions don't interfere
+- **Durability**: Committed data persists
+
+#### Isolation Levels
+| Level | Dirty Read | Non-Repeatable Read | Phantom Read |
+|-------|------------|---------------------|--------------|
+| Read Uncommitted | ✅ | ✅ | ✅ |
+| Read Committed | ❌ | ✅ | ✅ |
+| Repeatable Read | ❌ | ❌ | ✅ |
+| Serializable | ❌ | ❌ | ❌ |
+
+**Default recommendation**: Read Committed (Postgres default)
+
+#### Transaction Best Practices
+- Keep transactions as short as possible
+- Avoid external API calls inside transactions
+- Use savepoints for partial rollbacks
+- Handle deadlocks with retry logic
+- Set appropriate timeouts
+
+### Connection Pooling
+
+#### Pool Sizing Formula
+```
+connections = (core_count * 2) + effective_spindle_count
+```
+
+For most applications: `10-20` connections per application instance
+
+#### Configuration
+- Set minimum and maximum pool size
+- Configure connection timeout
+- Configure idle timeout
+- Enable connection validation
+- Monitor pool metrics
+
+### Naming Conventions
+
+| Element | Convention | Example |
+|---------|------------|---------|
+| Tables | plural, snake_case | `user_accounts` |
+| Columns | singular, snake_case | `created_at` |
+| Primary Key | `id` or `<table>_id` | `id`, `user_id` |
+| Foreign Key | `<referenced_table>_id` | `user_id` |
+| Indexes | `idx_<table>_<columns>` | `idx_users_email` |
+| Unique Indexes | `uniq_<table>_<columns>` | `uniq_users_email` |
+| Check Constraints | `chk_<table>_<description>` | `chk_users_age_positive` |
+
+### Backup & Recovery
+- Implement automated backups
+- Test restore procedures regularly
+- Use point-in-time recovery (PITR) for critical data
+- Keep backups in different regions
+- Document RTO (Recovery Time Objective) and RPO (Recovery Point Objective)
 
 ---
 
 ## Performance
 
-### General Guidelines
-- Measure before optimizing (profile first)
-- Optimize hot paths, not everything
-- Cache expensive operations
-- Use lazy loading for non-critical resources
-- Implement pagination for lists
+### Golden Rules
+1. **Measure first**: Never optimize without profiling
+2. **Optimize hot paths**: Focus on code that runs frequently
+3. **Know your bottlenecks**: CPU, memory, I/O, network
+4. **Set performance budgets**: Define acceptable latency/throughput
 
-### What to Avoid
-- Premature optimization
-- N+1 database queries
-- Blocking I/O in async contexts
-- Memory leaks (event listeners, closures)
-- Synchronous operations for large datasets
+### Profiling & Measurement
+
+#### What to Measure
+| Metric | Target | Tool Examples |
+|--------|--------|---------------|
+| Response time (p50, p95, p99) | < 200ms p95 | APM tools, custom metrics |
+| Throughput | Depends on requirements | Load testing tools |
+| Error rate | < 0.1% | Monitoring dashboards |
+| CPU usage | < 70% sustained | System monitors |
+| Memory usage | Stable, no leaks | Heap profilers |
+
+#### Profiling Process
+1. Establish baseline metrics
+2. Identify the bottleneck (don't guess)
+3. Form hypothesis
+4. Make targeted change
+5. Measure impact
+6. Repeat
+
+### Caching Strategies
+
+#### Cache Levels
+| Level | Latency | Use Case |
+|-------|---------|----------|
+| **CPU Cache** | ~1ns | Automatic (code locality) |
+| **Application Memory** | ~100ns | Frequently accessed data |
+| **Distributed Cache** (Redis) | ~1ms | Shared across instances |
+| **CDN** | ~10-100ms | Static assets, API responses |
+| **Browser Cache** | 0ms | Static assets |
+
+#### Caching Patterns
+| Pattern | Description | Use When |
+|---------|-------------|----------|
+| **Cache-Aside** | App manages cache | General purpose |
+| **Write-Through** | Write to cache and DB | Strong consistency needed |
+| **Write-Behind** | Write to cache, async to DB | Write-heavy workloads |
+| **Read-Through** | Cache fetches from DB | Simplify application code |
+
+#### Cache Invalidation Strategies
+- **Time-based (TTL)**: Simple, eventual consistency
+- **Event-based**: Invalidate on data change
+- **Version-based**: Include version in cache key
+
+#### Cache Best Practices
+- Set appropriate TTLs (not too long, not too short)
+- Use cache keys that include relevant context
+- Handle cache misses gracefully
+- Monitor hit rates (aim for > 90%)
+- Plan for cache failures (graceful degradation)
+
+### Database Performance
+
+#### Query Optimization
+- Use `EXPLAIN ANALYZE` to understand query plans
+- Add appropriate indexes (but don't over-index)
+- Avoid N+1 queries
+- Use pagination for large result sets
+- Consider denormalization for read-heavy workloads
+- Use read replicas for read scaling
+
+#### Connection Management
+- Use connection pooling
+- Size pools appropriately (not too large)
+- Close connections properly
+- Monitor connection usage
+
+### Async & Concurrency
+
+#### When to Use Async
+- I/O-bound operations (network, disk)
+- When parallelism improves throughput
+- Non-blocking UI/API responses
+
+#### Concurrency Patterns
+| Pattern | Use Case |
+|---------|----------|
+| **Thread Pool** | CPU-bound parallel work |
+| **Event Loop** | I/O-bound, many connections |
+| **Actor Model** | Isolated state, message passing |
+| **Work Queue** | Background job processing |
+
+#### Async Best Practices
+- Don't block the event loop
+- Use appropriate pool sizes
+- Handle backpressure
+- Set timeouts on all external calls
+- Use circuit breakers for resilience
+
+### Memory Management
+
+#### Common Memory Issues
+| Issue | Symptoms | Solution |
+|-------|----------|----------|
+| **Memory Leak** | Gradual increase over time | Find and fix references |
+| **Unbounded Cache** | Memory grows with data | Set max size, eviction policy |
+| **Large Objects** | High GC pressure | Stream, paginate, or compress |
+| **Circular References** | Objects never collected | Break cycles, use weak refs |
+
+#### Memory Best Practices
+- Stream large files instead of loading into memory
+- Use pagination for large datasets
+- Implement resource cleanup (finally blocks, using statements)
+- Set memory limits for containers
+- Monitor memory usage trends
+
+### Network Performance
+
+#### Reduce Latency
+- Keep connections alive (HTTP keep-alive)
+- Use connection pooling
+- Colocate services (same region/zone)
+- Use CDN for static content
+- Implement gzip/brotli compression
+
+#### Reduce Bandwidth
+- Compress responses
+- Use efficient serialization (protobuf, msgpack)
+- Implement sparse fieldsets (return only needed fields)
+- Use ETags for caching
+- Paginate large responses
+
+### Frontend Performance (if applicable)
+
+#### Core Web Vitals
+| Metric | Target | Measures |
+|--------|--------|----------|
+| **LCP** (Largest Contentful Paint) | < 2.5s | Loading performance |
+| **INP** (Interaction to Next Paint) | < 200ms | Interactivity |
+| **CLS** (Cumulative Layout Shift) | < 0.1 | Visual stability |
+
+#### Optimization Techniques
+- Code splitting and lazy loading
+- Image optimization (WebP, lazy loading, srcset)
+- Critical CSS inlining
+- Bundle size optimization
+- Service workers for caching
+
+### Performance Anti-Patterns
+
+| Anti-Pattern | Problem | Solution |
+|--------------|---------|----------|
+| **Premature optimization** | Wasted effort, added complexity | Measure first, optimize hot paths |
+| **N+1 queries** | Database round-trips | Eager loading, batch queries |
+| **Blocking I/O in async** | Blocks event loop | Use async APIs |
+| **Unbounded queries** | Returns too much data | Pagination, limits |
+| **No caching** | Repeated expensive computations | Add appropriate caching |
+| **Over-caching** | Stale data, memory issues | Set TTLs, invalidation |
+| **Synchronous external calls** | Cascading latency | Async, timeouts, circuit breakers |
+
+### Performance Checklist
+- [ ] Baseline metrics established
+- [ ] Profiling done on hot paths
+- [ ] Database queries optimized (checked with EXPLAIN)
+- [ ] Appropriate caching implemented
+- [ ] Pagination for all list endpoints
+- [ ] Timeouts on all external calls
+- [ ] Async used for I/O operations
+- [ ] Memory usage stable under load
+- [ ] Load testing performed
+
+---
+
+## Concurrency & Async
+
+### Concurrency Models
+
+| Model | Best For | Languages |
+|-------|----------|-----------|
+| **Threads** | CPU-bound, shared memory | Java, C#, Python, Go |
+| **Event Loop** | I/O-bound, many connections | JavaScript, Python (asyncio) |
+| **Actors** | Distributed, isolated state | Erlang, Akka, Elixir |
+| **CSP (Channels)** | Message passing | Go, Clojure |
+| **Async/Await** | I/O-bound, readable code | Most modern languages |
+
+### Common Concurrency Issues
+
+| Issue | Description | Prevention |
+|-------|-------------|------------|
+| **Race Condition** | Outcome depends on timing | Locks, atomic operations, immutability |
+| **Deadlock** | Circular wait for resources | Lock ordering, timeouts, avoid nested locks |
+| **Livelock** | Threads active but no progress | Backoff strategies |
+| **Starvation** | Thread never gets resources | Fair scheduling, priority management |
+| **Priority Inversion** | Low-priority holds high-priority resource | Priority inheritance |
+
+### Thread Safety
+
+#### Strategies
+1. **Immutability**: No shared mutable state
+2. **Synchronization**: Locks, mutexes, semaphores
+3. **Atomic Operations**: Lock-free primitives
+4. **Message Passing**: No shared state
+5. **Thread-Local Storage**: Per-thread data
+
+#### Best Practices
+- Prefer immutability over synchronization
+- Keep critical sections small
+- Avoid nested locks
+- Use higher-level abstractions (concurrent collections)
+- Document thread-safety guarantees
+
+### Async Programming
+
+#### When to Use Async
+- I/O-bound operations (network, disk, database)
+- High concurrency (many simultaneous operations)
+- Non-blocking requirements (UI, event handlers)
+
+#### When NOT to Use Async
+- CPU-bound operations (use threads/processes)
+- Simple sequential operations
+- When it adds complexity without benefit
+
+#### Async Best Practices
+- Don't block async code (no `.wait()` in async context)
+- Use async all the way (don't mix sync/async)
+- Handle cancellation properly
+- Set timeouts on all external calls
+- Use appropriate exception handling
+- Avoid `async void` (except event handlers)
+
+### Backpressure
+
+When producer is faster than consumer:
+
+| Strategy | Description |
+|----------|-------------|
+| **Drop** | Discard excess items |
+| **Buffer** | Queue items (bounded!) |
+| **Throttle** | Slow down producer |
+| **Sample** | Take periodic snapshots |
+| **Error** | Fail when overwhelmed |
+
+### Concurrency Patterns
+
+#### Producer-Consumer
+- Bounded queue between producer and consumer
+- Multiple consumers for parallelism
+- Graceful shutdown with poison pills
+
+#### Worker Pool
+- Fixed number of workers
+- Task queue for work distribution
+- Prevents resource exhaustion
+
+#### Fan-Out/Fan-In
+- Fan-out: Distribute work to multiple workers
+- Fan-in: Collect results from multiple sources
+
+### Timeouts
+
+**Always set timeouts on external operations:**
+
+| Operation | Recommended Timeout |
+|-----------|---------------------|
+| HTTP requests | 5-30 seconds |
+| Database queries | 5-60 seconds |
+| Cache operations | 100-500ms |
+| Message queue | 1-5 seconds |
+| Inter-service calls | 1-10 seconds |
 
 ---
 
 ## Environment & Configuration
 
 ### 12-Factor App Principles
-- Store config in environment variables
-- Keep dev/staging/prod as similar as possible
-- Never hardcode environment-specific values
+1. **Codebase**: One codebase, many deploys
+2. **Dependencies**: Explicitly declare and isolate
+3. **Config**: Store config in environment variables
+4. **Backing Services**: Treat as attached resources
+5. **Build, Release, Run**: Strictly separate stages
+6. **Processes**: Execute as stateless processes
+7. **Port Binding**: Export services via port binding
+8. **Concurrency**: Scale out via process model
+9. **Disposability**: Fast startup, graceful shutdown
+10. **Dev/Prod Parity**: Keep environments similar
+11. **Logs**: Treat as event streams
+12. **Admin Processes**: Run as one-off processes
 
 ### Environment Files
-- `.env.example`: Template with all vars (commit this)
-- `.env`: Local development (never commit)
-- `.env.test`: Test environment config
+| File | Purpose | Commit? |
+|------|---------|---------|
+| `.env.example` | Template with all vars | ✅ Yes |
+| `.env` | Local development | ❌ No |
+| `.env.test` | Test environment | ❌ No |
+| `.env.local` | Local overrides | ❌ No |
 
 ### Configuration Hierarchy
+```
 1. Environment variables (highest priority)
-2. Config files
-3. Default values in code (lowest priority)
+2. Command line arguments
+3. Config files (per environment)
+4. Default values in code (lowest priority)
+```
+
+### Configuration Best Practices
+- Never hardcode environment-specific values
+- Validate configuration at startup (fail fast)
+- Use typed configuration objects
+- Document all configuration options
+- Provide sensible defaults where possible
+- Keep secrets separate from config
+
+### Feature Flags
+Use feature flags for:
+- Gradual rollouts
+- A/B testing
+- Kill switches
+- Environment-specific features
+
+```json
+{
+  "new_checkout_flow": {
+    "enabled": true,
+    "percentage": 25,
+    "allowlist": ["user-123"],
+    "blocklist": []
+  }
+}
+```
 
 ---
 
@@ -639,9 +2297,197 @@ Follow [SemVer](https://semver.org/): `MAJOR.MINOR.PATCH`
 - Beta: `1.0.0-beta.1` (feature complete, may have bugs)
 - RC: `1.0.0-rc.1` (release candidate)
 
+### Version Bumping Guidelines
+| Change Type | Version Bump | Example |
+|-------------|--------------|---------|
+| Breaking API change | MAJOR | Remove endpoint, change response format |
+| New feature | MINOR | Add endpoint, add optional field |
+| Bug fix | PATCH | Fix validation, correct calculation |
+| Security fix | PATCH | Fix vulnerability (may warrant immediate release) |
+| Documentation only | No bump | README updates |
+| Internal refactor | PATCH | Code cleanup (if released) |
+
 ### Changelog
-- Keep a `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/)
-- Sections: Added, Changed, Deprecated, Removed, Fixed, Security
+Keep a `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/):
+
+```markdown
+# Changelog
+
+## [Unreleased]
+### Added
+- New feature description
+
+## [1.2.0] - 2024-01-15
+### Added
+- User profile customization
+- Dark mode support
+
+### Changed
+- Improved search performance
+
+### Fixed
+- Login timeout issue (#123)
+
+### Security
+- Updated dependencies for CVE-XXXX
+```
+
+Sections: Added, Changed, Deprecated, Removed, Fixed, Security
+
+---
+
+## CI/CD
+
+### Continuous Integration (CI)
+
+#### Pipeline Stages
+```
+1. Checkout → 2. Install → 3. Lint → 4. Test → 5. Build → 6. Analyze
+```
+
+#### CI Best Practices
+- Run CI on every push and PR
+- Keep pipelines fast (< 10 minutes ideal)
+- Fail fast (run quick checks first)
+- Cache dependencies
+- Run tests in parallel when possible
+- Use matrix builds for multiple versions/platforms
+
+#### Quality Gates
+| Gate | Criteria |
+|------|----------|
+| Linting | Zero warnings/errors |
+| Tests | 100% pass, no flaky tests |
+| Coverage | Minimum threshold met |
+| Security | No high/critical vulnerabilities |
+| Build | Successful compilation |
+
+### Continuous Deployment (CD)
+
+#### Deployment Strategies
+| Strategy | Description | Risk | Rollback |
+|----------|-------------|------|----------|
+| **Recreate** | Stop old, start new | Downtime | Manual |
+| **Rolling** | Gradual replacement | Low | Manual |
+| **Blue/Green** | Two identical environments | None | Instant |
+| **Canary** | Small % of traffic first | Very Low | Instant |
+| **Feature Flags** | Code paths controlled by config | None | Instant |
+
+#### Environment Promotion
+```
+Development → Staging → Production
+     │           │           │
+   Auto        Manual     Manual
+   Deploy      Approval   Approval
+```
+
+### Release Process
+
+#### Pre-Release Checklist
+- [ ] All tests passing
+- [ ] Code reviewed and approved
+- [ ] Changelog updated
+- [ ] Version bumped
+- [ ] Documentation updated
+- [ ] Migration scripts tested
+- [ ] Rollback plan documented
+
+#### Post-Release Monitoring
+- Watch error rates for 15-30 minutes
+- Monitor key metrics (latency, throughput)
+- Check logs for new errors
+- Verify critical flows manually
+- Be ready to rollback
+
+### Rollback Strategy
+1. **Immediate**: Keep previous version deployed
+2. **Database**: Forward-only migrations, backward compatible
+3. **Feature Flags**: Disable new features without deploy
+4. **Communication**: Have incident response process
+
+---
+
+## Accessibility (Web)
+
+### WCAG Principles (POUR)
+
+| Principle | Description |
+|-----------|-------------|
+| **Perceivable** | Information presentable in ways users can perceive |
+| **Operable** | UI components must be operable |
+| **Understandable** | Information and UI operation must be understandable |
+| **Robust** | Content must be robust enough for assistive technologies |
+
+### Essential Requirements
+
+#### Semantic HTML
+- Use correct heading hierarchy (`h1` → `h2` → `h3`)
+- Use `<button>` for buttons, `<a>` for links
+- Use `<nav>`, `<main>`, `<article>`, `<section>` landmarks
+- Use lists (`<ul>`, `<ol>`) for list content
+- Use `<table>` with proper headers for tabular data
+
+#### Images
+- All images need `alt` text
+- Decorative images: `alt=""`
+- Complex images: detailed description or link
+- Don't use images of text
+
+#### Forms
+- Every input needs a `<label>`
+- Group related fields with `<fieldset>` and `<legend>`
+- Provide clear error messages
+- Mark required fields clearly
+- Don't rely on color alone for validation
+
+#### Keyboard Navigation
+- All interactive elements focusable
+- Logical tab order
+- Visible focus indicators
+- No keyboard traps
+- Skip links for main content
+
+#### Color & Contrast
+- 4.5:1 contrast ratio for normal text
+- 3:1 for large text (18px+ or 14px+ bold)
+- Don't convey information by color alone
+- Test with color blindness simulators
+
+### ARIA Usage
+
+#### When to Use ARIA
+1. First, use native HTML elements
+2. If not possible, use ARIA attributes
+3. ARIA should supplement, not replace HTML
+
+#### Common ARIA Attributes
+| Attribute | Purpose |
+|-----------|---------|
+| `aria-label` | Label when no visible text |
+| `aria-labelledby` | Reference another element's text |
+| `aria-describedby` | Additional description |
+| `aria-hidden` | Hide from assistive technology |
+| `aria-live` | Announce dynamic content |
+| `aria-expanded` | Expandable element state |
+| `aria-selected` | Selection state |
+
+### Testing Accessibility
+- Use screen reader (VoiceOver, NVDA, JAWS)
+- Keyboard-only navigation
+- Automated tools (axe, Lighthouse)
+- Color contrast checkers
+- HTML validation
+
+### Accessibility Checklist
+- [ ] All images have alt text
+- [ ] Color contrast meets WCAG standards
+- [ ] All forms have proper labels
+- [ ] Keyboard navigation works
+- [ ] Focus indicators visible
+- [ ] Headings in logical order
+- [ ] ARIA used correctly (when needed)
+- [ ] Tested with screen reader
+- [ ] No motion/animation without user preference respect
 
 ---
 

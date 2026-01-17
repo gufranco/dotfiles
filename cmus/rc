@@ -1,0 +1,101 @@
+################################################################################
+# Tokyo Night Theme
+################################################################################
+# Base colors
+set color_win_bg=default
+set color_win_fg=253
+
+# Command line
+set color_cmdline_bg=default
+set color_cmdline_fg=253
+
+# Status line
+set color_statusline_bg=237
+set color_statusline_fg=253
+
+# Title
+set color_win_title_bg=default
+set color_win_title_fg=110
+
+# Currently playing
+set color_win_cur=110
+
+# Selection
+set color_win_cur_sel_bg=237
+set color_win_cur_sel_fg=110
+set color_win_sel_bg=237
+set color_win_sel_fg=253
+
+# Directory listing
+set color_win_dir=110
+
+# Inactive window
+set color_win_inactive_cur_sel_bg=default
+set color_win_inactive_cur_sel_fg=110
+set color_win_inactive_sel_bg=default
+set color_win_inactive_sel_fg=253
+
+# Error and info messages
+set color_error=203
+set color_info=110
+
+# Separator
+set color_separator=237
+
+################################################################################
+# Playback settings
+################################################################################
+# Output plugin (auto-detect or use: alsa, pulse, ao, oss)
+set output_plugin=ao
+
+# Continue playing next track from the library
+set play_library=true
+
+# Resume playback on startup
+set resume=true
+
+# Follow playback in library view
+set follow=true
+
+# Repeat mode
+set repeat=false
+
+# Shuffle mode
+set shuffle=false
+
+################################################################################
+# Display settings
+################################################################################
+# Format for displaying tracks in library
+set format_library=%a - %l - %t (%y)
+set format_playlist=%a - %l - %t (%y)
+set format_trackwin=%a - %l - %t (%y)
+
+# Status display format
+set format_statusline=%{status} %{artist} - %{album} - %{title} %{duration}
+
+# Show playback position
+set show_playback_position=true
+
+# Show remaining time instead of elapsed
+set show_remaining_time=false
+
+################################################################################
+# Library settings
+################################################################################
+# Add music directories (uncomment and customize)
+add ~/Music
+add ~/Dropbox/Music
+
+################################################################################
+# Key bindings
+################################################################################
+# Default key bindings are usually fine, but you can customize here
+# Example: bind -f common q quit
+
+################################################################################
+# File type associations
+################################################################################
+# Support for various audio formats (requires appropriate codecs)
+set aaa_mode=all
+

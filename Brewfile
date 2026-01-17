@@ -1,0 +1,300 @@
+# frozen_string_literal: true
+
+################################################################################
+# System specifications
+################################################################################
+architecture = `uname -m`.strip
+cpu = `sysctl -n machdep.cpu.brand_string`.strip
+model = `sysctl -n hw.model`.strip
+serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
+storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824) + 255) / 256) * 256
+
+################################################################################
+# Homebrew taps
+################################################################################
+tap 'aws/tap'
+tap 'buo/cask-upgrade'
+tap 'neomutt/neomutt'
+tap 'oven-sh/bun'
+tap 'stripe/stripe-cli'
+tap 'UltimateNova1203/maxcso'
+tap 'ungive/media-control'
+tap 'universal-ctags/universal-ctags'
+tap 'withgraphite/tap'
+
+################################################################################
+# Homebrew packages
+################################################################################
+brew 'ack'
+brew 'act'
+brew 'asciinema'
+brew 'autoconf'
+brew 'automake'
+brew 'awscli'
+brew 'bash'
+brew 'bat'
+brew 'bc'
+brew 'binutils'
+brew 'ca-certificates'
+brew 'chruby'
+brew 'cmake'
+brew 'cmus'
+brew 'cocoapods'
+brew 'colima'
+brew 'coreutils'
+brew 'cpufetch'
+brew 'curl'
+brew 'delta'
+brew 'diffutils'
+brew 'docker-compose'
+brew 'docker-credential-helper'
+brew 'docker'
+brew 'dust'
+brew 'eza'
+brew 'fastfetch'
+brew 'fatsort'
+brew 'fd'
+brew 'findutils'
+brew 'flyctl'
+brew 'fzf'
+brew 'gawk'
+brew 'gettext'
+brew 'gh'
+brew 'git'
+brew 'glab'
+brew 'gnu-indent'
+brew 'gnu-tar'
+brew 'gnu-time'
+brew 'gnu-units'
+brew 'gnu-which'
+brew 'gnupg'
+brew 'golang', link: true
+brew 'golangci-lint'
+brew 'gpatch'
+brew 'gping'
+brew 'graphite'
+brew 'grep'
+brew 'gsed'
+brew 'helm'
+brew 'htop'
+brew 'httpie'
+brew 'hyperfine'
+brew 'jq'
+brew 'kubectl'
+brew 'libpq'
+brew 'libtool'
+brew 'lima-additional-guestagents'
+brew 'lynx'
+brew 'mailutils'
+brew 'make'
+brew 'mas'
+brew 'mcfly'
+brew 'media-control'
+brew 'moreutils'
+brew 'mtr'
+brew 'neomutt'
+brew 'neovim'
+brew 'nmap'
+brew 'node', link: true
+brew 'nvm'
+brew 'openjdk@17'
+brew 'openssl'
+brew 'oven-sh/bun/bun', link: true
+brew 'p7zip'
+brew 'patchutils'
+brew 'pnpm'
+brew 'procs'
+brew 'pygments'
+brew 'python', link: true
+brew 'rclone'
+brew 'readline'
+brew 'ripgrep'
+brew 'rsync'
+brew 'ruby-install'
+brew 'ruby', link: true
+brew 'rust', link: true
+brew 'shared-mime-info'
+brew 'shellcheck'
+brew 'snyk-cli'
+brew 'starship'
+brew 'stripe-cli'
+brew 'telnet'
+brew 'terraform'
+brew 'tmux'
+brew 'tokei'
+brew 'tty-clock'
+brew 'ucon64'
+brew 'UltimateNova1203/maxcso/maxcso'
+brew 'universal-ctags'
+brew 'unzip'
+brew 'urlview'
+brew 'vim'
+brew 'vint'
+brew 'watchman'
+brew 'wget'
+brew 'yarn'
+brew 'zip'
+brew 'zlib'
+brew 'zsh-syntax-highlighting'
+brew 'zsh'
+
+################################################################################
+# Homebrew casks
+################################################################################
+# cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu)
+# cask 'jdownloader'
+cask '1password'
+cask 'android-studio'
+cask 'balenaetcher'
+cask 'claude-code'
+cask 'cleanmymac'
+cask 'clickup'
+cask 'coconutbattery'
+cask 'cursor-cli'
+cask 'cursor'
+cask 'cyberduck'
+cask 'db-browser-for-sqlite'
+cask 'dbeaver-community'
+cask 'discord'
+cask 'figma'
+cask 'firefox'
+cask 'flixtools'
+cask 'google-chrome'
+cask 'grandperspective'
+cask 'insomnia'
+cask 'istat-menus'
+cask 'iterm2'
+cask 'keka'
+cask 'kitty'
+cask 'lastpass'
+cask 'linear-linear'
+cask 'maccy'
+cask 'macs-fan-control' unless /\AApple M[\d]\z/.match?(cpu)
+cask 'maestral'
+cask 'mongodb-compass'
+cask 'monitorcontrol'
+cask 'mx-power-gadget' if architecture == 'arm64'
+cask 'ngrok'
+cask 'nordvpn'
+cask 'parallels' if architecture == 'arm64'
+cask 'postman'
+cask 'shottr'
+cask 'slack'
+cask 'spotify', args: { no_quarantine: true }
+cask 'sublime-text'
+cask 'textmate'
+cask 'transmission'
+cask 'tunnelblick'
+cask 'visual-studio-code'
+cask 'vlc'
+
+################################################################################
+# Homebrew fonts
+################################################################################
+cask 'font-fira-code-nerd-font'
+cask 'font-fira-mono-nerd-font'
+cask 'font-hack-nerd-font'
+cask 'font-jetbrains-mono-nerd-font'
+cask 'font-ubuntu-mono-nerd-font'
+cask 'font-ubuntu-nerd-font'
+cask 'font-ubuntu-sans-nerd-font'
+
+if storage >= 512
+  cask 'font-0xproto-nerd-font'
+  cask 'font-3270-nerd-font'
+  cask 'font-adwaita-mono-nerd-font'
+  cask 'font-agave-nerd-font'
+  cask 'font-anonymice-nerd-font'
+  cask 'font-arimo-nerd-font'
+  cask 'font-atkynson-mono-nerd-font'
+  cask 'font-aurulent-sans-mono-nerd-font'
+  cask 'font-bigblue-terminal-nerd-font'
+  cask 'font-bitstream-vera-sans-mono-nerd-font'
+  cask 'font-blex-mono-nerd-font'
+  cask 'font-caskaydia-cove-nerd-font'
+  cask 'font-caskaydia-mono-nerd-font'
+  cask 'font-code-new-roman-nerd-font'
+  cask 'font-comic-shanns-mono-nerd-font'
+  cask 'font-commit-mono-nerd-font'
+  cask 'font-cousine-nerd-font'
+  cask 'font-d2coding-nerd-font'
+  cask 'font-daddy-time-mono-nerd-font'
+  cask 'font-dejavu-sans-mono-nerd-font'
+  cask 'font-departure-mono-nerd-font'
+  cask 'font-droid-sans-mono-nerd-font'
+  cask 'font-envy-code-r-nerd-font'
+  cask 'font-fantasque-sans-mono-nerd-font'
+  cask 'font-geist-mono-nerd-font'
+  cask 'font-go-mono-nerd-font'
+  cask 'font-gohufont-nerd-font'
+  cask 'font-hasklug-nerd-font'
+  cask 'font-heavy-data-nerd-font'
+  cask 'font-hurmit-nerd-font'
+  cask 'font-im-writing-nerd-font'
+  cask 'font-inconsolata-go-nerd-font'
+  cask 'font-inconsolata-lgc-nerd-font'
+  cask 'font-inconsolata-nerd-font'
+  cask 'font-intone-mono-nerd-font'
+  cask 'font-iosevka-nerd-font'
+  cask 'font-iosevka-term-nerd-font'
+  cask 'font-iosevka-term-slab-nerd-font'
+  cask 'font-lekton-nerd-font'
+  cask 'font-liberation-nerd-font'
+  cask 'font-lilex-nerd-font'
+  cask 'font-m+-nerd-font'
+  cask 'font-martian-mono-nerd-font'
+  cask 'font-meslo-lg-nerd-font'
+  cask 'font-monaspice-nerd-font'
+  cask 'font-monocraft-nerd-font'
+  cask 'font-monofur-nerd-font'
+  cask 'font-monoid-nerd-font'
+  cask 'font-mononoki-nerd-font'
+  cask 'font-noto-nerd-font'
+  cask 'font-opendyslexic-nerd-font'
+  cask 'font-overpass-nerd-font'
+  cask 'font-profont-nerd-font'
+  cask 'font-proggy-clean-tt-nerd-font'
+  cask 'font-recursive-mono-nerd-font'
+  cask 'font-roboto-mono-nerd-font'
+  cask 'font-sauce-code-pro-nerd-font'
+  cask 'font-sf-mono-nerd-font-ligaturized'
+  cask 'font-shure-tech-mono-nerd-font'
+  cask 'font-space-mono-nerd-font'
+  cask 'font-symbols-only-nerd-font'
+  cask 'font-terminess-ttf-nerd-font'
+  cask 'font-tinos-nerd-font'
+  cask 'font-victor-mono-nerd-font'
+  cask 'font-zed-mono-nerd-font'
+end
+
+################################################################################
+# App Store - Apps
+################################################################################
+mas 'Xcode', id: 497_799_835
+mas 'Amphetamine', id: 937_984_704
+mas 'Magnet', id: 441_258_766
+
+################################################################################
+# App Store - Games
+################################################################################
+if architecture == 'arm64' && storage >= 512
+  mas 'Cyberpunk 2077', id: 6_633_429_424
+  mas 'Death Stranding', id: 6_449_748_961
+  mas 'Resident Evil 2', id: 1_640_632_432
+  mas 'Resident Evil 3', id: 1_640_630_077
+  mas 'Resident Evil 4', id: 6_462_360_082
+  mas 'Resident Evil 7', id: 1_640_629_241
+  mas 'Resident Evil 8', id: 1_640_627_334
+  mas 'Stray', id: 6_451_498_949
+end
+
+################################################################################
+# Unsupported systems
+#
+# Macbook Pro 13 Mid 2012:  C02J332HDV30
+# Macbook Retina 12 2017:   C02TW09THH29
+################################################################################
+if ['C02J332HDV30', 'C02TW09THH29'].include?(serial)
+  cask 'aldente'
+  cask 'opencore-patcher'
+end

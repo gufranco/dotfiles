@@ -1,0 +1,61 @@
+################################################################################
+# Completion
+################################################################################
+set completion-ignore-case on
+set show-all-if-ambiguous on
+set mark-symlinked-directories on
+set match-hidden-files off
+set page-completions off
+set completion-query-items 200
+set visible-stats on
+set skip-completed-text on
+set menu-complete-display-prefix on
+set print-completions-horizontally on
+set colored-completion-prefix on
+set colored-stats on
+
+################################################################################
+# History
+################################################################################
+"\e[B": history-search-forward
+"\e[A": history-search-backward
+set history-size 10000
+
+################################################################################
+# Character Encoding
+################################################################################
+set input-meta on
+set output-meta on
+set convert-meta off
+
+################################################################################
+# Key Bindings
+################################################################################
+"\e[3;3~": kill-word
+"\C-a": beginning-of-line
+"\C-e": end-of-line
+"\C-k": kill-line
+"\C-u": backward-kill-line
+"\C-w": backward-kill-word
+"\C-l": clear-screen
+"\C-r": reverse-search-history
+"\C-s": forward-search-history
+"\ef": forward-word
+"\eb": backward-word
+"\ed": kill-word
+"\e\C-h": backward-kill-word
+"\C-t": transpose-chars
+"\et": transpose-words
+
+################################################################################
+# Editing
+################################################################################
+set editing-mode emacs
+set bell-style none
+set blink-matching-paren on
+set enable-bracketed-paste on
+set horizontal-scroll-mode off
+set keyseq-timeout 500
+set mark-modified-lines on
+set meta-flag on
+set expand-tilde on

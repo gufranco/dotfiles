@@ -1,0 +1,92 @@
+# Cursor Rules for Dotfiles
+
+## Language
+- Always respond in American English, regardless of the language the user uses
+
+## Git Commits
+When making commits, follow these conventions based on ~/.dotfiles/git/.gitmessage:
+
+### Commit Message Format
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types (required)
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Formatting, missing semicolons, etc (no code change)
+- `refactor`: Code change that neither fixes a bug nor adds a feature
+- `perf`: Code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `build`: Changes to build system or dependencies (npm, gradle, etc)
+- `ci`: Changes to CI configuration files and scripts
+- `chore`: Other changes that don't modify src or test files
+- `revert`: Reverts a previous commit
+
+### Scopes (optional, for this dotfiles repo)
+- `zsh`: Shell configuration (aliases, functions, settings, paths)
+- `brew`: Brewfile changes
+- `install`: install.sh changes
+- `git`: Git configuration
+- `vim`: Vim/Neovim configuration
+- `tmux`: Tmux configuration
+- `eza`: eza configuration
+- `bat`: bat configuration
+- `kitty`: Kitty terminal configuration
+- `gpg`: GPG/SSH configuration
+- No scope for general changes
+
+### Subject (required)
+- Use imperative mood: "add" not "added" or "adds"
+- Don't capitalize the first letter
+- No period at the end
+- Max 50 characters
+
+### Body (optional)
+- Wrap at 72 characters
+- Explain WHAT and WHY, not HOW
+- Separate from subject with a blank line
+- Use bullet points if needed (- or *)
+
+### Footer (optional)
+- BREAKING CHANGE: <description>
+- Closes #123, Fixes #456, Refs #789
+- Co-authored-by: Name <email@example.com>
+
+### Rules
+1. Use `--no-gpg-sign` flag when GPG signing fails in terminal
+2. Make atomic commits (one logical change per commit)
+3. Group related changes together
+
+### Examples
+```
+feat(eza): add configuration with Tokyo Night theme
+
+fix(zsh): correct path for homebrew on Apple Silicon
+
+refactor(install): simplify package installation logic
+
+- Extract common functions to utilities
+- Remove duplicate code blocks
+
+docs: update README with installation instructions
+
+chore(brew): update dependencies
+```
+
+## Code Style
+- Follow existing patterns in the codebase
+- Use `__` prefix for internal helper functions in shell scripts
+- Keep configurations organized with clear section headers using `#` comments
+- Prefer DRY, SOLID, and KISS principles
+
+## Shell Scripts
+- Use `#!/usr/bin/env bash` shebang
+- Quote variables: `"$VAR"` not `$VAR`
+- Use `[[ ]]` for conditionals in bash
+- Use `command -v` instead of `which` for checking command existence

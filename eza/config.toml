@@ -1,0 +1,20 @@
+################################################################################
+# eza configuration
+# https://github.com/eza-community/eza
+################################################################################
+
+[icons]
+when = "auto"
+style = "fancy"
+
+[display]
+icons = "auto"
+group = true
+header = true
+time_style = "long-iso"
+git = true
+classify = "auto"
+
+[sorting]
+sort = "name"
+dirs_first = true

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Paths
+################################################################################
+case "$(uname)" in
+  "Linux")
+    __add_to_path "/usr/libexec/neomutt"
+    ;;
+
+  "Darwin")
+    # Setup Homebrew based on architecture
+    case "$(uname -m)" in
+      "arm64")  __setup_homebrew "/opt/homebrew" ;;
+      "x86_64") __setup_homebrew "/usr/local" ;;
+    esac
+
+    # Homebrew packages
+    __add_gnu_tool "curl"
+    __add_gnu_tool "libpq"
+    __add_gnu_tool "openssl"
+
+    # Ruby
+    __add_gnu_tool "ruby"
+    # __add_to_path "$HOMEBREW_PREFIX/lib/ruby/gems/3.4.0/bin"
+
+    # Development environments
+    export NVM_DIR="$HOME/.nvm"
+    export PNPM_HOME="$HOME/Library/pnpm"
+    __add_to_path "$PNPM_HOME"
+
+    export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@17"
+    __add_to_path "$JAVA_HOME/bin"
+
+    export ANDROID_HOME="$HOME/Library/Android/sdk"
+    __add_to_path "$ANDROID_HOME/platform-tools"
+    __add_to_path "$ANDROID_HOME/emulator"
+
+    # GNU utilities (replacing BSD versions)
+    __add_gnu_tool "bc"
+    __add_gnu_tool "coreutils" "libexec/gnubin"
+    __add_gnu_tool "gawk" "libexec/gnubin"
+    __add_gnu_tool "gnu-sed" "libexec/gnubin"
+    __add_gnu_tool "findutils" "libexec/gnubin"
+    __add_gnu_tool "grep" "libexec/gnubin"
+    __add_gnu_tool "binutils"
+    __add_gnu_tool "make" "libexec/gnubin"
+    __add_gnu_tool "gnu-tar" "libexec/gnubin"
+    __add_gnu_tool "which"
+    __add_gnu_tool "diffutils"
+    __add_gnu_tool "patch"
+    __add_gnu_tool "gnu-time" "libexec/gnubin"
+    __add_gnu_tool "gnu-which" "libexec/gnubin"
+    __add_gnu_tool "gnu-units"
+    __add_gnu_tool "gnu-indent" "libexec/gnubin"
+    __add_gnu_tool "inetutils" "libexec/gnubin"
+    __add_gnu_tool "mailutils"
+    __add_gnu_tool "moreutils"
+    __add_gnu_tool "patchutils"
+    ;;
+esac

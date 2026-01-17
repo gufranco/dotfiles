@@ -1,0 +1,923 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Terminal output helpers
+################################################################################
+function __log_with_time() {
+  local prefix="$1"
+  shift
+
+  if [ -n "${SCRIPT_START_TIME:-}" ]; then
+    local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
+    local mins=$((elapsed / 60))
+    local secs=$((elapsed % 60))
+    echo -e "${prefix} [$(printf '%02d:%02d' "$mins" "$secs")] $*"
+  else
+    echo -e "${prefix} $*"
+  fi
+}
+
+function __log_info() {
+  __log_with_time "\033[0;34m[INFO]\033[0m" "$@"
+}
+
+function __log_success() {
+  __log_with_time "\033[0;32m[✓]\033[0m" "$@"
+}
+
+function __log_warning() {
+  __log_with_time "\033[0;33m[!]\033[0m" "$@"
+}
+
+function __log_error() {
+  __log_with_time "\033[0;31m[✗]\033[0m" "$@"
+}
+
+function __log_skip() {
+  __log_with_time "\033[0;90m[SKIP]\033[0m" "$@"
+}
+
+################################################################################
+# System helpers
+################################################################################
+function __cmd_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+function __pkg_installed() {
+  dpkg -l "$1" 2>/dev/null | grep -q "^ii"
+}
+
+function __snap_installed() {
+  snap list "$1" >/dev/null 2>&1
+}
+
+function __safe_link() {
+  local src="$1"
+  local dst="$2"
+
+  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+    __log_skip "Link OK: $dst"
+    return 0
+  fi
+
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    rm -rf "$dst"
+  fi
+
+  # Create parent directory if it doesn't exist
+  mkdir -p "$(dirname "$dst")"
+
+  ln -s "$src" "$dst"
+  __log_success "Linked: $dst -> $(basename "$src")"
+}
+
+function __git_sync() {
+  local url="$1"
+  local path="$2"
+  local depth="${3:-1}"
+  local repo_name
+  repo_name=$(basename "$path")
+
+  if [ -d "$path/.git" ]; then
+    if git -C "$path" pull --quiet --no-edit >/dev/null 2>&1; then
+      __log_success "Updated: $repo_name"
+      return 0
+    else
+      __log_warning "Failed to update: $repo_name"
+      return 1
+    fi
+  else
+    rm -rf "$path"
+    if git clone --quiet --depth="$depth" "$url" "$path" >/dev/null 2>&1; then
+      __log_success "Cloned: $repo_name"
+      return 0
+    else
+      __log_error "Failed to clone: $repo_name"
+      return 1
+    fi
+  fi
+}
+
+################################################################################
+# VM / container internal helpers
+################################################################################
+function __calculate_vm_cores() {
+  # Percentage of total CPU cores to allocate
+  local percentage=50
+  # Minimum number of CPU cores to allocate
+  local minimum=2
+  # Maximum number of CPU cores to allocate
+  local maximum=4
+  # Total CPU cores
+  local total
+
+  case "$(uname -s)" in
+    Darwin)
+      total="$(sysctl -n hw.ncpu)"
+
+      ;;
+    Linux)
+      total="$(nproc)"
+
+      ;;
+  esac
+
+  # Calculate percentage
+  local result
+  result=$(( total * percentage / 100 ))
+
+  # Round up to next even number if odd and >= 2
+  if [ "$result" -ge 2 ] && [ $(( result % 2 )) -ne 0 ]; then
+    result=$(( result + 1 ))
+  fi
+
+  # Apply maximum limit
+  if [ "$result" -gt "$maximum" ]; then
+    echo "$maximum"
+
+    return
+  fi
+
+  # Apply minimum limit, but never exceed total available cores
+  if [ "$result" -lt "$minimum" ]; then
+    if [ "$total" -ge "$minimum" ]; then
+      echo "$minimum"
+    else
+      # If total cores < minimum, use total (don't allocate more than available)
+      echo "$total"
+    fi
+
+    return
+  fi
+
+  echo "$result"
+}
+
+function __calculate_vm_memory() {
+  # Percentage of total memory to allocate
+  local percentage=50
+  # Minimum memory to allocate (in GiB)
+  local minimum=2
+  # Maximum memory to allocate (in GiB)
+  local maximum=8
+  # Total memory (in GiB)
+  local total
+
+  case "$(uname -s)" in
+    Darwin)
+      total=$(( "$(sysctl -n hw.memsize)" / 1024 / 1024 / 1024 ))
+
+      ;;
+    Linux)
+      total=$(( "$(grep MemTotal /proc/meminfo | awk '{print $2}')" / 1024 / 1024 ))
+
+      ;;
+  esac
+
+  local result
+
+  result=$(( total * percentage / 100 ))
+
+  # Round up to nearest power of 2
+  local rounded=1
+  while [ "$rounded" -lt "$result" ]; do
+    rounded=$(( rounded * 2 ))
+  done
+
+  # Apply maximum limit
+  if [ "$rounded" -gt "$maximum" ]; then
+    echo "$maximum"
+
+    return
+  fi
+
+  # Apply minimum limit, but never exceed total available memory
+  if [ "$rounded" -lt "$minimum" ]; then
+    if [ "$total" -ge "$minimum" ]; then
+      echo "$minimum"
+    else
+      # If total memory < minimum, use total (don't allocate more than available)
+      echo "$total"
+    fi
+
+    return
+  fi
+
+  echo "$rounded"
+}
+
+function __calculate_vm_storage() {
+  # Percentage of total storage to allocate
+  local percentage=25
+  # Minimum storage to allocate (in GiB)
+  local minimum=8
+  # Maximum storage to allocate (in GiB)
+  local maximum=64
+  # Total storage (in GiB)
+  local total
+
+  case "$(uname -s)" in
+    Darwin)
+      # Get disk size in bytes, convert to GiB, then round up to nearest 256 GiB
+      # Formula: ((bytes / 1073741824) + 255) / 256 * 256
+      # Example: 500 GB → 512 GB, 750 GB → 768 GB
+      # This ensures predictable, power-of-2-aligned sizes
+      total=$(( (("$(diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}')" / 1073741824) + 255) / 256 * 256 ))
+
+      ;;
+    Linux)
+      # Get disk size in bytes, convert to GiB, then round up to nearest 256 GiB
+      # Same rounding logic as Darwin for consistency
+      total=$(( (("$(lsblk -bdno SIZE "/dev/$(lsblk -no pkname "$(df / --output=source | tail -n1)")")" / 1073741824) + 255) / 256 * 256 ))
+
+      ;;
+  esac
+
+  local result
+  result=$(( total * percentage / 100 ))
+
+  # Round up to nearest power of 2
+  local rounded=1
+  while [ "$rounded" -lt "$result" ]; do
+    rounded=$(( rounded * 2 ))
+  done
+
+  # Apply maximum limit
+  if [ "$rounded" -gt "$maximum" ]; then
+    echo "$maximum"
+
+    return
+  fi
+
+  # Apply minimum limit, but never exceed total available storage
+  if [ "$rounded" -lt "$minimum" ]; then
+    if [ "$total" -ge "$minimum" ]; then
+      echo "$minimum"
+    else
+      # If total storage < minimum, use total (don't allocate more than available)
+      echo "$total"
+    fi
+
+    return
+  fi
+
+  echo "$rounded"
+}
+
+function __ensure_docker_compose_plugin() {
+  if ! __cmd_exists docker-compose; then
+    __log_skip "docker-compose not found, skipping plugin setup"
+    return
+  fi
+
+  local compose_bin
+  compose_bin="$(command -v docker-compose)"
+
+  __safe_link "$compose_bin" "${HOME}/.docker/cli-plugins/docker-compose"
+  chmod +x "${HOME}/.docker/cli-plugins/docker-compose" 2>/dev/null
+}
+
+function __confirm_colima_config() {
+  local profile="$1"
+  local cores="$2"
+  local memory="$3"
+  local storage="$4"
+  local os_type="$5"
+  local arch="$6"
+
+  echo ""
+  echo "================================================================================"
+  echo "  Colima VM - Configuration"
+  echo "================================================================================"
+  echo ""
+  echo "Profile:          ${profile}"
+  echo "Platform:         ${os_type} (${arch})"
+  echo ""
+  echo "Configuration:"
+  echo "  CPU Cores:      ${cores}"
+  echo "  Memory:         ${memory}GiB"
+  echo "  Disk:           ${storage}GiB"
+  echo ""
+
+  if [[ "${CI:-0}" = "1" ]]; then
+    return 0
+  fi
+
+  read -r "?Do you want to continue with these configurations? (y/N): "
+  echo ""
+
+  if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+################################################################################
+# Lazy loading helpers
+################################################################################
+function __create_lazy_stub() {
+  local command_name="$1"
+  local loader_function="$2"
+
+  eval "${command_name}() { ${loader_function}; ${command_name} \"\$@\"; }"
+}
+
+function __create_lazy_stubs() {
+  local loader_function="$1"
+  shift
+  local commands=("$@")
+
+  for cmd in "${commands[@]}"; do
+    __create_lazy_stub "$cmd" "$loader_function"
+  done
+}
+
+################################################################################
+# NVM helpers
+################################################################################
+function __load_nvm() {
+  if [ ! -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ]; then
+    __log_skip "NVM not found, skipping initialization"
+    return
+  fi
+
+  # Remove stub functions if they exist
+  unset -f nvm 2>/dev/null
+  unset -f node 2>/dev/null
+  unset -f npm 2>/dev/null
+  unset -f npx 2>/dev/null
+  unset -f yarn 2>/dev/null
+  unset -f pnpm 2>/dev/null
+
+  # Load NVM
+  # shellcheck disable=SC1091
+  source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
+  # shellcheck disable=SC1091
+  [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && source "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
+}
+
+################################################################################
+# Tokens helpers
+################################################################################
+function __update_token() {
+  local force="${1:-false}"
+  local env_var_name="$2"
+  local gpg_file="$3"
+  local cache_file_name="$4"
+
+  # Validate parameters
+  if [ -z "$env_var_name" ] || [ -z "$gpg_file" ] || [ -z "$cache_file_name" ]; then
+    return 1
+  fi
+
+  # shellcheck disable=SC2155
+  local cache_file="/tmp/${cache_file_name}_$(whoami).cache"
+  local token_content
+
+  # Try to load from cache first (unless force is true)
+  if [ "$force" != "true" ] && [ -f "$cache_file" ]; then
+    token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
+    # Validate that token is not empty
+    if [ -n "$token_content" ]; then
+      export "${env_var_name}"="$token_content"
+      return 0
+    else
+      # Cache file exists but is empty, remove it and try to reload
+      rm -f "$cache_file" 2>/dev/null
+    fi
+  fi
+
+  # Check if GPG is available
+  if ! command -v gpg >/dev/null 2>&1; then
+    return 1
+  fi
+
+  # Check if GPG file exists
+  if [ ! -f "$gpg_file" ]; then
+    return 1
+  fi
+
+  # Decrypt GPG file and save to cache
+  if ! gpg --quiet --batch --yes -d "$gpg_file" 2>/dev/null | tr -d '\n' > "$cache_file"; then
+    # GPG decryption failed, remove invalid cache file
+    rm -f "$cache_file" 2>/dev/null
+    return 1
+  fi
+
+  # Set proper permissions on cache file
+  chmod 600 "$cache_file" 2>/dev/null
+
+  # Read token from cache and validate
+  token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
+  if [ -z "$token_content" ]; then
+    # Token is empty, remove invalid cache file
+    rm -f "$cache_file" 2>/dev/null
+    return 1
+  fi
+
+  # Export token
+  export "${env_var_name}"="$token_content"
+  return 0
+}
+
+function __update_npm_token() {
+  __update_token "${1:-false}" \
+    "NPM_TOKEN" \
+    "$HOME/.dotfiles/nodejs/tokens/npm.gpg" \
+    "npm_token"
+}
+
+function __update_github_token() {
+  __update_token "${1:-false}" \
+    "GITHUB_PAT" \
+    "$HOME/.dotfiles/git/tokens/github.gpg" \
+    "github_token"
+}
+
+################################################################################
+# Ruby / Chruby helpers
+################################################################################
+function __load_chruby() {
+  if [ ! -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh" ]; then
+    __log_skip "Chruby not found, skipping initialization"
+    return
+  fi
+
+  unset -f chruby 2>/dev/null
+  unset -f ruby 2>/dev/null
+  unset -f gem 2>/dev/null
+  unset -f bundle 2>/dev/null
+  unset -f rake 2>/dev/null
+  unset -f rails 2>/dev/null
+
+  # shellcheck disable=SC1091
+  source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
+  # shellcheck disable=SC1091
+  [ -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh" ] && source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
+
+  __log_success "Chruby loaded"
+}
+
+################################################################################
+# Package management helpers
+################################################################################
+function __apt_install_if_missing() {
+  local package="$1"
+  __pkg_installed "$package" || sudo apt install -y -qq "$package"
+}
+
+function __apt_add_key_and_repo() {
+  local key_url="$1"
+  local key_file="$2"
+  local repo_line="$3"
+  local repo_file="$4"
+  local package="${5:-}"
+
+  if [ ! -f "$key_file" ]; then
+    sudo mkdir -p "$(dirname "$key_file")" 2>/dev/null || true
+    curl -fsSL "$key_url" | sudo gpg --dearmor --yes -o "$key_file" 2>/dev/null || true
+    echo "$repo_line" | sudo tee "$repo_file" >/dev/null
+    sudo apt update -qq
+
+    # Install package if provided
+    if [ -n "$package" ]; then
+      sudo apt install -y -qq "$package"
+    fi
+  fi
+}
+
+function __brew_install_if_missing() {
+  local package="$1"
+  brew list "$package" >/dev/null 2>&1 || brew install "$package"
+}
+
+function __brew_install_cask_if_missing() {
+  local cask="$1"
+  brew list --cask "$cask" >/dev/null 2>&1 || brew install --cask "$cask"
+}
+
+################################################################################
+# Git repository helpers
+################################################################################
+function __git_clone_or_update() {
+  local url="$1"
+  local target="$2"
+  local remote_name="${3:-origin}"
+
+  if [ -d "$target/.git" ]; then
+    git -C "$target" remote set-url "$remote_name" "$url" 2>/dev/null || true
+    git -C "$target" pull --no-edit 2>/dev/null || true
+  else
+    git clone --recursive --depth=1 "$url" "$target"
+  fi
+}
+
+################################################################################
+# Path management helpers
+################################################################################
+function __add_to_path() {
+  # Only add if not already in PATH (prevents duplicates in subshells)
+  [[ ":$PATH:" != *":$1:"* ]] && export PATH="$1:$PATH"
+}
+
+function __add_gnu_tool() {
+  local tool="$1"
+  local subpath="${2:-bin}"
+  __add_to_path "$HOMEBREW_PREFIX/opt/$tool/$subpath"
+}
+
+function __setup_homebrew() {
+  local prefix="$1"
+
+  export HOMEBREW_PREFIX="$prefix"
+  export HOMEBREW_CELLAR="$prefix/Cellar"
+  export HOMEBREW_REPOSITORY="$prefix"
+  [ "$prefix" = "/opt/homebrew" ] && export HOMEBREW_REPOSITORY="/opt/homebrew"
+  [ "$prefix" = "/usr/local" ] && export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+  export HOMEBREW_SHELLENV_PREFIX="$prefix"
+  export PATH="$prefix/bin:$prefix/sbin${PATH+:$PATH}"
+  export MANPATH="$prefix/share/man${MANPATH+:$MANPATH}:"
+  export INFOPATH="$prefix/share/info:${INFOPATH:-}"
+}
+
+################################################################################
+# Alias management helpers
+################################################################################
+function __alias_if_exists() {
+  local cmd="$1"
+  local alias_name="$2"
+  local alias_value="$3"
+
+  # shellcheck disable=SC2139
+  command -v "$cmd" > /dev/null && alias "$alias_name"="$alias_value"
+}
+
+################################################################################
+# Docker container helpers
+################################################################################
+function __docker_container_start() {
+  local container_name="$1"
+  command docker start "$container_name"
+}
+
+function __docker_container_stop() {
+  local container_name="$1"
+  command docker stop "$container_name"
+}
+
+function __docker_container_purge() {
+  local container_name="$1"
+  local data_dir="$HOME/Docker/${container_name^}"
+
+  __docker_container_stop "$container_name" 2>/dev/null || true
+  command docker rm "$container_name" 2>/dev/null || true
+  rm -rf "$data_dir"
+}
+
+function __docker_container_terminal() {
+  local container_name="$1"
+  local shell="${2:-/bin/sh}"
+  command docker exec -it "$container_name" "$shell"
+}
+
+function __ensure_directory() {
+  local dir_path="$1"
+  mkdir -p "$dir_path"
+}
+
+function __docker_run_detached() {
+  local container_name="$1"
+  shift
+
+  command docker run \
+    --detach \
+    --hostname "$container_name" \
+    --name "$container_name" \
+    --restart unless-stopped \
+    \
+    --log-driver "local" \
+    --log-opt "max-size=10m" \
+    --log-opt "max-file=3" \
+    \
+    "$@"
+}
+
+################################################################################
+# Docker container initialization helpers
+################################################################################
+function __docker_init_with_health() {
+  local container_name="$1"
+  local health_cmd="$2"
+  shift 2
+
+  __docker_run_detached "$container_name" \
+    --health-cmd "$health_cmd" \
+    --health-interval 30s \
+    --health-timeout 10s \
+    --health-retries 3 \
+    "$@"
+}
+
+function __docker_setup_data_dir_and_mount() {
+  local service_name="$1"
+  local data_dir="$HOME/Docker/${service_name}"
+
+  __ensure_directory "$data_dir"
+  echo "--mount type=bind,source=$data_dir,target=/external"
+}
+
+################################################################################
+# User confirmation helper
+################################################################################
+function __confirm_operation() {
+  local prompt="${1:-Do you want to continue?}"
+
+  if [[ "${CI:-0}" = "1" ]]; then
+    echo "CI mode detected - auto-confirming..."
+    echo ""
+    return 0
+  fi
+
+  read -r "?${prompt} (y/N): "
+  echo ""
+
+  if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+################################################################################
+# Display helpers
+################################################################################
+function __show_header() {
+  local title="$1"
+  local subtitle="${2:-}"
+
+  echo ""
+  echo "================================================================================"
+  if [ -n "$subtitle" ]; then
+    echo "  ${title} - ${subtitle}"
+  else
+    echo "  ${title}"
+  fi
+  echo "================================================================================"
+  echo ""
+}
+
+function __show_runtime_info() {
+  local vm_type="$1"
+  local arch_desc="$2"
+  local mount_type="$3"
+  local extra_info="${4:-}"
+
+  echo "Runtime:"
+  echo "  Engine:         Docker"
+  echo "  VM Type:        ${vm_type}"
+  echo "  Architecture:   ${arch_desc}"
+  echo "  Mount Type:     ${mount_type}"
+  echo "  File Watching:  inotify enabled"
+  [ -n "$extra_info" ] && echo "  ${extra_info}"
+  echo ""
+  echo "Network:"
+  echo "  DNS:            1.1.1.1, 8.8.8.8"
+  echo "  Address:        Reachable from host"
+  echo ""
+}
+
+function __show_performance_info() {
+  local extra_info="${1:-}"
+
+  echo "Performance:"
+  echo "  Auto Activate:  Enabled"
+  [ -n "$extra_info" ] && echo "  ${extra_info}"
+  echo "  BuildKit:       Enabled (faster builds & I/O)"
+  echo "  Inline Cache:   Enabled (persistent cache)"
+  echo ""
+}
+
+function __vm_start() {
+  local profile="$1"
+  local cores="$2"
+  local memory="$3"
+  local storage="$4"
+  local arch="$5"
+  shift 5
+
+  command colima start \
+    --profile "${profile}" \
+    --cpu "${cores}" \
+    --memory "${memory}" \
+    --disk "${storage}" \
+    \
+    --runtime "docker" \
+    --arch "${arch}" \
+    \
+    --mount "$HOME:w" \
+    --mount-inotify \
+    \
+    --dns "1.1.1.1" \
+    --dns "8.8.8.8" \
+    \
+    --network-address \
+    --activate \
+    \
+    --env DOCKER_BUILDKIT=1 \
+    --env COMPOSE_DOCKER_CLI_BUILD=1 \
+    --env BUILDKIT_INLINE_CACHE=1 \
+    \
+    "$@"
+}
+
+################################################################################
+# F5 Update helpers
+################################################################################
+function __f5_update_git_repo() {
+  local repo_dir="$1"
+  local quiet_flag=""
+
+  [ "$DEBUG" != "1" ] && quiet_flag="--quiet"
+
+  if [ "$DEBUG" = "1" ]; then
+    NO_COLOR="" FORCE_COLOR=1 CLICOLOR=1 CLICOLOR_FORCE=1 \
+      git -C "$repo_dir" pull && \
+    NO_COLOR="" FORCE_COLOR=1 CLICOLOR=1 CLICOLOR_FORCE=1 \
+      git -C "$repo_dir" fetch --prune
+  else
+    git -C "$repo_dir" pull $quiet_flag >/dev/null 2>&1 && \
+    git -C "$repo_dir" fetch --prune $quiet_flag >/dev/null 2>&1
+  fi
+}
+
+function __f5_update_dotfiles() {
+  __log_info "Updating dotfiles..."
+
+  if [ ! -d "$HOME/.dotfiles/.git" ]; then
+    __log_skip "Dotfiles not a git repository"
+    return
+  fi
+
+  if __f5_update_git_repo "$HOME/.dotfiles"; then
+    __log_success "Dotfiles updated"
+  else
+    __log_warning "Failed to update dotfiles"
+  fi
+}
+
+function __f5_update_vim() {
+  if ! __cmd_exists vim; then
+    __log_skip "Vim not installed"
+    return
+  fi
+
+  __log_info "Updating Vim plugins..."
+  if vim +PlugUpgrade +PlugUpdate +CocUpdateSync +PlugClean! +qall; then
+    __log_success "Vim plugins updated"
+  else
+    __log_warning "Failed to update Vim plugins"
+  fi
+}
+
+function __f5_update_plugins() {
+  __log_info "Updating Zsh and Tmux plugins..."
+
+  local plugin_count=0
+  local plugin_errors=0
+
+  for dir in \
+    "$HOME/.oh-my-zsh" \
+    "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ \
+    "$HOME/.tmux/plugins/"*/; do
+
+    [ ! -d "$dir/.git" ] && continue
+    [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]] && continue
+
+    [ "$DEBUG" = "1" ] && echo "Updating plugin: $dir"
+
+    if __f5_update_git_repo "$dir"; then
+      ((plugin_count++))
+    else
+      ((plugin_errors++))
+    fi
+  done
+
+  if [ "$plugin_errors" -gt 0 ]; then
+    __log_warning "Updated $plugin_count plugins ($plugin_errors failed)"
+  else
+    __log_success "Updated $plugin_count plugins"
+  fi
+}
+
+function __f5_update_nodejs() {
+  if ! __cmd_exists nvm && ! type __load_nvm >/dev/null 2>&1; then
+    __log_skip "NVM not installed"
+    return
+  fi
+
+  __log_info "Updating Node.js LTS..."
+  type __load_nvm >/dev/null 2>&1 && __load_nvm
+
+  if nvm install --lts && \
+     nvm use --lts && \
+     nvm alias default "lts/*"; then
+    __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
+  else
+    __log_warning "Failed to update Node.js LTS"
+  fi
+}
+
+function __f5_update_linux() {
+  __log_info "Updating Linux packages..."
+
+  local quiet_flag="-qq"
+  [ "$DEBUG" = "1" ] && quiet_flag=""
+
+  if [ "$DEBUG" = "1" ]; then
+    if sudo apt update; then
+      sudo apt dist-upgrade -y
+      sudo apt autoremove -y
+      sudo apt clean || true
+      __log_success "Linux packages updated"
+    else
+      __log_error "Failed to update Linux packages"
+    fi
+  else
+    if sudo apt update $quiet_flag >/dev/null 2>&1 || sudo apt update; then
+      sudo apt dist-upgrade -y $quiet_flag >/dev/null 2>&1 || sudo apt dist-upgrade -y
+      sudo apt autoremove -y $quiet_flag >/dev/null 2>&1 || sudo apt autoremove -y
+      sudo apt clean >/dev/null 2>&1 || true
+      __log_success "Linux packages updated"
+    else
+      __log_error "Failed to update Linux packages"
+    fi
+  fi
+}
+
+function __f5_update_macos() {
+  __log_info "Updating macOS packages..."
+
+  if brew update; then
+    brew bundle --file "$HOME/.dotfiles/Brewfile" || __log_warning "Brewfile sync failed"
+    brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
+    brew upgrade || __log_warning "Brew upgrade failed"
+    brew cu --all --yes --cleanup || true
+    brew cleanup -s || true
+  else
+    __log_warning "Brew update failed"
+  fi
+
+  if __cmd_exists mas; then
+    mas upgrade && __log_success "Mac App Store apps updated"
+  fi
+
+  if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
+    __log_info "Cleaning Launchpad cache..."
+    if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
+      killall Dock || true
+      __log_success "Launchpad cache cleaned"
+    fi
+  fi
+
+  __log_success "macOS packages updated"
+}
+
+function __f5_reload_configs() {
+  __log_info "Reloading configurations..."
+
+  if __cmd_exists tmux && [ -n "$TMUX" ]; then
+    if tmux source-file ~/.tmux.conf; then
+      __log_success "Tmux config reloaded"
+    else
+      __log_warning "Tmux reload failed"
+    fi
+  else
+    __log_skip "Not in tmux session"
+  fi
+
+  # shellcheck disable=SC1091
+  if source "$HOME/.zshrc"; then
+    __log_success "Zsh config reloaded"
+  else
+    __log_warning "Zsh reload failed"
+  fi
+}
+
+function __f5_show_summary() {
+  local f5_end f5_total f5_mins f5_secs
+
+  f5_end=$(date +%s)
+  f5_total=$((f5_end - SCRIPT_START_TIME))
+  f5_mins=$((f5_total / 60))
+  f5_secs=$((f5_total % 60))
+
+  echo ""
+  __log_success "==============================================================="
+  __log_success "Update completed successfully!"
+  __log_success "==============================================================="
+  echo ""
+  __log_info "Total time: ${f5_mins}m ${f5_secs}s"
+  echo ""
+}

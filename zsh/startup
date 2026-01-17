@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Tmux Auto-Start
+################################################################################
+# Automatically start tmux when opening a new terminal
+# Skip for VSCode integrated terminal
+if [ -z "$TMUX" ] && [ "$TERM_PROGRAM" != "vscode" ] && command -v tmux >/dev/null 2>&1; then
+  tmux new-session -s $$ -d && tmux attach-session -t $$
+fi
+
+################################################################################
+# Tmux Terminal Settings
+################################################################################
+# Set proper TERM for tmux sessions (skip for Kitty terminal)
+if [ -n "$TMUX" ] && [ "$TERM_PROGRAM" != "kitty" ]; then
+  export TERM="tmux-256color"
+fi
+

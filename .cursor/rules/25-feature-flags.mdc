@@ -1,0 +1,239 @@
+---
+description: Feature flag patterns and rollout strategies
+globs: "**/*.ts,**/*.tsx,**/*.rb,**/*.py,**/*.go"
+alwaysApply: false
+---
+
+# Feature Flags
+
+## Flag Types
+
+| Type | Use Case | Example |
+|------|----------|---------|
+| Release | Gradual rollout | New checkout flow |
+| Experiment | A/B testing | Button color test |
+| Ops | Kill switch | Disable heavy feature |
+| Permission | Access control | Beta features |
+
+## Naming Convention
+
+```
+{category}_{feature}_{variant}
+
+Examples:
+- release_new_checkout
+- experiment_button_color
+- ops_disable_exports
+- permission_beta_dashboard
+```
+
+## Flag Structure
+
+```typescript
+interface FeatureFlag {
+  key: string;
+  enabled: boolean;
+  
+  // Targeting rules
+  targeting?: {
+    percentage?: number;        // 0-100
+    userIds?: string[];         // Specific users
+    companyIds?: string[];      // Specific companies
+    attributes?: Record<string, string[]>; // Custom rules
+  };
+  
+  // Metadata
+  description: string;
+  owner: string;
+  createdAt: string;
+  expiresAt?: string;
+}
+```
+
+## Evaluation Pattern
+
+```typescript
+function isEnabled(
+  flagKey: string,
+  context: { userId: string; companyId: string; attributes?: Record<string, string> }
+): boolean {
+  const flag = getFlag(flagKey);
+  
+  if (!flag || !flag.enabled) return false;
+  
+  // Check specific user/company targeting
+  if (flag.targeting?.userIds?.includes(context.userId)) return true;
+  if (flag.targeting?.companyIds?.includes(context.companyId)) return true;
+  
+  // Check percentage rollout
+  if (flag.targeting?.percentage) {
+    const hash = hashString(`${flagKey}-${context.userId}`);
+    return (hash % 100) < flag.targeting.percentage;
+  }
+  
+  // Check attribute rules
+  // ...
+  
+  return flag.enabled;
+}
+```
+
+## Rollout Strategies
+
+### Percentage Rollout
+```
+Day 1: 1%   → Monitor
+Day 2: 5%   → Monitor
+Day 3: 25%  → Monitor
+Day 4: 50%  → Monitor
+Day 5: 100% → Complete
+```
+
+### User Segment Rollout
+```
+Phase 1: Internal users
+Phase 2: Beta users
+Phase 3: Free tier users
+Phase 4: All users
+```
+
+### Geographic Rollout
+```
+Phase 1: Single region
+Phase 2: Expand to similar regions
+Phase 3: Global rollout
+```
+
+## Code Patterns
+
+### Basic Usage
+```typescript
+if (isEnabled('release_new_checkout', { userId, companyId })) {
+  return <NewCheckout />;
+} else {
+  return <OldCheckout />;
+}
+```
+
+### Default Values
+```typescript
+// Always provide fallback
+const showFeature = isEnabled('new_feature', context) ?? false;
+```
+
+### Avoid Nesting
+```typescript
+// ❌ Avoid nested flags
+if (isEnabled('feature_a')) {
+  if (isEnabled('feature_b')) {
+    // Complex
+  }
+}
+
+// ✅ Combine into single flag or separate logic
+if (isEnabled('feature_a_with_b')) {
+  // Clear
+}
+```
+
+## Flag Lifecycle
+
+```
+┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+│  Create  │──►│  Rollout │──►│  Stable  │──►│  Remove  │
+└──────────┘   └──────────┘   └──────────┘   └──────────┘
+                                                  │
+                                                  ▼
+                                            Clean up code
+```
+
+### Cleanup Process
+1. Flag reaches 100% for 2+ weeks
+2. Remove flag checks from code
+3. Delete flag from system
+4. Document in changelog
+
+## Kill Switches
+
+### Emergency Disable
+```typescript
+// High-priority flag check
+if (isEnabled('ops_disable_heavy_export')) {
+  return res.status(503).json({
+    error: 'Feature temporarily disabled'
+  });
+}
+```
+
+### Circuit Breaker Integration
+```typescript
+if (circuitBreaker.isOpen || isEnabled('ops_disable_external_api')) {
+  return fallbackResponse();
+}
+```
+
+## Testing
+
+### Unit Tests
+```typescript
+describe('Feature: new checkout', () => {
+  it('shows new checkout when flag enabled', () => {
+    mockFlag('release_new_checkout', true);
+    // Assert new checkout renders
+  });
+  
+  it('shows old checkout when flag disabled', () => {
+    mockFlag('release_new_checkout', false);
+    // Assert old checkout renders
+  });
+});
+```
+
+### Always Test Both Paths
+- Flag enabled behavior
+- Flag disabled behavior (default)
+- Partial rollout behavior
+
+## Monitoring
+
+### Track Flag Usage
+```json
+{
+  "event": "feature_flag.evaluated",
+  "flag": "release_new_checkout",
+  "result": true,
+  "userId": "123",
+  "context": { ... }
+}
+```
+
+### Metrics
+- Evaluation count per flag
+- Enabled/disabled ratio
+- Performance impact
+- Error rate per variant
+
+## Best Practices
+
+### Do
+- Keep flags short-lived
+- Document flag purpose
+- Set expiration dates
+- Test both code paths
+- Clean up after rollout
+
+### Don't
+- Use flags for permanent config
+- Create deeply nested flags
+- Forget to remove old flags
+- Skip testing disabled path
+- Use flags for user permissions (use RBAC)
+
+## Checklist
+- [ ] Flag has clear purpose
+- [ ] Naming convention followed
+- [ ] Rollout plan defined
+- [ ] Both paths tested
+- [ ] Monitoring in place
+- [ ] Expiration date set
+- [ ] Cleanup scheduled

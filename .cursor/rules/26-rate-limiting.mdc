@@ -1,0 +1,241 @@
+---
+description: Rate limiting patterns and implementation
+globs: "**/middleware/**,**/api/**"
+alwaysApply: false
+---
+
+# Rate Limiting
+
+## Limit Tiers
+
+| Endpoint Type | Limit | Window | Key |
+|---------------|-------|--------|-----|
+| Authentication | 5 | 1 minute | IP |
+| Password Reset | 3 | 15 minutes | IP + Email |
+| API (authenticated) | 1000 | 1 minute | User ID |
+| API (public) | 100 | 1 minute | IP |
+| Webhooks | 1000 | 1 minute | Partner ID |
+| File Upload | 10 | 1 minute | User ID |
+
+## Algorithms
+
+### Fixed Window
+```
+┌─────────────────┬─────────────────┐
+│  Window 1       │  Window 2       │
+│  count: 5       │  count: 0       │
+└─────────────────┴─────────────────┘
+```
+- Simple to implement
+- Boundary burst problem
+
+### Sliding Window
+```
+┌───────────────────────────────────┐
+│        Sliding Window             │
+│  ◄────────── 1 minute ──────────► │
+└───────────────────────────────────┘
+```
+- Smoother limiting
+- More accurate
+- Slightly more complex
+
+### Token Bucket
+```
+┌─────────────────┐
+│  Bucket: 100    │ ← Refills 10/sec
+│  tokens         │
+└─────────────────┘
+```
+- Allows controlled bursts
+- Smooth rate over time
+
+## Implementation Pattern
+
+### Middleware
+```typescript
+async function rateLimit(
+  key: string,
+  limit: number,
+  windowMs: number
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  const now = Date.now();
+  const windowStart = now - windowMs;
+  
+  // Sliding window: count requests in window
+  const count = await redis.zcount(key, windowStart, now);
+  
+  if (count >= limit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: windowStart + windowMs
+    };
+  }
+  
+  // Add current request
+  await redis.zadd(key, now, `${now}-${randomId()}`);
+  await redis.zremrangebyscore(key, 0, windowStart);
+  await redis.expire(key, Math.ceil(windowMs / 1000));
+  
+  return {
+    allowed: true,
+    remaining: limit - count - 1,
+    resetAt: windowStart + windowMs
+  };
+}
+```
+
+### Key Generation
+```typescript
+function getRateLimitKey(req: Request, type: string): string {
+  switch (type) {
+    case 'auth':
+      return `rl:auth:${getClientIP(req)}`;
+    case 'api':
+      return `rl:api:${req.user?.id || getClientIP(req)}`;
+    case 'partner':
+      return `rl:partner:${req.partner.id}`;
+    default:
+      return `rl:default:${getClientIP(req)}`;
+  }
+}
+```
+
+## Response Headers
+
+### Standard Headers
+```typescript
+response.headers.set('X-RateLimit-Limit', limit.toString());
+response.headers.set('X-RateLimit-Remaining', remaining.toString());
+response.headers.set('X-RateLimit-Reset', resetAt.toString());
+```
+
+### 429 Response
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Too many requests. Please try again later.",
+    "retryAfter": 60
+  }
+}
+```
+
+Also set:
+```typescript
+response.headers.set('Retry-After', retryAfterSeconds.toString());
+```
+
+## Bypass Rules
+
+### Internal Services
+```typescript
+function shouldBypass(req: Request): boolean {
+  // Internal service-to-service calls
+  if (req.headers['x-internal-service']) {
+    return verifyInternalToken(req.headers['x-internal-service']);
+  }
+  
+  // Health checks
+  if (req.path === '/health') return true;
+  
+  // Specific IPs (monitoring, etc.)
+  const bypassIPs = process.env.RATE_LIMIT_BYPASS_IPS?.split(',') || [];
+  return bypassIPs.includes(getClientIP(req));
+}
+```
+
+## Graceful Degradation
+
+### Soft Limits
+```typescript
+const limits = {
+  hard: 1000,  // Block requests
+  soft: 800,   // Log warning
+};
+
+if (count > limits.hard) {
+  return res.status(429).json({ error: 'Rate limit exceeded' });
+} else if (count > limits.soft) {
+  logger.warn('Approaching rate limit', { userId, count });
+}
+```
+
+### Prioritization
+```typescript
+// During high load, prioritize paid users
+if (isSystemOverloaded && !user.isPaid) {
+  return res.status(503).json({
+    error: 'Service temporarily unavailable for free tier'
+  });
+}
+```
+
+## Multi-Level Limiting
+
+### Layered Approach
+```
+Level 1: Global (all requests)     │ 10,000/min
+Level 2: Per Endpoint              │ 1,000/min
+Level 3: Per User                  │ 100/min
+Level 4: Per Resource              │ 10/min
+```
+
+### Example
+```typescript
+const limits = [
+  { key: 'global', limit: 10000, window: 60000 },
+  { key: `endpoint:${req.path}`, limit: 1000, window: 60000 },
+  { key: `user:${userId}`, limit: 100, window: 60000 },
+];
+
+for (const { key, limit, window } of limits) {
+  const result = await rateLimit(key, limit, window);
+  if (!result.allowed) {
+    return res.status(429).json({ error: 'Rate limit exceeded' });
+  }
+}
+```
+
+## Distributed Rate Limiting
+
+### Redis-Based
+- Use Redis MULTI/EXEC for atomicity
+- Set appropriate TTL on keys
+- Handle Redis failures gracefully
+
+### Fallback on Failure
+```typescript
+try {
+  const result = await checkRateLimit(key);
+  if (!result.allowed) return res.status(429)...;
+} catch (error) {
+  logger.error('Rate limit check failed', { error });
+  // Fail open or fail closed based on security requirements
+  // For most APIs: fail open (allow request)
+  // For auth endpoints: fail closed (deny request)
+}
+```
+
+## Monitoring
+
+### Metrics
+- Rate limit hits per endpoint
+- Users hitting limits
+- Limit utilization (% of limit used)
+- Redis latency for rate limit checks
+
+### Alerts
+- Spike in 429 responses
+- Single user/IP hitting limits repeatedly
+- Rate limit check failures (Redis issues)
+
+## Checklist
+- [ ] Limits defined per endpoint type
+- [ ] Algorithm chosen (sliding window recommended)
+- [ ] Response headers implemented
+- [ ] Bypass rules for internal services
+- [ ] Graceful degradation strategy
+- [ ] Monitoring in place
+- [ ] Distributed setup (if applicable)

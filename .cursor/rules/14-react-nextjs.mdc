@@ -1,0 +1,57 @@
+---
+description: React and Next.js patterns
+globs: "**/*.tsx,**/app/**,**/pages/**"
+alwaysApply: false
+---
+
+# React & Next.js
+
+## Official Documentation
+Always consult before implementing:
+- React Best Practices: https://react.dev
+- Next.js Docs: https://nextjs.org/docs
+- React Hook Form: https://react-hook-form.com
+- TanStack Query: https://tanstack.com/query
+- Zod: https://zod.dev
+
+## Server vs Client
+| Need | Component |
+|------|-----------|
+| Data fetching, DB access | Server |
+| useState, useEffect, events | Client |
+
+Default to Server. Add `'use client'` only when needed.
+
+## Accessibility (MANDATORY)
+- Semantic HTML (`<button>`, `<nav>`, `<main>`)
+- All images need `alt`
+- Forms need `<label htmlFor>`
+- Interactive elements keyboard accessible
+
+```tsx
+// ❌ <div onClick={...}>Click</div>
+// ✅ <button onClick={...}>Click</button>
+// ✅ <button aria-label="Search"><IconSearch /></button>
+```
+
+## Performance
+- Use `next/image` for images
+- Use `next/font` for fonts
+- Dynamic imports for code splitting
+- Avoid waterfalls: `Promise.all()`
+
+## State Management
+| Type | Solution |
+|------|----------|
+| Server data | React Query, SWR |
+| Global client | Zustand |
+| Form | React Hook Form + Zod |
+| URL | useSearchParams |
+
+## Styling
+Tailwind + `cn()` helper:
+```typescript
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+export const cn = (...inputs) => twMerge(clsx(inputs));
+```

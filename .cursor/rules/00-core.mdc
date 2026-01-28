@@ -1,0 +1,269 @@
+---
+description: Core principles - always loaded
+alwaysApply: true
+---
+
+# Core Principles
+
+## Language & Tone
+- Always respond in English
+- Use clear, internationally understood English - avoid regional slang or idioms
+- Avoid words with double meanings or that only exist in specific regions
+- Be friendly and approachable, like a coworker you enjoy working with
+- Keep it natural - warm but professional, not over-the-top
+- Celebrate wins briefly, acknowledge challenges constructively
+- Use casual language when appropriate ("Nice!", "Let's do this", "Hmm, interesting...")
+- Avoid excessive enthusiasm or forced positivity
+
+## Confidence (95%+ Required)
+Before ANY action, verify:
+- Information is correct (read actual code)
+- Approach will work
+- Won't break existing functionality
+
+**If uncertain: STOP → ASK → INVESTIGATE**
+
+## External Tools
+Before using any external tool or CLI command:
+
+1. **Check if MCP exists** - If an MCP server provides the functionality, prefer MCP
+2. **Verify tool is installed** - Run `which <tool>` or `<tool> --version`
+3. **If not installed** - Ask before installing: "I need `<tool>` to proceed. Should I install it?"
+4. **Never assume availability** - Even common tools (gh, docker, aws) may not be installed
+
+### Tool Priority
+```
+1. MCP (if available) → Preferred, integrated experience
+2. CLI (if installed)  → Fallback, verify first
+3. Ask to install      → Only with user permission
+```
+
+### Examples
+```bash
+# ✅ Check first
+which gh && gh pr create ...
+
+# ❌ Don't assume
+gh pr create ...  # May fail if gh not installed
+```
+
+## Anti-Hallucination
+| ❌ NEVER | ✅ ALWAYS |
+|----------|-----------|
+| Invent file paths | Verify with glob/read |
+| Assume signatures | Read the definition |
+| Guess APIs | Check route/controller |
+| Make up versions | Look up or omit |
+
+## Type Safety (Zero Tolerance)
+- **NEVER** use `any`, `@ts-ignore`, `@ts-expect-error`
+- Use `unknown` + type guards instead
+
+| ❌ NEVER | ✅ CORRECT |
+|----------|------------|
+| `data: any` | `data: unknown` |
+| `// @ts-ignore` | Fix the type error |
+| `// @ts-expect-error` | Add proper types |
+| `(obj as any).prop` | Type guard + assertion |
+
+```typescript
+// ❌ NEVER
+function process(data: any) {
+  return data.value;
+}
+
+// ✅ CORRECT
+function process(data: unknown): string {
+  if (typeof data === 'object' && data !== null && 'value' in data) {
+    return String(data.value);
+  }
+  throw new Error('Invalid data');
+}
+```
+
+## Code Style
+- DRY, SOLID, KISS
+- Small functions (< 30 lines)
+- Meaningful names
+- No magic numbers
+- Single export per file
+
+| ❌ NEVER | ✅ CORRECT |
+|----------|------------|
+| `const x = 86400` | `const SECONDS_PER_DAY = 86400` |
+| `if (status === 1)` | `if (status === Status.ACTIVE)` |
+| `function doStuff()` | `function calculateTotalPrice()` |
+| `const data = []` | `const userEmails: string[] = []` |
+| `function bigFunc() { ... 100 lines }` | Split into smaller functions |
+
+```typescript
+// ❌ NEVER - magic numbers, unclear names
+function calc(a, b) {
+  return a * 0.1 + b * 86400;
+}
+
+// ✅ CORRECT - meaningful names, constants
+const TAX_RATE = 0.1;
+const SECONDS_PER_DAY = 86400;
+
+function calculateTotalWithTax(subtotal: number, days: number): number {
+  const tax = subtotal * TAX_RATE;
+  const durationInSeconds = days * SECONDS_PER_DAY;
+  return subtotal + tax;
+}
+```
+
+## Comments Policy
+**Code should be self-explanatory in English.** Only add comments when:
+- Complex algorithm that can't be simplified
+- Non-obvious business rule ("// Tax exempt per regulation X")
+- Workaround for external issue ("// Bug in library v1.2.3")
+- JSDoc for public APIs
+- AAA pattern in tests (`// Arrange`, `// Act`, `// Assert` only)
+
+| ❌ NEVER | ✅ ACCEPTABLE |
+|----------|---------------|
+| `// increment counter` | `// Retry 3x per RFC-7231` |
+| `// get user` | `// Workaround for Prisma#1234` |
+| `// loop through items` | JSDoc with @param, @returns |
+| `// Arrange - set up data` | `// Arrange` |
+
+## Self-Documenting Code
+- Variable and function names MUST convey intent
+- If you need a comment to explain code, rewrite the code instead
+- Code should read naturally in English
+
+| ❌ NEVER | ✅ CORRECT |
+|----------|------------|
+| `const d = new Date()` | `const createdAt = new Date()` |
+| `const arr = users.filter(u => u.a)` | `const activeUsers = users.filter(user => user.isActive)` |
+| `function process(x)` | `function sendWelcomeEmail(user)` |
+| `const flag = true` | `const shouldRetryOnFailure = true` |
+| `// Check if user is admin` + `if (u.r === 1)` | `if (user.role === Role.ADMIN)` |
+
+```typescript
+// ❌ NEVER - needs comment to understand
+// Get users who signed up in the last 30 days and are active
+const res = data.filter(x => x.d > Date.now() - 2592000000 && x.s === 1);
+
+// ✅ CORRECT - self-explanatory, no comment needed
+const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+const thirtyDaysAgo = Date.now() - THIRTY_DAYS_IN_MS;
+
+const recentActiveUsers = users.filter(user => 
+  user.signupDate > thirtyDaysAgo && user.status === UserStatus.ACTIVE
+);
+```
+
+## Documentation (README.md) - MANDATORY
+**Every task completion MUST include a README check.**
+
+### Before Marking Any Task Complete
+Ask yourself: "Does this change affect how someone uses or sets up the project?"
+
+If YES, update README.md:
+- New environment variables → Add to Environment Variables table
+- New API endpoints → Add to API Design section
+- Authentication changes → Update Authentication section
+- New commands or scripts → Add to Scripts table
+- Changed setup steps → Update Getting Started
+- New dependencies with setup → Document installation
+- Architecture changes → Update Project Structure
+- New features → Document usage
+
+### README Update Checklist
+```
+□ Does this add/change environment variables?
+□ Does this add/change API endpoints?
+□ Does this add/change CLI commands or scripts?
+□ Does this change setup or installation steps?
+□ Does this add new dependencies that need configuration?
+□ Does this change authentication or authorization?
+□ Does this add a new feature users need to know about?
+```
+
+**If any checkbox is YES → Update README before completing the task.**
+
+**Keep it concise.** Don't document obvious things.
+**This is not optional.** Task is incomplete without README verification.
+
+## Think Before You Code
+For non-trivial tasks:
+1. **Clarify** - Ask questions, understand requirements
+2. **Propose** - Present approach, wait for approval
+3. **Decompose** - Split into small, verifiable steps
+4. **Implement** - Only then write code
+
+**Don't start coding until the approach is clear.**
+
+## Scope Control
+- Complete ONE task fully before starting another
+- Ask before expanding scope
+- Max 3-5 files per task
+
+## Verification Before Completion
+Before declaring any task done:
+1. **Run the code** - Actually execute, don't assume
+2. **Test the change** - Verify it works as expected
+3. **Check side effects** - Ensure nothing else broke
+4. **Evidence** - Show proof it works (output, test results)
+
+**Claims without evidence = not done.**
+
+## Self-Correction
+When you make a mistake:
+1. Acknowledge clearly
+2. Explain why
+3. Fix immediately
+4. State prevention
+
+## Pattern Detection (Proactive)
+When you notice the user requesting the same thing 2+ times in a conversation:
+1. **Identify** - Recognize the repeated pattern
+2. **Check** - Verify if it's already in `.cursor/rules/`
+3. **Suggest** - Ask: "I noticed you've requested [X] multiple times. Should I add this to `.cursor/rules/` to automate it?"
+4. **Recommend** - Suggest the appropriate rule file:
+   - Code style → `00-core.mdc`
+   - Git workflow → `01-git-workflow.mdc`
+   - Task completion → `02-task-completion.mdc`
+   - Security → `03-security.mdc`
+   - Testing → `11-testing.mdc`
+   - API design → `13-api-design.mdc`
+   - New category → Create new numbered file
+
+**Examples of detectable patterns:**
+- "Run tests before finishing" → Add to `02-task-completion.mdc`
+- "Use specific naming convention" → Add to `00-core.mdc`
+- "Always check lints" → Add to `02-task-completion.mdc`
+- "Follow specific commit format" → Add to `01-git-workflow.mdc`
+
+## Writing Rules (Agnostic by Default)
+When creating or modifying rules in `.cursor/rules/`:
+
+1. **Technology Agnostic** - Write rules that apply across similar technologies
+   - Use generic terms: "ORM" not "Prisma", "framework" not "Next.js"
+   - Provide examples for multiple languages/frameworks when possible
+   - Avoid hardcoding specific library names unless the rule is framework-specific
+
+2. **Pattern Over Implementation** - Focus on the "what" and "why", not the "how"
+   ```markdown
+   ✅ "Use connection pooling for database connections"
+   ❌ "Set Prisma connection pool to 10"
+   ```
+
+3. **Reusability Checklist**
+   - [ ] Could this rule apply to Python, Go, Ruby, etc.?
+   - [ ] Are examples generic enough to adapt?
+   - [ ] Is the principle clear without specific library knowledge?
+
+4. **When Framework-Specific is Necessary**
+   - Create separate rule files: `14-react-nextjs.mdc`, `23-ruby.mdc`
+   - Use glob patterns to auto-apply: `globs: "**/*.rb"`
+   - Still document the underlying principle, not just the syntax
+
+5. **Rule File Naming**
+   - `00-09`: Core principles (always apply)
+   - `10-19`: Language-specific (TypeScript, etc.)
+   - `20-29`: Architecture patterns (monorepo, websocket, etc.)
+   - `30-39`: Language-specific (Ruby, Go, Python, etc.)
+   - `90-99`: Meta rules (agent router, etc.)

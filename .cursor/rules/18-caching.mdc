@@ -1,0 +1,77 @@
+---
+description: Caching strategy with Redis
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Caching with Redis
+
+## Stateless Architecture (MANDATORY)
+The application MUST be completely stateless for horizontal scaling.
+
+### Never Store in Memory
+- User sessions
+- Authentication state
+- Temporary data
+- Cache
+
+### Always Use Redis For
+- Session data
+- Query cache
+- Rate limiting counters
+- Temporary locks
+
+## Redis Cache Pattern
+
+```typescript
+// Read-through cache
+const data = await cachedQuery(
+  `users:${userId}:profile`,
+  () => db.user.findUnique({ where: { id: userId } }),
+  300 // TTL in seconds
+);
+```
+
+## Cache Key Naming
+```
+{resource}:{scope}:{identifier}:{hash}
+```
+
+Examples:
+- `users:tenant123:list:5d41402a`
+- `users:tenant123:item:xyz789`
+- `dashboard:tenant123:stats`
+
+## Cache Invalidation
+
+| Operation | Action |
+|-----------|--------|
+| CREATE | Invalidate list cache |
+| UPDATE | Invalidate item + list cache |
+| DELETE | Invalidate item + list cache |
+
+```typescript
+// After mutation
+await cache.del(`users:${tenantId}:item:${id}`);
+await cache.invalidatePattern(`users:${tenantId}:list:*`);
+```
+
+## What to Cache
+
+| Cache | Don't Cache |
+|-------|-------------|
+| List queries | Real-time data |
+| Single record reads | Frequently changing data |
+| Dashboard stats | Security-sensitive data |
+| User profiles | Write operations |
+| Static lookups | Notifications |
+
+## TTL Guidelines
+
+| Data Type | TTL |
+|-----------|-----|
+| Lists | 5 minutes |
+| Single records | 10 minutes |
+| Dashboard stats | 1 minute |
+| User profile | 5 minutes |
+| Static lookups | 1 hour |

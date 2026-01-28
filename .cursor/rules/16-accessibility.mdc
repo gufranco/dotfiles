@@ -1,0 +1,66 @@
+---
+description: Accessibility standards
+globs: "**/*.tsx,**/*.jsx"
+alwaysApply: false
+---
+
+# Accessibility (a11y)
+
+## Core Principles (POUR)
+- **Perceivable** - Can users perceive the content?
+- **Operable** - Can users operate the interface?
+- **Understandable** - Can users understand the content?
+- **Robust** - Works across assistive technologies?
+
+## Semantic HTML First
+| ❌ Avoid | ✅ Use |
+|----------|--------|
+| `<div onclick>` | `<button>` |
+| `<span>Title</span>` | `<h1>Title</h1>` |
+| `<div class="list">` | `<ul>` / `<ol>` |
+| `<div class="nav">` | `<nav>` |
+
+## Images
+```tsx
+// Informative
+<img src="chart.png" alt="Sales up 20% in Q4" />
+
+// Decorative
+<img src="divider.png" alt="" role="presentation" />
+```
+
+## Forms
+```tsx
+<label htmlFor="email">Email</label>
+<input id="email" type="email" aria-required="true" />
+<span id="email-error" role="alert">{error}</span>
+```
+
+## Keyboard Navigation
+- All interactive elements focusable
+- Visible focus indicator
+- Logical tab order
+- No keyboard traps
+- Escape closes modals
+
+## ARIA (Use Sparingly)
+```tsx
+// Only when HTML semantics aren't enough
+<div role="alert" aria-live="polite">
+  {statusMessage}
+</div>
+```
+
+## Color & Contrast
+- Minimum 4.5:1 for text
+- Don't rely on color alone
+- Support reduced motion
+
+## Checklist
+- [ ] All images have alt text
+- [ ] Forms have labels
+- [ ] Keyboard navigable
+- [ ] Focus visible
+- [ ] Headings in order (h1→h2→h3)
+- [ ] Links have descriptive text
+- [ ] Error messages announced

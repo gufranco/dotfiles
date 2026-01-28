@@ -1,0 +1,123 @@
+---
+description: Internationalization standards
+globs: "**/messages/**,**/*.tsx,**/*.ts"
+alwaysApply: false
+---
+
+# Internationalization (i18n)
+
+## Structure
+```
+messages/
+├── en.json      # English (source of truth)
+├── es.json      # Spanish
+└── pt-BR.json   # Portuguese (Brazil)
+```
+
+## Key Naming
+```json
+{
+  "namespace": {
+    "keyName": "Translation text"
+  }
+}
+```
+
+| Convention | Example |
+|------------|---------|
+| Namespace | `auth`, `dashboard`, `workOrders` |
+| Key | camelCase: `signInToAccount` |
+| Nested | Max 2 levels deep |
+
+## Rules
+
+### Adding New Strings
+1. Add to `en.json` first (source of truth)
+2. Add to ALL other language files
+3. Use namespaces matching module/feature
+4. Never hardcode user-facing strings
+
+### Key Guidelines
+```json
+// ✅ Good
+"auth.welcomeBack": "Welcome back"
+"clients.noClients": "No clients yet"
+"common.save": "Save"
+
+// ❌ Bad
+"welcomeBackMessage": "..."       // No namespace
+"auth.WELCOME_BACK": "..."        // Not camelCase
+"auth.buttons.actions.save": "..." // Too nested
+```
+
+### Interpolation
+```json
+{
+  "projectsCount": "{count} project(s)",
+  "welcomeUser": "Hello, {name}!"
+}
+```
+
+```tsx
+t('common.projectsCount', { count: 5 })
+// → "5 project(s)"
+```
+
+### Pluralization
+```json
+{
+  "items": "{count, plural, =0 {No items} =1 {1 item} other {# items}}"
+}
+```
+
+## Component Usage
+
+### Client Components
+```tsx
+'use client';
+import { useTranslations } from 'next-intl';
+
+export function MyComponent() {
+  const t = useTranslations('namespace');
+  return <h1>{t('title')}</h1>;
+}
+```
+
+### Server Components
+```tsx
+import { getTranslations } from 'next-intl/server';
+
+export async function MyPage() {
+  const t = await getTranslations('namespace');
+  return <h1>{t('title')}</h1>;
+}
+```
+
+## Checklist
+- [ ] String added to `en.json`
+- [ ] String added to ALL language files
+- [ ] Namespace matches module
+- [ ] Key is descriptive and camelCase
+- [ ] No hardcoded strings in JSX
+- [ ] Interpolation used for dynamic values
+
+## Common Namespaces
+| Namespace | Use For |
+|-----------|---------|
+| `common` | Shared UI (Save, Cancel, Loading...) |
+| `auth` | Authentication screens |
+| `navigation` | Menu items |
+| `dashboard` | Dashboard page |
+| `clients` | Client module |
+| `projects` | Project module |
+| `tasks` | Task module |
+| `workOrders` | Work order module |
+| `settings` | Settings pages |
+
+## Anti-Patterns
+| ❌ Avoid | ✅ Instead |
+|----------|------------|
+| Concatenating strings | Use interpolation |
+| Translating inside loops | Extract to array |
+| Date/number formatting in strings | Use Intl API |
+| Duplicating strings across namespaces | Use `common` |

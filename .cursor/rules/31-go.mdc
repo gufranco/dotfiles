@@ -1,0 +1,373 @@
+---
+description: Go conventions and patterns
+globs: "**/*.go,**/go.mod,**/go.sum"
+alwaysApply: false
+---
+
+# Go
+
+## Project Structure
+
+### Standard Layout
+```
+/
+├── cmd/
+│   └── server/
+│       └── main.go         # Entry point
+├── internal/               # Private packages
+│   ├── handler/            # HTTP handlers
+│   ├── service/            # Business logic
+│   ├── repository/         # Data access
+│   └── model/              # Domain models
+├── pkg/                    # Public packages
+│   └── utils/
+├── api/                    # API definitions (OpenAPI, proto)
+├── config/                 # Configuration
+├── scripts/                # Build/deploy scripts
+├── go.mod
+└── go.sum
+```
+
+### Package Naming
+- Short, lowercase, no underscores
+- Singular: `user` not `users`
+- Descriptive: `handler` not `h`
+
+## Error Handling
+
+### Return Errors
+```go
+func GetUser(id string) (*User, error) {
+    user, err := db.FindUser(id)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get user %s: %w", id, err)
+    }
+    return user, nil
+}
+```
+
+### Wrap Errors
+```go
+// Always wrap with context
+if err != nil {
+    return fmt.Errorf("operation X failed: %w", err)
+}
+
+// Check wrapped errors
+if errors.Is(err, ErrNotFound) {
+    // Handle not found
+}
+
+// Type assertion
+var validationErr *ValidationError
+if errors.As(err, &validationErr) {
+    // Handle validation error
+}
+```
+
+### Custom Errors
+```go
+type AppError struct {
+    Code    string
+    Message string
+    Err     error
+}
+
+func (e *AppError) Error() string {
+    return e.Message
+}
+
+func (e *AppError) Unwrap() error {
+    return e.Err
+}
+
+// Usage
+var (
+    ErrNotFound = &AppError{Code: "NOT_FOUND", Message: "resource not found"}
+    ErrInvalid  = &AppError{Code: "INVALID", Message: "invalid input"}
+)
+```
+
+### Don't Panic
+```go
+// ❌ Don't use panic for expected errors
+func GetUser(id string) *User {
+    user, err := db.FindUser(id)
+    if err != nil {
+        panic(err) // Bad!
+    }
+    return user
+}
+
+// ✅ Return error
+func GetUser(id string) (*User, error) {
+    user, err := db.FindUser(id)
+    if err != nil {
+        return nil, err
+    }
+    return user, nil
+}
+```
+
+## Context Propagation
+
+### Always Pass Context
+```go
+func (s *Service) GetUser(ctx context.Context, id string) (*User, error) {
+    // Use context for cancellation, timeout, values
+    user, err := s.repo.FindUser(ctx, id)
+    if err != nil {
+        return nil, err
+    }
+    return user, nil
+}
+```
+
+### Context Values
+```go
+type contextKey string
+
+const (
+    requestIDKey contextKey = "requestID"
+    userIDKey    contextKey = "userID"
+)
+
+func WithRequestID(ctx context.Context, id string) context.Context {
+    return context.WithValue(ctx, requestIDKey, id)
+}
+
+func RequestIDFrom(ctx context.Context) string {
+    id, _ := ctx.Value(requestIDKey).(string)
+    return id
+}
+```
+
+### Timeouts
+```go
+ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+defer cancel()
+
+result, err := externalService.Call(ctx)
+if errors.Is(err, context.DeadlineExceeded) {
+    // Handle timeout
+}
+```
+
+## Interfaces
+
+### Small Interfaces
+```go
+// ✅ Small, focused interfaces
+type Reader interface {
+    Read(ctx context.Context, id string) (*Entity, error)
+}
+
+type Writer interface {
+    Write(ctx context.Context, entity *Entity) error
+}
+
+// Compose when needed
+type ReadWriter interface {
+    Reader
+    Writer
+}
+```
+
+### Accept Interfaces, Return Structs
+```go
+// ✅ Accept interface
+func NewService(repo UserRepository) *Service {
+    return &Service{repo: repo}
+}
+
+// ✅ Return concrete type
+func NewUserRepository(db *sql.DB) *UserRepository {
+    return &UserRepository{db: db}
+}
+```
+
+### Define Interfaces Where Used
+```go
+// In service package, not repository package
+type userRepository interface {
+    FindUser(ctx context.Context, id string) (*User, error)
+}
+
+type Service struct {
+    repo userRepository
+}
+```
+
+## Concurrency
+
+### Goroutine Pattern
+```go
+func Process(items []Item) error {
+    g, ctx := errgroup.WithContext(context.Background())
+    
+    for _, item := range items {
+        item := item // Capture loop variable
+        g.Go(func() error {
+            return processItem(ctx, item)
+        })
+    }
+    
+    return g.Wait()
+}
+```
+
+### Channel Patterns
+```go
+// Fan-out, fan-in
+func fanOut(input <-chan int, workers int) <-chan int {
+    output := make(chan int)
+    var wg sync.WaitGroup
+    
+    for i := 0; i < workers; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            for n := range input {
+                output <- process(n)
+            }
+        }()
+    }
+    
+    go func() {
+        wg.Wait()
+        close(output)
+    }()
+    
+    return output
+}
+```
+
+### Mutex Usage
+```go
+type SafeCounter struct {
+    mu    sync.RWMutex
+    count int
+}
+
+func (c *SafeCounter) Inc() {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.count++
+}
+
+func (c *SafeCounter) Value() int {
+    c.mu.RLock()
+    defer c.mu.RUnlock()
+    return c.count
+}
+```
+
+## Testing
+
+### Table-Driven Tests
+```go
+func TestAdd(t *testing.T) {
+    tests := []struct {
+        name     string
+        a, b     int
+        expected int
+    }{
+        {"positive", 1, 2, 3},
+        {"negative", -1, -2, -3},
+        {"zero", 0, 0, 0},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result := Add(tt.a, tt.b)
+            if result != tt.expected {
+                t.Errorf("Add(%d, %d) = %d; want %d", tt.a, tt.b, result, tt.expected)
+            }
+        })
+    }
+}
+```
+
+### Test Helpers
+```go
+func setupTestDB(t *testing.T) *sql.DB {
+    t.Helper()
+    db, err := sql.Open("postgres", testDSN)
+    if err != nil {
+        t.Fatalf("failed to connect: %v", err)
+    }
+    t.Cleanup(func() { db.Close() })
+    return db
+}
+```
+
+### Mocks
+```go
+type mockRepository struct {
+    findUserFunc func(ctx context.Context, id string) (*User, error)
+}
+
+func (m *mockRepository) FindUser(ctx context.Context, id string) (*User, error) {
+    return m.findUserFunc(ctx, id)
+}
+```
+
+## HTTP Handlers
+
+### Handler Pattern
+```go
+func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
+    ctx := r.Context()
+    id := chi.URLParam(r, "id")
+    
+    user, err := h.service.GetUser(ctx, id)
+    if err != nil {
+        h.handleError(w, err)
+        return
+    }
+    
+    h.respondJSON(w, http.StatusOK, user)
+}
+
+func (h *Handler) respondJSON(w http.ResponseWriter, status int, data interface{}) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(data)
+}
+
+func (h *Handler) handleError(w http.ResponseWriter, err error) {
+    var appErr *AppError
+    if errors.As(err, &appErr) {
+        h.respondJSON(w, appErr.Status(), appErr)
+        return
+    }
+    h.respondJSON(w, http.StatusInternalServerError, map[string]string{
+        "error": "internal server error",
+    })
+}
+```
+
+## Best Practices
+
+### Do
+- Handle every error
+- Use `context.Context` everywhere
+- Keep packages small and focused
+- Write table-driven tests
+- Use `defer` for cleanup
+- Document exported functions
+
+### Don't
+- Use `init()` for complex logic
+- Panic for expected errors
+- Use global variables
+- Ignore context cancellation
+- Return interfaces
+
+## Checklist
+- [ ] Errors wrapped with context
+- [ ] Context propagated through call chain
+- [ ] Interfaces defined where used
+- [ ] Table-driven tests
+- [ ] No global state
+- [ ] Goroutines properly managed

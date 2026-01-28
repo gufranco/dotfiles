@@ -1,0 +1,74 @@
+---
+description: Guide for selecting the right agent
+alwaysApply: true
+---
+
+# Agent Selection Guide
+
+## Engineering Agents
+| Problem | Agent |
+|---------|-------|
+| API design, endpoints, REST | `api-designer` |
+| System architecture, patterns | `backend-architect` |
+| Queries, indexes, schema | `database-specialist` |
+| Bug hunting, root cause | `debugging-specialist` |
+| CI/CD, Docker, infra | `devops-engineer` |
+| React, Next.js, UI | `frontend-specialist` |
+| Translations, localization | `frontend-specialist` + rule `06-i18n` |
+| React Native, Flutter, mobile | `mobile-specialist` |
+| Schema changes, data moves | `migration-specialist` |
+| Slow code, memory, latency | `performance-engineer` |
+| Auth, vulnerabilities, OWASP | `security-engineer` |
+| Screen readers, WCAG, a11y | `accessibility-specialist` |
+| Git history, code evolution | `code-archeologist` |
+| Monorepo, workspaces, shared packages | `monorepo-architect` |
+| WebSocket, SSE, pub/sub | `realtime-engineer` |
+
+## Language-Specific Agents
+| Problem | Agent |
+|---------|-------|
+| Ruby, Rails, RSpec | `ruby-specialist` |
+| Go, concurrency, goroutines | `go-specialist` |
+| Python, FastAPI, pytest | `python-specialist` |
+
+## Testing Agents
+| Problem | Agent |
+|---------|-------|
+| Test strategy, coverage | `test-architect` |
+| API/endpoint testing | `api-tester` |
+| Browser, Playwright, Cypress | `e2e-tester` |
+
+## Code Quality Agents
+| Problem | Agent |
+|---------|-------|
+| PR review, feedback | `code-reviewer` |
+| Code smells, cleanup | `refactoring-expert` |
+
+## Other Agents
+| Problem | Agent |
+|---------|-------|
+| README, docs, ADRs | `technical-writer` |
+| Outages, incidents | `incident-responder` |
+
+## Quick Decision Tree
+```
+Is it broken?
+├─ Yes → debugging-specialist
+└─ No
+   ├─ Is it slow? → performance-engineer
+   ├─ Is it insecure? → security-engineer
+   ├─ Is it inaccessible? → accessibility-specialist
+   ├─ Need to understand history? → code-archeologist
+   └─ Building something new?
+      ├─ API? → api-designer
+      ├─ UI? → frontend-specialist
+      ├─ Mobile? → mobile-specialist
+      ├─ Real-time? → realtime-engineer
+      ├─ Monorepo? → monorepo-architect
+      ├─ Translations? → frontend-specialist + 06-i18n
+      ├─ Database? → database-specialist
+      ├─ Ruby? → ruby-specialist
+      ├─ Go? → go-specialist
+      ├─ Python? → python-specialist
+      └─ Tests? → test-architect
+```

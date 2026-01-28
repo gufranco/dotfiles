@@ -1,0 +1,113 @@
+---
+description: Task completion and delivery standards
+alwaysApply: true
+---
+
+# Task Completion
+
+## Pre-Completion Checklist
+- [ ] Backward compatible
+- [ ] Matches existing patterns
+- [ ] Errors handled and logged
+- [ ] Input validation (user endpoints)
+- [ ] TypeScript compiles
+- [ ] No N+1 queries
+- [ ] No sensitive data exposed
+- [ ] Tests written and passing
+- [ ] README updated (if API/setup/env changed)
+
+## Mandatory Verification Commands
+Before declaring ANY task complete, run these commands and show output:
+
+```bash
+npm run test        # All tests must pass
+npm run lint        # No errors allowed
+npm run build       # Must compile successfully
+```
+
+**Do NOT skip these steps. Claims without evidence = not done.**
+
+## Delivery Summary
+1. **Files**: List modified files
+2. **Changes**: What and why
+3. **Tests**: Coverage confirmation
+4. **Risks**: Concerns or follow-ups
+
+```markdown
+<!-- ❌ NEVER - vague summary -->
+Done. Updated some files.
+
+<!-- ✅ CORRECT - detailed summary -->
+## Delivery Summary
+
+**Files Modified:**
+- `src/services/user.service.ts` - Added email validation
+- `src/controllers/user.controller.ts` - Updated createUser endpoint
+- `src/services/user.service.test.ts` - Added 3 new tests
+
+**Changes:**
+- Added email format validation before user creation
+- Returns 400 Bad Request for invalid emails (previously 500)
+
+**Tests:**
+- 3 new tests added (valid email, invalid format, duplicate email)
+- All 47 tests passing, 85% coverage
+
+**Risks:**
+- None identified. Change is backward compatible.
+```
+
+## Rollback Strategy
+If change causes problems:
+1. `git revert <commit>` → Push
+2. Analyze what went wrong
+3. Fix properly in new commit
+
+**Never** force push or amend pushed commits.
+
+## Debugging Approach (Systematic - 4 Phases)
+```
+1. REPRODUCE   → Can you trigger it reliably?
+2. ISOLATE     → What's the minimal failing case?
+3. ROOT CAUSE  → Why is it happening? (not just where)
+4. FIX+VERIFY  → Fix the cause, prove it's fixed
+```
+- One change at a time
+- Read full error messages
+- Stop after 3 failed attempts, reassess
+- **Evidence over claims** - Show proof it's fixed
+
+```markdown
+<!-- ❌ NEVER - random changes without understanding -->
+"I'll try changing this... nope. Maybe this... still broken."
+
+<!-- ✅ CORRECT - systematic approach -->
+## Bug: Users can't login after password reset
+
+**1. REPRODUCE**
+- Reset password for test@example.com
+- Try to login with new password → 401 Unauthorized
+- Reproducible 100% of the time
+
+**2. ISOLATE**
+- Direct DB query shows password hash is updated ✓
+- bcrypt.compare() returns false even with correct password
+- Issue: hash has extra whitespace from form input
+
+**3. ROOT CAUSE**
+- `resetPassword()` doesn't trim the new password
+- Hash includes trailing space, but login trims input
+- Location: src/services/auth.service.ts:45
+
+**4. FIX+VERIFY**
+- Added `.trim()` to password in resetPassword()
+- Test: Reset + login now works
+- Added test case for whitespace passwords
+```
+
+## Self-Review
+Before submitting work, verify both:
+1. **Requirements** - Does it solve the actual problem?
+2. **Quality** - Is the code clean and maintainable?
+
+Fix any issues before marking complete.

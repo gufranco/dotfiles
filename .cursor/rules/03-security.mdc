@@ -1,0 +1,185 @@
+---
+description: Security best practices
+alwaysApply: true
+---
+
+# Security
+
+## NEVER Commit
+`.env`, `*.pem`, `*.key`, `credentials.json`, `id_rsa`
+
+## Input Validation
+1. Type → 2. Format → 3. Range → 4. Sanitize → 5. Business rules
+
+```typescript
+// ❌ NEVER - no validation
+async function createUser(data: any) {
+  return db.user.create({ data });
+}
+
+// ✅ CORRECT - full validation pipeline
+async function createUser(input: unknown) {
+  // 1. Type
+  if (typeof input !== 'object' || input === null) {
+    throw new BadRequestException('Invalid input type');
+  }
+
+  // 2. Format
+  const { email, age } = input as Record<string, unknown>;
+  if (typeof email !== 'string' || !EMAIL_REGEX.test(email)) {
+    throw new BadRequestException('Invalid email format');
+  }
+
+  // 3. Range
+  if (typeof age !== 'number' || age < 18 || age > 120) {
+    throw new BadRequestException('Age must be between 18 and 120');
+  }
+
+  // 4. Sanitize
+  const sanitizedEmail = email.toLowerCase().trim();
+
+  // 5. Business rules
+  const existingUser = await db.user.findUnique({ where: { email: sanitizedEmail } });
+  if (existingUser) {
+    throw new ConflictException('Email already registered');
+  }
+
+  return db.user.create({ data: { email: sanitizedEmail, age } });
+}
+```
+
+## Auth Checklist
+- [ ] Passwords hashed (bcrypt/argon2)
+- [ ] Rate limiting on auth
+- [ ] Token expiration
+- [ ] Permission check every request
+
+```typescript
+// ❌ NEVER - plain text password
+await db.user.create({ data: { password: input.password } });
+
+// ✅ CORRECT - hashed password
+import { hash } from 'bcrypt';
+const SALT_ROUNDS = 12;
+const hashedPassword = await hash(input.password, SALT_ROUNDS);
+await db.user.create({ data: { password: hashedPassword } });
+
+// ❌ NEVER - no expiration
+const token = jwt.sign({ userId }, SECRET);
+
+// ✅ CORRECT - with expiration
+const TOKEN_EXPIRY = '15m';
+const REFRESH_TOKEN_EXPIRY = '7d';
+const token = jwt.sign({ userId }, SECRET, { expiresIn: TOKEN_EXPIRY });
+
+// ❌ NEVER - assume user has permission
+async function deleteProject(projectId: number) {
+  return db.project.delete({ where: { id: projectId } });
+}
+
+// ✅ CORRECT - verify permission every request
+async function deleteProject(projectId: number, userId: number) {
+  const project = await db.project.findUnique({ where: { id: projectId } });
+  if (!project || project.ownerId !== userId) {
+    throw new ForbiddenException('Not authorized');
+  }
+  return db.project.delete({ where: { id: projectId } });
+}
+```
+
+## Common Vulnerabilities
+| Issue | Prevention |
+|-------|------------|
+| SQL Injection | Use ORM (Prisma) |
+| XSS | Use React (auto-escapes) |
+| IDOR | Verify ownership on every request |
+
+## Security Headers
+```
+Content-Security-Policy: default-src 'self'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Strict-Transport-Security: max-age=31536000
+```
+
+## Rate Limiting
+- Auth endpoints: 5 requests/minute per IP
+- API endpoints: 100 requests/minute per user
+- Use sliding window algorithm
+
+```typescript
+// ❌ NEVER - no rate limiting
+app.post('/login', loginHandler);
+
+// ✅ CORRECT - with rate limiting
+import rateLimit from 'express-rate-limit';
+
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 requests per window
+  keyGenerator: (req) => req.ip,
+  message: { error: 'Too many attempts, try again later' }
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  keyGenerator: (req) => req.user?.id || req.ip
+});
+
+app.post('/login', authLimiter, loginHandler);
+app.use('/api', apiLimiter);
+```
+
+## Audit Logging
+Log sensitive actions with context:
+- Login attempts (success/failure)
+- Password changes
+- Role changes
+- Record deletions
+- Permission changes
+
+Format: `{ action, userId, targetId, timestamp, ip, userAgent }`
+
+```typescript
+// ❌ NEVER - no audit trail
+await db.user.update({ where: { id: targetId }, data: { role: 'admin' } });
+
+// ✅ CORRECT - with audit logging
+async function changeUserRole(targetId: number, newRole: string, context: RequestContext) {
+  const oldUser = await db.user.findUnique({ where: { id: targetId } });
+  
+  await db.user.update({ where: { id: targetId }, data: { role: newRole } });
+  
+  await auditLog.create({
+    action: 'ROLE_CHANGE',
+    userId: context.userId,
+    targetId,
+    timestamp: new Date(),
+    ip: context.ip,
+    userAgent: context.userAgent,
+    metadata: {
+      oldRole: oldUser.role,
+      newRole
+    }
+  });
+}
+
+// ❌ NEVER - log sensitive data
+logger.info('Login', { email, password });
+
+// ✅ CORRECT - sanitized audit log
+logger.info('Login attempt', { 
+  email: maskEmail(email), // j***@example.com
+  success: false,
+  reason: 'invalid_password'
+});
+```
+
+## Error Messages
+| Environment | Detail Level |
+|-------------|--------------|
+| Development | Full stack trace, debug info |
+| Production | Generic message, no internals |
+
+**Never** expose database errors, file paths, or stack traces in production.

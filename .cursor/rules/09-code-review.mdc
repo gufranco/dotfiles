@@ -1,0 +1,142 @@
+---
+description: Code review guidelines for authors and reviewers
+alwaysApply: false
+---
+
+# Code Review
+
+## As Author
+
+### Before Requesting Review
+- Self-review the entire diff line by line
+- Run all tests locally
+- Verify the build passes
+- Check for debugging code, console logs, commented code
+- Ensure commit history is clean and logical
+- Write a clear PR description
+
+### PR Best Practices
+- Keep PRs small (< 400 lines ideally, max 1000)
+- One logical change per PR
+- Include before/after screenshots for UI changes
+- Link to relevant tickets/issues
+- Respond to all comments, even if just "Done"
+
+```markdown
+<!-- ❌ NEVER - vague PR description -->
+## Description
+Fixed some bugs and added features.
+
+<!-- ✅ CORRECT - clear PR description -->
+## Summary
+Add email verification for new user registrations.
+
+## Changes
+- Added `sendVerificationEmail()` to auth service
+- Created email verification endpoint `POST /verify-email`
+- Added 24-hour expiration for verification tokens
+
+## Testing
+- [x] Unit tests for token generation
+- [x] Integration tests for email sending
+- [x] Manual test: full registration flow
+
+## Screenshots
+| Before | After |
+|--------|-------|
+| (none) | [verification email screenshot] |
+
+Closes ENG-1234
+```
+
+### Splitting Large PRs
+| Original PR | Split Into |
+|-------------|------------|
+| Feature + Refactor | 1. Refactor PR → 2. Feature PR |
+| Multiple features | Separate PR per feature |
+| Migration + Code | 1. Migration PR → 2. Code PR |
+
+## As Reviewer
+
+### Response Time
+- Review within 24 hours (business hours)
+- If you cannot review soon, communicate that
+- Prioritize unblocking teammates
+
+### Comment Prefixes
+| Prefix | Meaning | Blocking? |
+|--------|---------|-----------|
+| `issue:` | Must be addressed before merge | Yes |
+| `question:` | Need clarification to proceed | Yes |
+| `suggestion:` | Optional improvement | No |
+| `nit:` | Minor style/preference | No |
+| `praise:` | Highlight good practices | No |
+| `thought:` | Food for thought, no action needed | No |
+
+### Review Mindset
+- Be constructive, not critical
+- Assume good intent
+- Explain the "why" behind suggestions
+- Offer solutions, not just problems
+- Approve with comments if only nits remain
+- Use "we" instead of "you" ("we should" vs "you should")
+
+| ❌ NEVER | ✅ CORRECT |
+|----------|------------|
+| "This is wrong" | "issue: This might cause X. Consider Y instead" |
+| "Why did you do it this way?" | "question: What was the reasoning behind X?" |
+| "You should use X" | "suggestion: We could use X here for better Y" |
+| "Fix this" | "nit: We usually prefer X style in this codebase" |
+
+```markdown
+<!-- ❌ NEVER - unhelpful criticism -->
+This code is confusing and hard to read.
+
+<!-- ✅ CORRECT - constructive with solution -->
+suggestion: This function is doing multiple things. We could split it into
+`validateInput()` and `processOrder()` for better readability and testability.
+
+Something like:
+\`\`\`typescript
+const validatedData = validateInput(input);
+const result = await processOrder(validatedData);
+\`\`\`
+
+<!-- ❌ NEVER - blocking on style -->
+I would have done this differently. Blocking until changed.
+
+<!-- ✅ CORRECT - approve with nits -->
+Looks good! Left a few nits but nothing blocking. Approving.
+```
+
+## Review Checklist
+
+### Correctness
+- Does the code do what it is supposed to do?
+- Are edge cases handled?
+- Are error cases handled appropriately?
+- Is the logic correct?
+
+### Security
+- No hardcoded secrets or credentials
+- Input validation present
+- No SQL injection vulnerabilities
+- No XSS vulnerabilities
+- Proper authorization checks
+
+### Performance
+- No N+1 queries
+- No unnecessary database calls
+- No blocking operations in async context
+- Appropriate use of caching
+
+### Maintainability
+- Code is readable and self-documenting
+- Follows existing patterns
+- No code duplication
+- Good naming conventions
+
+### Testing
+- Tests cover the changes
+- Tests cover edge cases
+- Tests are readable and maintainable

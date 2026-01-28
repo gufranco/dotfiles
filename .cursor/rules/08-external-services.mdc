@@ -1,0 +1,200 @@
+---
+description: External services integration patterns
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# External Services Integration
+
+## Integration Checklist
+Before integrating any external service:
+- [ ] Timeout configured
+- [ ] Retry strategy defined
+- [ ] Circuit breaker implemented
+- [ ] Fallback behavior defined
+- [ ] Error handling specific to service
+- [ ] Logging with requestId
+- [ ] Rate limits understood
+- [ ] API key in environment variables
+
+## Timeout Configuration
+
+| Service Type | Timeout | Rationale |
+|--------------|---------|-----------|
+| Email (Resend) | 5s | Fire and forget acceptable |
+| Maps (Mapbox) | 3s | User-facing, needs fast response |
+| Payment (Stripe) | 10s | Critical, needs completion |
+| Webhooks (outgoing) | 10s | Allow slower endpoints |
+| File upload | 30s | Large payloads |
+
+## Retry Strategy
+
+### When to Retry
+| Retry | Don't Retry |
+|-------|-------------|
+| Network timeout | 400 Bad Request |
+| 429 Too Many Requests | 401 Unauthorized |
+| 500 Internal Server | 403 Forbidden |
+| 502 Bad Gateway | 404 Not Found |
+| 503 Service Unavailable | 422 Validation Error |
+
+### Retry Pattern
+```typescript
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  options: {
+    maxAttempts: number;
+    baseDelay: number;
+    maxDelay: number;
+    shouldRetry: (error: unknown) => boolean;
+  }
+): Promise<T> {
+  let lastError: unknown;
+  
+  for (let attempt = 1; attempt <= options.maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      
+      if (!options.shouldRetry(error) || attempt === options.maxAttempts) {
+        throw error;
+      }
+      
+      const delay = Math.min(
+        options.baseDelay * Math.pow(2, attempt - 1),
+        options.maxDelay
+      );
+      const jitter = delay * 0.1 * (Math.random() - 0.5);
+      
+      await sleep(delay + jitter);
+    }
+  }
+  
+  throw lastError;
+}
+```
+
+### Per-Service Configuration
+| Service | Max Attempts | Base Delay | Max Delay |
+|---------|--------------|------------|-----------|
+| Email | 3 | 100ms | 2s |
+| Maps | 2 | 50ms | 500ms |
+| Payments | 3 | 200ms | 5s |
+| Webhooks | 5 | 1s | 30s |
+
+## Fallback Strategies
+
+| Service | Fallback Behavior |
+|---------|-------------------|
+| Email (Resend) | Queue for later retry, notify admin |
+| Maps (Mapbox) | Return cached coordinates, use OpenStreetMap |
+| Geocoding | Return null, allow manual input |
+| File storage | Local storage fallback |
+
+### Graceful Degradation
+```typescript
+async function getMapData(address: string): Promise<Coordinates | null> {
+  try {
+    return await mapboxClient.geocode(address);
+  } catch (error) {
+    logger.warn({ error, address }, 'Mapbox unavailable, using fallback');
+    
+    // Try cache
+    const cached = await cache.get(`geocode:${address}`);
+    if (cached) return cached;
+    
+    // Return null, UI handles gracefully
+    return null;
+  }
+}
+```
+
+## Service Wrapper Pattern
+
+```typescript
+class ExternalServiceClient {
+  constructor(
+    private readonly config: {
+      baseUrl: string;
+      timeout: number;
+      retries: number;
+    }
+  ) {}
+
+  async request<T>(options: RequestOptions): Promise<T> {
+    const startTime = Date.now();
+    
+    try {
+      const result = await withRetry(
+        () => this.doRequest(options),
+        { maxAttempts: this.config.retries, /* ... */ }
+      );
+      
+      logger.info({
+        service: this.serviceName,
+        operation: options.operation,
+        duration: Date.now() - startTime,
+        success: true,
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error({
+        service: this.serviceName,
+        operation: options.operation,
+        duration: Date.now() - startTime,
+        error,
+      });
+      
+      throw error;
+    }
+  }
+}
+```
+
+## Rate Limiting Awareness
+
+### Handling 429 Responses
+```typescript
+if (response.status === 429) {
+  const retryAfter = response.headers.get('Retry-After');
+  const delay = retryAfter ? parseInt(retryAfter) * 1000 : 60000;
+  
+  await sleep(delay);
+  return retry();
+}
+```
+
+### Proactive Rate Limiting
+- Track API calls per minute
+- Implement client-side throttling
+- Queue requests when approaching limits
+
+## Secrets Management
+
+| ❌ NEVER | ✅ ALWAYS |
+|----------|-----------|
+| Hard-code API keys | Use environment variables |
+| Log API keys | Mask in logs (`key: ***abc`) |
+| Commit `.env` | Use `.env.example` with placeholders |
+| Share keys across envs | Separate keys per environment |
+
+## Testing External Services
+
+### Unit Tests
+- Mock external calls
+- Test error handling paths
+- Test retry logic
+
+### Integration Tests
+- Use sandbox/test environments
+- Test with real credentials in CI (secrets)
+- Verify webhook signatures
+
+## Rules
+- NEVER call external services without timeout
+- ALWAYS log external calls with duration
+- ALWAYS handle failures gracefully
+- NEVER expose external API errors to users
+- ALWAYS use environment variables for credentials

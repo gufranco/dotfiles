@@ -1,0 +1,347 @@
+---
+description: Ruby and Rails conventions
+globs: "**/*.rb,**/Gemfile,**/Rakefile"
+alwaysApply: false
+---
+
+# Ruby & Rails
+
+## Code Style
+
+### Frozen String Literals
+```ruby
+# frozen_string_literal: true
+# Add at top of every file
+```
+
+### Naming Conventions
+| Element | Convention | Example |
+|---------|------------|---------|
+| Classes | PascalCase | `UserService` |
+| Methods | snake_case | `find_by_email` |
+| Variables | snake_case | `user_count` |
+| Constants | SCREAMING_SNAKE | `MAX_RETRIES` |
+| Files | snake_case | `user_service.rb` |
+| Predicates | end with `?` | `valid?`, `admin?` |
+| Dangerous | end with `!` | `save!`, `destroy!` |
+
+### Method Length
+- Max 15 lines per method
+- Extract to private methods
+- Single responsibility
+
+## Service Objects
+
+### Pattern
+```ruby
+class CreateUserService
+  def initialize(params, context: {})
+    @params = params
+    @context = context
+  end
+
+  def call
+    validate!
+    user = build_user
+    user.save!
+    notify_user(user)
+    user
+  rescue ActiveRecord::RecordInvalid => e
+    handle_error(e)
+  end
+
+  private
+
+  attr_reader :params, :context
+
+  def validate!
+    # Validation logic
+  end
+
+  def build_user
+    User.new(permitted_params)
+  end
+
+  def notify_user(user)
+    UserMailer.welcome(user).deliver_later
+  end
+end
+```
+
+### Usage
+```ruby
+# In controller
+def create
+  user = CreateUserService.new(user_params, context: { current_user: }).call
+  render json: user, status: :created
+end
+```
+
+## Interactor Pattern
+
+### Single Interactor
+```ruby
+class CreateOrder
+  include Interactor
+
+  delegate :order_params, :user, to: :context
+
+  def call
+    order = user.orders.build(order_params)
+    
+    if order.save
+      context.order = order
+    else
+      context.fail!(errors: order.errors)
+    end
+  end
+end
+```
+
+### Organizer
+```ruby
+class PlaceOrder
+  include Interactor::Organizer
+
+  organize(
+    ValidateInventory,
+    CreateOrder,
+    ChargePayment,
+    SendConfirmation
+  )
+end
+```
+
+### Usage
+```ruby
+result = PlaceOrder.call(order_params:, user:)
+
+if result.success?
+  render json: result.order
+else
+  render json: { errors: result.errors }, status: :unprocessable_entity
+end
+```
+
+## Query Objects
+
+### Pattern
+```ruby
+class UsersQuery
+  def initialize(scope = User.all)
+    @scope = scope
+  end
+
+  def call(params = {})
+    scope
+      .then { |s| filter_by_status(s, params[:status]) }
+      .then { |s| filter_by_role(s, params[:role]) }
+      .then { |s| search(s, params[:query]) }
+      .then { |s| order_by(s, params[:sort]) }
+  end
+
+  private
+
+  attr_reader :scope
+
+  def filter_by_status(scope, status)
+    return scope if status.blank?
+    scope.where(status:)
+  end
+
+  def filter_by_role(scope, role)
+    return scope if role.blank?
+    scope.where(role:)
+  end
+
+  def search(scope, query)
+    return scope if query.blank?
+    scope.where('name ILIKE ?', "%#{query}%")
+  end
+
+  def order_by(scope, sort)
+    column, direction = sort&.split(':') || ['created_at', 'desc']
+    scope.order(column => direction)
+  end
+end
+```
+
+### Usage
+```ruby
+users = UsersQuery.new.call(
+  status: params[:status],
+  role: params[:role],
+  query: params[:q],
+  sort: params[:sort]
+)
+```
+
+## RSpec Conventions
+
+### Structure
+```ruby
+RSpec.describe UserService, type: :service do
+  describe '#call' do
+    subject(:result) { described_class.new(params).call }
+
+    let(:params) { { email: 'test@example.com' } }
+
+    context 'with valid params' do
+      it 'creates a user' do
+        expect { result }.to change(User, :count).by(1)
+      end
+
+      it 'returns the user' do
+        expect(result).to be_a(User)
+      end
+    end
+
+    context 'with invalid params' do
+      let(:params) { { email: '' } }
+
+      it 'raises an error' do
+        expect { result }.to raise_error(ActiveRecord::RecordInvalid)
+      end
+    end
+  end
+end
+```
+
+### Patterns
+- Use `let` for variables
+- Use `subject` for the thing being tested
+- Use `described_class` instead of class name
+- Group with `context` for different scenarios
+- One expectation per `it` block (when practical)
+
+### Factories (FactoryBot)
+```ruby
+FactoryBot.define do
+  factory :user do
+    email { Faker::Internet.email }
+    name { Faker::Name.name }
+    
+    trait :admin do
+      role { :admin }
+    end
+    
+    trait :with_orders do
+      after(:create) do |user|
+        create_list(:order, 3, user:)
+      end
+    end
+  end
+end
+```
+
+## Controller Patterns
+
+### RESTful Actions
+```ruby
+class Api::V1::UsersController < ApplicationController
+  before_action :authenticate!
+  before_action :set_user, only: %i[show update destroy]
+
+  def index
+    users = UsersQuery.new(current_company.users).call(filter_params)
+    render json: users, each_serializer: UserSerializer
+  end
+
+  def show
+    render json: @user, serializer: UserSerializer
+  end
+
+  def create
+    user = CreateUserService.new(user_params, context: { company: current_company }).call
+    render json: user, serializer: UserSerializer, status: :created
+  end
+
+  def update
+    @user.update!(user_params)
+    render json: @user, serializer: UserSerializer
+  end
+
+  def destroy
+    @user.destroy!
+    head :no_content
+  end
+
+  private
+
+  def set_user
+    @user = current_company.users.find(params[:id])
+  end
+
+  def user_params
+    params.require(:user).permit(:email, :name, :role)
+  end
+
+  def filter_params
+    params.permit(:status, :role, :q, :sort)
+  end
+end
+```
+
+## Serializers
+
+### ActiveModel::Serializer
+```ruby
+class UserSerializer < ActiveModel::Serializer
+  attributes :id, :email, :name, :role, :created_at
+
+  has_many :orders, if: -> { should_include?(:orders) }
+
+  def should_include?(association)
+    instance_options[:include]&.include?(association.to_s)
+  end
+end
+```
+
+## Background Jobs
+
+### Sidekiq Pattern
+```ruby
+class SendWelcomeEmailJob
+  include Sidekiq::Job
+
+  sidekiq_options queue: :default, retry: 3
+
+  def perform(user_id)
+    user = User.find(user_id)
+    UserMailer.welcome(user).deliver_now
+  rescue ActiveRecord::RecordNotFound
+    # User was deleted, skip silently
+  end
+end
+```
+
+### Enqueue
+```ruby
+SendWelcomeEmailJob.perform_async(user.id)
+SendWelcomeEmailJob.perform_in(1.hour, user.id)
+```
+
+## Rails Best Practices
+
+### Do
+- Keep controllers thin
+- Use service objects for business logic
+- Use query objects for complex queries
+- Use concerns sparingly
+- Use `find_each` for large datasets
+- Use transactions for multi-step operations
+
+### Don't
+- Put business logic in models
+- Use callbacks for business logic
+- Use `update_all` without scoping
+- Skip validations
+- Use raw SQL without parameterization
+
+## Checklist
+- [ ] Frozen string literals enabled
+- [ ] Naming conventions followed
+- [ ] Business logic in services
+- [ ] Queries in query objects
+- [ ] RSpec tests with proper structure
+- [ ] Controllers are thin

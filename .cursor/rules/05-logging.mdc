@@ -1,0 +1,156 @@
+---
+description: Logging standards
+globs: "**/*.ts,**/*.tsx"
+alwaysApply: false
+---
+
+# Logging
+
+## Log Levels
+| Level | When | Example |
+|-------|------|---------|
+| ERROR | Operation failed | Payment failed |
+| WARN | Handled but unexpected | Rate limit near |
+| INFO | Business events | User registered |
+| DEBUG | Diagnostic (dev only) | Function input/output |
+
+**Production**: INFO+ | **Development**: DEBUG+
+
+## Structured Format (JSON)
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "level": "INFO",
+  "message": "Order placed",
+  "requestId": "abc-123",
+  "userId": "user-456",
+  "orderId": "order-789"
+}
+```
+
+## Correlation IDs
+- Generate at request entry point
+- Pass through all service calls
+- Include in every log
+
+```typescript
+// ❌ NEVER - no correlation
+logger.info('Processing order');
+await paymentService.charge(amount);
+logger.info('Order complete');
+
+// ✅ CORRECT - correlation ID throughout
+import { v4 as uuid } from 'uuid';
+
+// Middleware: generate at entry point
+app.use((req, res, next) => {
+  req.requestId = req.headers['x-request-id'] || uuid();
+  res.setHeader('x-request-id', req.requestId);
+  next();
+});
+
+// Service: pass through all calls
+async function processOrder(orderId: string, requestId: string) {
+  logger.info('Processing order', { requestId, orderId });
+  
+  await paymentService.charge(amount, { requestId });
+  
+  logger.info('Order complete', { requestId, orderId });
+}
+```
+
+## What to Log
+- External API calls (sanitized)
+- Authentication events
+- Business-critical operations
+- Errors with full context
+
+```typescript
+// ✅ CORRECT - log business events with context
+logger.info('User registered', { 
+  requestId,
+  userId: user.id,
+  email: maskEmail(user.email), // j***@example.com
+  plan: user.plan
+});
+
+// ✅ CORRECT - log external API calls
+logger.info('Stripe API call', {
+  requestId,
+  method: 'POST',
+  endpoint: '/v1/charges',
+  responseTime: 234,
+  status: 200
+});
+
+// ✅ CORRECT - log errors with full context
+logger.error('Payment failed', {
+  requestId,
+  userId,
+  orderId,
+  error: error.message,
+  stack: error.stack,
+  stripeErrorCode: error.code
+});
+```
+
+## What NOT to Log
+- Passwords, tokens, API keys
+- Credit card numbers
+- PII without necessity
+- Health check spam
+
+| ❌ NEVER | ✅ CORRECT |
+|----------|------------|
+| `{ password: '123456' }` | `{ password: '[REDACTED]' }` |
+| `{ token: 'eyJhbG...' }` | `{ tokenPresent: true }` |
+| `{ card: '4242424242424242' }` | `{ cardLast4: '4242' }` |
+| `{ ssn: '123-45-6789' }` | Never log SSN |
+
+```typescript
+// ❌ NEVER - logs sensitive data
+logger.info('Login', { email, password, token });
+
+// ✅ CORRECT - sanitized
+logger.info('Login', { 
+  email: maskEmail(email),
+  passwordProvided: !!password,
+  tokenPresent: !!token
+});
+```
+
+## Rules
+- Use structured logging (JSON)
+- Always include requestId
+- Sanitize sensitive data
+- Don't log in loops
+- Use appropriate level (not everything is ERROR)
+
+```typescript
+// ❌ NEVER - string concatenation
+logger.info('User ' + userId + ' created order ' + orderId);
+
+// ✅ CORRECT - structured
+logger.info('Order created', { userId, orderId });
+
+// ❌ NEVER - logging in loops
+for (const item of items) {
+  logger.info('Processing item', { itemId: item.id });
+  await process(item);
+}
+
+// ✅ CORRECT - log batch summary
+logger.info('Processing items', { count: items.length, requestId });
+const results = await Promise.all(items.map(process));
+logger.info('Items processed', { 
+  success: results.filter(r => r.ok).length,
+  failed: results.filter(r => !r.ok).length,
+  requestId
+});
+
+// ❌ NEVER - wrong level
+logger.error('User not found'); // Not an error, expected case
+
+// ✅ CORRECT - appropriate level
+logger.warn('User not found', { userId, requestId }); // Or just don't log
+```

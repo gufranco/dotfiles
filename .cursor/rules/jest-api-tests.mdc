@@ -1,0 +1,66 @@
+---
+description: Jest API Tests - Running tests and following test architecture patterns
+globs: tests/api-tests/jest/**/*.ts
+alwaysApply: false
+---
+
+# Jest API Tests
+
+## Prerequisites
+
+Before running tests locally:
+
+1. **Docker must be running** - The tests connect to services running in Docker
+2. **Start required services** (only if running against local environment):
+   ```bash
+   # From repo root, start the services you want to test
+   docker-compose up -d
+   ```
+   Note: If the `.env` file points to a remote/non-local environment, Docker is not required.
+3. **Environment variables** - Ensure `.env` file exists in `tests/api-tests/jest/`
+
+## Running Tests
+
+```bash
+cd tests/api-tests/jest
+
+# Run all tests
+npm test
+
+# Run specific test file
+npm test -- --testPathPattern="invoice.spec.ts"
+
+# Run tests in a specific domain
+npm test -- --testPathPattern="payment/"
+
+# Exclude specific tests
+npm test -- --testPathIgnorePatterns="phone"
+
+# Run with increased timeout for slow tests
+npm test -- --testTimeout=120000
+```
+
+## Linting
+
+```bash
+cd tests/api-tests/jest
+
+# Lint and auto-fix
+npm run lint
+
+# Check only (no auto-fix)
+npm run lint:check
+```
+
+## Architecture & Writing Tests
+
+See [ARCHITECTURE.md](tests/api-tests/jest/ARCHITECTURE.md) for:
+- Directory structure and layer responsibilities
+- Import conventions and path aliases
+- How to add new tests, API clients, and factories
+- Dependency rules and best practices
+
+## Troubleshooting
+
+- **Connection refused**: Ensure Docker services are running (if testing locally)
+- **Timeout errors**: Increase `--testTimeout` or check service health

@@ -1,0 +1,117 @@
+---
+description: Monorepo patterns and workspace management
+globs: "**/pnpm-workspace.yaml,**/turbo.json,**/nx.json,**/lerna.json"
+alwaysApply: false
+---
+
+# Monorepo
+
+## Directory Structure
+```
+/
+├── apps/              # Deployable applications
+│   ├── web/           # Frontend app
+│   ├── mobile/        # Mobile app
+│   └── api/           # API server
+├── packages/          # Shared packages
+│   ├── ui/            # Shared UI components
+│   ├── config/        # Shared configurations
+│   ├── database/      # Database client & schemas
+│   ├── common/        # Shared utilities
+│   └── logger/        # Centralized logging
+├── services/          # Microservices (if applicable)
+└── tools/             # Build tools, scripts
+```
+
+## Package Categories
+
+| Type | Purpose | Example |
+|------|---------|---------|
+| `@repo/ui` | Shared UI components | Buttons, forms, layouts |
+| `@repo/config-*` | Shared configurations | ESLint, TypeScript, Jest |
+| `@repo/common` | Shared utilities | Validators, formatters |
+| `@repo/database` | Database client | ORM client, migrations |
+| `@repo/logger` | Centralized logging | Structured logger |
+
+## Dependency Rules
+
+### Internal Dependencies
+```
+apps/* → can depend on → packages/*
+packages/* → can depend on → packages/*
+packages/* → CANNOT depend on → apps/*
+services/* → can depend on → packages/*
+```
+
+### Version Management
+- Internal packages: Use `workspace:*` (pnpm) or `*` (npm/yarn)
+- External packages: Pin exact versions in shared configs
+- Never duplicate external dependencies across packages
+
+## Shared Configuration Pattern
+
+### TypeScript
+```
+packages/config-typescript/
+├── base.json         # Base config
+├── nextjs.json       # Next.js projects
+├── react-library.json # React libraries
+├── node.json         # Node.js projects
+└── package.json
+```
+
+### ESLint
+```
+packages/config-eslint/
+├── base.js           # Base rules
+├── next.js           # Next.js rules
+├── react.js          # React rules
+├── node.js           # Node.js rules
+└── package.json
+```
+
+## Build Orchestration
+
+### Task Dependencies
+```json
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"]
+    },
+    "lint": {}
+  }
+}
+```
+
+### Caching Strategy
+- Cache build outputs (`dist/`, `.next/`)
+- Cache test results
+- Invalidate on source file changes
+- Share cache across CI runs
+
+## Code Sharing Best Practices
+
+### Do
+- Extract truly shared code to packages
+- Keep packages focused (single responsibility)
+- Version packages semantically
+- Document package APIs
+
+### Don't
+- Create packages for code used by one app
+- Share business logic between unrelated apps
+- Create circular dependencies
+- Over-abstract prematurely
+
+## Checklist
+- [ ] Clear separation between apps and packages
+- [ ] No circular dependencies
+- [ ] Shared configs for consistency
+- [ ] Build tasks properly ordered
+- [ ] Caching configured for CI
+- [ ] Each package has clear purpose

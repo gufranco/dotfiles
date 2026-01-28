@@ -1,0 +1,189 @@
+---
+description: Mobile development patterns (React Native, Flutter, etc.)
+globs: "**/ios/**,**/android/**,**/App.tsx,**/app.json"
+alwaysApply: false
+---
+
+# Mobile Development
+
+## Offline-First Architecture
+
+### Data Sync Strategy
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Server    │◄───►│ Sync Queue  │◄───►│ Local Store │
+└─────────────┘     └─────────────┘     └─────────────┘
+                           │
+                    Network State
+                    Aware Processing
+```
+
+### Sync Queue Pattern
+1. User performs action
+2. Save to local store immediately
+3. Queue sync operation
+4. Process queue when online
+5. Handle conflicts on sync
+
+### Network State Detection
+```
+// Don't just check connection status
+// Verify actual connectivity
+async function isOnline(): Promise<boolean> {
+  try {
+    await fetch('https://clients3.google.com/generate_204');
+    return true;
+  } catch {
+    return false;
+  }
+}
+```
+
+## Storage Patterns
+
+### Storage Tiers
+| Tier | Use Case | Example |
+|------|----------|---------|
+| Memory | Session data, UI state | Redux, Zustand |
+| Fast KV | User preferences, tokens | MMKV, SharedPreferences |
+| Database | Structured data | SQLite, Realm |
+| File | Media, documents | File system |
+
+### User-Scoped Storage
+```
+// Isolate data per user
+const storageKey = `user-${userId}-data`;
+```
+
+## Deep Linking
+
+### Setup Pattern
+```typescript
+function setupDeepLinking(handler: (url: string) => void) {
+  // Handle app opened via link
+  getInitialURL().then(url => {
+    if (url) handler(url);
+  });
+  
+  // Handle link while app is open
+  const subscription = addEventListener('url', ({ url }) => {
+    handler(url);
+  });
+  
+  return () => subscription.remove();
+}
+```
+
+### URL Structure
+```
+myapp://                    # App scheme
+myapp://resource/123        # Direct to resource
+myapp://resource/123?ref=x  # With parameters
+https://myapp.com/resource  # Universal links
+```
+
+## Push Notifications
+
+### Permission Flow
+1. Explain value before asking
+2. Request permission
+3. Handle denial gracefully
+4. Provide settings shortcut
+
+### Token Management
+- Register token on app start
+- Update token on refresh
+- Remove token on logout
+- Handle token expiration
+
+## App Lifecycle
+
+### States
+```
+Active      → App in foreground, receiving events
+Background  → App in background, limited processing
+Inactive    → Transitioning between states
+Terminated  → App not running
+```
+
+### Background Tasks
+- Keep tasks short (< 30 seconds)
+- Save state before backgrounding
+- Resume gracefully on foreground
+- Handle termination at any time
+
+## Platform-Specific Code
+
+### Organization
+```
+src/
+├── components/
+│   ├── Button.tsx          # Shared
+│   ├── Button.ios.tsx      # iOS-specific
+│   └── Button.android.tsx  # Android-specific
+├── services/
+│   └── storage/
+│       ├── index.ts        # Interface
+│       ├── storage.ios.ts
+│       └── storage.android.ts
+```
+
+### Platform Checks
+```typescript
+import { Platform } from 'react-native';
+
+const config = Platform.select({
+  ios: { /* iOS config */ },
+  android: { /* Android config */ },
+  default: { /* Fallback */ },
+});
+```
+
+## Performance
+
+### Image Optimization
+- Use appropriate resolution per device
+- Lazy load off-screen images
+- Cache aggressively
+- Use modern formats (WebP)
+
+### List Performance
+- Use virtualized lists
+- Minimize re-renders
+- Optimize item components
+- Implement pagination
+
+### Bundle Size
+- Tree-shake unused code
+- Lazy load screens
+- Use dynamic imports
+- Monitor bundle size in CI
+
+## CI/CD
+
+### Build Pipeline
+```
+Lint → Test → Build (iOS) ─┬─→ TestFlight/Firebase
+                           │
+              Build (Android) ─→ Play Console
+```
+
+### Versioning
+- Semantic versioning for releases
+- Build number auto-increment
+- Match version across platforms
+
+### Code Signing
+- Never commit signing keys
+- Use CI secrets
+- Automate with Fastlane/EAS
+
+## Checklist
+- [ ] Offline-first data strategy
+- [ ] Network state handling
+- [ ] Deep linking configured
+- [ ] Push notifications setup
+- [ ] Platform-specific code organized
+- [ ] Performance optimized
+- [ ] CI/CD pipeline configured
+- [ ] Code signing automated

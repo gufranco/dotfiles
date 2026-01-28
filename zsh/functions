@@ -591,3 +591,17 @@ function sync_games() {
   echo ""
   echo ""
 }
+
+################################################################################
+# Dotfiles management wrapper (inspired by bare git repo approach)
+################################################################################
+function dot() {
+  local dotfiles_dir="$HOME/.dotfiles"
+
+  if [ ! -d "$dotfiles_dir/.git" ]; then
+    __log_error "Dotfiles repository not found at $dotfiles_dir"
+    return 1
+  fi
+
+  git -C "$dotfiles_dir" "$@"
+}

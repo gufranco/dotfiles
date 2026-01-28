@@ -135,17 +135,43 @@ Edit files directly in the repository. Changes will be reflected after:
 
 ## Maintenance
 
+### Using the `dot` Function
+
+After installation, you'll have a `dot` function available in your shell that acts as a convenient wrapper for Git operations on the dotfiles repository:
+
+```bash
+# Check status
+dot status
+
+# Add changes
+dot add .
+
+# Commit changes
+dot commit -m "chore: update vim config"
+
+# Push changes
+dot push origin master
+
+# Pull updates
+dot pull origin master
+```
+
+The `dot` function is equivalent to running `git -C ~/.dotfiles` but shorter and easier to remember.
+
 ### Updating Submodules
 
 ```bash
-git submodule update --remote .cursor
+dot submodule update --remote .cursor
 ```
 
 ### Syncing Changes
 
 ```bash
-cd ~/.dotfiles
-git pull
+# Using the dot function (recommended)
+dot pull origin master
+
+# Or traditional way
+cd ~/.dotfiles && git pull
 # Restart terminal or source configs as needed
 ```
 

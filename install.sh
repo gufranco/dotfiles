@@ -61,6 +61,22 @@ log_info "==============================================================="
 echo ""
 
 ################################################################################
+# User confirmation (skip in CI)
+################################################################################
+if [[ -z "$CI" ]]; then
+  echo ""
+  log_warning "This script will install/update dotfiles and may overwrite existing configurations."
+  read -p "Continue? (Y/n) " -n 1 -r
+  echo ""
+  if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ -n "$REPLY" ]]; then
+    log_info "Installation cancelled."
+    exit 0
+  fi
+else
+  log_info "Running in CI environment - skipping user interaction."
+fi
+
+################################################################################
 # OS-specific installation
 ################################################################################
 case "$(uname)" in

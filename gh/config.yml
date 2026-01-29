@@ -1,0 +1,5 @@
+git_protocol: ssh
+editor: vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd' -c 'syntax on' -c 'filetype on'
+pager: delta
+prompt: enabled
+version: "1"

@@ -723,6 +723,20 @@ log_info "Setting up cmus..."
 safe_link "$HOME/.dotfiles/cmus/rc" "$HOME/.config/cmus/rc"
 
 ############################################################################
+# GitHub CLI
+############################################################################
+log_info "Setting up GitHub CLI..."
+mkdir -p "$HOME/.config/gh"
+safe_link "$HOME/.dotfiles/gh/config.yml" "$HOME/.config/gh/config.yml"
+
+############################################################################
+# GitLab CLI
+############################################################################
+log_info "Setting up GitLab CLI..."
+mkdir -p "$HOME/.config/glab-cli"
+safe_link "$HOME/.dotfiles/glab/config.yml" "$HOME/.config/glab-cli/config.yml"
+
+############################################################################
 # Cleanup
 ############################################################################
 log_info "Cleaning up..."

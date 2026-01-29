@@ -1,0 +1,7 @@
+# GitLab CLI - https://docs.gitlab.com/cli/config/
+
+git_protocol: ssh
+editor: vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd' -c 'syntax on' -c 'filetype on'
+glab_pager: delta
+glamour_style: dark
+display_hyperlinks: true

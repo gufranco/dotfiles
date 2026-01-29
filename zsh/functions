@@ -7,8 +7,6 @@ function f5() {
   SCRIPT_START_TIME=$(date +%s)
   export SCRIPT_START_TIME
 
-  [ "$DEBUG" = "1" ] && __log_info "DEBUG mode enabled - showing all command output"
-
   echo ""
   __log_info "==============================================================="
   __log_info "System Update (F5)"

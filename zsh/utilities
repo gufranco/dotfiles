@@ -737,19 +737,8 @@ function __vm_start() {
 ################################################################################
 function __f5_update_git_repo() {
   local repo_dir="$1"
-  local quiet_flag=""
-
-  [ "$DEBUG" != "1" ] && quiet_flag="--quiet"
-
-  if [ "$DEBUG" = "1" ]; then
-    NO_COLOR="" FORCE_COLOR=1 CLICOLOR=1 CLICOLOR_FORCE=1 \
-      git -C "$repo_dir" pull && \
-    NO_COLOR="" FORCE_COLOR=1 CLICOLOR=1 CLICOLOR_FORCE=1 \
-      git -C "$repo_dir" fetch --prune
-  else
-    git -C "$repo_dir" pull $quiet_flag >/dev/null 2>&1 && \
-    git -C "$repo_dir" fetch --prune $quiet_flag >/dev/null 2>&1
-  fi
+  git -C "$repo_dir" pull --quiet >/dev/null 2>&1 && \
+  git -C "$repo_dir" fetch --prune --quiet >/dev/null 2>&1
 }
 
 function __f5_update_dotfiles() {
@@ -761,7 +750,11 @@ function __f5_update_dotfiles() {
   fi
 
   if __f5_update_git_repo "$HOME/.dotfiles"; then
-    __log_success "Dotfiles updated"
+    if git -C "$HOME/.dotfiles" submodule update --init --recursive --quiet; then
+      __log_success "Dotfiles and submodules updated"
+    else
+      __log_success "Dotfiles updated (submodules had issues)"
+    fi
   else
     __log_warning "Failed to update dotfiles"
   fi
@@ -794,8 +787,6 @@ function __f5_update_plugins() {
 
     [ ! -d "$dir/.git" ] && continue
     [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]] && continue
-
-    [ "$DEBUG" = "1" ] && echo "Updating plugin: $dir"
 
     if __f5_update_git_repo "$dir"; then
       ((plugin_count++))
@@ -832,27 +823,13 @@ function __f5_update_nodejs() {
 function __f5_update_linux() {
   __log_info "Updating Linux packages..."
 
-  local quiet_flag="-qq"
-  [ "$DEBUG" = "1" ] && quiet_flag=""
-
-  if [ "$DEBUG" = "1" ]; then
-    if sudo apt update; then
-      sudo apt dist-upgrade -y
-      sudo apt autoremove -y
-      sudo apt clean || true
-      __log_success "Linux packages updated"
-    else
-      __log_error "Failed to update Linux packages"
-    fi
+  if sudo apt update -qq >/dev/null 2>&1 || sudo apt update; then
+    sudo apt dist-upgrade -y -qq >/dev/null 2>&1 || sudo apt dist-upgrade -y
+    sudo apt autoremove -y -qq >/dev/null 2>&1 || sudo apt autoremove -y
+    sudo apt clean >/dev/null 2>&1 || true
+    __log_success "Linux packages updated"
   else
-    if sudo apt update $quiet_flag >/dev/null 2>&1 || sudo apt update; then
-      sudo apt dist-upgrade -y $quiet_flag >/dev/null 2>&1 || sudo apt dist-upgrade -y
-      sudo apt autoremove -y $quiet_flag >/dev/null 2>&1 || sudo apt autoremove -y
-      sudo apt clean >/dev/null 2>&1 || true
-      __log_success "Linux packages updated"
-    else
-      __log_error "Failed to update Linux packages"
-    fi
+    __log_error "Failed to update Linux packages"
   fi
 }
 

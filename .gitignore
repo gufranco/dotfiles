@@ -115,6 +115,8 @@ Brewfile.lock.json
 ################################################################################
 # Node.js
 ################################################################################
+# Track nodejs/.npmrc (uses ${NPM_TOKEN}); global gitignore may ignore .npmrc
+!nodejs/.npmrc
 nodejs/*/*.cache
 node_modules/
 npm-debug.log*

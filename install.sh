@@ -137,8 +137,8 @@ case "$(uname)" in
     ############################################################################
     log_info "Setting up dotfiles..."
     git_clone_or_update "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles"
-      git -C "$HOME/.dotfiles" checkout -f master 2>/dev/null || true
-      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
+    git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
+    git -C "$HOME/.dotfiles" submodule update --init --recursive 2>/dev/null || true
     log_success "Dotfiles configured"
 
     ############################################################################
@@ -515,9 +515,9 @@ case "$(uname)" in
     log_info "Setting up dotfiles..."
     if [ -d "$HOME/.dotfiles/.git" ]; then
       git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git 2>/dev/null || true
-      git -C "$HOME/.dotfiles" checkout -f master 2>/dev/null || true
       git -C "$HOME/.dotfiles" pull --no-edit 2>/dev/null || true
       git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
+      git -C "$HOME/.dotfiles" submodule update --init --recursive 2>/dev/null || true
       log_success "Dotfiles updated"
     else
       git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"

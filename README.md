@@ -19,7 +19,9 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 ├── curl/                 # Curl configuration
 ├── eza/                  # eza (ls replacement) configuration
 ├── fd/                   # fd (find replacement) configuration
+├── gh/                   # GitHub CLI (gh) configuration
 ├── git/                  # Git configuration and hooks
+├── glab/                 # GitLab CLI (glab) configuration
 ├── gnupg/                # GPG configuration and public keys
 ├── htop/                 # htop configuration
 ├── kitty/                # Kitty terminal configuration
@@ -52,6 +54,8 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 
 ### Development Tools
 - **Git**: Comprehensive configuration with aliases, hooks, and templates
+- **GitHub CLI (gh)**: Defaults (ssh, vim, delta) in `gh/config.yml`
+- **GitLab CLI (glab)**: Defaults (ssh, vim, delta) in `glab/config.yml`
 - **Vim/Neovim**: Custom configuration with plugins
 - **Node.js**: Configuration for npm, yarn, and pnpm
 - **Cursor IDE**: Engineering rules and best practices (via submodule)
@@ -102,10 +106,24 @@ All configuration files are symlinked to their respective locations in your home
 
 - **Zsh**: `~/.zshrc` → `zsh/.zshrc`
 - **Git**: `~/.gitconfig` → `git/.gitconfig`
+- **GitHub CLI**: `~/.config/gh/config.yml` → `gh/config.yml`
+- **GitLab CLI**: `~/.config/glab-cli/config.yml` → `glab/config.yml`
 - **Vim**: `~/.vimrc` → `vim/.vimrc`
 - **Tmux**: `~/.tmux.conf` → `tmux/.tmux.conf`
 - **SSH**: `~/.ssh/config` → `ssh/config`
 - **GPG**: `~/.gnupg/` → `gnupg/`
+
+### Brewfile tools without dotfiles config (optional)
+
+These are in the Brewfile but have no versioned config here (either env-specific or optional):
+
+- **starship** – `~/.config/starship.toml` (you use Oh My Zsh Spaceship; add if you switch to standalone Starship)
+- **direnv** – `~/.config/direnv/direnvrc` (global defaults; hook is in zsh)
+- **mcfly** – `~/.config/mcfly/config.toml` (keybindings, etc.)
+- **awscli** – `~/.aws/config` only (never commit `~/.aws/credentials`)
+- **terraform** – `~/.terraformrc` or `~/.config/terraform/terraform.rc`
+- **docker** – `~/.docker/config.json` (often contains creds; version only if minimal)
+- **kubectl** – `~/.kube/config` (sensitive; do not version)
 
 ## Security Notes
 

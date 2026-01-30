@@ -14,6 +14,8 @@ alwaysApply: true
 | Bug hunting, root cause | `debugging-specialist` |
 | CI/CD, Docker, infra | `devops-engineer` |
 | React, Next.js, UI | `frontend-specialist` |
+| Vue, Nuxt, Svelte, SvelteKit, Angular | `frontend-specialist` + rules 34–36 |
+| Laravel, PHP | rule `33-laravel` |
 | Translations, localization | `frontend-specialist` + rule `06-i18n` |
 | React Native, Flutter, mobile | `mobile-specialist` |
 | Schema changes, data moves | `migration-specialist` |
@@ -36,6 +38,7 @@ alwaysApply: true
 |---------|-------|
 | Test strategy, coverage | `test-architect` |
 | API/endpoint testing | `api-tester` |
+| Jest API tests (Docker, env) | `api-tester` + rule `11-testing` |
 | Browser, Playwright, Cypress | `e2e-tester` |
 
 ## Code Quality Agents

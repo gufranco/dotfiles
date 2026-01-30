@@ -6,11 +6,14 @@ alwaysApply: false
 
 # External Services Integration
 
+## Stateless Services
+- In multi-node or multi-instance setups, keep services stateless; store session and cache state in an external store (e.g. Redis) so any instance can serve any request.
+
 ## Integration Checklist
 Before integrating any external service:
 - [ ] Timeout configured
 - [ ] Retry strategy defined
-- [ ] Circuit breaker implemented
+- [ ] Circuit breaker (or equivalent) implemented
 - [ ] Fallback behavior defined
 - [ ] Error handling specific to service
 - [ ] Logging with requestId

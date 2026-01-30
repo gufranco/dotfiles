@@ -17,6 +17,11 @@ Always consult before implementing:
 - Use transactions for data modifications
 - Use `SELECT ... FOR UPDATE` for reads before writes
 
+## Prisma: Errors and Migrations
+- Catch ORM-specific errors (e.g. `PrismaClientKnownRequestError`, `PrismaClientValidationError`) and map them to clear, user-facing messages; never leak raw DB or ORM errors to clients.
+- Do not change migrations that have already been applied; add a new migration for further schema changes.
+- Where the migration system allows, keep migrations idempotent so they can be re-run safely.
+
 ## Schema
 - Always: `created_at`, `updated_at`
 - Soft delete: `deleted_at` (nullable)

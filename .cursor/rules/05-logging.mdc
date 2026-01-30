@@ -120,6 +120,7 @@ logger.info('Login', {
 ```
 
 ## Rules
+- In production, prefer structured logs (e.g. JSON) and use levels (info, warn, error) consistently.
 - Use structured logging (JSON)
 - Always include requestId
 - Sanitize sensitive data

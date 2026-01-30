@@ -1,0 +1,38 @@
+---
+description: Raise agent/auto mode quality via process and evidence
+alwaysApply: true
+---
+
+# Agent / Auto Mode Quality
+
+When running autonomously (Agent or Auto), follow a strict process so analysis, decisions, and outputs stay reliable even when a faster/lighter model is used.
+
+## Before Acting
+
+1. **State the goal** in one sentence (what must be true when done).
+2. **List what must be read or verified** (files, APIs, types, env) — then **perform each** (read, grep, run) before proposing code.
+3. **Propose the approach** in 1–3 bullets; if the task is multi-step, break it into steps and work one at a time.
+
+Do not implement until the above is done. Prefer verification over speed.
+
+## While Implementing
+
+- **One logical change per turn** when possible; cap edits at 3–5 files per task unless the task explicitly requires more.
+- **Read before edit**: open the real file and reference line numbers or symbols; do not assume signatures or structure.
+- **After each significant step**, run the relevant check (e.g. `npm run lint`, `npm run test`, or the project’s build) and **show the output**; do not claim success without evidence.
+
+## Evidence Required
+
+- **Never claim** “tests pass”, “build succeeds”, or “it works” without showing command output or a concrete file excerpt.
+- When suggesting a fix: include the minimal code change, the exact command to validate it, and the expected outcome (and edge cases if relevant).
+- If something is unclear (missing file, ambiguous requirement), say so and ask for details (e.g. @file) instead of guessing.
+
+## When in Doubt
+
+- **Stop and verify**: read the code, run the command, then answer.
+- **Smaller steps**: split the task, do one step, show evidence, then continue.
+- **Explicit trade-offs**: if there are multiple valid approaches, state them briefly and say which one you chose and why.
+
+## Product Tip
+
+In Cursor, **Settings → Models** lets you choose the default model for Chat, Composer, and Agent. If Auto uses a lighter model and quality drops, consider setting the Agent (or Composer) default to a stronger model (e.g. Claude Opus) for complex or multi-file tasks; use a faster model only for small, clear edits.

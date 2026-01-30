@@ -67,6 +67,7 @@ it('should create a user with valid data', async () => {
 ## Test Naming
 - Describe **behavior**, not implementation
 - Use clear, readable names: `should create user with valid email`
+- When it helps readability, use consistent prefixes: `inputX`, `mockX`, `expectedX` (e.g. `inputUser`, `mockRepo`, `expectedStatus`).
 - **NEVER** reference ticket/task IDs in test names or describe blocks
   - ❌ `describe('User Tests (ENG-1234)', ...)`
   - ✅ `describe('User Tests', ...)`
@@ -74,6 +75,47 @@ it('should create a user with valid data', async () => {
 
 ## File Location
 Colocate: `user-service.ts` → `user-service.test.ts`
+
+## API / integration tests (Docker, env)
+- Use real services or Docker when testing against local APIs; `.env` for config (e.g. base URL).
+- For slow or flaky API tests: set `--testTimeout` (e.g. `120000`) or equivalent in the runner.
+- Connection/timeout failures: ensure services are up (e.g. `docker-compose up -d`) or increase timeout.
+- Prefer project test layout docs (e.g. ARCHITECTURE.md in the test dir) when present; otherwise colocate and follow AAA.
+
+## E2E (browser / Playwright-style)
+- Prefer finding elements by role, label, or text (e.g. `getByRole`, `getByLabel`, `getByText`) instead of complex CSS or XPath; use data-testid or semantic selectors when needed.
+- Avoid fixed timeouts; use the runner’s auto-waiting or wait for specific conditions (e.g. element visible, network idle) so tests stay stable.
+- Cover critical user journeys; keep each E2E file to a small number of focused tests (e.g. 3–5) and base tests on user stories or common flows.
+- Mock external APIs (e.g. Playwright’s `page.route`) when testing UI in isolation so tests are deterministic.
+- Run E2E in isolation (no shared state between tests) and in parallel when the runner supports it.
+
+## Cypress (E2E)
+- Use `cy.intercept` for API mocking so tests are isolated and deterministic.
+- Prefer `data-testid` selectors over CSS or XPath; use `beforeEach` for setup; avoid hard-coded waits.
+- Limit each file to 3–5 focused tests; validate both success and error scenarios; base tests on user stories.
+
+## Jest (unit)
+- Mock dependencies **before** imports with `jest.mock()`; use `beforeEach` and `jest.clearAllMocks()`.
+- Test valid inputs, invalid inputs, and edge cases (null, undefined, wrong types); limit to 3–5 focused tests per file.
+- Group tests in `describe` blocks; use clear names that indicate expected behavior.
+
+## Vitest (unit)
+- Mock dependencies **before** imports with `vi.mock()`; use `vi.clearAllMocks()` in `beforeEach`.
+- Same as Jest: valid/invalid/edge cases, 3–5 tests per file, descriptive names and `describe` grouping.
+
+## API testing (Playwright / Cypress)
+- Test critical endpoints: status codes, response body, schema compliance; keep tests isolated and deterministic (no reliance on existing server state).
+- Group by endpoint or resource in `describe` blocks; validate both success and error scenarios; use schema validation (e.g. Zod, AJV) when available.
+- Limit to 3–5 focused tests per API resource; use fixtures or factories for test data; test authenticated and unauthenticated access where relevant.
+
+## Gherkin / acceptance
+- Use Feature, Scenario, Given, When, Then (and And, But); use Examples tables for data-driven scenarios.
+- Write in simple, non-technical language so business and legal can read; avoid jargon (API, selector, endpoint).
+- When converting technical scripts: Given = preconditions, When = user actions, Then = verifiable outcomes.
+
+## Smoke and Acceptance
+- In APIs, consider a smoke endpoint per module (e.g. GET /health or GET /admin/test) for quick sanity checks.
+- In acceptance tests, use a Given-When-Then structure in the description or comments so scenarios stay readable.
 
 ## When to Run
 - After ANY code change → related tests

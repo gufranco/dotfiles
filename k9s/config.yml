@@ -1,0 +1,8 @@
+# K9s - https://k9scli.io
+# On macOS: ~/Library/Application Support/k9s (or set K9S_CONFIG_DIR)
+
+liveViewAutoRefresh: false
+refreshRate: 2
+apiServerTimeout: 120
+readOnly: false
+noExitOnCtrlC: false

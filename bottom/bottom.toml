@@ -1,0 +1,8 @@
+# Bottom (btm) - https://github.com/ClementTsang/bottom
+
+[colors]
+truecolor = true
+
+[options]
+update_time_ms = 1000
+temperature_type = "c"

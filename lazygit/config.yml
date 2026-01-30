@@ -1,0 +1,9 @@
+# Lazygit - https://github.com/jesseduffield/lazygit
+# On macOS: symlink to ~/Library/Application Support/lazygit if not using XDG_CONFIG_HOME
+
+gui:
+  scrollHeight: 2
+  scrollPastBottom: true
+  showCommandLog: true
+
+reporting: "off"

@@ -14,6 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 .dotfiles/
 ├── .cursor/              # Cursor IDE engineering rules (submodule)
 ├── bat/                  # Bat (cat replacement) configuration
+├── bottom/               # Bottom (btm) system monitor configuration
 ├── cmus/                 # Cmus music player configuration
 ├── conky/                # Conky system monitor configuration
 ├── curl/                 # Curl configuration
@@ -24,13 +25,17 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 ├── glab/                 # GitLab CLI (glab) configuration
 ├── gnupg/                # GPG configuration and public keys
 ├── htop/                 # htop configuration
+├── k9s/                  # K9s (kubectl TUI) configuration
 ├── kitty/                # Kitty terminal configuration
+├── lazydocker/           # Lazydocker (Docker TUI) configuration
+├── lazygit/              # Lazygit configuration
 ├── mailcap/              # Mailcap configuration
 ├── mutt/                 # Neomutt email client configuration
 ├── nodejs/               # Node.js, npm, yarn, pnpm configuration
 ├── readline/             # Readline configuration
 ├── ripgrep/              # Ripgrep configuration
 ├── ssh/                  # SSH configuration and public keys
+├── tealdeer/             # Tealdeer (tldr) configuration
 ├── telnet/               # Telnet configuration
 ├── themes/               # Terminal themes (iTerm2, Tilix)
 ├── tilix/                # Tilix terminal configuration
@@ -48,6 +53,8 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 ### Shell Configuration (Zsh)
 - Oh My Zsh with custom plugins
 - Spaceship prompt theme
+- direnv hook (per-directory env via `.envrc`)
+- zoxide hook (smarter `cd` by frequency)
 - Custom aliases and functions
 - Utility functions for system management
 - Infrastructure helpers (Docker, VMs)
@@ -67,9 +74,15 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 - **eza**: Modern ls replacement
 - **Ripgrep**: Fast text search
 - **fd**: Fast find replacement
+- **Lazygit**: Git TUI (`lazygit/config.yml`)
+- **Lazydocker**: Docker TUI (`lazydocker/config.yml`)
+- **K9s**: kubectl TUI (`k9s/config.yml`)
+- **Bottom (btm)**: System monitor TUI (`bottom/bottom.toml`)
+- **Tealdeer (tldr)**: Simplified man pages (`tealdeer/config.toml`)
 
 ### System Tools
 - **htop**: Process monitoring configuration
+- **Bottom (btm)**: TUI system monitor
 - **Conky**: System monitor configuration
 - **GPG**: Key management and agent configuration
 - **SSH**: Configuration and key management
@@ -108,6 +121,11 @@ All configuration files are symlinked to their respective locations in your home
 - **Git**: `~/.gitconfig` → `git/.gitconfig`
 - **GitHub CLI**: `~/.config/gh/config.yml` → `gh/config.yml`
 - **GitLab CLI**: `~/.config/glab-cli/config.yml` → `glab/config.yml`
+- **Tealdeer (tldr)**: `~/.config/tealdeer/config.toml` → `tealdeer/config.toml`
+- **Bottom (btm)**: `~/.config/bottom/bottom.toml` → `bottom/bottom.toml`
+- **Lazygit**: `~/.config/lazygit/config.yml` → `lazygit/config.yml` (macOS: also `~/Library/Application Support/lazygit`)
+- **Lazydocker**: `~/.config/lazydocker/config.yml` → `lazydocker/config.yml` (macOS: also `~/Library/Application Support/jesseduffield/lazydocker`)
+- **K9s**: `~/.config/k9s/config.yml` → `k9s/config.yml` (macOS: also `~/Library/Application Support/k9s`)
 - **Vim**: `~/.vimrc` → `vim/.vimrc`
 - **Tmux**: `~/.tmux.conf` → `tmux/.tmux.conf`
 - **SSH**: `~/.ssh/config` → `ssh/config`
@@ -118,7 +136,8 @@ All configuration files are symlinked to their respective locations in your home
 These are in the Brewfile but have no versioned config here (either env-specific or optional):
 
 - **starship** – `~/.config/starship.toml` (you use Oh My Zsh Spaceship; add if you switch to standalone Starship)
-- **direnv** – `~/.config/direnv/direnvrc` (global defaults; hook is in zsh)
+- **direnv** – `~/.config/direnv/direnvrc` (global defaults; hook in zsh/startup)
+- **zoxide** – hook in zsh/startup
 - **mcfly** – `~/.config/mcfly/config.toml` (keybindings, etc.)
 - **awscli** – `~/.aws/config` only (never commit `~/.aws/credentials`)
 - **terraform** – `~/.terraformrc` or `~/.config/terraform/terraform.rc`

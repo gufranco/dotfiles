@@ -10,7 +10,7 @@ alwaysApply: false
 
 ### API Key
 ```
-Header: X-API-Key: pk_live_abc123...
+Header: X-API-Key: <your-api-key>
 ```
 - Simple, low-security use cases
 - Rate limit by key
@@ -18,8 +18,8 @@ Header: X-API-Key: pk_live_abc123...
 
 ### HMAC Signature
 ```
-Header: X-Signature: sha256=abc123...
-Header: X-Timestamp: 1704067200
+Header: X-Signature: sha256=<signature>
+Header: X-Timestamp: <unix-timestamp>
 ```
 - High-security use cases
 - Proves request integrity

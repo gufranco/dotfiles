@@ -1,0 +1,20 @@
+---
+description: Vue 3, Nuxt 3, Composition API
+globs: "**/*.vue,**/nuxt.config.*,**/vite.config.*"
+alwaysApply: false
+---
+
+# Vue 3 & Nuxt
+
+## Composition API
+- Use `setup()` (or `<script setup>`) for component logic; use `ref` and `reactive` for reactive state.
+- Use `computed()` for derived state; use `watch` and `watchEffect` for side effects.
+- Use lifecycle hooks: `onMounted`, `onUpdated`, etc.; use `provide`/`inject` for dependency injection.
+
+## Project Structure
+- Typical layout: `src/components/`, `composables/`, `views/`, `router/`, `store/`, `assets/`; `App.vue`, `main.js` (or Nuxt `app/`, `pages/`, `components/`).
+
+## Best Practices
+- Use TypeScript for type safety; define props and emits; use Vue 3 style guide and naming conventions.
+- Use `Teleport` when needed; use `Suspense` for async components; use Vite for dev and build.
+- In Nuxt: use file-based routing, `useAsyncData`/`useFetch` for data, auto-imports for components and composables.

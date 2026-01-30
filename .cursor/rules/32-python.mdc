@@ -6,6 +6,12 @@ alwaysApply: false
 
 # Python
 
+## Style and Conventions
+- Follow PEP 8: naming (snake_case for functions/variables), line length, spacing.
+- Use type hints on all public functions and, when helpful, on locals.
+- Document modules and public functions with docstrings (PEP 257): one-line or multi-line; keep them up to date.
+- For functions with many parameters, prefer a single options object (receive object, return object); same for composite return values.
+
 ## Project Structure
 
 ### Standard Layout
@@ -79,6 +85,7 @@ class Repository(Generic[T]):
 ```
 
 ## Pydantic Models
+- For APIs, use Pydantic (or equivalent) for request/response and validation so input is validated and types stay in sync.
 
 ### Data Models
 ```python
@@ -288,7 +295,16 @@ def test_uppercase(input, expected):
     assert input.upper() == expected
 ```
 
+## Django
+- Follow MVT (Model-View-Template); use Django apps for modularity; prefer CBVs for complex views, FBVs for simple logic.
+- Use the ORM (avoid raw SQL unless needed); use ModelForm/forms for validation; use built-in auth and middleware for cross-cutting concerns.
+- Use `select_related` and `prefetch_related` to avoid N+1; use the cache framework (e.g. Redis); use DRF for APIs, Celery for background tasks.
+- Handle errors at the view level; use signals to decouple logging from business logic; customize 404/500 pages.
+
 ## FastAPI Patterns
+- Prefer lifespan context managers for startup/shutdown instead of `@app.on_event("startup")` / `@app.on_event("shutdown")`.
+- Use `async def` for I/O-bound operations (DB, external APIs); avoid blocking I/O in request handlers.
+- Use `HTTPException` for expected error responses and document them in OpenAPI; use middleware for logging and unexpected error handling.
 
 ### Router Structure
 ```python
@@ -342,12 +358,13 @@ def get_user_service(
 ## Best Practices
 
 ### Do
-- Use type hints everywhere
-- Use Pydantic for data validation
-- Use pytest fixtures for test setup
-- Use async for I/O operations
-- Use `__all__` for public exports
-- Document with docstrings
+- Use type hints everywhere; follow PEP 8 and snake_case.
+- Use Pydantic for data validation and API request/response.
+- Use pytest fixtures for test setup.
+- Use async for I/O operations.
+- Use `__all__` for public exports.
+- Document with docstrings (PEP 257).
+- When the project uses `uv`, use it consistently for add/remove/sync of dependencies; do not mix with pip/poetry in the same project.
 
 ### Don't
 - Use mutable default arguments

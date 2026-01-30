@@ -112,6 +112,9 @@ func GetUser(id string) (*User, error) {
 ## Context Propagation
 
 ### Always Pass Context
+- Propagate context through the call chain for request scope, deadlines, and cancellation; use it in spans and logs.
+- Close resources (files, connections) with `defer` immediately after opening so cleanup is guaranteed.
+
 ```go
 func (s *Service) GetUser(ctx context.Context, id string) (*User, error) {
     // Use context for cancellation, timeout, values
@@ -201,6 +204,9 @@ type Service struct {
 ## Concurrency
 
 ### Goroutine Pattern
+- Protect shared state with channels or sync primitives; avoid data races.
+- Use context for cancellation so goroutines can exit and do not leak (e.g. pass context into goroutines and respect cancellation).
+
 ```go
 func Process(items []Item) error {
     g, ctx := errgroup.WithContext(context.Background())
@@ -312,6 +318,12 @@ func (m *mockRepository) FindUser(ctx context.Context, id string) (*User, error)
 }
 ```
 
+## Go API (net/http, ServeMux 1.22+)
+- Plan step-by-step: API structure, endpoints, data flow (pseudocode) before writing code.
+- Use standard library: proper error handling and custom error types, appropriate status codes, JSON responses, input validation.
+- Use middleware for logging, auth, rate limiting; implement auth/authorization where appropriate; leave no TODOs or placeholders.
+- Offer testing suggestions using the `testing` package.
+
 ## HTTP Handlers
 
 ### Handler Pattern
@@ -350,12 +362,14 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 ## Best Practices
 
 ### Do
-- Handle every error
-- Use `context.Context` everywhere
-- Keep packages small and focused
-- Write table-driven tests
-- Use `defer` for cleanup
-- Document exported functions
+- Handle every error; when wrapping, add context (e.g. `fmt.Errorf("op: %w", err)`).
+- Use `context.Context` everywhere for request scope, deadlines, cancellation.
+- Avoid global state; pass dependencies via constructor or init function.
+- Keep packages small and focused.
+- Write table-driven tests; mock external interfaces; separate fast unit tests from integration/E2E.
+- Use `defer` for cleanup (files, connections).
+- Document exported functions.
+- Format with `go fmt` / `goimports`; run `golangci-lint` (or equivalent) in CI.
 
 ### Don't
 - Use `init()` for complex logic

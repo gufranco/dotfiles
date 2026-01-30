@@ -13,7 +13,15 @@ alwaysApply: false
 - Verify the build passes
 - Check for debugging code, console logs, commented code
 - Ensure commit history is clean and logical
-- Write a clear PR description
+- Write a clear PR description; when the repo has a PR template, fill it out completely (Purpose, Implementation Details, Testing Performed, Potential Impacts, Review Checklist, Related Issues).
+
+### PR template sections (when no template exists)
+- Purpose: why the change is needed; reference issues.
+- Implementation Details: how and why specific approaches were chosen.
+- Testing Performed: automated (unit, integration, E2E) and manual.
+- Potential Impacts: other areas of the system affected.
+- Review Checklist: style guidelines, docs updated, tests passing, no new warnings.
+- Related Issues: Closes #N, Refs #N.
 
 ### PR Best Practices
 - Keep PRs small (< 400 lines ideally, max 1000)
@@ -57,6 +65,11 @@ Closes ENG-1234
 | Migration + Code | 1. Migration PR → 2. Code PR |
 
 ## As Reviewer
+
+### When Suggesting Changes
+- Review the existing codebase first; reference specific files (e.g. @path).
+- Provide suggestions in incremental steps: explanation and purpose, minimal code snippet, targeted test to validate, expected outcomes and edge cases.
+- Request clarification for missing context via @ references or status.md.
 
 ### Response Time
 - Review within 24 hours (business hours)
@@ -117,6 +130,10 @@ Looks good! Left a few nits but nothing blocking. Approving.
 - Are error cases handled appropriately?
 - Is the logic correct?
 
+### Types and Naming
+- Are types correct and consistent (no stray `any` or unchecked casts)?
+- Is naming clear and consistent (no duplication or misleading names)?
+
 ### Security
 - No hardcoded secrets or credentials
 - Input validation present
@@ -140,3 +157,11 @@ Looks good! Left a few nits but nothing blocking. Approving.
 - Tests cover the changes
 - Tests cover edge cases
 - Tests are readable and maintainable
+
+## QA bug reports
+- Structure: Description, Environment (device, OS, browser/version, resolution, role), Severity (Critical/High/Medium/Low/Trivial), Steps to Reproduce (numbered), Expected vs Actual, Visual Evidence, Console/Error Logs, Additional Notes.
+- One issue per report; objective and factual; clear, reproducible steps; include version numbers and exact error messages.
+
+## Engineering tickets
+- Include: Description, Technical Context, Implementation Details, Acceptance Criteria (list or Given-When-Then), Testing Considerations, Dependencies, Resources (links), Estimation (story points), Priority, Sprint.
+- Be specific and testable; suggest implementation without being overly prescriptive; identify dependencies and blockers.

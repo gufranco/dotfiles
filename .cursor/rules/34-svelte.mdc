@@ -1,0 +1,22 @@
+---
+description: Svelte 5, SvelteKit, TypeScript
+globs: "**/*.svelte,**/svelte.config.js,**/+*.svelte"
+alwaysApply: false
+---
+
+# Svelte & SvelteKit
+
+## Stack
+- Svelte 5, SvelteKit, TypeScript; optional: Supabase, Drizzle.
+
+## Code Style and Structure
+- Follow naming conventions; use TypeScript for type safety; use Svelte runes (`$state`, `$derived`, etc.) for reactivity.
+- Use Shadcn color conventions when using Shadcn; follow SvelteKit project structure (routes, layouts, +page.server, +layout).
+
+## Component Development
+- Keep components focused; use runes for local state; use classes for complex state (e.g. state machines) with `$state` in the class.
+- Use `+page.svelte` and `+page.server.ts` for routes; use `+layout.svelte` for shared layout.
+
+## State Management
+- Prefer runes for component state; use classes when state is complex (e.g. `class Counter { count = $state(0); increment() { ... } }`).
+- Use load functions and form actions for server data; use stores only when shared across components.

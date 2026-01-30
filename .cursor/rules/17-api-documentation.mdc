@@ -7,6 +7,8 @@ alwaysApply: false
 # API Documentation
 
 ## OpenAPI Requirements
+- For GraphQL or flexible APIs, document and practice requesting only needed fields to avoid over-fetch and extra cost.
+
 All API endpoints MUST be documented in OpenAPI specification.
 
 ```typescript

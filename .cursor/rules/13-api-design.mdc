@@ -6,6 +6,10 @@ alwaysApply: false
 
 # API Design
 
+## Cross-Cutting Concerns
+- Use middleware for logging, auth, and rate limiting instead of repeating logic in every handler.
+- In microservices, consider an API Gateway for rate limiting, request transformation, and security filters (auth, validation) at the edge.
+
 ## URL Design
 ```
 GET    /api/v1/{resource}           # List with pagination
@@ -121,6 +125,9 @@ POST requests SHOULD support `X-Idempotency-Key` header for safe retries.
 - Version in URL path: `/api/v1/`
 - Breaking changes require new version
 - Old versions deprecated, not removed immediately
+
+## GraphQL and Flexible APIs
+- For GraphQL or other flexible query APIs, document and practice requesting only the fields needed to avoid over-fetch and unnecessary cost; prefer a typed/generated client when available.
 
 ## Webhook Endpoints
 

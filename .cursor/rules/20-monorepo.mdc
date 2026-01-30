@@ -71,6 +71,7 @@ packages/config-eslint/
 ```
 
 ## Build Orchestration
+- Use a cache and pipeline for build and test (e.g. Turborepo, Nx, or equivalent) so tasks run in the right order and outputs are cached across runs.
 
 ### Task Dependencies
 ```json

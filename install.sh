@@ -737,6 +737,54 @@ mkdir -p "$HOME/.config/glab-cli"
 safe_link "$HOME/.dotfiles/glab/config.yml" "$HOME/.config/glab-cli/config.yml"
 
 ############################################################################
+# Tealdeer (tldr)
+############################################################################
+log_info "Setting up Tealdeer..."
+mkdir -p "$HOME/.config/tealdeer"
+safe_link "$HOME/.dotfiles/tealdeer/config.toml" "$HOME/.config/tealdeer/config.toml"
+cmd_exists tldr && tldr --update 2>/dev/null || true
+
+############################################################################
+# Bottom (btm)
+############################################################################
+log_info "Setting up Bottom..."
+mkdir -p "$HOME/.config/bottom"
+safe_link "$HOME/.dotfiles/bottom/bottom.toml" "$HOME/.config/bottom/bottom.toml"
+
+############################################################################
+# Lazygit
+############################################################################
+log_info "Setting up Lazygit..."
+mkdir -p "$HOME/.config/lazygit"
+safe_link "$HOME/.dotfiles/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
+if [ "$(uname)" = "Darwin" ]; then
+  mkdir -p "$HOME/Library/Application Support/lazygit"
+  safe_link "$HOME/.dotfiles/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
+fi
+
+############################################################################
+# Lazydocker
+############################################################################
+log_info "Setting up Lazydocker..."
+mkdir -p "$HOME/.config/lazydocker"
+safe_link "$HOME/.dotfiles/lazydocker/config.yml" "$HOME/.config/lazydocker/config.yml"
+if [ "$(uname)" = "Darwin" ]; then
+  mkdir -p "$HOME/Library/Application Support/jesseduffield/lazydocker"
+  safe_link "$HOME/.dotfiles/lazydocker/config.yml" "$HOME/Library/Application Support/jesseduffield/lazydocker/config.yml"
+fi
+
+############################################################################
+# K9s
+############################################################################
+log_info "Setting up K9s..."
+mkdir -p "$HOME/.config/k9s"
+safe_link "$HOME/.dotfiles/k9s/config.yml" "$HOME/.config/k9s/config.yml"
+if [ "$(uname)" = "Darwin" ]; then
+  mkdir -p "$HOME/Library/Application Support/k9s"
+  safe_link "$HOME/.dotfiles/k9s/config.yml" "$HOME/Library/Application Support/k9s/config.yml"
+fi
+
+############################################################################
 # Cleanup
 ############################################################################
 log_info "Cleaning up..."

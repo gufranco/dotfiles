@@ -6,6 +6,14 @@ alwaysApply: false
 
 # Mobile Development
 
+## Flutter
+- Use Flutter 3.x and Material 3; follow null safety; use `const` constructors when possible.
+- Keep widgets small and focused; use proper widget composition and layout principles; set widget keys when needed.
+- Prefer StatelessWidget when state is not required; keep core code (constants, themes, utilities) under `lib/core/`.
+
+## React Native / Expo
+- (See offline-first, storage, and deep linking below.)
+
 ## Offline-First Architecture
 
 ### Data Sync Strategy

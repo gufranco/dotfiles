@@ -213,6 +213,10 @@ end
 - Use `described_class` instead of class name
 - Group with `context` for different scenarios
 - One expectation per `it` block (when practical)
+- Keep examples independent: no shared mutable state between examples; use `let`/`let!` or factories so each example has a clear setup
+- Use `shared_examples` / `shared_context` for behavior that repeats across multiple specs
+- Put spec files under `spec/` mirroring app paths (e.g. `app/models/user.rb` → `spec/models/user_spec.rb`)
+- Prefer `expect` syntax over `should`
 
 ### Factories (FactoryBot)
 ```ruby

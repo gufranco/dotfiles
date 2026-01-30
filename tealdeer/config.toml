@@ -1,0 +1,5 @@
+# Tealdeer (tldr) - https://dbrgn.github.io/tealdeer/config.html
+
+[updates]
+auto_update = true
+auto_update_interval_hours = 168

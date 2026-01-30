@@ -1,0 +1,12 @@
+# Lazydocker - https://github.com/jesseduffield/lazydocker
+# On macOS: ~/Library/Application Support/jesseduffield/lazydocker
+
+gui:
+  scrollHeight: 2
+  scrollPastBottom: true
+  theme:
+    lightTheme: false
+    theme: "default"
+  showAllContainers: false
+
+reporting: "off"

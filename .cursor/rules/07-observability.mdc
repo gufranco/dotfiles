@@ -7,6 +7,7 @@ alwaysApply: false
 # Observability
 
 ## Distributed Tracing
+- In distributed systems, use OpenTelemetry (or equivalent): create and propagate spans at every boundary (HTTP, gRPC, DB, external API calls) so requests can be traced across services.
 
 ### Request Context
 Every request MUST have a unique identifier propagated through all operations:
@@ -183,6 +184,14 @@ When investigating issues:
 5. Review timing breakdown
 6. Check cache hit/miss
 7. Review database query plans
+
+## SLIs and Dashboards
+- Define explicit service-level indicators (e.g. latency p95, error rate) and track them in dashboards (e.g. Prometheus/Grafana or equivalent).
+- Alert when SLIs breach agreed thresholds.
+
+## Cardinality and Correlation
+- Keep label and span cardinality low; too many unique values (e.g. per-request IDs as labels) can blow up storage and slow queries.
+- When using distributed tracing, include trace ID (and span ID when useful) in every log line so logs and traces can be correlated.
 
 ## Rules
 - Every request MUST have a `requestId`

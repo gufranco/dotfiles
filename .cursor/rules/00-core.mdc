@@ -280,3 +280,7 @@ When creating or modifying rules in `.cursor/rules/`:
    - `20-29`: Architecture patterns (monorepo, websocket, etc.)
    - `30-39`: Language-specific (Ruby, Go, Python, etc.)
    - `90-99`: Meta rules (agent router, etc.)
+
+6. **Clarity and Maintenance**
+   - Keep rules concise; avoid redundant instructions; use clear, unambiguous language.
+   - Review rules periodically. If a rule doesn't seem to apply: check syntax and path (`.cursor/rules`), restart Cursor; note that global rules can override project rules.

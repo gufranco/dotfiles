@@ -19,7 +19,7 @@ Always consult before implementing:
 
 ## Next.js App Router
 - Use server components by default; add `'use client'` only when you need state, effects, or browser APIs.
-- Use the file-based routing: `layout.js` for shared layouts, `loading.js` for loading states, `error.js` for error boundaries.
+- Use the file-based routing: `layout.js` for shared layouts, `loading.js` for loading states, `error.js` for error boundaries; use parallel routes for complex layouts.
 - Use route handlers for API routes; put app code under `app/` with `page.js`, `components/`, `lib/`, `styles/`.
 
 ## Server vs Client

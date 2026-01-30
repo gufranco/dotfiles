@@ -6,6 +6,9 @@ alwaysApply: false
 
 # React & Next.js
 
+## File Structure
+- In component files, order by importance: main export first, then subcomponents, helpers, static content, types.
+
 ## Official Documentation
 Always consult before implementing:
 - React Best Practices: https://react.dev
@@ -14,13 +17,18 @@ Always consult before implementing:
 - TanStack Query: https://tanstack.com/query
 - Zod: https://zod.dev
 
+## Next.js App Router
+- Use server components by default; add `'use client'` only when you need state, effects, or browser APIs.
+- Use the file-based routing: `layout.js` for shared layouts, `loading.js` for loading states, `error.js` for error boundaries.
+- Use route handlers for API routes; put app code under `app/` with `page.js`, `components/`, `lib/`, `styles/`.
+
 ## Server vs Client
 | Need | Component |
 |------|-----------|
 | Data fetching, DB access | Server |
 | useState, useEffect, events | Client |
 
-Default to Server. Add `'use client'` only when needed.
+Default to Server. Add `'use client'` only when needed. Wrap client components in `<Suspense>` with lightweight fallbacks.
 
 ## Accessibility (MANDATORY)
 - Semantic HTML (`<button>`, `<nav>`, `<main>`)
@@ -35,10 +43,12 @@ Default to Server. Add `'use client'` only when needed.
 ```
 
 ## Performance
-- Use `next/image` for images
-- Use `next/font` for fonts
-- Dynamic imports for code splitting
-- Avoid waterfalls: `Promise.all()`
+- Use `next/image` for images (layout, priority, sizes, srcSet); prefer WebP, explicit sizes, `loading="lazy"` for below-fold; use `next/font` for fonts
+- Dynamic imports for code splitting (`next/dynamic` for non-critical components; `ssr: false` for client-only); avoid waterfalls: `Promise.all()`
+- Minimize re-renders (e.g. `React.memo` when measured); use ISR where appropriate
+- Use try-catch and fallback UI for API/async calls; handle edge cases (empty states, network failures)
+- Measure with Lighthouse or `@next/bundle-analyzer`; document trade-offs in comments or status.md
+- Validate and sanitize route params; prefer flat, descriptive routes
 
 ## State Management
 | Type | Solution |
@@ -48,10 +58,21 @@ Default to Server. Add `'use client'` only when needed.
 | Form | React Hook Form + Zod |
 | URL | useSearchParams |
 
+## State (Redux / React Query / GraphQL)
+- **Redux:** Prefer Redux Toolkit; use slice pattern; use `createAsyncThunk` for async actions; use selectors for state; structure: `store/slices/`, `store/hooks.ts`.
+- **React Query:** Use `QueryClient` and `QueryClientProvider` at root; custom hooks for queries and mutations; query keys for caching; prefetching; error and loading states; optimistic updates and invalidation.
+- **GraphQL (Apollo):** Use Apollo Provider at root; queries, mutations, fragments in `graphql/`; custom hooks for operations; TypeScript for operations; use caching and error boundaries.
+
 ## Styling
-Tailwind + `cn()` helper:
+- Style with Tailwind CSS, mobile-first; avoid inline CSS unless justified (e.g. dynamic values).
+- Use `cn()` helper:
 ```typescript
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 export const cn = (...inputs) => twMerge(clsx(inputs));
 ```
+
+## Operational
+- Use `.env.local` for local configuration; never commit secrets.
+- Ensure compatibility with target hosting (Vercel, AWS, Netlify).
+- Integrate prod logging (e.g. Sentry) for errors; run `npm audit` and fix critical issues.

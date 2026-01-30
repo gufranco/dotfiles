@@ -87,6 +87,14 @@ async function deleteProject(projectId: number, userId: number) {
 }
 ```
 
+## Security Review (High-Risk Areas)
+For user input, authentication, and other high-risk areas, conduct a mandatory security review:
+- Identify vulnerabilities (injection, XSS, CSRF, IDOR, etc.).
+- Document mitigations (e.g. validation with zod, secure defaults).
+- Cite OWASP or framework docs (e.g. Next.js security) where relevant.
+- Add a test to verify the mitigation.
+- Use secure defaults; avoid unsafe practices (e.g. `eval`, unvalidated `dangerouslySetInnerHTML`).
+
 ## Common Vulnerabilities
 | Issue | Prevention |
 |-------|------------|
@@ -106,6 +114,7 @@ Strict-Transport-Security: max-age=31536000
 - Auth endpoints: 5 requests/minute per IP
 - API endpoints: 100 requests/minute per user
 - Use sliding window algorithm
+- When you have multiple instances or services, enforce limits via a shared store (e.g. Redis) so the cap applies across the system
 
 ```typescript
 // ❌ NEVER - no rate limiting

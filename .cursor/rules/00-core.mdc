@@ -23,6 +23,8 @@ Before ANY action, verify:
 
 **If uncertain: STOP → ASK → INVESTIGATE**
 
+When no definitive solution exists, say so. When information is lacking, ask for details (e.g. @file) and suggest next steps (e.g. consult docs). Adapt to user feedback (track in status.md or code comments); address recurring issues with simpler or alternative solutions; clarify ambiguous feedback via @ references.
+
 ## External Tools
 Before using any external tool or CLI command:
 
@@ -87,6 +89,15 @@ function process(data: unknown): string {
 - Meaningful names
 - No magic numbers
 - Single export per file
+- For functions with many arguments, pass one options object; when returning several values, return an object (receive object, return object)
+- File order: main export first, then subcomponents, helpers, static content, types (so the file reads top-down by importance)
+- Design for change: isolate business logic from the framework; prefer dependency inversion (depend on abstractions, not concretions)
+- Prefer composition over inheritance; define interfaces for contracts between layers
+- Use braces for all control structures (if, for, while, etc.); consider a consistent line length per project (e.g. 80–120) when the team has a standard
+- When defining project rules, include project structure, key libraries, and common patterns so the AI has context
+- Verify information before presenting it; do not assume or speculate without evidence; make changes file by file when editing multiple files
+- Do not show or discuss the current implementation unless specifically requested; prefer links to real files over generated context
+- Consider security implications when suggesting changes; suggest unit tests for new or modified code; handle edge cases explicitly
 
 | ❌ NEVER | ✅ CORRECT |
 |----------|------------|
@@ -118,7 +129,7 @@ function calculateTotalWithTax(subtotal: number, days: number): number {
 - Complex algorithm that can't be simplified
 - Non-obvious business rule ("// Tax exempt per regulation X")
 - Workaround for external issue ("// Bug in library v1.2.3")
-- JSDoc for public APIs
+- JSDoc for public APIs (use active voice, present tense; prefer tags compatible with your doc tool, e.g. TypeDoc)
 - AAA pattern in tests (`// Arrange`, `// Act`, `// Assert` only)
 
 | ❌ NEVER | ✅ ACCEPTABLE |
@@ -186,6 +197,8 @@ If YES, update README.md:
 
 **Keep it concise.** Don't document obvious things.
 **This is not optional.** Task is incomplete without README verification.
+
+For shared repositories, keep CONTRIBUTING.md (and ARCHITECTURE.md when useful) with decisions and structure so contributors know how to work with the codebase.
 
 ## Think Before You Code
 For non-trivial tasks:

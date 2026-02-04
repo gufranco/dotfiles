@@ -161,8 +161,6 @@ brew 'zsh'
 ################################################################################
 # Homebrew casks
 ################################################################################
-# cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu)
-# cask 'jdownloader'
 cask '1password'
 cask 'android-studio'
 cask 'balenaetcher'
@@ -176,6 +174,7 @@ cask 'cyberduck'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'discord'
+cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu)
 cask 'figma'
 cask 'firefox'
 cask 'flixtools'
@@ -184,10 +183,15 @@ cask 'grandperspective'
 cask 'insomnia'
 cask 'istat-menus'
 cask 'iterm2'
+cask 'jdownloader'
 cask 'keka'
 cask 'kitty'
 cask 'lastpass'
 cask 'linear-linear'
+cask 'logi-options+'
+cask 'logitech-camera-settings'
+cask 'logitech-g-hub'
+cask 'logitech-presentation'
 cask 'maccy'
 cask 'macs-fan-control' unless /\AApple M[\d]\z/.match?(cpu)
 cask 'maestral'

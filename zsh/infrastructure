@@ -105,6 +105,8 @@ function colima-stop() {
 
 function colima-purge() {
   local profile="${1:-default}"
+  local disks_dir="$HOME/.colima/_lima/_disks"
+  local lima_dir="$HOME/.colima/_lima"
 
   __show_header "Colima VM" "Purge (WARNING: Destructive Operation)"
   echo "Profile:         ${profile}"
@@ -114,6 +116,7 @@ function colima-purge() {
   echo "  - Remove all Docker images, volumes, and networks"
   echo "  - Stop the Colima VM"
   echo "  - Delete the Colima VM and all its data"
+  echo "  - Clean orphan disks and cached assets"
   echo ""
   echo "WARNING: This action cannot be undone!"
   echo ""
@@ -123,6 +126,24 @@ function colima-purge() {
   docker-purge "${profile}"
   command colima stop --profile "${profile}" --force 2>/dev/null || true
   command colima delete --profile "${profile}" --force 2>/dev/null || true
+
+  # Clean orphan disks
+  local -a active=()
+  while read -r name _; do
+    [[ "$name" != "PROFILE" ]] && active+=("$name")
+  done < <(command colima list 2>/dev/null)
+
+  for dir in "$disks_dir"/colima*(/N); do
+    local disk="${dir:t}"
+    local p=$([[ "$disk" == "colima" ]] && echo "default" || echo "${disk#colima-}")
+    if (( ! ${active[(Ie)$p]} )); then
+      echo "Removing orphan: $disk"
+
+      rm -rf "${dir:?}" "${lima_dir:?}/${disk:?}"
+    fi
+  done
+
+  command colima prune --all --force
 }
 
 ################################################################################

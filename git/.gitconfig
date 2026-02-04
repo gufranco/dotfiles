@@ -232,6 +232,14 @@
 [credential]
   helper = cache --timeout=3600
 
+[credential "https://github.com"]
+  helper =
+  helper = !/opt/homebrew/bin/gh auth git-credential
+
+[credential "https://gist.github.com"]
+  helper =
+  helper = !/opt/homebrew/bin/gh auth git-credential
+
 [help]
   autocorrect = never
 
@@ -352,9 +360,3 @@
 
 [includeIf "gitdir/i:**/onyx odds/"]
   path = ~/.dotfiles/git/.gitconfig-onyx
-[credential "https://github.com"]
-	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
-[credential "https://gist.github.com"]
-	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential

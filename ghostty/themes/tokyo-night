@@ -1,0 +1,65 @@
+# Tokyo Night color scheme for Ghostty
+# Matches kitty/themes/tokyo-night.conf and VS Code/Cursor Tokyo Night
+
+foreground = #c0caf5
+background = #1a1b26
+
+palette = 0=#15161d
+palette = 1=#f7768e
+palette = 2=#9ece69
+palette = 3=#e0af68
+palette = 4=#7aa2f7
+palette = 5=#bb9af7
+palette = 6=#7dcfff
+palette = 7=#a9b1d6
+palette = 8=#414868
+palette = 9=#f7768e
+palette = 10=#9ece69
+palette = 11=#e0af68
+palette = 12=#7aa2f7
+palette = 13=#bb9af7
+palette = 14=#7dcfff
+palette = 15=#c0caf5
+
+palette = 16=#ff9e64
+palette = 17=#db4b4b
+palette = 18=#1f2335
+palette = 19=#292e42
+palette = 20=#3b4261
+palette = 21=#565f89
+palette = 22=#0db9d7
+palette = 23=#1abc9c
+palette = 24=#b4f9f8
+palette = 25=#2ac3de
+palette = 26=#0db9d7
+palette = 27=#89ddff
+palette = 28=#9ece69
+palette = 29=#73daca
+palette = 30=#41a6b5
+palette = 31=#3d59a1
+palette = 32=#7aa2f7
+palette = 33=#7dcfff
+palette = 34=#b4f9f8
+palette = 35=#394b70
+palette = 36=#364a82
+palette = 37=#7aa2f7
+
+palette = 232=#15161d
+palette = 233=#16161e
+palette = 234=#1a1b26
+palette = 235=#1f2335
+palette = 236=#24283b
+palette = 237=#292e42
+palette = 238=#3b4261
+palette = 239=#414868
+palette = 240=#565f89
+palette = 241=#787c99
+palette = 242=#a9b1d6
+palette = 243=#c0caf5
+palette = 255=#ffffff
+
+cursor-color = #c0caf5
+cursor-text = #1a1b26
+
+selection-foreground = #c0caf5
+selection-background = #283457

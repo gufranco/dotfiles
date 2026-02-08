@@ -21,6 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 ├── eza/                  # eza (ls replacement) configuration
 ├── fd/                   # fd (find replacement) configuration
 ├── gh/                   # GitHub CLI (gh) configuration
+├── ghostty/              # Ghostty terminal configuration
 ├── git/                  # Git configuration and hooks
 ├── glab/                 # GitLab CLI (glab) configuration
 ├── gnupg/                # GPG configuration and public keys
@@ -69,6 +70,7 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 
 ### Terminal Applications
 - **Kitty**: Terminal emulator configuration
+- **Ghostty**: Terminal emulator configuration (Tokyo Night, JetBrains Mono Nerd Font)
 - **Tmux**: Session management with TPM plugins
 - **Bat**: Syntax highlighting for cat
 - **eza**: Modern ls replacement

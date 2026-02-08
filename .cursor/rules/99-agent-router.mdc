@@ -5,6 +5,8 @@ alwaysApply: true
 
 # Agent Selection Guide
 
+Use this guide to choose an agent for the problem. Project rules (`00-core.mdc`, `02-task-completion.mdc`, `03-security.mdc`, etc.) still apply.
+
 ## Engineering Agents
 | Problem | Agent |
 |---------|-------|
@@ -52,6 +54,7 @@ alwaysApply: true
 |---------|-------|
 | README, docs, ADRs | `technical-writer` |
 | Outages, incidents | `incident-responder` |
+| Need official docs for a library or framework | Load `19-llm-docs.mdc` for LLM-optimized documentation links |
 
 ## Quick Decision Tree
 ```
@@ -62,6 +65,7 @@ Is it broken?
    ├─ Is it insecure? → security-engineer
    ├─ Is it inaccessible? → accessibility-specialist
    ├─ Need to understand history? → code-archeologist
+   ├─ Need docs for a library? → load 19-llm-docs.mdc
    └─ Building something new?
       ├─ API? → api-designer
       ├─ UI? → frontend-specialist

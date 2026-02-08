@@ -1,0 +1,60 @@
+---
+description: ClickUp project management and task automation
+alwaysApply: false
+---
+
+# ClickUp Automation
+
+## Hierarchy
+```
+Workspace (Team) > Space > Folder > List > Task
+```
+
+**Note**: Lists can be inside Folders OR directly in Spaces (folderless).
+
+## ID Formats
+| Entity | Format |
+|--------|--------|
+| Workspace/Team | Large integers |
+| Space, Folder, List | Integers |
+| Task | Alphanumeric strings (e.g., "9hz") |
+| User | Integers |
+| Comment | Integers |
+
+## Task Creation
+| Parameter | Notes |
+|-----------|-------|
+| `list_id` | Integer, required |
+| `name` | String, required |
+| `status` | **Case-sensitive**, must match list status |
+| `priority` | 1=Urgent, 2=High, 3=Normal, 4=Low |
+| `due_date` | Unix timestamp in **milliseconds** |
+| `assignees` | Array of user IDs (integers) |
+
+## Subtasks
+- `parent`: Parent task ID (string)
+- Parent must be a task (not another subtask)
+- Parent must be in the same list
+
+## Comments
+All four fields required:
+- `task_id`
+- `comment_text`
+- `assignee` (assigns comment, not task)
+- `notify_all`
+
+## Pagination
+- Tasks: `page` starts at 0, max 100 per page
+- Comments: `start` (Unix ms) + `start_id`, max 25 per page
+
+## Gotchas
+- `team_id` = Workspace ID (not a user group)
+- Dates are milliseconds (multiply seconds × 1000)
+- Status must match exactly (case-sensitive)
+- Use `CLICKUP_GET_LIST` to see available statuses
+
+## Best Practices
+- Resolve names to IDs through hierarchy
+- Check available statuses before creating tasks
+- Set `notify_all=false` for bulk operations
+- Track created task IDs to avoid duplicate retries

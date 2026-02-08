@@ -1,0 +1,58 @@
+---
+description: Discord messaging and bot automation patterns
+alwaysApply: false
+---
+
+# Discord Automation
+
+## Snowflake IDs
+All Discord entities use 64-bit snowflake IDs (strings):
+- Guilds (servers)
+- Channels
+- Users
+- Roles
+- Messages
+- Webhooks
+
+## Message Limits
+- Max 2000 characters per message
+- Embeds for rich content
+- Only bot's own messages can be edited
+
+## Direct Messages
+1. Create DM channel with `recipient_id`
+2. Send message to DM channel ID
+3. Returns existing channel if one exists
+
+## Roles
+- Target role must be lower in hierarchy than bot's highest role
+- MANAGE_ROLES permission required
+- DELETE permanently removes from all members
+
+## Webhooks
+- Secret tokens - handle securely
+- Custom username/avatar per message
+- MANAGE_WEBHOOKS permission for creation
+
+## Reactions
+- Unicode emojis: URL-encoded (e.g., `%F0%9F%91%8D`)
+- Custom emojis: `name:id` format
+- MANAGE_MESSAGES permission for DELETE_ALL
+
+## Permission Bitfields
+| Permission | Value |
+|------------|-------|
+| SEND_MESSAGES | 0x800 |
+| MANAGE_MESSAGES | 0x2000 |
+| MANAGE_ROLES | 0x10000000 |
+| ADMINISTRATOR | 0x8 |
+
+## Rate Limits
+- Per-route rate limits enforced
+- Honor `Retry-After` header on 429
+
+## Best Practices
+- Use bot tokens for automation (not user OAuth)
+- Check permissions before operations
+- Respect rate limits
+- Use embeds for structured content

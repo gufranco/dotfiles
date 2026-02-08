@@ -13,7 +13,7 @@ alwaysApply: false
 - Verify the build passes
 - Check for debugging code, console logs, commented code
 - Ensure commit history is clean and logical
-- Write a clear PR description; when the repo has a PR template, fill it out completely (Purpose, Implementation Details, Testing Performed, Potential Impacts, Review Checklist, Related Issues).
+- Write a clear PR description. When the repo has a PR template, fill it out completely: Purpose, Implementation Details, Testing Performed, Potential Impacts, Review Checklist, Related Issues.
 
 ### PR template sections (when no template exists)
 - Purpose: why the change is needed; reference issues.
@@ -54,7 +54,7 @@ Add email verification for new user registrations.
 |--------|-------|
 | (none) | [verification email screenshot] |
 
-Closes ENG-1234
+Closes PROJ-1234
 ```
 
 ### Splitting Large PRs
@@ -67,7 +67,7 @@ Closes ENG-1234
 ## As Reviewer
 
 ### When Suggesting Changes
-- Review the existing codebase first; reference specific files (e.g. @path).
+- Review the existing codebase first. Reference specific files, e.g. @path.
 - Provide suggestions in incremental steps: explanation and purpose, minimal code snippet, targeted test to validate, expected outcomes and edge cases.
 - Request clarification for missing context via @ references or status.md.
 
@@ -92,7 +92,15 @@ Closes ENG-1234
 - Explain the "why" behind suggestions
 - Offer solutions, not just problems
 - Approve with comments if only nits remain
-- Use "we" instead of "you" ("we should" vs "you should")
+- Use "we" instead of "you": "we should" instead of "you should"
+
+### Writing Style for Reviews
+Follow the writing style rules from `00-core.mdc`:
+- **No em dashes.** Never use `—` or ` — `. Use periods, commas, or colons to break up ideas
+- **No parentheses in prose.** Rewrite using commas, separate sentences, or inline phrasing. Parentheses are fine in code blocks and signatures
+- **Write like a human.** Comments should sound like a real person talking to a colleague. Natural, warm, professional. Not formulaic or robotic
+- **Keep sentences short.** One idea per sentence
+- **Use international English.** Clear, universally understood vocabulary. No regional slang
 
 | ❌ NEVER | ✅ CORRECT |
 |----------|------------|
@@ -100,12 +108,18 @@ Closes ENG-1234
 | "Why did you do it this way?" | "question: What was the reasoning behind X?" |
 | "You should use X" | "suggestion: We could use X here for better Y" |
 | "Fix this" | "nit: We usually prefer X style in this codebase" |
+| "This — combined with Y — causes Z" | "This causes Z when combined with Y" |
+| "the flag (which is never set) won't work" | "the flag is never set, so it won't work" |
 
 ```markdown
 <!-- ❌ NEVER - unhelpful criticism -->
 This code is confusing and hard to read.
 
-<!-- ✅ CORRECT - constructive with solution -->
+<!-- ❌ NEVER - em dashes and parentheses -->
+This `throw` will bubble into the `.catch()` — which means we'll track
+both events (Failed and Error) for every failure.
+
+<!-- ✅ CORRECT - constructive, natural, no em dashes or parentheses -->
 suggestion: This function is doing multiple things. We could split it into
 `validateInput()` and `processOrder()` for better readability and testability.
 
@@ -114,6 +128,10 @@ Something like:
 const validatedData = validateInput(input);
 const result = await processOrder(validatedData);
 \`\`\`
+
+<!-- ✅ CORRECT - natural tone, no em dashes -->
+Heads up: this `throw` will bubble into the `.catch()` block below, which
+means we'll track both "Failed" and "Error" for every expected failure.
 
 <!-- ❌ NEVER - blocking on style -->
 I would have done this differently. Blocking until changed.
@@ -157,11 +175,12 @@ Looks good! Left a few nits but nothing blocking. Approving.
 - Tests cover the changes
 - Tests cover edge cases
 - Tests are readable and maintainable
+- When the PR was planned with test scenarios (see `97-plan-test-scenarios.mdc`), those scenarios are implemented and passing
 
 ## QA bug reports
-- Structure: Description, Environment (device, OS, browser/version, resolution, role), Severity (Critical/High/Medium/Low/Trivial), Steps to Reproduce (numbered), Expected vs Actual, Visual Evidence, Console/Error Logs, Additional Notes.
-- One issue per report; objective and factual; clear, reproducible steps; include version numbers and exact error messages.
+- Structure: Description, Environment details like device/OS/browser/version/resolution/role, Severity from Critical to Trivial, Steps to Reproduce as a numbered list, Expected vs Actual, Visual Evidence, Console/Error Logs, Additional Notes.
+- One issue per report. Objective and factual. Clear, reproducible steps. Include version numbers and exact error messages.
 
 ## Engineering tickets
-- Include: Description, Technical Context, Implementation Details, Acceptance Criteria (list or Given-When-Then), Testing Considerations, Dependencies, Resources (links), Estimation (story points), Priority, Sprint.
-- Be specific and testable; suggest implementation without being overly prescriptive; identify dependencies and blockers.
+- Include: Description, Technical Context, Implementation Details, Acceptance Criteria as a list or Given-When-Then, Testing Considerations, Dependencies, Resource links, Estimation in story points, Priority, Sprint.
+- Be specific and testable. Suggest implementation without being overly prescriptive. Identify dependencies and blockers.

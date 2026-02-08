@@ -10,12 +10,18 @@ alwaysApply: false
 - In component files, order by importance: main export first, then subcomponents, helpers, static content, types.
 
 ## Official Documentation
-Always consult before implementing:
-- React Best Practices: https://react.dev
-- Next.js Docs: https://nextjs.org/docs
-- React Hook Form: https://react-hook-form.com
-- TanStack Query: https://tanstack.com/query
-- Zod: https://zod.dev
+Always consult before implementing. Prefer LLM-optimized docs when available. See `19-llm-docs.mdc` for the full reference.
+
+### LLM-Optimized Docs
+- **React**: [llms.txt](https://react.dev/llms.txt)
+- **Next.js**: [llms.txt](https://nextjs.org/docs/llms.txt) | [llms-full.txt](https://nextjs.org/docs/llms-full.txt)
+- **Zod**: [llms.txt](https://zod.dev/llms.txt)
+- **TanStack Query**: [llms.txt](https://tanstack.com/llms.txt)
+
+### Standard Docs
+- React Hook Form: https://www.react-hook-form.com/api
+- Redux Toolkit: https://redux-toolkit.js.org/usage/usage-guide
+- Tailwind CSS: https://tailwindcss.com/docs
 
 ## Next.js App Router
 - Use server components by default; add `'use client'` only when you need state, effects, or browser APIs.

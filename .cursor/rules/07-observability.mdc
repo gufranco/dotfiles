@@ -6,6 +6,12 @@ alwaysApply: false
 
 # Observability
 
+## Documentation
+Consult before implementing. See `19-llm-docs.mdc` for the full reference.
+- **Datadog**: https://docs.datadoghq.com/
+- **Amplitude**: [LLM docs](https://amplitude.com/docs/llms)
+- **Sentry**: https://docs.sentry.io/
+
 ## Distributed Tracing
 - In distributed systems, use OpenTelemetry (or equivalent): create and propagate spans at every boundary (HTTP, gRPC, DB, external API calls) so requests can be traced across services.
 

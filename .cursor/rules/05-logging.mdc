@@ -6,6 +6,8 @@ alwaysApply: false
 
 # Logging
 
+See `00-core.mdc` (never swallow errors, no secrets in logs). This file defines **log levels**, **structured format**, and **what not to log**.
+
 ## Log Levels
 | Level | When | Example |
 |-------|------|---------|

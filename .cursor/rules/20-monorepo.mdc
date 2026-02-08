@@ -6,6 +6,10 @@ alwaysApply: false
 
 # Monorepo
 
+## Documentation
+Consult before implementing. See `19-llm-docs.mdc` for the full reference.
+- **Turborepo**: [llms.txt](https://turborepo.com/llms.txt)
+
 ## Directory Structure
 ```
 /

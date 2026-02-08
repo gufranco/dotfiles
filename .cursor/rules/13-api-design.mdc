@@ -6,6 +6,8 @@ alwaysApply: false
 
 # API Design
 
+See `00-core.mdc` (validation at boundaries, fail fast) and `04-error-handling.mdc` (error format). This file defines **URL design**, **request/response**, and **versioning**.
+
 ## Cross-Cutting Concerns
 - Use middleware for logging, auth, and rate limiting instead of repeating logic in every handler.
 - In microservices, consider an API Gateway for rate limiting, request transformation, and security filters (auth, validation) at the edge.

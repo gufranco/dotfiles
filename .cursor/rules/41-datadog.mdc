@@ -1,0 +1,61 @@
+---
+description: Datadog monitoring, metrics, logs, and alerting patterns
+globs: "**/datadog/**/*,**/monitoring/**/*"
+alwaysApply: false
+---
+
+# Datadog Automation
+
+## Metric Query Syntax
+```
+aggregation:metric_name{tag_filters}
+```
+
+### Aggregations
+- `avg`, `sum`, `min`, `max`, `count`
+
+### Tag Filters
+- Single: `{host:web01}`
+- Multiple: `{host:web01,env:prod}` (AND logic)
+- Wildcard: `host:web*`
+
+### Examples
+```
+avg(last_5m):avg:system.cpu.user{env:prod} > 90
+sum:trace.express.request.hits{service:api}.as_count()
+```
+
+## Log Search Syntax
+```
+service:web status:error @http.status_code:500
+```
+
+## Monitor Types
+- `metric alert` - Threshold on metrics
+- `log alert` - Threshold on log counts
+- `query alert` - Complex queries
+- `service check` - Health checks
+
+### Monitor Message
+Supports @mentions for notifications:
+- `@slack-channel-name`
+- `@pagerduty`
+- `@email@example.com`
+
+## Timestamps
+- Use Unix epoch in **seconds** (not milliseconds)
+- ISO 8601 accepted in some endpoints
+
+## Downtime Scope
+```
+host:web01
+env:staging
+service:api
+```
+
+## Best Practices
+- Set meaningful monitor names
+- Include runbook links in monitor messages
+- Use tags consistently across services
+- Set appropriate thresholds (critical, warning)
+- Schedule downtimes for maintenance windows

@@ -6,6 +6,10 @@ alwaysApply: false
 
 # Caching with Redis
 
+## Documentation
+Consult before implementing. See `19-llm-docs.mdc` for the full reference.
+- **Redis**: [llms.txt](https://redis.io/llms.txt)
+
 ## Stateless Architecture (MANDATORY)
 The application MUST be completely stateless for horizontal scaling.
 

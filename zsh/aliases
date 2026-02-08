@@ -86,7 +86,6 @@ case "$(uname)" in
     fi
 
     # Multiple Cursor profiles
-    __alias_if_exists cursor cursor-coperniq "command cursor --user-data-dir=$HOME/.cursor-coperniq --extensions-dir=$HOME/.cursor-coperniq/extensions"
     __alias_if_exists cursor cursor-onyx "command cursor --user-data-dir=$HOME/.cursor-onyx --extensions-dir=$HOME/.cursor-onyx/extensions"
 
     # Modern tool replacements

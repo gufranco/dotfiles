@@ -702,6 +702,16 @@ safe_link "$HOME/.dotfiles/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 safe_link "$HOME/.dotfiles/kitty/themes" "$HOME/.config/kitty/themes"
 
 ############################################################################
+# Ghostty
+############################################################################
+log_info "Setting up Ghostty..."
+safe_link "$HOME/.dotfiles/ghostty" "$HOME/.config/ghostty"
+if [ "$(uname)" = "Darwin" ]; then
+  mkdir -p "$HOME/Library/Application Support/com.mitchellh.ghostty"
+  safe_link "$HOME/.config/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+fi
+
+############################################################################
 # Bat
 ############################################################################
 log_info "Setting up Bat..."
@@ -823,6 +833,7 @@ log_info "Next steps:"
 echo "  1. Review any warnings above"
 echo "  2. Restart your terminal or run: source ~/.zshrc"
 echo "  3. For Kitty: Press Cmd+F5 to reload config"
+echo "  4. For Ghostty: Press Cmd+Shift+, to reload config"
 echo ""
 log_warning "Some changes may require a reboot to take effect"
 log_info "To reboot now: sudo reboot"

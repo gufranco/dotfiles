@@ -1,0 +1,82 @@
+---
+description: Vercel deployment and project management patterns
+globs: "**/vercel.json,**/.vercel/**/*"
+alwaysApply: false
+---
+
+# Vercel Automation
+
+## Deployment States
+| State | Meaning |
+|-------|---------|
+| INITIALIZING | Starting |
+| ANALYZING | Detecting framework |
+| BUILDING | Running build |
+| DEPLOYING | Publishing |
+| READY | Live ✓ |
+| ERROR | Failed |
+| CANCELED | Aborted |
+| QUEUED | Waiting |
+
+## Environment Variables
+- `type: 'plain'` - Visible value
+- `type: 'secret'` - Write-only (can't read back)
+- `type: 'encrypted'` - Encrypted at rest
+- `target`: Array of `['production', 'preview', 'development']`
+
+**Note**: Changes require new deployment to take effect.
+
+## Common Operations
+
+### Deployments
+```bash
+# List deployments
+vercel ls
+
+# Deploy to preview
+vercel
+
+# Deploy to production
+vercel --prod
+
+# Get deployment logs
+vercel logs <deployment-url>
+```
+
+### Environment Variables
+```bash
+# Add env var
+vercel env add VAR_NAME
+
+# List env vars
+vercel env ls
+
+# Remove env var
+vercel env rm VAR_NAME
+```
+
+### Domains
+```bash
+# Add domain
+vercel domains add example.com
+
+# List domains
+vercel domains ls
+```
+
+## DNS Records
+- CNAME at apex not supported (use A records)
+- MX records require priority
+- SSL auto-provisioned for new domains
+
+## Project Settings
+- `framework`: nextjs, vite, remix, etc.
+- `buildCommand`: Custom build command
+- `rootDirectory`: Monorepo subdirectory
+
+## Best Practices
+- Use preview deployments for PRs
+- Set env vars per environment (prod/preview/dev)
+- Use `vercel.json` for configuration as code
+- Monitor deployment logs for build issues
+- Use Edge Functions for low-latency APIs

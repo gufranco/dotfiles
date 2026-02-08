@@ -7,8 +7,12 @@ alwaysApply: false
 # Database
 
 ## Official Documentation
-Always consult before implementing:
-- Prisma Docs: https://www.prisma.io/docs
+Always consult before implementing. Prefer LLM-optimized docs when available. See `19-llm-docs.mdc` for the full reference.
+
+### LLM-Optimized Docs
+- **Prisma**: [llms.txt](https://www.prisma.io/docs/llms.txt) | [llms-full.txt](https://www.prisma.io/docs/llms-full.txt)
+
+### Standard Docs
 - Query Optimization: https://www.prisma.io/docs/guides/performance-and-optimization
 - Connection Management: https://www.prisma.io/docs/guides/performance-and-optimization/connection-management
 

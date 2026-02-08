@@ -6,6 +6,8 @@ alwaysApply: false
 
 # Dependencies
 
+Reproducible builds and lockfiles are required by `00-core.mdc` (Reproducibility & Automation). This file defines **how** to add and pin dependencies.
+
 ## Before Adding
 1. **Ask permission** - Never add without approval
 2. **Check existing** - Maybe already solved
@@ -34,6 +36,7 @@ alwaysApply: false
 | Add `uuid` | Use native `crypto.randomUUID()` |
 
 ## Rules
+- **Lock dependencies** – Commit lockfile (package-lock.json, yarn.lock, etc.). Reproducible builds are mandatory (see `00-core.mdc` → Reproducibility & Automation).
 - Pin exact versions: `"1.2.3"` not `"^1.2.3"`
 - One package at a time
 - Run `npm audit` after adding

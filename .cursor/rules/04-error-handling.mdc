@@ -6,6 +6,8 @@ alwaysApply: false
 
 # Error Handling
 
+Principles: fail fast, never swallow errors (see `00-core.mdc`). This file defines **error categories**, **response format**, and **retry strategy**.
+
 ## Error Categories
 | Type | HTTP | When |
 |------|------|------|

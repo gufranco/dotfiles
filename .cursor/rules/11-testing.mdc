@@ -6,6 +6,14 @@ alwaysApply: false
 
 # Testing
 
+See `00-core.mdc` and `02-task-completion.mdc` for evidence and mandatory test run. When planning a task, generate test scenarios per `97-plan-test-scenarios.mdc`. This file defines **test philosophy**, **mocks policy**, and **coverage**.
+
+## Documentation
+Consult before implementing. See `19-llm-docs.mdc` for the full reference.
+- **Vitest**: [llms.txt](https://vitest.dev/llms.txt)
+- **Jest**: https://jestjs.io/docs/getting-started
+- **Playwright**: https://playwright.dev/docs/intro
+
 ## Philosophy
 Tests should verify real behavior, not mock behavior.
 
@@ -69,7 +77,7 @@ it('should create a user with valid data', async () => {
 - Use clear, readable names: `should create user with valid email`
 - When it helps readability, use consistent prefixes: `inputX`, `mockX`, `expectedX` (e.g. `inputUser`, `mockRepo`, `expectedStatus`).
 - **NEVER** reference ticket/task IDs in test names or describe blocks
-  - ❌ `describe('User Tests (ENG-1234)', ...)`
+  - ❌ `describe('User Tests (PROJ-1234)', ...)`
   - ✅ `describe('User Tests', ...)`
 - Test descriptions should be timeless and self-explanatory
 

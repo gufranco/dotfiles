@@ -5,11 +5,15 @@ alwaysApply: true
 
 # Security
 
+Secrets/env principle and safe defaults are in `00-core.mdc` (Secrets & Environment, Secure & Safe Defaults). This file defines **validation pipeline**, **auth**, **rate limiting**, and **audit logging**.
+
 ## NEVER Commit
 `.env`, `*.pem`, `*.key`, `credentials.json`, `id_rsa`
 
 ## Input Validation
-1. Type → 2. Format → 3. Range → 4. Sanitize → 5. Business rules
+Validate at system boundaries (API, CLI, queue handlers). See `00-core.mdc` → Fail-Fast & Validation at Boundaries.
+
+Pipeline: 1. Type → 2. Format → 3. Range → 4. Sanitize → 5. Business rules
 
 ```typescript
 // ❌ NEVER - no validation
@@ -98,8 +102,8 @@ For user input, authentication, and other high-risk areas, conduct a mandatory s
 ## Common Vulnerabilities
 | Issue | Prevention |
 |-------|------------|
-| SQL Injection | Use ORM (Prisma) |
-| XSS | Use React (auto-escapes) |
+| SQL Injection | Use ORM or parameterized queries |
+| XSS | Use framework that auto-escapes (e.g. React) |
 | IDOR | Verify ownership on every request |
 
 ## Security Headers

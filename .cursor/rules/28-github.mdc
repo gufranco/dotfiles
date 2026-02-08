@@ -1,0 +1,77 @@
+---
+description: GitHub automation patterns for repos, issues, PRs, and workflows
+alwaysApply: true
+---
+
+# GitHub Automation
+
+Use `gh` CLI for GitHub operations.
+
+## Common Commands
+
+### Issues
+```bash
+# Create issue
+gh issue create --title "Bug: description" --body "Details" --label bug
+
+# List issues
+gh issue list --state open --assignee "@me"
+
+# Close issue
+gh issue close 123 --comment "Fixed in #456"
+```
+
+### Pull Requests
+```bash
+# Create PR
+gh pr create --title "TICKET-123: description" --body "## Summary" --base main
+
+# List PRs
+gh pr list --state open --assignee "@me"
+
+# Merge PR (squash)
+gh pr merge 123 --squash --delete-branch
+
+# Review PR
+gh pr review 123 --approve
+gh pr review 123 --request-changes --body "issue: Fix X"
+```
+
+### Repositories
+```bash
+# Clone
+gh repo clone owner/repo
+
+# List repos
+gh repo list --limit 50
+
+# Create repo
+gh repo create name --private --clone
+```
+
+### Workflows (Actions)
+```bash
+# List workflows
+gh workflow list
+
+# Run workflow
+gh workflow run ci.yml --ref main
+
+# View run status
+gh run list --workflow ci.yml
+gh run view 12345
+```
+
+### Multiple Accounts
+```bash
+# Switch account
+gh auth switch -u USERNAME
+
+# Check current
+gh auth status
+```
+
+## Best Practices
+- Include ticket ID in PR titles: `TICKET-123: description`
+- Use `--squash` merge for clean history
+- Reference issues in commits: `Fixes #123`

@@ -1,0 +1,53 @@
+---
+description: Sentry error tracking and monitoring patterns
+globs: "**/sentry/**/*"
+alwaysApply: false
+---
+
+# Sentry Automation
+
+## Identifiers
+- **Organization**: Use slug (e.g., 'my-org'), not display name
+- **Project**: Use slug (e.g., 'my-project'), not display name
+- **Issue IDs**: Numeric integers
+- **Event IDs**: UUIDs (32-char hex strings)
+
+## Search Query Syntax
+```
+is:unresolved                    # Unresolved issues
+is:resolved                      # Resolved issues
+assigned:me                      # Assigned to current user
+assigned:team-slug               # Assigned to team
+!has:release                     # Issues without a release
+first-release:1.0.0              # First seen in release
+times-seen:>100                  # Seen more than 100 times
+browser:Chrome                   # Filter by browser tag
+```
+
+## Release Management
+1. Create release with version string
+2. Associate with projects array
+3. Deploy to environment (production, staging)
+4. Upload source maps for readable stack traces
+
+### Version Formats
+- Semantic: `1.0.0`, `2.1.3-beta`
+- Commit SHA: `abc123def456`
+- Custom: `deploy-20240115`
+
+## Alert Rules
+- **Project-level**: Issue alerts for a specific project
+- **Org-level**: Metric alerts across projects
+
+### Alert Components
+- `conditions`: Trigger conditions
+- `actions`: What happens when triggered
+- `filters`: Event filters
+- `frequency`: How often (in minutes)
+
+## Best Practices
+- Always resolve project names to slugs first
+- Use cursor-based pagination for large result sets
+- Inspect individual events for detailed stack traces
+- Create releases for every deployment
+- Upload source maps for production debugging

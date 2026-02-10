@@ -1,6 +1,0 @@
-[submodule "tmux/plugins/tpm"]
-	path = tmux/tpm
-	url = https://github.com/tmux-plugins/tpm
-[submodule ".cursor"]
-	path = .cursor
-	url = git@github.com:gufranco/cursor-engineering-rules.git

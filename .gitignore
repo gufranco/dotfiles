@@ -152,6 +152,8 @@ pip-delete-this-directory.txt
 .idea/
 *.sublime-workspace
 *.sublime-project
+.cursor/
+.claude/
 
 ################################################################################
 # Logs

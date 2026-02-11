@@ -86,7 +86,7 @@ case "$(uname)" in
     fi
 
     # Multiple Cursor profiles
-    __alias_if_exists cursor cursor-onyx "command cursor --user-data-dir=$HOME/.cursor-onyx --extensions-dir=$HOME/.cursor-onyx/extensions"
+    # __alias_if_exists cursor cursor-onyx "command cursor --user-data-dir=$HOME/.cursor-onyx --extensions-dir=$HOME/.cursor-onyx/extensions"
 
     # Modern tool replacements
     __alias_if_exists sd sed "command sd"

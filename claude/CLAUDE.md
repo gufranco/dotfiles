@@ -65,11 +65,6 @@ When no definitive solution exists, say so. When information is lacking, ask for
 - Use braces for all control structures
 - **Never swallow errors**: no empty catch; log with context, rethrow or handle
 
-### Fail-Fast and Validation at Boundaries
-
-- Validate inputs at system boundaries: API, CLI, queue handlers. Invalid data must not propagate.
-- Fail fast with a clear, actionable error message.
-
 ### Immutability and Explicit Side Effects
 
 - Prefer immutable data: avoid mutating arguments or shared state when a copy is feasible.
@@ -83,13 +78,6 @@ When no definitive solution exists, say so. When information is lacking, ask for
 - Non-obvious business rule
 - Workaround for external issue
 - Doc comments for public APIs
-- AAA pattern in tests: `// Arrange`, `// Act`, `// Assert` only
-
-## Secrets and Environment
-
-- **Never** log, commit, or expose secrets like API keys, passwords, or tokens
-- Required env vars MUST be documented in `.env.example` with placeholder values
-- Validate required env at startup. Fail fast with a clear message listing what is missing.
 
 ## Scope Control
 
@@ -177,21 +165,37 @@ After ANY push:
 
 ### PR/MR Creation
 
-Title format: `<TICKET-ID>: <description>`
+**Title:** Clear, specific summary of what the PR accomplishes. Describe the outcome, not the process.
+- Good: `feat(auth): add SSO login with Google and GitHub providers`
+- Bad: `update auth`, `fix stuff`, `changes`
+
+When a ticket ID exists, prefix it: `<TICKET-ID>: <description>`
+
+**Description structure:**
+
+- **What**: One paragraph explaining what changed and why. A reviewer reading only this paragraph should understand the full picture.
+- **How**: Key implementation decisions, trade-offs, and anything non-obvious. Skip trivial details the diff already shows.
+- **Testing**: How the changes were verified. Include commands, screenshots, or steps to reproduce.
+- **Breaking changes**: If any, list them with migration steps.
+
+Before opening:
+
+1. Identify the base branch from git, never hardcode it
+2. Fetch and rebase: `git fetch origin && git rebase origin/<base>`
+3. Resolve conflicts if any, run tests locally
 
 Prefer CLI over web UI:
 
 ```bash
-gh pr create --title "<TICKET-ID>: <desc>" --body-file pr.md --base staging
-gh pr create --fill --base staging
-gh pr create --draft --title "<TICKET-ID>: WIP" --base staging
+gh pr create --title "<desc>" --body-file pr.md
+gh pr create --draft --title "<TICKET-ID>: WIP"
 gh pr merge <number> --squash --delete-branch
 ```
 
 ### Conflict Resolution
 
 ```bash
-git fetch origin && git rebase origin/staging
+git fetch origin && git rebase origin/<base>
 # Resolve conflicts manually
 git add <file> && git rebase --continue
 # Test locally, then:
@@ -217,14 +221,6 @@ If a change causes problems:
 3. Fix properly in new commit
 
 **Never** force push or amend pushed commits.
-
-### GPG Signing
-
-If a commit fails due to GPG signing issues, retry without GPG signing:
-
-```bash
-git commit --no-gpg-sign -m "message"
-```
 
 ---
 
@@ -281,9 +277,12 @@ Before declaring ANY task complete, run the project's test, lint, and build comm
 
 ## Security
 
-### NEVER Commit
+### Secrets and Environment
 
-`.env`, `*.pem`, `*.key`, `credentials.json`, `id_rsa`
+**NEVER commit:** `.env`, `*.pem`, `*.key`, `credentials.json`, `id_rsa`
+
+- Required env vars MUST be documented in `.env.example` with placeholder values
+- Validate required env at startup. Fail fast with a clear message listing what is missing.
 
 ### Input Validation Pipeline
 

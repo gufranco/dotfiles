@@ -156,6 +156,7 @@ pip-delete-this-directory.txt
 claude/*
 !claude/settings.json
 !claude/CLAUDE.md
+!claude/skills/
 
 ################################################################################
 # Logs

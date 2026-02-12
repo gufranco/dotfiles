@@ -5,6 +5,17 @@ description: Monitor CI/CD checks for the current branch and diagnose failures.
 
 Monitor CI/CD pipeline checks for the current branch and help diagnose any failures. Supports both GitHub and GitLab.
 
+## When to use
+
+- After pushing commits or creating a PR/MR.
+- When CI/CD pipeline is running and you want to wait for results.
+- When a pipeline fails and you need to diagnose the failure.
+
+## When NOT to use
+
+- When there is no remote branch or PR/MR and no recent pipelines.
+- When you want to fix failures automatically. This skill only diagnoses.
+
 ## Arguments
 
 This skill accepts optional arguments after `/checks`:
@@ -79,3 +90,9 @@ This skill accepts optional arguments after `/checks`:
 - Never mark a task as complete if checks are still running or failing.
 - Do not automatically fix failures. Present the diagnosis and let the user decide.
 - If the required CLI tool (`gh` or `glab`) is not installed, stop and tell the user.
+
+## Related skills
+
+- `/pr` - Create or update a PR/MR before checking pipelines.
+- `/review` - Review the PR/MR code after checks pass.
+- `/commit` - Fix issues locally and commit before pushing again.

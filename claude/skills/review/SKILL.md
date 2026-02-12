@@ -57,70 +57,66 @@ This skill accepts optional arguments after `/review`:
    - Style: does it follow existing patterns in the codebase?
 6. If the project has tests, lint, or build commands, run them locally to verify the changes pass.
 7. Present the review to the user before posting anything. Format as described below.
-8. After user approval, post the comments:
-   - GitHub: use `gh api` to post review comments on specific lines, or `gh pr review <number>` for the overall review.
+8. After user approval, post the review with inline comments on specific lines:
+   - GitHub: use `gh api repos/{owner}/{repo}/pulls/{number}/reviews` with a JSON payload containing `event`, `body`, and `comments` array. Each comment has `path`, `line`, `side`, and `body`. Always post individual comments on the exact lines, never a single big comment.
    - GitLab: use `glab mr note <number>` for comments.
 
 ## Comment Format
 
-Use these prefixes for every comment, as defined in CLAUDE.md:
-
-| Prefix | Meaning | Blocking? |
-|--------|---------|-----------|
-| `issue:` | Must be addressed | Yes |
-| `question:` | Need clarification | Yes |
-| `suggestion:` | Optional improvement | No |
-| `nit:` | Minor style | No |
-| `praise:` | Highlight good practices | No |
+Do not use prefix labels like `issue:`, `suggestion:`, `nit:`, or `praise:`. Humans do not write like that. Just say what you mean directly.
 
 Each comment should:
-- Start with the prefix.
-- Reference the file and line number.
 - Be concise and actionable.
 - Explain WHY, not just WHAT.
+- Sound like a real colleague wrote it.
+
+Write every comment as if you are a coworker leaving feedback. Be direct and natural. Vary the tone between comments. Do not repeat the same sentence patterns. If something needs fixing, say so plainly. If you have a question, just ask it. If something is good, say it briefly.
 
 Example:
 ```
-issue: `handleAuth` doesn't validate the token expiration before use.
-This could allow expired tokens to access protected routes.
+`handleAuth` doesn't check token expiration before using it.
+Expired tokens could still reach protected routes, you should
+validate expiry before proceeding.
 
-suggestion: Consider extracting this retry logic into a shared helper,
-since `fetchUser` and `fetchOrders` use the same pattern.
+`fetchUser` and `fetchOrders` have the same retry logic. Worth
+extracting to a shared helper so you don't have to maintain it
+in two places.
 
-praise: Clean separation of the validation pipeline here. Each step
-is easy to test independently.
+The validation pipeline is well structured here. Each step is
+easy to test on its own.
 ```
 
 ## Review Summary
 
-After all file-level comments, provide an overall summary:
+The overall review body should be a short, natural summary. Say what the PR does well and what needs attention. Do not use structured templates with "Blocking" / "Non-blocking" headers.
 
-```
-## Summary
+Choose the verdict based on whether there are things that must be fixed before merging:
+- **APPROVE**: nothing needs to change.
+- **REQUEST_CHANGES**: something needs to be fixed or clarified.
+- **COMMENT**: just feedback, nothing blocking.
 
-<1-2 sentences on the overall quality and purpose of the PR>
+## Test Evidence
 
-### Blocking
-- <list of issues that must be addressed>
+Always check if the PR includes evidence of tests passing and coverage percentage. If missing, leave a comment asking the author to:
+- Run the test suite and show the output with coverage.
+- Record it with asciinema and include the URL in the PR description.
 
-### Non-blocking
-- <list of suggestions and nits>
+This applies to any PR that changes behavior. Do not approve without test evidence.
 
-### Verdict
-APPROVE | REQUEST_CHANGES | COMMENT
-```
+## Branch Freshness
 
-Choose the verdict based on:
-- **APPROVE**: no blocking issues found.
-- **REQUEST_CHANGES**: one or more `issue:` or `question:` comments exist.
-- **COMMENT**: only non-blocking feedback.
+Check if the branch is up to date with the base branch. If it is behind, ask the author to rebase and re-run the tests with fresh evidence. If the rebase causes conflicts, ask the author to resolve them and provide test evidence again after resolution. Stale branches should not be approved.
 
 ## Rules
 
 - Always detect the git platform from the remote URL. Never assume GitHub or GitLab.
 - Always present the full review to the user before posting any comments.
+- Always post comments as individual inline comments on the exact lines where the change is needed. Never post a single big comment with everything.
 - Never post comments without explicit user approval.
 - Never approve a PR that has failing tests or lint errors.
+- Never approve a PR without evidence of tests passing and coverage percentage.
+- Never approve a PR whose branch is behind the base branch. Ask for rebase and fresh test evidence.
+- Every comment must sound like a real person wrote it. No prefix labels, no formulaic language, no template-driven phrasing.
 - If the required CLI tool (`gh` or `glab`) is not installed, stop and tell the user.
 - If there is no PR/MR to review, say so and stop.
 - Do not include `Co-authored-by` lines in any comments.

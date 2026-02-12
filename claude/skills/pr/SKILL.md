@@ -5,6 +5,18 @@ description: Create or update a pull request with a clear title and structured d
 
 Create or update a pull request (or merge request) for the current branch following the PR format defined in CLAUDE.md. Supports both GitHub and GitLab.
 
+## When to use
+
+- After committing changes to a feature branch and ready for review.
+- When updating an existing PR/MR description after changes.
+- When creating a draft PR/MR for early feedback.
+
+## When NOT to use
+
+- On the main/master branch. PRs are for feature branches.
+- When there are uncommitted changes. Use `/commit` first.
+- When there are no commits ahead of the base branch.
+
 ## Arguments
 
 This skill accepts optional arguments after `/pr`:
@@ -32,25 +44,26 @@ This skill accepts optional arguments after `/pr`:
    - If both fail, run `git remote show origin` and look for "HEAD branch".
    - Last resort: fall back to `main` or `master` based on what exists locally.
 5. Run `git fetch origin` to ensure the remote is up to date.
-6. Rebase on the base branch before pushing:
+6. If the project has tests, lint, or build commands, run them to verify the changes pass before pushing. If they fail, stop and tell the user.
+7. Rebase on the base branch before pushing:
    - Run `git rebase origin/<base>`.
    - If there are conflicts, stop and tell the user to resolve them manually.
-7. Run `git log --oneline origin/<base>..HEAD` to see all commits that will be in the PR.
-8. Run `git diff origin/<base>...HEAD --stat` to see which files changed.
-9. Run `git diff origin/<base>...HEAD` to understand the actual changes.
-10. Push the branch to the remote:
+8. Run `git log --oneline origin/<base>..HEAD` to see all commits that will be in the PR.
+9. Run `git diff origin/<base>...HEAD --stat` to see which files changed.
+10. Run `git diff origin/<base>...HEAD` to understand the actual changes.
+11. Push the branch to the remote:
     - Run `git rev-parse --abbrev-ref @{upstream}` to check for a tracking branch.
     - If no upstream exists, push with `git push -u origin <branch>`.
     - If upstream exists but is behind, push with `git push`.
-11. Build the PR/MR title and description following the format below.
-12. Create or update the PR/MR:
+12. Build the PR/MR title and description following the format below.
+13. Create or update the PR/MR:
     - **Create (GitHub):** `gh pr create --title "<title>" --body-file <tmpfile>`. Add `--draft` if requested.
     - **Create (GitLab):** `glab mr create --title "<title>" --description "$(cat <tmpfile>)"`. Add `--draft` if requested.
     - **Update (GitHub):** `gh pr edit <number> --title "<title>" --body-file <tmpfile>`.
     - **Update (GitLab):** `glab mr update <number> --title "<title>" --description "$(cat <tmpfile>)"`.
     - Always write the description to a temp file first and use `--body-file` (GitHub) or read from it (GitLab) to avoid shell escaping issues with multi-line content.
     - Clean up the temp file after the command succeeds.
-13. Show the PR/MR URL when done.
+14. Show the PR/MR URL when done.
 
 ## PR Title
 
@@ -120,3 +133,9 @@ Add a `## Breaking changes` section only if there are breaking changes, with mig
 - If there are no commits ahead of the base branch, say so and stop.
 - If rebase has conflicts, stop and tell the user. Do not force push or skip conflicts.
 - Do not merge the PR/MR. Only create or update it.
+
+## Related skills
+
+- `/commit` - Create semantic commits before opening a PR.
+- `/checks` - Monitor CI/CD pipeline status after pushing.
+- `/review` - Review a PR/MR before merging.

@@ -5,6 +5,17 @@ description: Analyze all uncommitted changes and create semantic commits followi
 
 Analyze all uncommitted changes in the repository and create semantic commits following the commit format defined in CLAUDE.md and the template in `git/.gitmessage`.
 
+## When to use
+
+- After completing a task or feature and ready to save progress.
+- When there are multiple unrelated changes that need separate commits.
+- Before creating a PR/MR, to ensure clean commit history.
+
+## When NOT to use
+
+- When there are no uncommitted changes.
+- When you want to push to remote. This skill only creates local commits.
+
 ## Steps
 
 1. Run `git status` to identify all modified, added, and deleted files.
@@ -91,3 +102,8 @@ Only when needed:
 - Never add `Co-authored-by` lines.
 - If there are no changes to commit, say so and stop.
 - Do not push to remote. Only create local commits.
+
+## Related skills
+
+- `/pr` - After committing, create or update a pull request.
+- `/checks` - After pushing, monitor CI/CD pipeline status.

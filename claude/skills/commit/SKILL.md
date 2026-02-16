@@ -18,21 +18,21 @@ Analyze all uncommitted changes in the repository and create semantic commits fo
 
 ## Steps
 
-1. Run `git status` to identify all modified, added, and deleted files.
-2. Run `git diff` to understand the actual changes in each file.
-3. Run `git diff --cached` to check for already staged changes.
-4. Run `git log --oneline -10` to understand the existing commit style.
-5. Group related changes into logical units. Each group becomes one commit. Consider:
+1. Run these four commands **in parallel** to gather all context in one round:
+   - `git status` to identify all modified, added, and deleted files.
+   - `git diff` to understand the actual changes in each file.
+   - `git diff --cached` to check for already staged changes.
+   - `git log --oneline -10` to understand the existing commit style.
+2. Group related changes into logical units. Each group becomes one commit. Consider:
    - Changes to the same feature or module belong together.
    - Unrelated changes to different areas must be separate commits.
    - Renames, moves, and formatting changes are separate from logic changes.
    - Test changes go with the code they test, not in a separate commit.
-6. For each group, in dependency order:
+3. For each group, in dependency order:
    - Stage only the relevant files using `git add <file1> <file2> ...`. Never use `git add -A` or `git add .`.
    - Commit following the message format below.
    - If GPG signing fails, retry with `--no-gpg-sign`.
-7. Run `git status` after all commits to verify a clean working tree.
-8. Show a summary of all commits created using `git log --oneline`.
+4. After all commits, run `git status` and `git log --oneline` **in parallel** to verify clean tree and show summary.
 
 ## Commit Message Format
 

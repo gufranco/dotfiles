@@ -26,16 +26,13 @@ This skill accepts optional arguments after `/release`:
 
 ## Steps
 
-1. Detect the git platform and CLI tool:
-   - Run `git remote get-url origin` to get the remote URL.
-   - If the URL contains `github.com`, use `gh` (GitHub CLI).
-   - If the URL contains `gitlab` (e.g. `gitlab.com` or a self-hosted GitLab), use `glab` (GitLab CLI).
-   - If neither matches, ask the user which platform they use.
-   - Verify the CLI tool is installed with `which <tool>`. If not installed, stop and tell the user.
-2. Find the latest tag:
-   - Run `git describe --tags --abbrev=0` to get the most recent tag.
-   - If no tags exist, use the root commit as the starting point.
-3. Gather all commits since the last tag:
+1. **Gather initial context.** Run these **in parallel**:
+   - `git remote get-url origin` to detect the git platform.
+   - `git describe --tags --abbrev=0` to find the latest tag (if no tags, use root commit).
+   - `git status --porcelain` to check for uncommitted changes.
+   - Determine the CLI tool from the remote URL: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
+   - If the working tree is dirty, stop and warn the user.
+2. Gather all commits since the last tag:
    - Run `git log --oneline <last-tag>..HEAD` (or `git log --oneline` if no tags).
    - If there are no new commits, say so and stop.
 4. Determine the next version:

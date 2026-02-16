@@ -644,6 +644,12 @@ Every task completion MUST include a README check. If the change affects how som
 
 ---
 
+## Claude Configuration Documentation
+
+The file `claude/README.md` documents the full Claude Code setup: settings, skills, review checklist, and directory structure. Whenever you modify any file inside the `claude/` directory, including skills, settings, CLAUDE.md itself, or the reviewer prompt, you must also update `claude/README.md` to reflect those changes. Do not wait for the user to ask. Do it as part of the same task.
+
+---
+
 ## Self-Correction
 
 When you make a mistake:

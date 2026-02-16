@@ -25,14 +25,11 @@ This skill accepts optional arguments after `/checks`:
 
 ## Steps
 
-1. Detect the git platform and CLI tool:
-   - Run `git remote get-url origin` to get the remote URL.
-   - If the URL contains `github.com`, use `gh` (GitHub CLI).
-   - If the URL contains `gitlab` (e.g. `gitlab.com` or a self-hosted GitLab), use `glab` (GitLab CLI).
-   - If neither matches, ask the user which platform they use.
-   - Verify the CLI tool is installed with `which <tool>`. If not installed, stop and tell the user.
-2. Run `git branch --show-current` to get the current branch name (skip if a PR/MR number was provided).
-3. Check if a PR/MR exists:
+1. **Gather initial context.** Run these **in parallel** (skip branch check if a PR/MR number was provided):
+   - `git remote get-url origin` to detect the git platform.
+   - `git branch --show-current` to get the current branch name.
+   - Determine the CLI tool from the remote URL: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
+2. Check if a PR/MR exists:
    - If a number was provided, use that directly.
    - Otherwise, check the current branch:
      - GitHub: run `gh pr view --json number,url,statusCheckRollup`.
@@ -57,10 +54,10 @@ This skill accepts optional arguments after `/checks`:
    - **GitHub:**
      - Identify the failed check names from the output.
      - Run `gh run list --branch <branch> --limit 5` to find the run IDs.
-     - For each failed run, get the logs with `gh run view <id> --log-failed`.
+     - Fetch logs for **all failed runs in parallel** using `gh run view <id> --log-failed` for each.
    - **GitLab:**
      - Run `glab ci view` to see the pipeline overview.
-     - Identify failed jobs and run `glab ci trace <job-id>` to get the logs.
+     - Identify failed jobs and fetch logs **in parallel** using `glab ci trace <job-id>` for each.
    - Before suggesting a fix, search for an existing fix:
      - Check recent commits on the branch: `git log --oneline -5`.
      - Check open PRs/MRs that might address it:

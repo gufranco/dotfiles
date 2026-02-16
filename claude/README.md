@@ -53,9 +53,9 @@ The global `CLAUDE.md` file defines engineering standards enforced across all co
 
 Analyzes uncommitted changes and creates semantic commits following conventional commit format.
 
-**Arguments**: none required, works from current state.
+**Arguments**: `--push` to push automatically after committing.
 
-Runs `git status`, `git diff`, `git diff --cached`, and `git log` in parallel to gather context. Groups related changes into logical commits. Follows the format `<type>(<scope>): <subject>` with types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Never uses `git add -A`, always stages specific files.
+Runs `git status`, `git diff`, `git diff --cached`, and `git log` in parallel to gather context. Groups related changes into logical commits. Follows the format `<type>(<scope>): <subject>` with types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Never uses `git add -A`, always stages specific files. After committing, asks whether to push to remote. Use `--push` to skip the question and push immediately.
 
 ---
 

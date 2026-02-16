@@ -14,7 +14,13 @@ Analyze all uncommitted changes in the repository and create semantic commits fo
 ## When NOT to use
 
 - When there are no uncommitted changes.
-- When you want to push to remote. This skill only creates local commits.
+
+## Arguments
+
+This skill accepts optional arguments after `/commit`:
+
+- No arguments: commit changes and ask whether to push afterward.
+- `--push`: commit and push to remote automatically without asking.
 
 ## Steps
 
@@ -33,6 +39,14 @@ Analyze all uncommitted changes in the repository and create semantic commits fo
    - Commit following the message format below.
    - If GPG signing fails, retry with `--no-gpg-sign`.
 4. After all commits, run `git status` and `git log --oneline` **in parallel** to verify clean tree and show summary.
+5. **Push to remote:**
+   - If `--push` was passed, push immediately without asking.
+   - Otherwise, ask the user: "Want me to push to remote?"
+   - If yes, or if `--push`:
+     - Check if an upstream exists: `git rev-parse --abbrev-ref @{upstream}`.
+     - If no upstream, push with `git push -u origin <branch>`.
+     - If upstream exists, push with `git push`.
+   - If the user declines, stop. Suggest `/pr` if they want to open a pull request.
 
 ## Commit Message Format
 
@@ -101,7 +115,6 @@ Only when needed:
 - Never include files that contain secrets or credentials.
 - Never add `Co-authored-by` lines.
 - If there are no changes to commit, say so and stop.
-- Do not push to remote. Only create local commits.
 
 ## Related skills
 

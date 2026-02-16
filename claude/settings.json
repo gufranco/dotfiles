@@ -9,7 +9,9 @@
       "Bash(git *)",
       "Bash(which *)",
       "Bash(gh *)",
-      "Bash(glab *)"
+      "Bash(glab *)",
+      "Bash(python3 *)",
+      "Bash(node *)"
     ]
   }
 }

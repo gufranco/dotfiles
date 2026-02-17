@@ -49,9 +49,10 @@ This skill accepts optional arguments after `/review`:
 3. **Get the diff and context.** This step differs by mode:
 
    **3A. PR mode.** Run these **in parallel**:
-   - Metadata:
-     - GitHub: `gh pr view <number> --json title,body,baseRefName,headRefName,files,commits`.
-     - GitLab: `glab mr view <number>`.
+   - Metadata and authorship:
+     - GitHub: `gh pr view <number> --json title,body,baseRefName,headRefName,files,commits,author` and `gh api user --jq '.login'`.
+     - GitLab: `glab mr view <number>` and `glab auth status` to get the current user.
+     - Compare the PR author with the current authenticated user. Store a flag: `isOwnPR = true` if they match.
    - Diff:
      - GitHub: `gh pr diff <number>`.
      - GitLab: `glab mr diff <number>`.
@@ -90,12 +91,19 @@ This skill accepts optional arguments after `/review`:
    - In local mode: skip the test evidence check on the PR description since there is no PR yet. Running tests locally in step 6 serves as the evidence.
 8. **Present the full review to the user.** Format as described below.
    - In local mode: clearly label the review as "Local Review" so the user knows this was not posted anywhere.
-9. **Ask the user what to do next.** After presenting the review:
-    - If issues were found, ask the user: "Want me to fix these issues?" If yes, apply the fixes directly, then run tests to verify. After fixing, suggest `/commit` to commit and `/pr` to open the PR.
-    - In PR mode: also ask if the user wants to post the review as inline comments. If yes, post after explicit approval:
-      - GitHub: use `gh api repos/{owner}/{repo}/pulls/{number}/reviews` with a JSON payload containing `event`, `body`, and `comments` array. Each comment has `path`, `line`, `side`, and `body`. Always post individual comments on the exact lines, never a single big comment.
-      - GitLab: use `glab mr note <number>` for comments.
+9. **Ask the user what to do next.** After presenting the review, the behavior depends on whether this is your own PR, someone else's PR, or a local review:
+
+    **Own PR (`isOwnPR = true`) or local mode:**
+    - If issues were found, ask the user: "Want me to fix these issues?" If yes, apply the fixes directly, then run tests to verify. After fixing, suggest `/commit` to commit.
     - In local mode: do NOT post anything. If the review is clean, suggest `/pr` to open the PR.
+    - In PR mode on your own PR: after fixing, push the changes.
+
+    **Someone else's PR (`isOwnPR = false`):**
+    - Do NOT offer to fix the code directly. You are a reviewer, not a co-author.
+    - Ask the user if they want to post the review as inline comments. If yes, post after explicit approval:
+      - GitHub: use `gh api repos/{owner}/{repo}/pulls/{number}/reviews` with a JSON payload containing `event`, `body`, and `comments` array. Each comment has `path`, `line`, `side`, and `body`. Always post individual comments on the exact lines, never a single big comment. Use `REQUEST_CHANGES` as the event when there are issues, `APPROVE` when clean, or `COMMENT` for minor suggestions only.
+      - GitLab: use `glab mr note <number>` for comments.
+    - Each comment should include the issue, why it matters, and a code example showing the fix, so the author knows exactly what to do.
 
 ## Review Standards
 

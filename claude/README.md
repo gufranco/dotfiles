@@ -7,7 +7,15 @@ Personal Claude Code setup with custom skills, engineering guidelines, and proje
 ```
 claude/
   settings.json          # Permissions, attribution, and global settings
-  CLAUDE.md              # Engineering rules applied to every conversation
+  CLAUDE.md              # Core engineering rules (lean, ~120 lines)
+  rules/
+    code-style.md        # Code conventions, comments, dependencies, backward compat
+    testing.md           # Test philosophy, mock policy, AAA pattern, scenario planning
+    git-workflow.md      # Commit format, branches, CI monitoring, PRs, rollbacks
+    code-review.md       # Author guidelines, review style, documentation checks
+    security.md          # Secrets, auth checklist, audit logging
+    database.md          # Schema rules, query optimization, migrations, naming
+    llm-docs.md          # LLM-optimized documentation references for common tech
   skills/
     commit/SKILL.md      # Semantic commits from uncommitted changes
     pr/SKILL.md          # Pull request creation and updates
@@ -34,18 +42,28 @@ Defined in `settings.json`:
 
 ## CLAUDE.md Overview
 
-The global `CLAUDE.md` file defines engineering standards enforced across all conversations and skills. Key areas:
+The global `CLAUDE.md` is intentionally lean, containing only rules that change Claude's default behavior. Domain-specific conventions live in the `rules/` directory, which loads automatically with the same priority.
+
+**Root file covers:**
 
 - **Core checklist**: verify before acting, no secrets, fail fast, evidence required, safe defaults, single source of truth, explicit over implicit, reuse first.
 - **Writing style**: no em dashes, no parentheses in prose, no AI attribution. Write like a human colleague.
-- **Confidence**: 95%+ required before taking action. When uncertain, stop and ask.
-- **Code style**: DRY, SOLID, KISS. Functions under 30 lines. Meaningful names. No magic numbers.
-- **Git workflow**: conventional commits, branch naming conventions, mandatory CI monitoring after push.
-- **Testing**: integration tests preferred over unit tests. Strict mock policy. AAA pattern with exact comments.
-- **Security**: OWASP-aware. Input validation pipeline. Rate limiting. Audit logging.
-- **API design**: RESTful conventions, standard response format, pagination defaults.
-- **Database**: schema rules, query optimization, safe migration strategies.
-- **Error handling**: categorized by type, retry strategies with exponential backoff, circuit breaker pattern.
+- **Confidence**: 95%+ required before taking action. When uncertain, stop and ask. State trade-offs explicitly when multiple approaches exist. Ask one question at a time when blocked.
+- **Anti-hallucination**: never invent paths, signatures, APIs, or versions.
+- **Scope control**: one task at a time, ask before expanding, max 3-5 files.
+- **Mandatory verification**: run tests, lint, build before declaring done.
+- **Context compaction**: preserve modified files, test results, and user decisions.
+- **Debugging approach**: reproduce, isolate, root cause, fix+verify.
+
+**Rules directory covers:**
+
+- **Code style** (`rules/code-style.md`): DRY, SOLID, KISS. Functions under 30 lines. Immutability. Comments policy. Dependencies management.
+- **Testing** (`rules/testing.md`): integration-first. Strict mock policy. AAA pattern. 80%+ coverage for new code. Test scenario planning with requirement traceability for non-trivial tasks.
+- **Git workflow** (`rules/git-workflow.md`): conventional commits, branch naming, CI/CD monitoring, PR creation, conflict resolution, rollback strategy.
+- **Code review** (`rules/code-review.md`): author guidelines, natural review comments, test evidence, documentation checks, pre-completion checklist.
+- **Security** (`rules/security.md`): secrets management, auth checklist, audit logging.
+- **Database** (`rules/database.md`): schema rules, query optimization, safe migrations, naming conventions.
+- **LLM docs** (`rules/llm-docs.md`): curated `llms.txt` and `llms-full.txt` references for common technologies. Fetch official docs before relying on training data.
 
 ## Skills Reference
 
@@ -75,7 +93,7 @@ Reviews a pull request or local branch changes with rigorous, line-by-line analy
 
 **Arguments**: no args for current branch PR, a PR number, a URL, or `--local` to skip PR lookup.
 
-Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Uses a 14-category checklist covering correctness, security, error handling, performance, concurrency, data integrity, API design, testing, code quality, naming, architecture, observability, dependencies, and documentation. Every issue includes what's wrong, why it matters, and a code example showing the fix. After the review, asks if the user wants issues fixed automatically. In PR mode, can also post inline comments after approval.
+Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Uses a 14-category checklist covering correctness, security, error handling, performance, concurrency, data integrity, API design, testing, code quality, naming, architecture, observability, dependencies, and documentation. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval.
 
 **Verdicts**: APPROVE, REQUEST_CHANGES, or COMMENT. Defaults to REQUEST_CHANGES when in doubt.
 

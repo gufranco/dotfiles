@@ -6,12 +6,15 @@
   },
   "permissions": {
     "allow": [
-      "Bash(git *)",
-      "Bash(which *)",
-      "Bash(gh *)",
-      "Bash(glab *)",
-      "Bash(python3 *)",
-      "Bash(node *)"
+      "Bash(git:*)",
+      "Bash(which:*)",
+      "Bash(gh:*)",
+      "Bash(glab:*)",
+      "Bash(python3:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(head:*)",
+      "Bash(/usr/bin/head:*)"
     ]
   }
 }

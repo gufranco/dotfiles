@@ -55,6 +55,8 @@ Before ANY action, verify:
 
 When no definitive solution exists, say so. When information is lacking, ask for details. Adapt to user feedback. Address recurring issues with simpler or alternative solutions.
 
+When multiple valid approaches exist, state them briefly with trade-offs and say which one you chose and why. When several things are unclear, ask the single most blocking question first rather than listing many questions at once.
+
 ## Anti-Hallucination
 
 | NEVER | ALWAYS |
@@ -64,44 +66,11 @@ When no definitive solution exists, say so. When information is lacking, ask for
 | Guess APIs | Check route/controller |
 | Make up versions | Look up or omit |
 
-## Code Style
-
-- DRY, SOLID, KISS
-- Small functions (< 30 lines)
-- Meaningful names
-- No magic numbers
-- Single export per file
-- For functions with many arguments, pass one options object. Return objects.
-- File order: main export first, then subcomponents, helpers, static content, types
-- Design for change: isolate business logic from the framework. Prefer dependency inversion.
-- Prefer composition over inheritance
-- Use braces for all control structures
-- **Never swallow errors**: no empty catch; log with context, rethrow or handle
-
-### Immutability and Explicit Side Effects
-
-- Prefer immutable data: avoid mutating arguments or shared state when a copy is feasible.
-- Make side effects explicit: I/O, network, DB, logging. Isolate them so logic is easy to test.
-
-## Comments Policy
-
-**Code should be self-explanatory.** Only add comments when:
-
-- Complex algorithm that cannot be simplified
-- Non-obvious business rule
-- Workaround for external issue
-- Doc comments for public APIs
-
 ## Scope Control
 
 - Complete ONE task fully before starting another
 - Ask before expanding scope
 - Max 3 to 5 files per task
-
-## Backward Compatibility
-
-- Do not break existing callers, APIs, or config without a plan
-- Document breaking changes and migration steps
 
 ## External Tools
 
@@ -110,12 +79,6 @@ Before using any external tool or CLI command:
 1. **Verify tool is installed.** Run `which <tool>` or `<tool> --version`.
 2. **If not installed.** Ask before installing.
 3. **Never assume availability.** Even common tools like gh, docker, and aws may not be installed.
-
-## Automation-Friendly Workflows
-
-- Prefer **idempotent** operations for scripts, migrations, and deploys
-- Prefer **non-interactive** commands for CI and scripts
-- When adding scripts or CLI, document required env, exit codes, and how to run in CI
 
 ## Think Before You Code
 
@@ -126,146 +89,13 @@ For non-trivial tasks:
 3. **Decompose.** Split into small, verifiable steps.
 4. **Implement.** Only then write code.
 
----
+## Mandatory Verification
 
-## Git Workflow
-
-### Commit Format
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
-
-**Subject Rules:**
-
-- Imperative mood: "add" not "added" or "adds"
-- No caps at start, no period at end
-- Max 50 characters
-
-**Body:** Wrap at 72 characters. Explain WHAT and WHY, not HOW.
-
-**Footer:**
-
-- `BREAKING CHANGE:` for breaking changes, or `!` after type/scope
-- `Fixes #123`, `Closes #456`, `Refs #789`
-- **NEVER** add `Co-authored-by` lines referencing any AI
-
-### Branch Naming
-
-```
-<type>/<ticket-id>-<description>
-```
-
-Types: `feature/`, `bugfix/`, `hotfix/`, `release/`, `chore/`
-
-### CI/CD Monitoring (MANDATORY)
-
-After ANY push:
-
-1. Run `gh pr checks --watch`
-2. Wait for ALL checks
-3. If failed: `gh run view <id> --log-failed`
-4. Before fixing: search for an existing fix in source branch, open PRs, and remote branches
-5. If no existing fix: Fix, push, repeat until green
-
-**Never** mark task complete with failing/running pipeline.
-
-### PR/MR Creation
-
-**Title:** Clear, specific summary of what the PR accomplishes. Describe the outcome, not the process.
-- Good: `feat(auth): add SSO login with Google and GitHub providers`
-- Bad: `update auth`, `fix stuff`, `changes`
-
-When a ticket ID exists, prefix it: `<TICKET-ID>: <description>`
-
-**Description structure:**
-
-- **What**: One paragraph explaining what changed and why. A reviewer reading only this paragraph should understand the full picture.
-- **How**: Key implementation decisions, trade-offs, and anything non-obvious. Skip trivial details the diff already shows.
-- **Testing**: How the changes were verified. Include commands, screenshots, or steps to reproduce.
-- **Breaking changes**: If any, list them with migration steps.
-
-Before opening:
-
-1. Identify the base branch from git, never hardcode it
-2. Fetch and rebase: `git fetch origin && git rebase origin/<base>`
-3. Resolve conflicts if any, run tests locally
-
-Prefer CLI over web UI:
-
-```bash
-gh pr create --title "<desc>" --body-file pr.md
-gh pr create --draft --title "<TICKET-ID>: WIP"
-gh pr merge <number> --squash --delete-branch
-```
-
-### Conflict Resolution
-
-```bash
-git fetch origin && git rebase origin/<base>
-# Resolve conflicts manually
-git add <file> && git rebase --continue
-# Test locally, then:
-git push --force-with-lease
-```
-
-### Post-Task Workflow
-
-After completing significant features:
-
-1. Stage and commit with conventional message
-2. Push to remote: `git push`
-3. Verify remote is updated
-
-**Keep remote in sync.** Do not accumulate local-only commits.
-
-### Rollback Strategy
-
-If a change causes problems:
-
-1. `git revert <commit>`, then push
-2. Analyze what went wrong
-3. Fix properly in new commit
-
-**Never** force push or amend pushed commits.
-
----
-
-## Task Completion
-
-### Pre-Completion Checklist
-
-- [ ] Reuse checked (codebase, PRs, branches)
-- [ ] Backward compatible
-- [ ] Matches existing patterns
-- [ ] Errors handled and logged
-- [ ] Input validation (user endpoints)
-- [ ] No sensitive data exposed
-- [ ] Tests written and passing
-- [ ] README updated (if API/setup/env changed)
-
-### Mandatory Verification
-
-Before declaring ANY task complete, run the project's test, lint, and build commands and show output. Detect the project's package manager and scripts from the lockfile or config:
-
-- `package-lock.json` or `node_modules/`: use `npm run`
-- `pnpm-lock.yaml`: use `pnpm run`
-- `yarn.lock`: use `yarn`
-- `bun.lock` or `bun.lockb`: use `bun run`
-- `Makefile`: use `make`
-- `Cargo.toml`: use `cargo`
-- `go.mod`: use `go`
-- `pyproject.toml` or `requirements.txt`: use the project's configured runner
+Before declaring ANY task complete, run the project's test, lint, and build commands and show output. Detect the project's package manager and scripts from the lockfile or config.
 
 **Claims without evidence = not done.**
 
-### Delivery Summary
+## Delivery Summary
 
 1. **Files**: List modified files
 2. **Changes**: What and why
@@ -273,7 +103,7 @@ Before declaring ANY task complete, run the project's test, lint, and build comm
 4. **Verification**: Paste last 10-20 lines of test, lint, build output
 5. **Risks**: Concerns or follow-ups
 
-### Debugging Approach (4 Phases)
+## Debugging Approach
 
 ```
 1. REPRODUCE   -> Can you trigger it reliably?
@@ -286,369 +116,9 @@ Before declaring ANY task complete, run the project's test, lint, and build comm
 - Read full error messages
 - Stop after 3 failed attempts, reassess
 
----
+## Context Compaction
 
-## Security
-
-### Secrets and Environment
-
-**NEVER commit:** `.env`, `*.pem`, `*.key`, `credentials.json`, `id_rsa`
-
-- Required env vars MUST be documented in `.env.example` with placeholder values
-- Validate required env at startup. Fail fast with a clear message listing what is missing.
-
-### Input Validation Pipeline
-
-1. Type
-2. Format
-3. Range
-4. Sanitize
-5. Business rules
-
-### Auth Checklist
-
-- [ ] Passwords hashed (bcrypt/argon2)
-- [ ] Rate limiting on auth
-- [ ] Token expiration
-- [ ] Permission check every request
-
-### Common Vulnerabilities
-
-| Issue | Prevention |
-|-------|------------|
-| SQL Injection | Use ORM or parameterized queries |
-| XSS | Use framework that auto-escapes |
-| IDOR | Verify ownership on every request |
-
-### Security Headers
-
-```
-Content-Security-Policy: default-src 'self'
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-Strict-Transport-Security: max-age=31536000
-```
-
-### Rate Limiting
-
-- Auth endpoints: 5 requests/minute per IP
-- API endpoints: 100 requests/minute per user
-- Use sliding window algorithm
-
-### Error Messages
-
-| Environment | Detail Level |
-|-------------|--------------|
-| Development | Full stack trace, debug info |
-| Production | Generic message, no internals |
-
-**Never** expose database errors, file paths, or stack traces in production.
-
-### Audit Logging
-
-Log sensitive actions with context:
-
-- Login attempts (success/failure)
-- Password changes
-- Role changes
-- Record deletions
-- Permission changes
-
-Format: `{ action, userId, targetId, timestamp, ip, userAgent }`
-
----
-
-## Error Handling
-
-### Error Categories
-
-| Type | HTTP | When |
-|------|------|------|
-| Validation | 400 | Bad input |
-| Auth | 401 | Not authenticated |
-| Forbidden | 403 | No permission |
-| NotFound | 404 | Resource missing |
-| Conflict | 409 | State conflict |
-| Server | 500 | Unexpected error |
-
-### Retry Strategy
-
-| Retry | Do Not Retry |
-|-------|--------------|
-| Network timeout | Validation (400) |
-| Rate limit (429) | Auth (401/403) |
-| Server error (503) | Not found (404) |
-
-```
-Max: 3 attempts
-Delay: 100ms -> 200ms -> 400ms (exponential)
-Add jitter: +/-50ms
-```
-
-### Circuit Breaker
-
-```
-CLOSED --[failures > threshold]--> OPEN
-  ^                                   |
-  |                              [timeout]
-  |                                   |
-  +---[successes > threshold]--- HALF-OPEN
-```
-
----
-
-## Logging
-
-### Log Levels
-
-| Level | When |
-|-------|------|
-| ERROR | Operation failed |
-| WARN | Handled but unexpected |
-| INFO | Business events |
-| DEBUG | Diagnostic (dev only) |
-
-**Production**: INFO+ | **Development**: DEBUG+
-
-### Rules
-
-- Use structured logging (JSON)
-- Always include requestId
-- Sanitize sensitive data
-- Do not log in loops
-- Use appropriate level
-
-### What NOT to Log
-
-- Passwords, tokens, API keys
-- Credit card numbers
-- PII without necessity
-
----
-
-## Testing
-
-### Philosophy
-
-Tests should verify real behavior, not mock behavior.
-
-### Priority
-
-1. **Integration** (preferred): real database, real services
-2. **E2E**: full user flows
-3. **Unit** (fallback): pure functions only
-
-### Mocks Policy (STRICT)
-
-**Allowed:** External APIs, Time/Date, Randomness
-
-**NEVER Mock:** Database, your own services, your own modules
-
-### Test Structure (AAA Pattern)
-
-Every test MUST follow Arrange-Act-Assert with these exact comments:
-
-```
-// Arrange
-// Act
-// Assert
-```
-
-### Test Naming
-
-- Describe behavior, not implementation
-- **NEVER** reference ticket/task IDs in test names
-- Use: `should create user with valid email`
-
-### Coverage
-
-- New code: 80%+ coverage
-- Existing code: do not reduce coverage
-
----
-
-## Database
-
-### Schema Rules
-
-- Always: `created_at`, `updated_at`
-- Soft delete: `deleted_at` (nullable)
-- Dates in UTC
-
-### Query Optimization
-
-- No `SELECT *`: specify columns
-- No N+1: use include/eager loading
-- Pagination for lists
-- Indexes for WHERE, JOIN, ORDER BY
-
-### Safe Migrations
-
-| Operation | Approach |
-|-----------|----------|
-| Add column | Nullable first, backfill, constraint |
-| Remove column | Stop reading, deploy, remove |
-| Rename column | Add new, copy, migrate code, remove old |
-| Add index | CONCURRENTLY |
-
-### Naming
-
-- Tables: `plural_snake_case`
-- Columns: `singular_snake_case`
-- FK: `<table>_id`
-
----
-
-## API Design
-
-### URL Design
-
-```
-GET    /api/v1/{resource}           # List with pagination
-POST   /api/v1/{resource}           # Create
-GET    /api/v1/{resource}/{id}      # Get single
-PATCH  /api/v1/{resource}/{id}      # Partial update
-DELETE /api/v1/{resource}/{id}      # Delete
-```
-
-### Response Format
-
-Success:
-```json
-{
-  "data": {},
-  "meta": { "requestId": "req_abc123", "timestamp": "2024-01-01T00:00:00Z" }
-}
-```
-
-Error:
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Human readable message",
-    "requestId": "req_abc123"
-  }
-}
-```
-
-### Pagination
-
-```
-?page=1&pageSize=25&sort=createdAt&order=desc
-```
-
-- Default pageSize: 25, Max: 100
-
-### Versioning
-
-- Version in URL path: `/api/v1/`
-- Breaking changes require new version
-
----
-
-## Dependencies
-
-### Before Adding
-
-1. **Ask permission.** Never add without approval.
-2. **Check existing.** Maybe already solved natively.
-3. **Evaluate.** Recent commits? Vulnerabilities?
-4. **Size.** Avoid heavy packages for simple tasks.
-
-### Rules
-
-- Pin exact versions
-- One package at a time
-- Audit after adding
-- Separate dev dependencies
-- Commit lockfile
-- Prefer native/stdlib over third-party when equivalent
-
----
-
-## External Services
-
-### Integration Checklist
-
-- [ ] Timeout configured
-- [ ] Retry strategy defined
-- [ ] Circuit breaker implemented
-- [ ] Fallback behavior defined
-- [ ] Error handling specific to service
-- [ ] Logging with requestId
-- [ ] Rate limits understood
-- [ ] API key in environment variables
-
-### Rules
-
-- NEVER call external services without timeout
-- ALWAYS log external calls with duration
-- ALWAYS handle failures gracefully
-- NEVER expose external API errors to users
-
----
-
-## Observability
-
-- Every request MUST have a `requestId`
-- Generate at API entry point, pass through all calls
-- Include in every log entry
-- Send to external APIs via `X-Request-ID` header
-
-### Performance Budgets
-
-| Operation | Target | Max |
-|-----------|--------|-----|
-| API response | < 100ms | 500ms |
-| Database query | < 50ms | 200ms |
-| Cache read | < 5ms | 20ms |
-| External API | < 500ms | 3s |
-
----
-
-## Code Review
-
-### As Author
-
-- Self-review the entire diff line by line
-- Run all tests locally
-- Keep PRs small (< 400 lines ideally, max 1000)
-- One logical change per PR
-- Include before/after screenshots for UI changes
-
-### Review Comments
-
-Write review comments the way a human colleague would. No prefix labels, no structured templates. Just say what you mean directly.
-
-If something needs to be fixed, say it. If you have a question, ask it. If something looks good, say so briefly. Each comment should be its own thought, written naturally, not items from a generated checklist.
-
-### Test Evidence (MANDATORY)
-
-Every PR that changes behavior must include evidence of tests passing and coverage percentage. If missing, request it. Suggest recording the terminal session with asciinema and including the URL in the PR description.
-
----
-
-## Documentation (README) - MANDATORY
-
-Every task completion MUST include a README check. If the change affects how someone uses or sets up the project, update the README:
-
-- New environment variables
-- New API endpoints
-- Authentication changes
-- New commands or scripts
-- Changed setup steps
-- New dependencies with setup
-- Architecture changes
-- New features
-
----
-
-## Claude Configuration Documentation
-
-The file `claude/README.md` documents the full Claude Code setup: settings, skills, review checklist, and directory structure. Whenever you modify any file inside the `claude/` directory, including skills, settings, CLAUDE.md itself, or the reviewer prompt, you must also update `claude/README.md` to reflect those changes. Do not wait for the user to ask. Do it as part of the same task.
-
----
+When compacting context, always preserve: the list of modified files, test commands already run and their results, the current task description, and any user decisions made during the conversation.
 
 ## Self-Correction
 
@@ -658,3 +128,9 @@ When you make a mistake:
 2. Explain why
 3. Fix immediately
 4. State prevention
+
+---
+
+## Claude Configuration Documentation
+
+The file `claude/README.md` documents the full Claude Code setup: settings, skills, review checklist, and directory structure. Whenever you modify any file inside the `claude/` directory, including skills, settings, CLAUDE.md itself, or the reviewer prompt, you must also update `claude/README.md` to reflect those changes. Do not wait for the user to ask. Do it as part of the same task.

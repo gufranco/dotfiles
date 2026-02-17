@@ -13,8 +13,7 @@
       "Bash(python3:*)",
       "Bash(node:*)",
       "Bash(curl:*)",
-      "Bash(head:*)",
-      "Bash(/usr/bin/head:*)"
+      "Bash(head:*)"
     ]
   }
 }

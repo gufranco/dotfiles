@@ -7,7 +7,7 @@ Personal Claude Code setup with custom skills, engineering guidelines, and proje
 ```
 claude/
   settings.json          # Permissions, attribution, and global settings
-  CLAUDE.md              # Core engineering rules (lean, ~120 lines)
+  CLAUDE.md              # Core engineering rules (lean, ~135 lines)
   rules/
     code-style.md        # Code conventions, comments, dependencies, backward compat
     testing.md           # Test philosophy, mock policy, AAA pattern, scenario planning

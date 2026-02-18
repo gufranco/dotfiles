@@ -1,0 +1,8 @@
+{
+  "coc.preferences.formatOnSave": true,
+  "eslint.autoFixOnSave": true,
+  "prettier.requireConfig": true,
+  "diagnostic.displayByAle": false,
+  "suggest.noselect": true,
+  "suggest.enablePreselect": false
+}

@@ -81,6 +81,7 @@ brew 'gnu-time'
 brew 'gnu-units'
 brew 'gnu-which'
 brew 'gnupg'
+brew 'pinentry-mac'
 brew 'golang', link: true
 brew 'golangci-lint'
 brew 'gpatch'

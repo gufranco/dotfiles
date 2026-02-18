@@ -37,8 +37,9 @@ claude/
 
 Defined in `settings.json`:
 
+- **Output style**: `Explanatory`. Adds educational insight blocks before and after code, explaining implementation choices and codebase-specific patterns.
 - **Attribution**: disabled. No "Co-authored-by" lines in commits or PRs.
-- **Permissions**: pre-approved bash commands: `git`, `which`, `gh`, `glab`, `python3`, `node`. Everything else requires manual approval.
+- **Permissions**: broad pre-approved access covering file I/O (`Read`, `Write`, `Edit`), web access (`WebFetch`, `WebSearch`), skills, and ~100 bash commands across categories: version control, package managers, runtimes, build tools, containers, infrastructure, databases, dev tooling, shell utilities, search, networking, archives, data processing, process management, and macOS system commands. Only unusual or destructive operations require manual approval.
 
 ## CLAUDE.md Overview
 

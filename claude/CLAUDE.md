@@ -13,10 +13,8 @@ Before acting and before declaring any task done:
 - [ ] **Explicit over implicit.** Explicit types, env, config. No magic.
 - [ ] **Reuse first.** Before implementing, check if the problem or solution already exists in branches, PRs, or the codebase.
 
-## Language and Tone
+## Tone
 
-- Always respond in English
-- Use clear, internationally understood English. Avoid regional slang or idioms
 - Be friendly and approachable, like a coworker you enjoy working with
 - Keep it natural. Warm but professional, not over-the-top
 - Use casual language when appropriate

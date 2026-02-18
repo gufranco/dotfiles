@@ -114,4 +114,4 @@ This skill accepts optional arguments after `/test`:
 
 - `/commit` - After tests pass, commit the changes.
 - `/checks` - After pushing, verify CI/CD tests also pass.
-- `/deps` - Audit dependencies for vulnerabilities complements test scanning.
+- `/deps` - Audit dependencies for vulnerabilities. The `deps scan` subcommand provides the same trivy/snyk/gitleaks scanning as `test --scan`.

@@ -35,14 +35,14 @@ This skill accepts optional arguments after `/release`:
 2. Gather all commits since the last tag:
    - Run `git log --oneline <last-tag>..HEAD` (or `git log --oneline` if no tags).
    - If there are no new commits, say so and stop.
-4. Determine the next version:
+3. Determine the next version:
    - If the user provided a version, use that.
    - Otherwise, parse the last tag as semver and bump based on commit types:
      - Any `BREAKING CHANGE` or `!` in type: bump major.
      - Any `feat`: bump minor.
      - Only `fix`, `perf`, `refactor`, `chore`, `docs`, `style`, `test`, `build`, `ci`: bump patch.
    - If the last tag is not semver, ask the user for the version.
-5. Generate the changelog by grouping commits by type:
+4. Generate the changelog by grouping commits by type:
 
    ```
    ## What's new
@@ -69,16 +69,16 @@ This skill accepts optional arguments after `/release`:
    - Include the short hash for reference.
    - List breaking changes in their own section with details from the commit body/footer.
 
-6. If `--dry-run` was passed, show the version and changelog and stop.
+5. If `--dry-run` was passed, show the version and changelog and stop.
+6. **If the project has tests, lint, or build commands,** run them to verify everything passes before releasing. If they fail, stop and tell the user.
 7. Present the version and changelog to the user for approval before creating anything.
 8. After user approval:
    - Create an annotated tag: `git tag -a v<version> -m "v<version>"`.
-   - If GPG signing fails, retry with `git tag -a v<version> -m "v<version>" --no-sign`.
    - Push the tag: `git push origin v<version>`.
    - Create the release:
      - GitHub: `gh release create v<version> --title "v<version>" --notes-file <tmpfile>`.
      - GitLab: `glab release create v<version> --notes-file <tmpfile>`.
-   - Clean up the temp file.
+   - Clean up the temp file after the command completes, whether it succeeded or failed.
 9. Show the release URL when done.
 
 ## Rules
@@ -88,9 +88,8 @@ This skill accepts optional arguments after `/release`:
 - Never create a tag or release without explicit user approval.
 - Never release if there are no new commits since the last tag.
 - Never release if the working tree is dirty. Run `git status` and warn if there are uncommitted changes.
-- Always write release notes to a temp file to avoid shell escaping issues.
+- Always write release notes to a temp file to avoid shell escaping issues. Clean up the temp file on both success and failure.
 - If the required CLI tool (`gh` or `glab`) is not installed, stop and tell the user.
-- Do not include `Co-authored-by` lines in the changelog.
 
 ## Related skills
 

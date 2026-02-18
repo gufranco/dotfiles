@@ -38,19 +38,19 @@ This skill accepts optional arguments after `/checks`:
      - GitHub: run `gh run list --branch <branch> --limit 5`.
      - GitLab: run `glab ci list --branch <branch>`.
      - If no pipelines exist either, say so and stop.
-4. Check the status of all pipeline checks:
+3. Check the status of all pipeline checks:
    - **With PR/MR:**
      - GitHub: run `gh pr checks`.
      - GitLab: run `glab ci status`.
    - **Without PR/MR (branch pipelines only):**
      - GitHub: run `gh run list --branch <branch> --limit 1` to find the latest run, then `gh run view <id>`.
      - GitLab: run `glab ci status`.
-5. If all checks pass, report success and stop.
-6. If checks are still running, wait with a timeout:
+4. If all checks pass, report success and stop.
+5. If checks are still running, wait with a timeout:
    - GitHub: run `gh pr checks --watch` (or `gh run watch <id>` for branch pipelines) with a 10-minute timeout.
    - GitLab: run `glab ci status --wait` with a 10-minute timeout.
    - If the timeout is reached, report that checks are still running and show the URL for the user to monitor manually.
-7. If any checks failed:
+6. If any checks failed:
    - **GitHub:**
      - Identify the failed check names from the output.
      - Run `gh run list --branch <branch> --limit 5` to find the run IDs.
@@ -64,7 +64,7 @@ This skill accepts optional arguments after `/checks`:
        - GitHub: `gh pr list --search "<failed check name>"`.
        - GitLab: `glab mr list --search "<failed check name>"`.
      - If an existing fix is found, report it and stop.
-8. Present the diagnosis using this format for each failure:
+7. Present the diagnosis using this format for each failure:
 
    ```
    ### <check name>
@@ -76,7 +76,7 @@ This skill accepts optional arguments after `/checks`:
    <the most relevant 10-20 lines from the failure log>
    ```
 
-9. After diagnosing, suggest next steps but do not automatically fix anything.
+8. After diagnosing, suggest next steps but do not automatically fix anything.
 
 ## Rules
 

@@ -296,8 +296,6 @@ Check if the branch is up to date with the base branch. If it is behind, ask the
 - Never review a PR/MR that is not open. Check the state before doing any work. If merged or closed, tell the user and stop immediately.
 - In local mode, never post comments anywhere. Present the review to the user only.
 - In local mode, if the review is clean, suggest the user run `/pr` to open the PR.
-- Do not include `Co-authored-by` lines in any comments.
-
 ## Related skills
 
 - `/pr` - Create or update the PR/MR being reviewed.

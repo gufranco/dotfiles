@@ -72,6 +72,7 @@ vim/plugged/
 vim/.backup/
 vim/.swp/
 vim/.undo/
+vim/undodir/
 coc/extensions/package-lock.json
 coc/extensions/node_modules/
 coc/extensions/db.json

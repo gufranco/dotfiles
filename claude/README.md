@@ -38,6 +38,8 @@ claude/
 Defined in `settings.json`:
 
 - **Output style**: `Explanatory`. Adds educational insight blocks before and after code, explaining implementation choices and codebase-specific patterns.
+- **Language**: `english`. Always respond in English regardless of input language.
+- **Effort level**: `high`. Maximum reasoning depth on every response. Override per-session with `/effortLevel medium` or `low` for faster, lighter interactions.
 - **Attribution**: disabled. No "Co-authored-by" lines in commits or PRs.
 - **Permissions**: broad pre-approved access covering file I/O (`Read`, `Write`, `Edit`), web access (`WebFetch`, `WebSearch`), skills, and ~100 bash commands across categories: version control, package managers, runtimes, build tools, containers, infrastructure, databases, dev tooling, shell utilities, search, networking, archives, data processing, process management, and macOS system commands. Only unusual or destructive operations require manual approval.
 
@@ -116,7 +118,7 @@ Creates a tagged release with an auto-generated changelog from conventional comm
 
 **Arguments**: no args for auto-detected version, a specific `<version>`, or `--dry-run`.
 
-Gathers remote URL, latest tag, and working tree status in parallel. Groups commits by type into sections: Features, Bug fixes, Performance, Breaking changes. Requires explicit approval before creating the tag and release.
+Gathers remote URL, latest tag, and working tree status in parallel. Groups commits by type into sections: Features, Bug fixes, Performance, Breaking changes. Runs tests, lint, and build if the project has them before proceeding. Requires explicit approval before creating the tag and release.
 
 ---
 
@@ -126,7 +128,7 @@ Detects the project's test runner and executes tests with coverage, linting, and
 
 **Arguments**: no args for full suite, file or pattern, `--coverage`, `--watch`, `--lint`, `--scan`, `--ci`.
 
-Auto-detects the package manager from lockfiles and the test runner from config files. Supports vitest, jest, mocha, pytest, cargo test, and go test. Lint mode runs eslint, golangci-lint, shellcheck, ruff, flake8, actionlint, or vint as appropriate. Scan mode uses trivy, snyk, and gitleaks. CI mode runs GitHub Actions locally with `act`.
+Auto-detects the package manager from lockfiles and the test runner from config files. Supports vitest, jest, mocha, pytest, cargo test, and go test. Lint mode runs eslint, golangci-lint, shellcheck, ruff, flake8, actionlint, or vint as appropriate. Scan mode uses trivy, snyk, and gitleaks (same scanning as `/deps scan`). CI mode runs GitHub Actions locally with `act`.
 
 ---
 
@@ -136,7 +138,7 @@ Audits dependencies for vulnerabilities and manages updates.
 
 **Arguments**: no args for audit, `outdated`, `update [package]`, `scan`, or `image <name>`.
 
-Detects the package manager automatically. Runs native audit commands, then deep scans with trivy, snyk, and gitleaks if installed. Docker image analysis uses trivy and dive. Shows vulnerabilities grouped by severity. Always asks approval before updating.
+Detects the package manager automatically. Runs native audit commands, then deep scans with trivy, snyk, and gitleaks if installed (same scanning as `/test --scan`). Docker image analysis uses trivy and dive. Shows vulnerabilities grouped by severity. Always asks approval before updating.
 
 ---
 

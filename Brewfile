@@ -167,6 +167,7 @@ brew 'zsh'
 ################################################################################
 # Homebrew casks
 ################################################################################
+# cask 'clickup'
 # cask 'orbstack'
 # cask 'proxyman'
 # cask 'raycast'
@@ -175,7 +176,6 @@ cask 'android-studio'
 cask 'balenaetcher'
 cask 'claude-code'
 cask 'cleanmymac'
-cask 'clickup'
 cask 'coconutbattery'
 cask 'codex-app'
 cask 'codex'

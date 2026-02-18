@@ -33,7 +33,7 @@ Arguments can be combined: `/pr --draft --base develop --reviewer alice --label 
 
 ## Steps
 
-1. **Gather initial context.** Run these three commands **in parallel**:
+1. **Gather initial context.** Run these commands **in parallel**:
    - `git status --porcelain` to check for uncommitted changes.
    - `git remote get-url origin` to detect the git platform.
    - `git branch --show-current` to get the current branch.
@@ -53,41 +53,41 @@ Arguments can be combined: `/pr --draft --base develop --reviewer alice --label 
    - Run `git fetch origin` to ensure the remote is up to date.
    - Run `git log --oneline origin/<base>..HEAD` to check for commits ahead of the base.
    - If there are no commits, say so and stop.
-7. **If the project has tests, lint, or build commands,** run them to verify the changes pass before pushing. If they fail, stop and tell the user.
-8. **Rebase on the base branch:**
+4. **If the project has tests, lint, or build commands,** run them to verify the changes pass before pushing. If they fail, stop and tell the user.
+5. **Rebase on the base branch:**
    - First, check if the branch has already been pushed: run `git rev-parse --abbrev-ref @{upstream}` to detect an upstream tracking branch.
    - Run `git rebase origin/<base>`.
    - If there are conflicts, run `git rebase --abort` to restore a clean state, then stop and tell the user to resolve conflicts manually.
    - If the rebase rewrote commits and the branch was already pushed, use `git push --force-with-lease` in the push step. This is the only acceptable force push scenario, since rebase rewrites history.
    - If the rebase was a fast-forward (no commits rewritten), a normal push is sufficient.
-9. **Check PR size and read the diff.** Run these two commands **in parallel**:
+6. **Check PR size and read the diff.** Run these two commands **in parallel**:
    - `git diff origin/<base>...HEAD --stat` for the stat summary.
    - `git diff origin/<base>...HEAD` for the full diff.
    - If the stat shows more than 400 lines changed, warn the user the PR is large. If over 1000, ask for confirmation.
    - If the full diff exceeds 2000 lines, rely on the stat output plus reading the most-changed files individually.
-10. **Self-review the diff:**
+7. **Self-review the diff:**
     - Scan the changes for common issues before creating the PR:
       - Debug statements: `console.log`, `debugger`, `print(`, `binding.pry`, `import pdb`.
       - TODO/FIXME/HACK comments that might be unintentional.
       - Accidentally committed files: `.env`, `.DS_Store`, `node_modules`, editor config.
       - Large binary files.
     - If any issues are found, list them and ask the user whether to proceed or fix first.
-12. **Extract issue references and check for UI changes** from the diff you already have. Do both at the same time:
+8. **Extract issue references and check for UI changes** from the diff you already have. Do both at the same time:
     - Check the branch name and commit messages for ticket/issue patterns like `PROJ-123`, `Fixes #123`, `Closes #`, `Refs #`.
     - Check if the diff touches frontend files (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.scss`, `.html`). If so, remind the user to include screenshots.
-13. **Push the branch to the remote:**
+9. **Push the branch to the remote:**
     - If no upstream exists, push with `git push -u origin <branch>`.
     - If upstream exists and rebase rewrote history, push with `git push --force-with-lease`.
     - Otherwise, push with `git push`.
-14. **Build the PR/MR title and description** following the format below.
-15. **Create or update the PR/MR:**
+10. **Build the PR/MR title and description** following the format below.
+11. **Create or update the PR/MR:**
     - Write the description to a temp file first to avoid shell escaping issues.
     - **Create (GitHub):** `gh pr create --title "<title>" --body-file <tmpfile>`. Add `--draft`, `--base`, `--reviewer`, `--assignee`, `--label` flags as provided.
     - **Create (GitLab):** `glab mr create --title "<title>" --description-file <tmpfile>`. Fall back to `--description "$(cat <tmpfile>)"` if `--description-file` is not supported. Add `--draft`, `--target-branch`, `--reviewer`, `--assignee`, `--label` flags as provided.
     - **Update (GitHub):** `gh pr edit <number> --title "<title>" --body-file <tmpfile>`. Add `--add-reviewer`, `--add-assignee`, `--add-label` if provided.
     - **Update (GitLab):** `glab mr update <number> --title "<title>" --description-file <tmpfile>`. Fall back to `--description "$(cat <tmpfile>)"` if `--description-file` is not supported.
     - Always clean up the temp file after the command completes, whether it succeeded or failed. Use a trap or finally block.
-16. **Show the PR/MR URL when done.**
+12. **Show the PR/MR URL when done.**
 
 ## PR Title
 
@@ -144,7 +144,6 @@ If issue references were found in the branch name or commits, add them at the en
 
 - Be concise and direct. No filler prose.
 - Use bullet points for lists.
-- Do not include `Co-authored-by` lines.
 - Do not hard-wrap lines. Let the markdown render naturally in the web UI.
 
 ## Rules

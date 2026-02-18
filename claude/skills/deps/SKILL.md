@@ -46,7 +46,7 @@ This skill accepts optional arguments after `/deps`:
    - npm: run `npm audit`.
    - pnpm: run `pnpm audit`.
    - yarn: run `yarn audit`.
-   - bun: run `bun audit` (if supported) or `npm audit` as fallback.
+   - bun: verify `bun audit` exists by running it. If not supported, fall back to `npm audit` only if npm is also available. If neither works, tell the user that bun does not yet support native auditing.
    - cargo: run `cargo audit` (verify with `which cargo-audit`, suggest installing if missing).
    - go: run `govulncheck ./...` (verify with `which govulncheck`, suggest installing if missing).
    - uv: run `uv pip audit` or fall back to `pip-audit`.
@@ -112,6 +112,6 @@ This skill accepts optional arguments after `/deps`:
 
 ## Related skills
 
-- `/test` - Run tests after updating dependencies to verify nothing broke.
+- `/test` - Run tests after updating dependencies to verify nothing broke. The `--scan` flag provides the same trivy/snyk/gitleaks scanning as `deps scan`.
 - `/commit` - Commit lockfile changes after updates.
 - `/docker` - Docker images can be scanned for vulnerabilities too.

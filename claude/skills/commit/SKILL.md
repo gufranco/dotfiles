@@ -37,7 +37,6 @@ This skill accepts optional arguments after `/commit`:
 3. For each group, in dependency order:
    - Stage only the relevant files using `git add <file1> <file2> ...`. Never use `git add -A` or `git add .`.
    - Commit following the message format below.
-   - If GPG signing fails, retry with `--no-gpg-sign`.
 4. After all commits, run `git status` and `git log --oneline` **in parallel** to verify clean tree and show summary.
 5. **Push to remote:**
    - If `--push` was passed, push immediately without asking.
@@ -113,7 +112,6 @@ Only when needed:
 - Never combine unrelated changes into a single commit.
 - Never use `git add -A` or `git add .`.
 - Never include files that contain secrets or credentials.
-- Never add `Co-authored-by` lines.
 - If there are no changes to commit, say so and stop.
 
 ## Related skills

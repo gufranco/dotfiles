@@ -24,9 +24,10 @@ Use the checklist in `reviewer-prompt.md` in this directory as a structured guid
 This skill accepts optional arguments after `/review`:
 
 - No arguments: review the PR/MR for the current branch. If no PR/MR exists, automatically fall back to local mode.
-- A PR/MR number (e.g. `123`): review that specific PR/MR.
-- A URL: review the PR/MR at that URL.
+- One or more PR/MR numbers (e.g. `123` or `123 456 789`): review those specific PRs/MRs sequentially.
+- One or more URLs: review the PRs/MRs at those URLs sequentially.
 - `--local`: skip PR lookup entirely and review the local branch diff against the base branch. Useful before opening a PR.
+- `--post`: automatically post the review as inline comments without asking for confirmation. Only applies to someone else's PR. Has no effect in local mode or on your own PR.
 
 ## Steps
 
@@ -34,6 +35,8 @@ This skill accepts optional arguments after `/review`:
    - `git remote get-url origin` to detect the git platform.
    - `git branch --show-current` to get the current branch.
    - Determine the CLI tool from the remote URL: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
+   - Parse flags: check if `--post` or `--local` was passed. Collect all remaining arguments as PR identifiers.
+   - **If multiple PRs were given**, process each one sequentially through steps 2-9 below. Complete the full review cycle for one PR before starting the next. Between PRs, print a separator line so the user can tell where one review ends and the next begins.
 2. **Determine the review mode (PR or local):**
    - If `--local` was passed, go directly to **local mode** (step 3B).
    - If a PR/MR number or URL was provided, look up that specific PR/MR:
@@ -100,7 +103,9 @@ This skill accepts optional arguments after `/review`:
 
     **Someone else's PR (`isOwnPR = false`):**
     - Do NOT offer to fix the code directly. You are a reviewer, not a co-author.
-    - Ask the user if they want to post the review as inline comments. If yes, post after explicit approval:
+    - If `--post` was passed: post the review as inline comments immediately after presenting it, without asking for confirmation.
+    - If `--post` was NOT passed: ask the user if they want to post the review as inline comments. If yes, post after explicit approval.
+    - When posting:
       - GitHub: use `gh api repos/{owner}/{repo}/pulls/{number}/reviews` with a JSON payload containing `event`, `body`, and `comments` array. Each comment has `path`, `line`, `side`, and `body`. Always post individual comments on the exact lines, never a single big comment. Use `REQUEST_CHANGES` as the event when there are issues, `APPROVE` when clean, or `COMMENT` for minor suggestions only.
       - GitLab: use `glab mr note <number>` for comments.
     - Each comment should include the issue, why it matters, and a code example showing the fix, so the author knows exactly what to do.
@@ -284,7 +289,7 @@ Check if the branch is up to date with the base branch. If it is behind, ask the
 - Always present the full review to the user before posting any comments.
 - Always post comments as individual inline comments on the exact lines where the change is needed. Never post a single big comment with everything.
 - Always include a code example in every comment that points out an issue. The developer should see exactly what the fix looks like.
-- Never post comments without explicit user approval.
+- Never post comments without explicit user approval, unless `--post` was passed.
 - Never approve a PR that has failing tests or lint errors.
 - Never approve a PR without evidence of tests passing and coverage percentage.
 - Never approve a PR whose branch is behind the base branch. Ask for rebase and fresh test evidence.

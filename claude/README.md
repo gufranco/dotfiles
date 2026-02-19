@@ -29,6 +29,7 @@ claude/
     docker/SKILL.md      # Container orchestration with Colima awareness
     env/SKILL.md         # Environment variable validation
     logs/SKILL.md        # Log viewing and analysis
+    morning/SKILL.md     # Start-of-day dashboard and standup prep
     scaffold/SKILL.md    # Boilerplate generation from existing patterns
     terraform/SKILL.md   # Terraform/OpenTofu workflows with safety gates
 ```
@@ -50,7 +51,7 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 **Root file covers:**
 
 - **Core checklist**: verify before acting, no secrets, fail fast, evidence required, safe defaults, single source of truth, explicit over implicit, reuse first.
-- **Writing style**: no em dashes, no parentheses in prose, no AI attribution. Write like a human colleague.
+- **Writing style**: no em dashes, no parentheses in prose, no AI attribution in own output. Write like a human colleague. AI attribution in other people's code is not flagged during reviews.
 - **Confidence**: 95%+ required before taking action. When uncertain, stop and ask. State trade-offs explicitly when multiple approaches exist. Ask one question at a time when blocked.
 - **Anti-hallucination**: never invent paths, signatures, APIs, or versions.
 - **Scope control**: one task at a time, ask before expanding, max 3-5 files.
@@ -94,9 +95,9 @@ Detects GitHub or GitLab from the remote URL. Fetches and rebases on the target 
 
 Reviews a pull request or local branch changes with rigorous, line-by-line analysis.
 
-**Arguments**: no args for current branch PR, a PR number, a URL, or `--local` to skip PR lookup.
+**Arguments**: no args for current branch PR, one or more PR numbers or URLs, `--local` to skip PR lookup, `--post` to auto-post without confirmation.
 
-Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Uses a 14-category checklist covering correctness, security, error handling, performance, concurrency, data integrity, API design, testing, code quality, naming, architecture, observability, dependencies, and documentation. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval.
+Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses a 14-category checklist covering correctness, security, error handling, performance, concurrency, data integrity, API design, testing, code quality, naming, architecture, observability, dependencies, and documentation. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
 
 **Verdicts**: APPROVE, REQUEST_CHANGES, or COMMENT. Defaults to REQUEST_CHANGES when in doubt.
 
@@ -181,6 +182,16 @@ Views and analyzes logs from Docker containers, log files, or process managers.
 **Arguments**: no args for recent logs, service or container name, `--level <level>`, `--since <time>`, `--grep <pattern>`.
 
 Detects Docker runtime and log sources in parallel. Supports Docker Compose services, standalone containers, pm2, and log files. Auto-detects JSON structured logs. Masks sensitive fields. Shows error count, frequency, and repeated patterns.
+
+---
+
+### /morning
+
+Start-of-day dashboard with open PRs, pending reviews, notifications, and standup prep.
+
+**Arguments**: no args for full briefing in the current repo, `--all` for cross-repo data, `--standup` for just yesterday's commits and today's pending items, `--review` to skip the briefing and jump straight to reviewing pending PRs.
+
+Enumerates all authenticated accounts on GitHub and GitLab, queries each one, and aggregates the results. Fetches your open PRs with CI, review, and merge status. Fetches PRs where you are requested as a reviewer, sorted by size (smallest first) to unblock teammates faster, with drafts filtered out. Pulls unread notifications grouped by type. Builds a standup summary from yesterday's commits grouped by branch, with Monday-aware weekend coverage. Checks local state for uncommitted changes, unpushed commits, and stale merged branches. After the briefing, if there are pending reviews, offers to review them all interactively: for each PR, runs the full `/review` checklist, presents the analysis, and asks whether to Post, Skip, or Stop. Account switching is handled automatically per PR and the original account is always restored.
 
 ---
 

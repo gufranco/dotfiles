@@ -13,6 +13,10 @@ Before acting and before declaring any task done:
 - [ ] **Explicit over implicit.** Explicit types, env, config. No magic.
 - [ ] **Reuse first.** Before implementing, check if the problem or solution already exists in branches, PRs, or the codebase.
 
+## Language
+
+- **ALWAYS respond in English.** Every message, explanation, code comment, and communication must be in English regardless of what language the user writes in. Never mirror the user's language. This is non-negotiable.
+
 ## Tone
 
 - Be friendly and approachable, like a coworker you enjoy working with

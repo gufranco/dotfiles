@@ -45,7 +45,7 @@ When implementing, debugging, or making decisions about a technology, check the 
 | Fiber | [llms.txt](https://docs.gofiber.io/llms.txt) | [llms-full.txt](https://docs.gofiber.io/llms-full.txt) |
 | Express.js | N/A | [4.x API](https://expressjs.com/en/4x/api.html) |
 | Rails | N/A | [Guides](https://guides.rubyonrails.org/) |
-| Django | N/A | [Docs](https://docs.djangoproject.com/en/5.1/) |
+| Django | N/A | [Docs](https://docs.djangoproject.com/en/stable/) |
 | FastAPI | N/A | [Docs](https://fastapi.tiangolo.com/) |
 | Flask | N/A | [Docs](https://flask.palletsprojects.com/en/stable/) |
 | Gin | N/A | [Docs](https://gin-gonic.com/docs/) |

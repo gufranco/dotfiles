@@ -6,7 +6,8 @@
 "   Ctrl+p        Files (fzf)          ,gf    Git files (fzf)
 "   ,f            Ripgrep search       ,b     Buffers (fzf)
 "   ,h            File history (fzf)   f      Jump to char (EasyMotion)
-"   Ctrl+h/j/k/l Window navigation
+"   Ctrl+h/j/k/l Window navigation    %      Jump to match (matchup)
+"   [%  ]%        Prev/next outer pair a% i%  Around/inside match
 "
 " Code (coc.nvim)
 "   gd            Go to definition     gr     References
@@ -27,14 +28,22 @@
 "   Ctrl+n        Multi-cursor         Y      Yank to EOL
 "   < / >         Indent (stays visual)
 "   Alt+j/k       Move line up/down
+"   ci,           Change in comma sep  da,    Delete argument
+"   cinb          Change in next block 2i)    Second inner parens
+"
+" Bracket pairs (unimpaired)
+"   [q ]q         Prev/next quickfix   [b ]b  Prev/next buffer
+"   [e ]e         Exchange line up/dn  [<Sp>  Add blank line above
+"   [n ]n         Prev/next conflict
 "
 " Git (signify + fugitive)
 "   :Git          Fugitive commands    [c ]c  Prev/next hunk
 "
 " Other
 "   ,s            Source vimrc         ,v     Edit vimrc
-"   ,r            Resize windows       Enter  Clear search hl
+"   ,u            Toggle undo tree     ,r     Resize windows
 "   :Wipeout      Close hidden bufs
+"   Search hl clears automatically (vim-cool)
 "
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Encoding
@@ -67,11 +76,14 @@ Plug 'ghifarit53/tokyonight-vim'
 Plug 'itchyny/lightline.vim'
 Plug 'ryanoasis/vim-devicons'
 Plug 'inside/vim-search-pulse'
+Plug 'romainl/vim-cool'
 Plug 'simeji/winresizer', { 'on': 'WinResizerStartResize' }
+Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
 
 " Language support
-Plug 'neoclide/coc.nvim', { 'branch': 'release', 'do': ':CocInstall coc-snippets coc-tsserver coc-prettier coc-eslint coc-css coc-lists coc-highlight coc-json' }
+Plug 'neoclide/coc.nvim', { 'branch': 'release' }
 Plug 'sheerun/vim-polyglot'
+Plug 'andymass/vim-matchup'
 
 " File management
 if isdirectory('/opt/homebrew/opt/fzf')
@@ -92,6 +104,8 @@ Plug 'sickill/vim-pasta'
 Plug 'mg979/vim-visual-multi', { 'branch': 'master' }
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
+Plug 'tpope/vim-unimpaired'
+Plug 'wellle/targets.vim'
 
 " Navigation
 Plug 'easymotion/vim-easymotion'
@@ -143,6 +157,7 @@ set undodir=~/.vim/undodir
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set cursorline
 set colorcolumn=80
+set number
 set relativenumber
 set list
 
@@ -162,10 +177,12 @@ endif
 try
   let g:tokyonight_style = 'night'
   let g:tokyonight_enable_italic = 1
+
   colorscheme tokyonight
-catch
+catch /^Vim\%((\a\+)\)\=:E185/
   colorscheme desert
 endtry
+
 set background=dark
 
 " Subtle indent guides and whitespace markers
@@ -211,12 +228,12 @@ noremap <Down> <NOP>
 noremap <Left> <NOP>
 noremap <Right> <NOP>
 
-" Clear search highlight
-nnoremap <CR> :nohlsearch<CR><CR>
+" Undo tree
+nnoremap <leader>u :UndotreeToggle<CR>
 
 " Source / edit vimrc
-nmap <Leader>s :source $MYVIMRC<CR>
-nmap <Leader>v :edit $MYVIMRC<CR>
+nnoremap <Leader>s :source $MYVIMRC<CR>
+nnoremap <Leader>v :edit $MYVIMRC<CR>
 
 " Make Y behave like D and C: yank to end of line
 nnoremap Y y$
@@ -254,8 +271,9 @@ augroup vimrc
   " Restore cursor position when reopening a file
   autocmd BufReadPost * if line("'\"") >= 1 && line("'\"") <= line("$") | execute "normal! g`\"" | endif
 
-  " Strip trailing whitespace on save
-  autocmd BufWritePre * let b:pos = getpos('.') | %s/\s\+$//e | call setpos('.', b:pos)
+  " Strip trailing whitespace on save (skip markdown and diff)
+  autocmd BufWritePre * if &filetype !~# 'markdown\|diff' |
+    \ let b:view = winsaveview() | %s/\s\+$//e | call winrestview(b:view) | endif
 
   " Refresh lightline on coc status changes
   autocmd User CocStatusChange,CocDiagnosticChange call lightline#update()
@@ -288,6 +306,17 @@ endfunction
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Coc
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:coc_global_extensions = [
+  \ 'coc-snippets',
+  \ 'coc-tsserver',
+  \ 'coc-prettier',
+  \ 'coc-eslint',
+  \ 'coc-css',
+  \ 'coc-lists',
+  \ 'coc-highlight',
+  \ 'coc-json',
+  \ ]
+
 inoremap <silent><expr> <c-space> coc#refresh()
 
 inoremap <silent><expr> <TAB>
@@ -350,4 +379,4 @@ nmap f <Plug>(easymotion-overwin-f)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " WinResizer
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <leader>r :WinResizerStartResize<CR>
+nnoremap <leader>r :WinResizerStartResize<CR>

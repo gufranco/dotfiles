@@ -40,7 +40,8 @@ This skill accepts optional arguments after `/release`:
    - Otherwise, parse the last tag as semver and bump based on commit types:
      - Any `BREAKING CHANGE` or `!` in type: bump major.
      - Any `feat`: bump minor.
-     - Only `fix`, `perf`, `refactor`, `chore`, `docs`, `style`, `test`, `build`, `ci`: bump patch.
+     - Any `fix`, `perf`, or `refactor`: bump patch.
+     - Only `chore`, `docs`, `style`, `test`, `build`, `ci`: no version bump. These do not affect the published artifact.
    - If the last tag is not semver, ask the user for the version.
 4. Generate the changelog by grouping commits by type:
 
@@ -70,7 +71,7 @@ This skill accepts optional arguments after `/release`:
    - List breaking changes in their own section with details from the commit body/footer.
 
 5. If `--dry-run` was passed, show the version and changelog and stop.
-6. **If the project has tests, lint, or build commands,** run them to verify everything passes before releasing. If they fail, stop and tell the user.
+6. **Verify the project is healthy.** Detect test, lint, and build commands using the same lockfile and config detection as `/test`. Run them. If they fail, stop and tell the user.
 7. Present the version and changelog to the user for approval before creating anything.
 8. After user approval:
    - Create an annotated tag: `git tag -a v<version> -m "v<version>"`.

@@ -47,9 +47,9 @@ This skill accepts optional arguments after `/checks`:
      - GitLab: run `glab ci status`.
 4. If all checks pass, report success and stop.
 5. If checks are still running, wait with a timeout:
-   - GitHub: run `gh pr checks --watch` (or `gh run watch <id>` for branch pipelines) with a 10-minute timeout.
-   - GitLab: run `glab ci status --wait` with a 10-minute timeout.
-   - If the timeout is reached, report that checks are still running and show the URL for the user to monitor manually.
+   - GitHub: run `timeout 600 gh pr checks --watch` (or `timeout 600 gh run watch <id>` for branch pipelines). The `timeout` command enforces the 10-minute limit since `gh` has no native timeout flag.
+   - GitLab: run `timeout 600 glab ci status --wait`.
+   - If the timeout is reached (exit code 124), report that checks are still running and show the URL for the user to monitor manually.
 6. If any checks failed:
    - **GitHub:**
      - Identify the failed check names from the output.

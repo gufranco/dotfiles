@@ -37,7 +37,7 @@ Flags can be combined: `/morning --all --review`.
    - Parse flags: check if `--all`, `--standup`, or `--review` was passed.
 
 2. **Enumerate all authenticated accounts.** Both `gh` and `glab` can have multiple accounts logged in simultaneously. Discover all of them and record which one is currently active so it can be restored at the end.
-   - **GitHub:** run `gh auth status --json hosts`. Parse the JSON to extract every account across all hosts. Each entry has `host`, `login`, and `active`. Record the currently active account (the one with `active: true`). Verify `gh` is installed with `which gh` before this step.
+   - **GitHub:** verify `gh` is installed with `which gh`. Run `gh auth status --json hosts`. If `--json` is not supported (older gh versions), fall back to parsing the plain text output of `gh auth status`. Extract every account across all hosts. Each entry has `host`, `login`, and `active`. Record the currently active account.
    - **GitLab:** run `glab auth status`. Parse the output to identify all logged-in instances and users. Record the currently active one. Verify `glab` is installed with `which glab`. If not installed, skip GitLab entirely.
    - Build a list of accounts to query. Example structure:
      ```
@@ -116,7 +116,7 @@ Flags can be combined: `/morning --all --review`.
 9. **Local repo state.** Quick health check of the working directory:
    - Uncommitted changes: from step 1's `git status` output. Show a summary (X files modified, Y untracked).
    - Unpushed commits on the current branch: `git log --oneline @{upstream}..HEAD 2>/dev/null`. If no upstream, note the branch hasn't been pushed.
-   - Stale local branches: `git branch --merged origin/HEAD 2>/dev/null` to find branches already merged into the default branch that could be cleaned up. Only mention this if there are 3 or more stale branches.
+   - Stale local branches: `git branch --merged origin/HEAD 2>/dev/null` to find branches already merged into the default branch that could be cleaned up. If `origin/HEAD` is not set, try `origin/main`, then `origin/master`. Only mention this if there are 3 or more stale branches.
 
 10. **Present the briefing.** Use this format:
 

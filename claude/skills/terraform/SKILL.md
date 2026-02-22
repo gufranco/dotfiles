@@ -32,7 +32,7 @@ This skill accepts optional arguments after `/terraform`:
 ## Steps
 
 1. **Detect the IaC tool and find the working directory.** Run these **in parallel**:
-   - `which terraform` and `which tofu` to find which tool is available. Prefer `terraform`, fall back to `tofu`. If neither is found, stop.
+   - `which terraform` and `which tofu` to find which tool is available. If both exist, check for `.terraform-version` or `.opentofu-version` files to determine preference. If no marker file, prefer `terraform`. If neither tool is found, stop.
    - If a path argument was provided, use that as the working directory. Otherwise, look for `.tf` files in the current directory, then one level down. If none found, ask the user.
 2. **Check the environment setup:**
    - If the working directory has a `.envrc` file, check if direnv is active with `direnv status`.
@@ -69,12 +69,14 @@ This skill accepts optional arguments after `/terraform`:
    - Ask for explicit approval before applying.
    - After approval, run `<tool> apply tfplan`.
    - Show the apply output and report success or failure.
+   - Clean up the `tfplan` file after successful apply.
    - If apply fails, show the error. Do not retry automatically.
 8. For **destroy** mode:
    - Run `<tool> plan -destroy -out=tfplan`.
    - Show all resources that would be destroyed.
    - Ask for explicit approval. Warn that this is destructive and irreversible.
    - After approval, run `<tool> apply tfplan`.
+   - Clean up the `tfplan` file after successful destroy.
    - Report what was destroyed.
 9. Show the current workspace info:
     - Run `<tool> workspace show` to display the active workspace.
@@ -93,7 +95,6 @@ This skill accepts optional arguments after `/terraform`:
 - Never display secret values from environment variables. Show variable names only.
 - If init fails (e.g. missing backend config), stop and show the error. Do not retry with different flags.
 - If the working directory has no `.tf` files, say so and stop.
-- Clean up `tfplan` files after successful apply.
 
 ## Related skills
 

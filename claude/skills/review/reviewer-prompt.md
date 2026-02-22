@@ -190,7 +190,7 @@ For every issue found, explain why it matters and provide a code example showing
 ## 12. Observability
 
 - [ ] Logging at appropriate levels? (ERROR for failures, WARN for handled-but-unexpected, INFO for business events)
-- [ ] Logs include `requestId` and enough context to trace the issue?
+- [ ] Logs include a correlation identifier (requestId, traceId, or similar) and enough context to trace the issue?
 - [ ] No sensitive data logged (passwords, tokens, PII)?
 - [ ] No logging inside tight loops?
 - [ ] Metrics or monitoring for new critical paths?

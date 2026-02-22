@@ -90,7 +90,7 @@ This skill accepts optional arguments after `/db`:
    - Knex: run `<pm> knex migrate:latest`.
    - Sequelize: run `<pm> sequelize-cli db:migrate`.
    - TypeORM: run `<pm> typeorm migration:run`.
-   - Drizzle: run `<pm> drizzle-kit push` or `drizzle-kit migrate`.
+   - Drizzle: run `<pm> drizzle-kit migrate` for migration-based workflows. Use `<pm> drizzle-kit push` only in dev/prototyping when the user explicitly asks to push schema directly without migration files.
    - Alembic: run `alembic upgrade head`.
    - Goose: run `goose up`.
    - Diesel: run `diesel migration run`.
@@ -139,12 +139,13 @@ This skill accepts optional arguments after `/db`:
 
 ## Standalone container details
 
-The user manages database containers via shell functions defined in `~/.dotfiles/zsh/infrastructure`. These containers use:
+The user manages database containers via shell functions defined in `~/.dotfiles/zsh/infrastructure`. See `/docker`'s "Standalone container conventions" section for the full pattern. These containers use:
 
 - **Volumes:** named Docker volumes for data persistence and bind mounts to `~/Docker/<Service>/` for file exchange.
 - **Ports:** bound to 127.0.0.1 only (postgres: 5432, mongo: 27017, redis: 6379, valkey: 7000).
 - **Health checks:** built-in health check commands (pg_isready, mongosh ping, redis-cli ping).
 - **Credentials:** postgres:postgres for PostgreSQL, mongo:mongo for MongoDB. Redis has no auth.
+- **Known services:** `mongo`, `postgres`, `redis`, `valkey`, `redict`.
 
 When suggesting shell functions, prefer them over raw docker commands because they handle all the configuration consistently.
 

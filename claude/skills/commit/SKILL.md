@@ -49,26 +49,7 @@ This skill accepts optional arguments after `/commit`:
 
 ## Commit Message Format
 
-Follow the conventional commit format from `git/.gitmessage`:
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-### Subject line
-
-- Type is required. Scope is optional but preferred when a clear module exists.
-- Imperative mood: "add" not "added" or "adds".
-- No capital first letter, no period at the end.
-- Max 50 characters. Make it descriptive enough to stand alone.
-
-### Body
-
-Choose the right level of detail based on the change:
+Follow the conventional commit format from `rules/git-workflow.md` and `git/.gitmessage`. The format, types, subject rules, body rules, and footer conventions are defined there. Below are examples showing how to choose the right level of detail:
 
 **Subject-only, no body:** when the change is simple and the subject says it all.
 

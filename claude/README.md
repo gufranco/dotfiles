@@ -78,7 +78,7 @@ Analyzes uncommitted changes and creates semantic commits following conventional
 
 **Arguments**: `--push` to push automatically after committing.
 
-Runs `git status`, `git diff`, `git diff --cached`, and `git log` in parallel to gather context. Groups related changes into logical commits. Follows the format `<type>(<scope>): <subject>` with types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Never uses `git add -A`, always stages specific files. After committing, asks whether to push to remote. Use `--push` to skip the question and push immediately.
+Runs `git status`, `git diff`, `git diff --cached`, and `git log` in parallel to gather context. Groups related changes into logical commits. Follows the commit format defined in `rules/git-workflow.md` and `git/.gitmessage`. Never uses `git add -A`, always stages specific files. After committing, asks whether to push to remote. Use `--push` to skip the question and push immediately.
 
 ---
 
@@ -110,7 +110,7 @@ Monitors CI/CD pipeline status and diagnoses failures.
 
 **Arguments**: no args for current branch, or a PR number.
 
-Detects the platform from the remote URL. Waits for checks with a 10-minute timeout. When checks fail, fetches logs in parallel and formats failures with check name, direct URL, error message, and log excerpt. Searches for existing fixes in branches and PRs before suggesting corrections.
+Detects the platform from the remote URL. Waits for checks with a 10-minute timeout using a `timeout 600` wrapper since `gh` has no native timeout flag. When checks fail, fetches logs in parallel and formats failures with check name, direct URL, error message, and log excerpt. Searches for existing fixes in branches and PRs before suggesting corrections.
 
 ---
 
@@ -120,7 +120,7 @@ Creates a tagged release with an auto-generated changelog from conventional comm
 
 **Arguments**: no args for auto-detected version, a specific `<version>`, or `--dry-run`.
 
-Gathers remote URL, latest tag, and working tree status in parallel. Groups commits by type into sections: Features, Bug fixes, Performance, Breaking changes. Runs tests, lint, and build if the project has them before proceeding. Requires explicit approval before creating the tag and release.
+Gathers remote URL, latest tag, and working tree status in parallel. Groups commits by type into sections: Features, Bug fixes, Performance, Breaking changes. Determines version bump from commit types: `feat` bumps minor, `fix`/`perf`/`refactor` bump patch, non-artifact types like `chore`/`docs`/`style`/`test`/`build`/`ci` skip the bump. Runs tests, lint, and build using the same detection as `/test` before proceeding. Requires explicit approval before creating the tag and release.
 
 ---
 
@@ -140,7 +140,7 @@ Audits dependencies for vulnerabilities and manages updates.
 
 **Arguments**: no args for audit, `outdated`, `update [package]`, `scan`, or `image <name>`.
 
-Detects the package manager automatically. Runs native audit commands, then deep scans with trivy, snyk, and gitleaks if installed (same scanning as `/test --scan`). Docker image analysis uses trivy and dive. Shows vulnerabilities grouped by severity. Always asks approval before updating.
+Detects the package manager automatically using the same lockfile detection order as `/test`. Runs native audit commands, then deep scans with trivy, snyk, and gitleaks if installed (same scanning as `/test --scan`). Docker image analysis uses trivy and dive. Shows vulnerabilities grouped by severity. Always asks approval before updating.
 
 ---
 
@@ -150,9 +150,9 @@ Manages database migrations, containers, and data operations.
 
 **Arguments**: no args for status, `migrate`, `rollback`, `create <name>`, `seed`, `reset`, `start`, `stop`, `terminal`.
 
-Detects container status, migration tool, and package manager in parallel. Supports Prisma, Knex, Sequelize, TypeORM, Drizzle, Alembic, Goose, and Diesel. Aware of standalone containers managed by shell functions like `postgres-start`, `mongo-init`, `redis-start`. Checks container health before migration operations. Requires explicit approval for rollback and reset.
+Detects container status, migration tool, and package manager in parallel. Supports Prisma, Knex, Sequelize, TypeORM, Drizzle, Alembic, Goose, and Diesel. Drizzle uses `migrate` for migration-based workflows and `push` only in dev/prototyping when explicitly requested. Aware of standalone containers managed by shell functions like `postgres-start`, `mongo-init`, `redis-start`, following `/docker`'s container conventions. Checks container health before migration operations. Requires explicit approval for rollback and reset.
 
-**Container defaults**: postgres on 127.0.0.1:5432 (postgres:postgres), mongo on :27017 (mongo:mongo), redis on :6379 (no auth), valkey on :7000.
+**Container defaults**: postgres on 127.0.0.1:5432 (postgres:postgres), mongo on :27017 (mongo:mongo), redis on :6379 (no auth), valkey on :7000, redict on :6379.
 
 ---
 
@@ -182,7 +182,7 @@ Views and analyzes logs from Docker containers, log files, or process managers.
 
 **Arguments**: no args for recent logs, service or container name, `--level <level>`, `--since <time>`, `--grep <pattern>`.
 
-Detects Docker runtime and log sources in parallel. Supports Docker Compose services, standalone containers, pm2, and log files. Auto-detects JSON structured logs. Masks sensitive fields. Shows error count, frequency, and repeated patterns.
+Detects Docker runtime and log sources in parallel. Supports Docker Compose services, standalone containers, pm2, and log files. Auto-detects JSON structured logs. Masks sensitive fields matching patterns like password, token, secret, authorization, credential, key, jwt, auth, apikey, access_token, refresh_token. Shows error count, frequency, and repeated patterns.
 
 ---
 
@@ -192,7 +192,7 @@ Start-of-day dashboard with open PRs, pending reviews, notifications, and standu
 
 **Arguments**: no args for full briefing in the current repo, `--all` for cross-repo data, `--standup` for just yesterday's commits and today's pending items, `--review` to skip the briefing and jump straight to reviewing pending PRs.
 
-Enumerates all authenticated accounts on GitHub and GitLab, queries each one, and aggregates the results. Fetches your open PRs with CI, review, and merge status. Fetches PRs where you are requested as a reviewer, sorted by size (smallest first) to unblock teammates faster, with drafts filtered out. Pulls unread notifications grouped by type. Builds a standup summary from yesterday's commits grouped by branch, with Monday-aware weekend coverage. Checks local state for uncommitted changes, unpushed commits, and stale merged branches. After the briefing, if there are pending reviews, offers to review them all interactively: for each PR, runs the full `/review` checklist, presents the analysis, and asks whether to Post, Skip, or Stop. Account switching is handled automatically per PR and the original account is always restored.
+Enumerates all authenticated accounts on GitHub and GitLab with fallback parsing for older `gh` versions, queries each one, and aggregates the results. Fetches your open PRs with CI, review, and merge status. Fetches PRs where you are requested as a reviewer, sorted by size (smallest first) to unblock teammates faster, with drafts filtered out. Pulls unread notifications grouped by type. Builds a standup summary from yesterday's commits grouped by branch, with Monday-aware weekend coverage. Checks local state for uncommitted changes, unpushed commits, and stale merged branches. After the briefing, if there are pending reviews, offers to review them all interactively: for each PR, runs the full `/review` checklist, presents the analysis, and asks whether to Post, Skip, or Stop. Account switching is handled automatically per PR and the original account is always restored.
 
 ---
 
@@ -212,7 +212,7 @@ Runs Terraform or OpenTofu workflows with safety checks and approval gates.
 
 **Arguments**: no args for validate + plan, `init`, `fmt`, `validate`, `plan`, `apply`, `destroy`, or a directory path.
 
-Detects terraform or tofu and the working directory in parallel. Checks direnv setup and Terraform-related environment variables. Always validates before planning, plans before applying. Saves plan files before apply. Requires explicit approval for apply and destroy. Displays the active workspace in all outputs.
+Detects terraform or tofu and the working directory in parallel, using `.terraform-version` or `.opentofu-version` files to determine preference when both are installed. Checks direnv setup and Terraform-related environment variables. Always validates before planning, plans before applying. Saves plan files before apply and cleans them up after. Requires explicit approval for apply and destroy. Displays the active workspace in all outputs.
 
 ## Review Checklist
 
@@ -229,6 +229,6 @@ The `/review` skill uses a 14-category checklist defined in `skills/review/revie
 9. **Code quality**: function size, single responsibility, DRY, no dead code, composition over inheritance, immutability.
 10. **Naming**: descriptive variables, verb-based functions, boolean prefixes, no misleading names.
 11. **Architecture**: follows existing patterns, appropriate coupling, no circular dependencies, externalized config.
-12. **Observability**: appropriate log levels, requestId in logs, no sensitive data logged, health checks.
+12. **Observability**: appropriate log levels, correlation identifier (requestId, traceId, or similar) in logs, no sensitive data logged, health checks.
 13. **Dependencies**: justified, maintained, pinned, license-compatible, size-appropriate.
 14. **Documentation**: PR description explains what and why, breaking changes documented, README updated, env vars in .env.example.

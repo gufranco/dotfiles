@@ -30,7 +30,7 @@ This skill accepts optional arguments after `/deps`:
 
 ## Steps
 
-1. Detect the package manager by checking for lockfiles in the current directory:
+1. Detect the package manager by checking for lockfiles in the current directory (same detection order as `/test`):
    - `bun.lock` or `bun.lockb`: use `bun`.
    - `pnpm-lock.yaml`: use `pnpm`.
    - `yarn.lock`: use `yarn`.
@@ -39,7 +39,8 @@ This skill accepts optional arguments after `/deps`:
    - `go.mod`: use `go`.
    - `pyproject.toml` with `uv.lock` or `[tool.uv]`: use `uv`.
    - `pyproject.toml` with `[tool.poetry]`: use `poetry`.
-   - `requirements.txt`: use `pip`.
+   - `pyproject.toml` or `requirements.txt`: use `pip`.
+   - `Makefile` or `Justfile`: check for audit/scan targets.
    - If none found, ask the user which package manager to use.
 2. Verify the package manager CLI is installed with `which <tool>`. If not installed, stop and tell the user.
 3. For **audit** mode (default):
@@ -49,7 +50,7 @@ This skill accepts optional arguments after `/deps`:
    - bun: verify `bun audit` exists by running it. If not supported, fall back to `npm audit` only if npm is also available. If neither works, tell the user that bun does not yet support native auditing.
    - cargo: run `cargo audit` (verify with `which cargo-audit`, suggest installing if missing).
    - go: run `govulncheck ./...` (verify with `which govulncheck`, suggest installing if missing).
-   - uv: run `uv pip audit` or fall back to `pip-audit`.
+   - uv: run `pip-audit` (verify with `which pip-audit`, suggest installing if missing).
    - poetry: run `poetry check` or `pip-audit`.
    - pip: run `pip-audit` (verify with `which pip-audit`, suggest installing if missing).
    - Parse the output and present a summary:

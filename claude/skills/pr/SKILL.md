@@ -53,7 +53,7 @@ Arguments can be combined: `/pr --draft --base develop --reviewer alice --label 
    - Run `git fetch origin` to ensure the remote is up to date.
    - Run `git log --oneline origin/<base>..HEAD` to check for commits ahead of the base.
    - If there are no commits, say so and stop.
-4. **If the project has tests, lint, or build commands,** run them to verify the changes pass before pushing. If they fail, stop and tell the user.
+4. **Verify the changes pass.** Detect test, lint, and build commands using the same lockfile and config detection as `/test`. Run them. If they fail, stop and tell the user.
 5. **Rebase on the base branch:**
    - First, check if the branch has already been pushed: run `git rev-parse --abbrev-ref @{upstream}` to detect an upstream tracking branch.
    - Run `git rebase origin/<base>`.

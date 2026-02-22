@@ -87,7 +87,7 @@ This skill accepts optional arguments after `/test`:
 6. For **`--ci`** mode:
    - Verify `act` is installed with `which act`.
    - If found, run `act --list` to show available workflows.
-   - Ask the user which workflow to run, or run the default push event with `act push --container-architecture linux/amd64`.
+   - Ask the user which workflow to run, or run the default push event with `act push --container-architecture linux/amd64`. The `--container-architecture` flag is needed because most GitHub Actions runners are amd64, even when running locally on ARM.
    - Note: this requires Docker to be running.
 7. Run the test command and capture the output.
 8. Parse the results:

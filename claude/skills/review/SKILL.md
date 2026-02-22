@@ -87,7 +87,7 @@ This skill accepts optional arguments after `/review`:
    - **Design:** Single responsibility respected? Coupling between modules appropriate? Dependencies flowing in the right direction? Composition over inheritance? Is this the simplest solution that works, or is it over/under-engineered?
    - **Testing:** Are the changes covered by meaningful tests? Do tests verify real behavior or just mock behavior? Are edge cases and error paths tested? Is the test structure clean (AAA pattern)? Are assertions specific enough to catch regressions?
    - **Consistency:** Does the code follow the existing patterns in the codebase? Is the style consistent with surrounding code? Are similar problems solved the same way?
-6. **If the project has tests, lint, or build commands,** run them locally to verify the changes pass. Report the results.
+6. **Run local verification.** Detect test, lint, and build commands using the same lockfile and config detection as `/test`. Run them and report the results.
 7. **Check branch freshness and test evidence.** Do both **in parallel**:
    - Verify the branch is up to date with the base branch. If behind, this is a blocking issue.
    - In PR mode: verify the PR includes evidence of tests passing with coverage percentage. If missing, this is a blocking issue.
@@ -301,6 +301,7 @@ Check if the branch is up to date with the base branch. If it is behind, ask the
 - Never review a PR/MR that is not open. Check the state before doing any work. If merged or closed, tell the user and stop immediately.
 - In local mode, never post comments anywhere. Present the review to the user only.
 - In local mode, if the review is clean, suggest the user run `/pr` to open the PR.
+
 ## Related skills
 
 - `/pr` - Create or update the PR/MR being reviewed.

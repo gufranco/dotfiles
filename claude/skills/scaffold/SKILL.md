@@ -54,7 +54,7 @@ This skill requires arguments after `/scaffold`:
    - Create the test file in the same location pattern as existing tests.
    - Use the provided name, converting case to match the project convention.
    - Include the same imports, base classes, decorators, and utility usage as existing files.
-   - Add placeholder implementations with `TODO` comments where business logic goes.
+   - Add placeholder implementations with `TODO` comments where business logic goes. These TODOs are intentional and expected to be resolved before the code is committed via `/pr`.
 6. Present all generated files to the user for review before writing:
    - Show each file's path and full content.
    - Ask for approval before creating any files.

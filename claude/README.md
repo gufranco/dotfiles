@@ -7,7 +7,7 @@ Personal Claude Code setup with custom skills, engineering guidelines, and proje
 ```
 claude/
   settings.json          # Permissions, attribution, and global settings
-  CLAUDE.md              # Core engineering rules (lean, ~135 lines)
+  CLAUDE.md              # Core engineering rules (lean, ~150 lines)
   rules/
     code-style.md        # Code conventions, comments, dependencies, backward compat
     testing.md           # Test philosophy, mock policy, AAA pattern, scenario planning
@@ -50,10 +50,11 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 
 **Root file covers:**
 
-- **Core checklist**: verify before acting, no secrets, fail fast, evidence required, safe defaults, single source of truth, explicit over implicit, reuse first.
-- **Writing style**: no em dashes, no parentheses in prose, no AI attribution in own output. Write like a human colleague. AI attribution in other people's code is not flagged during reviews.
-- **Confidence**: 95%+ required before taking action. When uncertain, stop and ask. State trade-offs explicitly when multiple approaches exist. Ask one question at a time when blocked.
-- **Anti-hallucination**: never invent paths, signatures, APIs, or versions.
+- **Core checklist**: verify before acting, no secrets, fail fast, evidence required, safe defaults, single source of truth, explicit over implicit, reuse first, performance first.
+- **Tone**: write like a coworker, not an assistant. Match conversation energy. Push back when something doesn't make sense. Explicit banned phrases list targeting common AI tells: filler openers, closers, hedges, transitions, and fluff adjectives.
+- **Writing style**: no em dashes, no parentheses in prose, no AI attribution in own output. Natural writing for all external output: vary structure, no parallel enumeration, no bold labels in prose, self-review before posting.
+- **Confidence**: never act on assumptions. Read every file before modifying. No "I think" or "probably" about code facts. Red flags list for when to stop and verify. Investigate or ask one question at a time when blocked.
+- **Anti-hallucination**: verify everything in the current session: file paths, import paths, function signatures, API shapes, CLI flags, versions, config, dependencies, env vars. Self-check every import and path reference before presenting code.
 - **Scope control**: one task at a time, ask before expanding, max 3-5 files.
 - **Mandatory verification**: run tests, lint, build before declaring done.
 - **Context compaction**: preserve modified files, test results, and user decisions.

@@ -29,9 +29,14 @@ case "$(uname)" in
     export PNPM_HOME="$HOME/Library/pnpm"
     __add_to_path "$PNPM_HOME"
 
+    # Rust
+    __add_to_path "$HOME/.cargo/bin"
+
+    # Java
     export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@17"
     __add_to_path "$JAVA_HOME/bin"
 
+    # Android
     export ANDROID_HOME="$HOME/Library/Android/sdk"
     __add_to_path "$ANDROID_HOME/platform-tools"
     __add_to_path "$ANDROID_HOME/emulator"

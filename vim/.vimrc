@@ -5,7 +5,8 @@
 " Navigation
 "   Ctrl+p        Files (fzf)          ,gf    Git files (fzf)
 "   ,f            Ripgrep search       ,b     Buffers (fzf)
-"   ,h            File history (fzf)   f      Jump to char (EasyMotion)
+"   ,h            File history (fzf)   ,t     Search TODOs/FIXMEs
+"   f             Jump to char (EasyMotion)
 "   Ctrl+h/j/k/l Window navigation    %      Jump to match (matchup)
 "   [%  ]%        Prev/next outer pair a% i%  Around/inside match
 "
@@ -84,6 +85,7 @@ Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
 Plug 'neoclide/coc.nvim', { 'branch': 'release' }
 Plug 'sheerun/vim-polyglot'
 Plug 'andymass/vim-matchup'
+Plug 'mechatroner/rainbow_csv', { 'for': 'csv' }
 
 " File management
 if isdirectory('/opt/homebrew/opt/fzf')
@@ -315,6 +317,8 @@ let g:coc_global_extensions = [
   \ 'coc-lists',
   \ 'coc-highlight',
   \ 'coc-json',
+  \ 'coc-sh',
+  \ 'coc-import-cost',
   \ ]
 
 inoremap <silent><expr> <c-space> coc#refresh()
@@ -367,6 +371,7 @@ nnoremap <silent> <leader>b :Buffers<CR>
 nnoremap <silent> <leader>f :Rg<CR>
 nnoremap <silent> <leader>gf :GFiles<CR>
 nnoremap <silent> <leader>h :History<CR>
+nnoremap <silent> <leader>t :Rg TODO\|FIXME\|HACK\|XXX<CR>
 let g:fzf_layout = { 'window': { 'width': 0.9, 'height': 0.6 } }
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

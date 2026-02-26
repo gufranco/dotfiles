@@ -133,9 +133,48 @@ Returns 200 only when all dependencies are reachable.
 - Span names should be descriptive: `POST /users`, `db.users.findById`, `queue.orders.publish`
 - Add relevant attributes to spans: `http.method`, `http.status_code`, `db.statement`, `db.system`
 
+## SLIs, SLOs, and SLAs
+
+Define reliability targets before building monitoring. Without them, alerts are arbitrary and incident response has no priority framework.
+
+| Term | What it is | Who defines it | Example |
+|------|-----------|----------------|---------|
+| SLI (Service Level Indicator) | A measurable signal of service health | Engineering | Request latency p99, error rate, availability percentage |
+| SLO (Service Level Objective) | A target value for an SLI | Engineering + Product | p99 latency < 200ms, availability > 99.9% per rolling 30 days |
+| SLA (Service Level Agreement) | A contractual promise to customers with consequences | Business | 99.95% uptime or credits issued |
+
+**Rules:**
+
+- Define SLIs first. Common: availability, latency (p50, p95, p99), error rate, throughput
+- SLOs must be based on SLIs, not gut feeling. Measure first, then set targets
+- SLOs should be slightly stricter than SLAs. If the SLA is 99.95%, the SLO might be 99.97%
+- **Error budget** = 100% minus SLO. A 99.9% SLO means 0.1% error budget, roughly 43 minutes of downtime per month. When the budget is spent, prioritize reliability over features
+
 ## Alerting Conventions
 
 - Alert on symptoms, not causes. "Error rate > 1%" not "CPU > 80%"
+- Tie alerts to SLO violations: "error budget burn rate exceeds 10x" is more actionable than a static threshold
 - Every alert must have a runbook link
 - Use severity levels: `critical` (pages immediately), `warning` (notify channel), `info` (dashboard only)
 - Include in alert: what is happening, which service, since when, link to dashboard
+- Review alert signal-to-noise ratio monthly. If an alert fires without requiring action, tune or remove it
+
+## Incident Response
+
+When production breaks:
+
+1. **Detect**: SLO breach triggers alert. Monitoring catches it before users do
+2. **Triage**: classify severity based on SLO impact. How much error budget is being burned?
+3. **Mitigate**: restore service first. Rollback, feature flag, redirect traffic. Root cause analysis comes later
+4. **Communicate**: update status page and stakeholders. Set expectations for resolution
+5. **Resolve**: fix the underlying issue after service is restored
+6. **Postmortem**: blameless review within 48 hours. Document what happened, timeline, root cause, what went well, what didn't, and action items with owners
+
+### Postmortem Template
+
+- **Summary**: one paragraph of what happened
+- **Impact**: duration, affected users, error budget consumed
+- **Timeline**: timestamped sequence of events from detection to resolution
+- **Root cause**: the actual cause, not the trigger
+- **Contributing factors**: what made detection or recovery slower
+- **Action items**: concrete tasks with owners and due dates. Not "be more careful"

@@ -87,7 +87,16 @@ GET /users?page=2&pageSize=20
 - Use URL path versioning: `/v1/users`
 - Major version only. Minor changes are backward compatible
 - Support at most two major versions simultaneously
-- Deprecation: announce in response headers with `Deprecation` and `Sunset` dates
+
+### Deprecation Lifecycle
+
+Deprecation is a process, not an event. Follow this sequence:
+
+1. **Announce**: add `Deprecation: true` and `Sunset: <date>` response headers. Include a `Link` header pointing to the replacement. Set the sunset date at least 6 months out for external APIs
+2. **Document**: update API docs, changelog, and migration guide. Explain what to use instead and how to migrate
+3. **Monitor**: track usage of the deprecated endpoint. Do not remove it while it still receives meaningful traffic
+4. **Warn**: return a `Warning` header or a `deprecated` field in the response body to make it visible to consumers who don't check headers
+5. **Remove**: only after traffic drops to near-zero or the sunset date passes. Return 410 Gone, not 404, so consumers know it was intentional
 
 ## Idempotency
 

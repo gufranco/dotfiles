@@ -9,7 +9,7 @@ claude/
   settings.json          # Permissions, hooks, statusline, MCP, and global settings
   CLAUDE.md              # Core engineering rules (lean, ~150 lines)
   rules/
-    code-style.md        # Code conventions, comments, dependencies, backward compat
+    code-style.md        # Code conventions, data safety gate, comments, dependencies
     testing.md           # Test philosophy, mock policy, AAA pattern, scenario planning
     git-workflow.md      # Commit format, branches, CI monitoring, PRs, rollbacks
     code-review.md       # Author guidelines, review style, documentation checks
@@ -17,6 +17,9 @@ claude/
     database.md          # Schema rules, query optimization, migrations, naming
     api-design.md        # REST conventions, error format, pagination, versioning
     observability.md     # Structured logging, metrics, tracing, health checks
+    resilience.md        # Error classification, retries, idempotency, deduplication, DLQs, back pressure, bulkhead, concurrency control
+    caching.md           # Cache strategies, invalidation, thundering herd, warming, sizing
+    distributed-systems.md # Consistency models, saga, outbox, distributed locking, event ordering, schema evolution
     debugging.md         # Systematic debugging process, multi-component tracing
     verification.md      # Verification-before-completion enforcement
     llm-docs.md          # LLM-optimized documentation references for common tech
@@ -31,7 +34,9 @@ claude/
     commit/SKILL.md      # Semantic commits from uncommitted changes
     pr/SKILL.md          # Pull request creation and updates
     review/SKILL.md      # Code review for PRs and local branches
-      reviewer-prompt.md # 14-category review checklist
+      reviewer-prompt.md # 15-category review checklist with expanded architecture checks
+    assessment/SKILL.md  # Architecture completeness audit (finds missing patterns, not bugs)
+      assessment-checklist.md # 15-category architecture assessment checklist
     checks/SKILL.md      # CI/CD pipeline monitoring and diagnosis
     release/SKILL.md     # Tagged releases with auto-generated changelogs
     test/SKILL.md        # Test runner detection and execution
@@ -105,14 +110,17 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 
 **Rules directory covers:**
 
-- **Code style** (`rules/code-style.md`): DRY, SOLID, KISS. Functions under 30 lines. Immutability. Comments policy. Dependencies management.
-- **Testing** (`rules/testing.md`): integration-first. Strict mock policy. AAA pattern. 80%+ coverage for new code. Test scenario planning with requirement traceability for non-trivial tasks.
+- **Code style** (`rules/code-style.md`): DRY, SOLID, KISS. Functions under 30 lines. No deep nesting (max 3 levels, guard clauses). Strong typing (no `any`, explicit types, strict mode). Immutability at every layer: pure functions, immutable objects/collections, state transitions that produce new state, append-only for audit data. Data safety gate: three mandatory questions (idempotent? atomic? duplicates?) before any mutation. Error classification gate: every catch must classify transient vs permanent. Comments policy. Dependencies management.
+- **Testing** (`rules/testing.md`): integration-first. Strict mock policy. AAA pattern. 80%+ coverage for new code. Deterministic tests: no time/random/network/shared-state dependencies, flaky test prevention with fix-or-delete policy. Test scenario planning with requirement traceability for non-trivial tasks.
 - **Git workflow** (`rules/git-workflow.md`): conventional commits, branch naming, CI/CD monitoring, PR creation, conflict resolution, rollback strategy.
-- **Code review** (`rules/code-review.md`): author guidelines, natural review comments, test evidence, documentation checks, pre-completion checklist.
-- **Security** (`rules/security.md`): secrets management, auth checklist, audit logging.
-- **Database** (`rules/database.md`): schema rules, query optimization, safe migrations, naming conventions.
-- **API design** (`rules/api-design.md`): REST conventions, status codes, error response format, pagination patterns, versioning, idempotency keys, rate limiting headers, bulk operations.
-- **Observability** (`rules/observability.md`): structured JSON logging, log levels, sensitive data masking, correlation IDs, metrics naming, health check endpoints, distributed tracing, alerting conventions.
+- **Code review** (`rules/code-review.md`): author guidelines, natural review comments, test evidence, documentation checks, technical debt classification and tracking, ADR (Architecture Decision Records) format and usage, pre-completion checklist.
+- **Security** (`rules/security.md`): secrets management, auth checklist with CSRF protection, access control (RBAC, IDOR prevention, default deny, least privilege), encryption (TLS in transit, platform-managed keys at rest, bcrypt/argon2 for passwords), data privacy (minimization, retention, right to erasure, consent, GDPR/LGPD compliance), supply chain security (lockfile integrity, typosquatting, dependency confusion, audit in CI), audit logging.
+- **Database** (`rules/database.md`): schema rules, query optimization, isolation levels (READ COMMITTED through SERIALIZABLE with decision guide), transactions and atomic writes, conditional writes with optimistic locking, access pattern design with timezone alignment trap for time-range queries, NoSQL key design, safe migrations, connection management, naming conventions.
+- **API design** (`rules/api-design.md`): REST conventions, status codes, error response format, pagination patterns, versioning with full deprecation lifecycle (announce, document, monitor, warn, remove), idempotency keys, rate limiting headers, bulk operations.
+- **Observability** (`rules/observability.md`): structured JSON logging, log levels, sensitive data masking, correlation IDs, metrics naming, health check endpoints, distributed tracing, SLI/SLO/SLA with error budgets, alerting tied to SLO violations, incident response process, blameless postmortem template.
+- **Resilience** (`rules/resilience.md`): error classification (transient vs permanent), retry strategies with exponential backoff and jitter, idempotency patterns at every layer (API, message handler, database, state machine), deduplication with durable stores, dead letter queue strategy with partial batch failure reporting, circuit breakers, timeout budgets, back pressure with load shedding priorities, bulkhead isolation per dependency, concurrency control with semaphores and worker pools.
+- **Caching** (`rules/caching.md`): cache-aside, write-through, write-behind, and read-through strategies with default recommendations. Invalidation methods (TTL, explicit, event-driven, versioned keys). Thundering herd prevention (lock-based recomputation, stale-while-revalidate, probabilistic early expiration, TTL jitter). Cache warming strategies. Sizing and eviction policies.
+- **Distributed systems** (`rules/distributed-systems.md`): monolith vs microservices decision guide (start monolith, extract only with concrete reason). Consistency models (strong, eventual, read-your-writes, causal) with default-to-weakest rule. Saga pattern with orchestration vs choreography decision guide and compensating action design. Outbox pattern with SQL example and delivery mechanisms (polling, CDC, log tailing). Distributed locking with fencing tokens. Event ordering and delivery guarantees (at-most-once, at-least-once, exactly-once). Schema evolution with backward/forward compatibility rules. Zero-downtime deployments (rolling, blue/green, canary, feature flags) with backward compatibility and graceful shutdown requirements.
 - **Debugging** (`rules/debugging.md`): systematic four-phase debugging process, multi-component tracing, common traps to avoid. Expands on the debugging approach in CLAUDE.md with specific techniques for reproduction, isolation, root cause analysis, and fix verification.
 - **Verification** (`rules/verification.md`): verification-before-completion enforcement. Gate function: identify what proves the claim, run it, read the output, verify it matches, only then claim done. Evidence requirements table for common claims. Covers partial completion reporting.
 - **LLM docs** (`rules/llm-docs.md`): curated `llms.txt` and `llms-full.txt` references for common technologies. Fetch official docs before relying on training data.
@@ -145,9 +153,19 @@ Reviews a pull request or local branch changes with rigorous, line-by-line analy
 
 **Arguments**: no args for current branch PR, one or more PR numbers or URLs, `--local` to skip PR lookup, `--post` to auto-post without confirmation.
 
-Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses a 14-category checklist covering correctness, security, error handling, performance, concurrency, data integrity, API design, testing, code quality, naming, architecture, observability, dependencies, and documentation. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
+Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses a 15-category checklist covering correctness, security, error handling, performance (including caching, time-range timezone alignment), concurrency (including bounded concurrency, distributed locking with fencing), data integrity (including schema evolution, append-only audit data), API design, testing, code quality (including immutability enforcement), naming, architecture (including consistency models, read-your-writes, outbox pattern), observability, dependencies, documentation, and resilience/fault tolerance (including saga/compensation, back pressure with load shedding, bulkhead isolation). Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
 
 **Verdicts**: APPROVE, REQUEST_CHANGES, or COMMENT. Defaults to REQUEST_CHANGES when in doubt.
+
+---
+
+### /assessment
+
+Architecture completeness audit for an implementation. Finds what's **missing**, not just what's wrong.
+
+**Arguments**: no args for changed files on current branch, a file or directory path, `--scope <description>` to focus the assessment.
+
+Unlike `/review` which checks diffs for correctness, `/assessment` reads the full implementation and identifies missing architectural patterns. Classifies the system type first (write path, read path, external dependencies, async processing, multi-service, variable load, data storage), then audits only the applicable categories. Uses a 15-category checklist: idempotency/deduplication, atomicity/transactions, error classification, caching, consistency models, back pressure/load management, bulkhead isolation, concurrency control, saga/outbox, event ordering/delivery guarantees, distributed locking, schema evolution, immutability, query optimization, and observability. Output is a structured gap analysis with PRESENT/MISSING/PARTIAL status per category, concrete code examples for every gap, and a ranked top-3 impact list. After the assessment, offers to implement the missing patterns.
 
 ---
 
@@ -283,19 +301,40 @@ Enables working on multiple tasks simultaneously using git worktrees. `init` cre
 
 ## Review Checklist
 
-The `/review` skill uses a 14-category checklist defined in `skills/review/reviewer-prompt.md`:
+The `/review` skill uses a 15-category checklist defined in `skills/review/reviewer-prompt.md`:
 
 1. **Correctness**: logic tracing, off-by-one, null handling, boolean logic, type coercion, regex, date/time, floating point, recursion termination.
 2. **Security**: injection (SQL, XSS, command, path traversal, SSRF, header, template), auth/authz, data exposure, cryptography.
-3. **Error handling**: meaningful catches, context in errors, async error handling, partial failure rollback.
-4. **Performance**: algorithmic complexity, N+1 queries, SELECT *, pagination, memory/IO, frontend re-renders.
-5. **Concurrency**: shared mutable state, TOCTOU bugs, missing await, fire-and-forget, deadlock potential.
-6. **Data integrity**: boundary validation, database constraints, safe migrations, UTC timestamps.
+3. **Error handling**: meaningful catches, context in errors, error classification (transient vs permanent), retry with backoff, async error handling, partial failure and batch failure reporting.
+4. **Performance**: algorithmic complexity, N+1 queries, SELECT *, pagination, conditional writes, time-range query design with timezone alignment, NoSQL key distribution, memory/IO, caching strategies and invalidation, thundering herd prevention, frontend re-renders.
+5. **Concurrency**: shared mutable state, TOCTOU bugs, missing await, fire-and-forget, deadlock potential, bounded concurrency (semaphore/worker pool), distributed locking with fencing tokens, event ordering and delivery guarantees.
+6. **Data integrity**: boundary validation, database constraints, safe migrations, UTC timestamps, append-only for audit data, schema evolution (backward/forward compatibility).
 7. **API design**: REST conventions, response consistency, pagination, error format, idempotency.
 8. **Testing**: branch coverage at 80%+, AAA pattern, specific assertions, no mocked internals, negative and boundary tests.
-9. **Code quality**: function size, single responsibility, DRY, no dead code, composition over inheritance, immutability.
+9. **Code quality**: function size, single responsibility, DRY, no dead code, composition over inheritance, immutability (pure functions, new state per transition, derived values via selectors).
 10. **Naming**: descriptive variables, verb-based functions, boolean prefixes, no misleading names.
-11. **Architecture**: follows existing patterns, appropriate coupling, no circular dependencies, externalized config.
+11. **Architecture**: follows existing patterns, appropriate coupling, no circular dependencies, externalized config, consistency model chosen explicitly, read-your-writes for user mutations, outbox pattern for cross-service event publishing.
 12. **Observability**: appropriate log levels, correlation identifier (requestId, traceId, or similar) in logs, no sensitive data logged, health checks.
 13. **Dependencies**: justified, maintained, pinned, license-compatible, size-appropriate.
 14. **Documentation**: PR description explains what and why, breaking changes documented, README updated, env vars in .env.example.
+15. **Resilience**: idempotent handlers with durable deduplication, conditional/atomic writes, DLQ with partial batch failure reporting, explicit timeouts on all external calls, circuit breakers for degraded services, saga with compensating actions and outbox, back pressure with load shedding by priority, bulkhead isolation per dependency.
+
+## Assessment Checklist
+
+The `/assessment` skill uses a 15-category architecture completeness checklist defined in `skills/assessment/assessment-checklist.md`:
+
+1. **Idempotency and deduplication**: every write safe to execute twice, guard per layer, durable dedup with TTL.
+2. **Atomicity and transactions**: related writes atomic, conditional writes prevent lost updates, short transaction scope.
+3. **Error classification**: every catch classifies transient/permanent/ambiguous, retry only transient with backoff+jitter.
+4. **Caching**: strategy explicit, invalidation chosen, TTL jitter, stampede prevention, warming, eviction.
+5. **Consistency model**: explicit choice (strong/eventual/read-your-writes/causal), weakest tolerable model used.
+6. **Back pressure and load management**: bounded queues, load shedding by priority, 10x traffic plan.
+7. **Bulkhead isolation**: separate pool per dependency, critical/non-critical workload separation.
+8. **Concurrency control**: bounded fan-out, worker pool sizing, per-unit timeout.
+9. **Saga and cross-service coordination**: compensating actions, outbox pattern, no dual writes.
+10. **Event ordering and delivery**: delivery guarantee explicit, per-entity ordering, out-of-order handling.
+11. **Distributed locking**: lease expiry, fencing tokens, stale write prevention.
+12. **Schema evolution**: backward/forward compatible, version field, no removed/renamed fields.
+13. **Immutability**: pure functions, const default, new state per transition, append-only audit data.
+14. **Query optimization**: no N+1, pagination, timezone-aware time ranges, database-level filtering.
+15. **Observability**: structured logging, correlation IDs, health checks, metrics, alerts on symptoms.

@@ -58,12 +58,16 @@ For every issue found, explain why it matters and provide a code example showing
 - [ ] Every `catch` block does something meaningful? No empty catches?
 - [ ] Caught errors include context: what operation failed, with what input, and why?
 - [ ] Error types distinguished? Not catching `Error` when only `ValidationError` is expected?
+- [ ] Errors classified as transient or permanent? Transient errors retried, permanent errors failed immediately?
+- [ ] Retry logic uses exponential backoff with jitter? No tight retry loops?
+- [ ] Max retry count and timeout budget defined? Retries don't run forever?
 - [ ] Async errors handled? No unhandled promise rejections? No missing `await`?
 - [ ] Error propagation consistent? Not mixing thrown exceptions with returned error codes in the same layer?
 - [ ] HTTP status codes correct for each error type? (400 for bad input, 401 for unauthed, 403 for forbidden, 404 for missing, 409 for conflict, 500 for unexpected)
 - [ ] Database errors wrapped with context before propagating?
 - [ ] External API errors handled with specific messages, not generic "something went wrong"?
 - [ ] Partial failure: if step 3 of 5 fails, are steps 1-2 rolled back or is the state consistent?
+- [ ] Batch processing: individual item failures reported without aborting the batch?
 - [ ] Errors in cleanup code (finally blocks, defer) handled separately?
 
 ## 4. Performance
@@ -80,15 +84,28 @@ For every issue found, explain why it matters and provide a code example showing
 - [ ] Pagination on list endpoints? Default and maximum page size set?
 - [ ] New queries have appropriate indexes? Check `WHERE`, `JOIN`, and `ORDER BY` columns.
 - [ ] Transactions used where multiple writes must be atomic?
+- [ ] Writes use conditional expressions or optimistic locking to prevent lost updates?
+- [ ] Time-range queries designed for the partition/index structure? No full table scans for date ranges?
+- [ ] NoSQL key design distributes writes evenly? No hot partitions?
 - [ ] Connection pooling configured? No connection leak (opening without closing)?
 
 ### Memory and I/O
 - [ ] No unbounded data loaded into memory? Streams used for large files?
 - [ ] No allocations inside hot loops (object creation, string concatenation)?
 - [ ] File handles, connections, and streams closed after use?
-- [ ] Caching used where appropriate? Cache invalidation correct?
 - [ ] No synchronous I/O in async code paths?
 - [ ] HTTP requests to external services have timeouts configured?
+
+### Caching
+- [ ] Reads from slow or expensive sources: is caching considered? If caching, is the strategy explicit (cache-aside, write-through, read-through)?
+- [ ] Cache invalidation strategy chosen and documented? Not relying on "it will expire eventually" for data users expect to see updated immediately?
+- [ ] TTL set with jitter to prevent synchronized expiration (thundering herd)?
+- [ ] Popular cache keys protected from stampede (lock-based recomputation or stale-while-revalidate)?
+- [ ] Cache warming strategy for cold starts after deploy?
+
+### Time-range queries
+- [ ] Time-range queries account for timezone misalignment? Not assuming all consumers are in UTC?
+- [ ] Daily partitions or bucketing: does the query work when the user's "day" crosses UTC day boundaries?
 
 ### Frontend-specific (if applicable)
 - [ ] No unnecessary re-renders? Dependencies in `useEffect`/`useMemo`/`useCallback` correct?
@@ -105,8 +122,11 @@ For every issue found, explain why it matters and provide a code example showing
 - [ ] No fire-and-forget async calls that should be awaited or at least have error handlers?
 - [ ] Database operations that must be atomic wrapped in transactions?
 - [ ] Idempotency: can the same operation run twice without causing problems?
-- [ ] Event ordering: does the code depend on events arriving in a specific order that isn't guaranteed?
+- [ ] Event ordering: does the code depend on events arriving in a specific order that isn't guaranteed? If so, is ordering enforced (partition key, sequence number)?
+- [ ] Delivery guarantees explicit? At-least-once with idempotent consumers, or at-most-once for non-critical paths?
 - [ ] No deadlock potential from acquiring multiple locks?
+- [ ] Bounded concurrency: fan-out operations limited by semaphore or worker pool? No unbounded `Promise.all` over large arrays?
+- [ ] Distributed locks (if used): lease expiry set? Fencing tokens used to prevent stale writes after lease expiry?
 
 ## 6. Data Integrity
 
@@ -117,6 +137,8 @@ For every issue found, explain why it matters and provide a code example showing
 - [ ] Soft delete used where audit trail matters?
 - [ ] Timestamps in UTC? `created_at` and `updated_at` present on new tables?
 - [ ] Enum values stored as strings, not integers that break when reordered?
+- [ ] Audit-sensitive data append-only (versioned rows) instead of in-place updates?
+- [ ] Event/message schemas backward and forward compatible? No removed or renamed fields without migration?
 
 ## 7. API Design (if applicable)
 
@@ -161,7 +183,8 @@ For every issue found, explain why it matters and provide a code example showing
 - [ ] No dead code, commented-out code, or leftover debug statements?
 - [ ] Dependencies flow inward? Business logic does not import framework-specific modules?
 - [ ] Composition over inheritance?
-- [ ] Immutability preferred? Arguments and shared state not mutated when a copy is feasible?
+- [ ] Immutability preferred? Arguments not mutated, new values returned instead of in-place modification?
+- [ ] State transitions produce new state, never mutate the previous? Derived values computed from state, not cached as mutable fields?
 - [ ] Side effects isolated and explicit?
 - [ ] No over-engineering? No unnecessary abstractions, factories, or patterns for a single use case?
 - [ ] No under-engineering? No inline SQL strings, no god functions, no 500-line files?
@@ -186,6 +209,9 @@ For every issue found, explain why it matters and provide a code example showing
 - [ ] Configuration externalized? No environment-specific behavior hardcoded?
 - [ ] Feature flags or gradual rollout for risky changes?
 - [ ] Backward compatible with existing callers? Migration path for breaking changes?
+- [ ] Consistency model chosen explicitly? Strong only where required (finance, auth, inventory), eventual elsewhere?
+- [ ] Read-your-writes: after a user mutates data, can they immediately see their own change?
+- [ ] Cross-service data flow: dual writes avoided? Using outbox pattern or CDC for reliable event publishing?
 
 ## 12. Observability
 
@@ -213,3 +239,51 @@ For every issue found, explain why it matters and provide a code example showing
 - [ ] New env vars documented in `.env.example`?
 - [ ] PR scope focused? One logical change, not a grab-bag of unrelated fixes?
 - [ ] Commit history clean and logical?
+
+## 15. Resilience and Fault Tolerance
+
+### Idempotency and deduplication
+- [ ] Can any handler receive the same input twice (network retry, queue redelivery, Lambda retry)? If yes, what prevents duplicate side effects?
+- [ ] Write operations use conditional expressions, upserts, or deduplication keys to prevent duplicates?
+- [ ] Deduplication state is durable (database, not in-memory)? Survives restarts?
+- [ ] Deduplication window (TTL) exceeds the maximum retry/redelivery time?
+- [ ] Idempotency keys supported on mutation endpoints?
+
+### Error classification and retries
+- [ ] Errors classified as transient or permanent at the boundary where they originate?
+- [ ] Only transient errors retried? Permanent errors fail immediately without wasting retry budget?
+- [ ] Retry uses exponential backoff with jitter? No tight loops or fixed delays?
+- [ ] Max retry count and total timeout budget defined?
+
+### Async processing
+- [ ] Every queue consumer and event handler has a dead letter queue configured?
+- [ ] Partial batch failures reported per-item? (e.g., `ReportBatchItemFailures` for SQS/Lambda)
+- [ ] DLQ depth monitored with alerts?
+- [ ] A reprocessing path exists for DLQ messages?
+- [ ] Message visibility timeout aligned with expected processing time?
+
+### Timeouts and external calls
+- [ ] Every HTTP request, database query, and external call has an explicit timeout?
+- [ ] Timeouts are not default values? Set based on actual expected latency?
+- [ ] Circuit breaker or fallback for calls to degraded external services?
+
+### Atomic operations
+- [ ] Multiple writes that must succeed together are in a transaction or use `TransactWriteItems`?
+- [ ] Single-item writes use conditional expressions to prevent lost updates?
+- [ ] Multi-step workflows handle partial failure with rollback or compensating actions?
+
+### Saga and cross-service transactions
+- [ ] Business transactions spanning multiple services: using saga pattern with explicit compensating actions for each step?
+- [ ] Compensating actions idempotent? (compensation may be retried)
+- [ ] Saga state persisted durably? Can resume after a crash?
+- [ ] Saga timeout defined? Compensation triggered if not completed within the window?
+- [ ] Database write + event publish: using outbox pattern (single transaction) instead of dual write?
+
+### Back pressure and load management
+- [ ] Every in-memory queue and channel has a max size? Behavior defined for when full (reject, drop, block)?
+- [ ] Service has a plan for 10x traffic? Load shedding by request priority (critical > important > deferrable)?
+- [ ] Overload responses include `Retry-After` header?
+
+### Bulkhead isolation
+- [ ] Separate connection pool per external dependency? One slow dependency cannot exhaust the shared pool?
+- [ ] Critical and non-critical workloads isolated (separate processes, queues, or deployments)?

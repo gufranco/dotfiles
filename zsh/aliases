@@ -15,6 +15,17 @@ if command -v fzf > /dev/null && command -v bat > /dev/null; then
 fi
 
 ################################################################################
+# Modern tool replacements
+################################################################################
+__alias_if_exists bat cat "command bat"
+__alias_if_exists dust du "command dust"
+__alias_if_exists duf df "command duf"
+__alias_if_exists procs ps "command procs"
+__alias_if_exists btm top "command btm"
+__alias_if_exists nvim vim "command nvim"
+__alias_if_exists nvim vi "command nvim"
+
+################################################################################
 # eza / ls
 ################################################################################
 if command -v eza > /dev/null; then
@@ -88,9 +99,7 @@ case "$(uname)" in
     # Multiple Cursor profiles
     # __alias_if_exists cursor cursor-onyx "command cursor --user-data-dir=$HOME/.cursor-onyx --extensions-dir=$HOME/.cursor-onyx/extensions"
 
-    # Modern tool replacements
-    __alias_if_exists sd sed "command sd"
-    __alias_if_exists br tree "command br"
+    # macOS-specific tool replacements
     __alias_if_exists tokei stats "command tokei"
     __alias_if_exists gping ping "command gping"
     ;;

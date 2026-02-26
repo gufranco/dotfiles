@@ -1,0 +1,13 @@
+# Yazi - https://yazi-rs.github.io
+# Symlinked to ~/.config/yazi/yazi.toml
+
+[manager]
+show_hidden = true
+sort_by = "natural"
+sort_dir_first = true
+linemode = "size"
+
+[opener]
+edit = [
+  { run = 'vim "$@"', block = true, for = "unix" },
+]

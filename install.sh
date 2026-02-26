@@ -789,10 +789,18 @@ fi
 log_info "Setting up K9s..."
 mkdir -p "$HOME/.config/k9s"
 safe_link "$HOME/.dotfiles/k9s/config.yml" "$HOME/.config/k9s/config.yml"
+safe_link "$HOME/.dotfiles/k9s/skins" "$HOME/.config/k9s/skins"
 if [ "$(uname)" = "Darwin" ]; then
   mkdir -p "$HOME/Library/Application Support/k9s"
   safe_link "$HOME/.dotfiles/k9s/config.yml" "$HOME/Library/Application Support/k9s/config.yml"
+  safe_link "$HOME/.dotfiles/k9s/skins" "$HOME/Library/Application Support/k9s/skins"
 fi
+
+############################################################################
+# Yazi
+############################################################################
+log_info "Setting up Yazi..."
+safe_link "$HOME/.dotfiles/yazi" "$HOME/.config/yazi"
 
 ############################################################################
 # Claude Code

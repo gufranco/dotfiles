@@ -1,6 +1,6 @@
 # Dotfiles
 
-Personal dotfiles configuration for macOS and Linux systems. This repository contains configuration files for various development tools, terminal applications, and system utilities.
+Personal dotfiles for macOS and Linux. All configs live in `~/.dotfiles/` and are symlinked into place by `install.sh`.
 
 ## Quick Start
 
@@ -12,208 +12,156 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 
 ```
 .dotfiles/
-├── .cursor/              # Cursor IDE engineering rules (submodule)
-├── bat/                  # Bat (cat replacement) configuration
-├── bottom/               # Bottom (btm) system monitor configuration
-├── cmus/                 # Cmus music player configuration
-├── conky/                # Conky system monitor configuration
-├── curl/                 # Curl configuration
-├── eza/                  # eza (ls replacement) configuration
-├── fd/                   # fd (find replacement) configuration
-├── gh/                   # GitHub CLI (gh) configuration
-├── ghostty/              # Ghostty terminal configuration
-├── git/                  # Git configuration and hooks
-├── glab/                 # GitLab CLI (glab) configuration
-├── gnupg/                # GPG configuration and public keys
-├── htop/                 # htop configuration
-├── k9s/                  # K9s (kubectl TUI) configuration
-├── kitty/                # Kitty terminal configuration
-├── lazydocker/           # Lazydocker (Docker TUI) configuration
-├── lazygit/              # Lazygit configuration
-├── mailcap/              # Mailcap configuration
-├── mutt/                 # Neomutt email client configuration
-├── nodejs/               # Node.js, npm, yarn, pnpm configuration
-├── readline/             # Readline configuration
-├── ripgrep/              # Ripgrep configuration
-├── ssh/                  # SSH configuration and public keys
-├── tealdeer/             # Tealdeer (tldr) configuration
-├── telnet/               # Telnet configuration
+├── bat/                  # Bat (cat replacement) config + Tokyo Night theme
+├── bottom/               # Bottom (btm) system monitor, Tokyo Night styled
+├── claude/               # Claude Code: rules, skills, hooks, MCP
+├── cmus/                 # cmus music player
+├── conky/                # Conky system monitor (Linux)
+├── curl/                 # Curl config
+├── eza/                  # eza (ls replacement) config
+├── fd/                   # fd (find replacement) config
+├── gh/                   # GitHub CLI config
+├── ghostty/              # Ghostty terminal + Tokyo Night theme
+├── git/                  # Git config, hooks, message template
+├── glab/                 # GitLab CLI config
+├── gnupg/                # GPG config and public keys
+├── htop/                 # htop config (Broken Gray scheme)
+├── k9s/                  # K9s config + Tokyo Night skin
+│   └── skins/            # K9s skin files
+├── kitty/                # Kitty terminal + Tokyo Night theme
+├── lazydocker/           # Lazydocker config, Tokyo Night borders
+├── lazygit/              # Lazygit config, Tokyo Night theme
+├── mailcap/              # Mailcap config
+├── mutt/                 # Neomutt email client
+├── nodejs/               # npm, yarn, pnpm configs
+├── readline/             # Readline config
+├── ripgrep/              # Ripgrep config
+├── ssh/                  # SSH config and public keys
+├── tealdeer/             # Tealdeer (tldr) config, Tokyo Night colors
+├── telnet/               # Telnet config
 ├── themes/               # Terminal themes (iTerm2, Tilix)
-├── tilix/                # Tilix terminal configuration
-├── tmux/                 # Tmux configuration and plugins
-├── vim/                  # Vim/Neovim configuration
-├── wget/                 # Wget configuration
-├── zsh/                  # Zsh configuration, aliases, functions
-├── Brewfile              # Homebrew packages list (macOS)
+├── tilix/                # Tilix terminal config
+├── tmux/                 # Tmux config and plugins
+├── vim/                  # Vim/Neovim config and plugins
+├── wget/                 # Wget config
+├── yazi/                 # Yazi file manager + Tokyo Night theme
+├── zsh/                  # Zsh: aliases, functions, settings, paths
+├── Brewfile              # Homebrew packages (macOS)
 ├── install.sh            # Installation script
-└── README.md             # This file
+└── README.md
 ```
 
-## Features
+## Tokyo Night Theme
 
-### Shell Configuration (Zsh)
-- Oh My Zsh with custom plugins
-- Spaceship prompt theme
-- direnv hook (per-directory env via `.envrc`)
-- zoxide hook (smarter `cd` by frequency)
-- Custom aliases and functions
-- Utility functions for system management
-- Infrastructure helpers (Docker, VMs)
+All tools that support custom colors use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) "Night" variant for a consistent look across the entire terminal environment.
 
-### Development Tools
-- **Git**: Comprehensive configuration with aliases, hooks, and templates
-- **GitHub CLI (gh)**: Defaults (ssh, vim, delta) in `gh/config.yml`
-- **GitLab CLI (glab)**: Defaults (ssh, vim, delta) in `glab/config.yml`
-- **Vim/Neovim**: Custom configuration with plugins
-- **Node.js**: Configuration for npm, yarn, and pnpm
-- **Cursor IDE**: Engineering rules and best practices (via submodule)
+| Tool | How |
+|------|-----|
+| Ghostty | Custom theme file (`ghostty/themes/tokyo-night`) |
+| Kitty | Custom theme file (`kitty/themes/tokyo-night.conf`) |
+| Tilix | Exported color scheme (`tilix/tokyonight-night-tilix.json`) |
+| Bat | Theme in `bat/themes/` |
+| Vim | `tokyonight-vim` plugin |
+| Tmux | Tokyo Night Revamped plugin |
+| Bottom | `[styles]` section in `bottom/bottom.toml` |
+| K9s | Skin file in `k9s/skins/tokyo-night.yaml` |
+| Lazygit | `gui.theme` in `lazygit/config.yml` |
+| Lazydocker | Theme colors in `lazydocker/config.yml` |
+| Tealdeer | `[style.*]` RGB values in `tealdeer/config.toml` |
+| Yazi | Full theme in `yazi/theme.toml` |
+| fzf | `FZF_DEFAULT_OPTS --color` in `zsh/settings` |
+| nnn | `NNN_FCOLORS` palette indices in `zsh/settings` |
+| htop | `color_scheme=6` (Broken Gray, darkest built-in; no custom hex support) |
 
-### Terminal Applications
-- **Kitty**: Terminal emulator configuration
-- **Ghostty**: Terminal emulator configuration (Tokyo Night, JetBrains Mono Nerd Font)
-- **Tmux**: Session management with TPM plugins
-- **Bat**: Syntax highlighting for cat
-- **eza**: Modern ls replacement
-- **Ripgrep**: Fast text search
-- **fd**: Fast find replacement
-- **Lazygit**: Git TUI (`lazygit/config.yml`)
-- **Lazydocker**: Docker TUI (`lazydocker/config.yml`)
-- **K9s**: kubectl TUI (`k9s/config.yml`)
-- **Bottom (btm)**: System monitor TUI (`bottom/bottom.toml`)
-- **Tealdeer (tldr)**: Simplified man pages (`tealdeer/config.toml`)
+## Modern Tool Replacements
 
-### System Tools
-- **htop**: Process monitoring configuration
-- **Bottom (btm)**: TUI system monitor
-- **Conky**: System monitor configuration
-- **GPG**: Key management and agent configuration
-- **SSH**: Configuration and key management
+These aliases are defined in `zsh/aliases` and only activate when the modern tool is installed:
 
-### Email
-- **Neomutt**: Email client configuration with multiple account support
+| Alias | Points to | Replaces |
+|-------|-----------|----------|
+| `cat` | `bat` | Syntax-highlighted file viewer, plain output when piped |
+| `ls` | `eza` | Icons, git status, tree view via `lt` |
+| `cd` | `zoxide` | Frecency-based directory jumping, falls back to regular cd |
+| `du` | `dust` | Visual disk usage with tree output |
+| `df` | `duf` | Modern disk free with color output |
+| `ps` | `procs` | Process viewer with tree and color |
+| `top` | `btm` | Bottom system monitor TUI |
+| `vim`/`vi` | `nvim` | Neovim |
+| `ping` | `gping` | Graphical ping (macOS only) |
+| `stats` | `tokei` | Code statistics (macOS only) |
+
+GNU coreutils, findutils, grep, sed, tar, make, and other GNU tools override their BSD counterparts via PATH priority in `zsh/paths`.
+
+## Shell Configuration
+
+Zsh with Oh My Zsh, Spaceship prompt, and these integrations:
+
+- **direnv**: per-directory env via `.envrc`
+- **zoxide**: replaces `cd` with frecency matching (`zoxide init zsh --cmd cd`)
+- **fzf**: fuzzy finder with bat preview and Tokyo Night colors
+- **fzf-tab**: tab completion through fzf
+- **zsh-syntax-highlighting**: fish-like command highlighting
+
+## Symlink Map
+
+All files are symlinked by `install.sh` using `safe_link`. Key mappings:
+
+| Source | Target |
+|--------|--------|
+| `zsh/.zshrc` | `~/.zshrc` |
+| `git/.gitconfig` | `~/.gitconfig` |
+| `vim` | `~/.vim` |
+| `vim/.vimrc` | `~/.vimrc` |
+| `tmux/.tmux.conf` | `~/.tmux.conf` |
+| `ghostty` | `~/.config/ghostty` |
+| `kitty/kitty.conf` | `~/.config/kitty/kitty.conf` |
+| `bat/config` | `~/.config/bat/config` |
+| `eza` | `~/.config/eza` |
+| `yazi` | `~/.config/yazi` |
+| `bottom/bottom.toml` | `~/.config/bottom/bottom.toml` |
+| `lazygit/config.yml` | `~/.config/lazygit/config.yml` |
+| `lazydocker/config.yml` | `~/.config/lazydocker/config.yml` |
+| `k9s/config.yml` | `~/.config/k9s/config.yml` |
+| `k9s/skins` | `~/.config/k9s/skins` |
+| `tealdeer/config.toml` | `~/.config/tealdeer/config.toml` |
+| `htop/htoprc` | `~/.config/htop/htoprc` |
+| `gh/config.yml` | `~/.config/gh/config.yml` |
+| `glab/config.yml` | `~/.config/glab-cli/config.yml` |
+| `gnupg` | `~/.gnupg` |
+| `ssh` | `~/.ssh` |
+| `claude` | `~/.claude` |
+
+On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Library/Application Support/`.
 
 ## Installation
 
-The installation script supports both macOS and Linux (Ubuntu/Debian).
-
 ### macOS
 
-The script will:
-1. Install Homebrew (if not present)
-2. Install packages from `Brewfile`
-3. Set up all configuration files via symlinks
-4. Configure shell, Git, and development tools
+1. Installs Homebrew
+2. Installs everything from `Brewfile`
+3. Symlinks all configs
+4. Configures shell, Git, GPG, SSH
 
 ### Linux (Ubuntu/Debian)
 
-The script will:
-1. Update system packages
-2. Install essential development tools
-3. Install Docker, Node.js, Python, Go, Rust
-4. Install applications (VS Code, Chrome, Spotify, etc.)
-5. Set up all configuration files via symlinks
+1. Updates system packages
+2. Installs development tools, Docker, Node.js, Python, Go, Rust
+3. Installs applications
+4. Symlinks all configs
 
-## Configuration Files
+## Adding New Configs
 
-All configuration files are symlinked to their respective locations in your home directory. The script uses `safe_link` to avoid overwriting existing files.
-
-### Key Configurations
-
-- **Zsh**: `~/.zshrc` → `zsh/.zshrc`
-- **Git**: `~/.gitconfig` → `git/.gitconfig`
-- **GitHub CLI**: `~/.config/gh/config.yml` → `gh/config.yml`
-- **GitLab CLI**: `~/.config/glab-cli/config.yml` → `glab/config.yml`
-- **Tealdeer (tldr)**: `~/.config/tealdeer/config.toml` → `tealdeer/config.toml`
-- **Bottom (btm)**: `~/.config/bottom/bottom.toml` → `bottom/bottom.toml`
-- **Lazygit**: `~/.config/lazygit/config.yml` → `lazygit/config.yml` (macOS: also `~/Library/Application Support/lazygit`)
-- **Lazydocker**: `~/.config/lazydocker/config.yml` → `lazydocker/config.yml` (macOS: also `~/Library/Application Support/jesseduffield/lazydocker`)
-- **K9s**: `~/.config/k9s/config.yml` → `k9s/config.yml` (macOS: also `~/Library/Application Support/k9s`)
-- **Vim**: `~/.vimrc` → `vim/.vimrc`
-- **Tmux**: `~/.tmux.conf` → `tmux/.tmux.conf`
-- **SSH**: `~/.ssh/config` → `ssh/config`
-- **GPG**: `~/.gnupg/` → `gnupg/`
-
-### Brewfile tools without dotfiles config (optional)
-
-These are in the Brewfile but have no versioned config here (either env-specific or optional):
-
-- **starship** – `~/.config/starship.toml` (you use Oh My Zsh Spaceship; add if you switch to standalone Starship)
-- **direnv** – `~/.config/direnv/direnvrc` (global defaults; hook in zsh/startup)
-- **zoxide** – hook in zsh/startup
-- **mcfly** – `~/.config/mcfly/config.toml` (keybindings, etc.)
-- **awscli** – `~/.aws/config` only (never commit `~/.aws/credentials`)
-- **terraform** – `~/.terraformrc` or `~/.config/terraform/terraform.rc`
-- **docker** – `~/.docker/config.json` (often contains creds; version only if minimal)
-- **kubectl** – `~/.kube/config` (sensitive; do not version)
-
-## Security Notes
-
-⚠️ **Important**: This repository contains public GPG keys and SSH public keys only. Private keys and passwords are excluded via `.gitignore`.
-
-- Private GPG keys (`*.private.pgp`) are ignored
-- Password files (`password.gpg`) are ignored
-- SSH private keys are tracked but should be rotated if exposed
-
-## Customization
-
-### Adding New Configurations
-
-1. Create a new directory for your tool (e.g., `myapp/`)
-2. Add configuration files to that directory
-3. Add symlink command to `install.sh`:
+1. Create a directory: `myapp/`
+2. Add config files
+3. Add to `install.sh`:
    ```bash
-   safe_link "$HOME/.dotfiles/myapp/config" "$HOME/.config/myapp/config"
+   safe_link "$HOME/.dotfiles/myapp" "$HOME/.config/myapp"
    ```
 
-### Modifying Existing Configurations
+## Security
 
-Edit files directly in the repository. Changes will be reflected after:
-- Restarting your terminal (for shell configs)
-- Reloading the application (for app configs)
-- Running `source ~/.zshrc` (for shell changes)
-
-## Maintenance
-
-### Using the `dot` Function
-
-After installation, you'll have a `dot` function available in your shell that acts as a convenient wrapper for Git operations on the dotfiles repository:
-
-```bash
-# Check status
-dot status
-
-# Add changes
-dot add .
-
-# Commit changes
-dot commit -m "chore: update vim config"
-
-# Push changes
-dot push origin master
-
-# Pull updates
-dot pull origin master
-```
-
-The `dot` function is equivalent to running `git -C ~/.dotfiles` but shorter and easier to remember.
-
-### Updating Submodules
-
-```bash
-dot submodule update --remote .cursor
-```
-
-### Syncing Changes
-
-```bash
-# Using the dot function (recommended)
-dot pull origin master
-
-# Or traditional way
-cd ~/.dotfiles && git pull
-# Restart terminal or source configs as needed
-```
+Private keys and credentials are excluded via `.gitignore`. Only public GPG keys and SSH public keys are tracked.
 
 ## License
 
-See [LICENSE](LICENSE) file for details.
+See [LICENSE](LICENSE) file.

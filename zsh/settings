@@ -47,9 +47,20 @@ command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 export EZA_CONFIG_DIR="$HOME/.config/eza"
 
 ################################################################################
-# zoxide
+# fzf (Tokyo Night)
 ################################################################################
-command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+export FZF_DEFAULT_OPTS=" \
+  --color=fg:#c0caf5,bg:#1a1b26,hl:#bb9af7 \
+  --color=fg+:#c0caf5,bg+:#283457,hl+:#7dcfff \
+  --color=info:#7aa2f7,prompt:#7aa2f7,pointer:#7dcfff \
+  --color=marker:#9ece6a,spinner:#9ece6a,header:#9ece6a \
+  --color=border:#414868,label:#c0caf5,query:#c0caf5"
+
+################################################################################
+# nnn (Tokyo Night palette indices)
+################################################################################
+# BLK CHR DIR EXE REG HARDLINK SYMLINK MISSING ORPHAN FIFO SOCK OTHER
+export NNN_FCOLORS='0B0B04060000060606000906'
 
 ################################################################################
 # Oh-my-zsh

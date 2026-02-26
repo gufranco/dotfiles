@@ -67,3 +67,21 @@ Map each requirement to specific test scenarios:
 ### Skip for Trivial Changes
 
 Typos, config values, single-line fixes with no behavior change: a short list of 1-3 scenarios or "no new scenarios, existing tests cover this" is enough.
+
+## Deterministic Tests
+
+Every test must produce the same result on every run, on every machine. A test that passes 99% of the time is a broken test.
+
+**Never depend on:**
+
+| Source of flakiness | Fix |
+|---------------------|-----|
+| Current time | Inject a fixed clock or mock `Date.now()` |
+| Random values | Use a seeded generator or fixed values |
+| Network calls | Mock external APIs (allowed by mock policy) |
+| Shared database state | Isolate per test: unique IDs, transactions that rollback, or fresh schema |
+| Test execution order | No shared mutable state between tests. Each test sets up its own data |
+| Timing and delays | Never use `setTimeout` or `sleep` in assertions. Use deterministic signals (events, callbacks, polling with timeout) |
+| File system | Use temp directories, clean up in `afterEach` |
+
+If a test fails intermittently, fix or delete it. Flaky tests erode trust in the entire suite and train developers to ignore failures.

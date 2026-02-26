@@ -1,0 +1,110 @@
+# Tokyo Night skin for K9s
+# https://github.com/derailed/k9s
+
+foreground: &foreground "#c0caf5"
+background: &background "default"
+black: &black "#15161e"
+red: &red "#f7768e"
+green: &green "#9ece6a"
+yellow: &yellow "#e0af68"
+blue: &blue "#7aa2f7"
+magenta: &magenta "#bb9af7"
+cyan: &cyan "#7dcfff"
+white: &white "#a9b1d6"
+orange: &orange "#ff9e64"
+teal: &teal "#73daca"
+comment: &comment "#565f89"
+dark: &dark "#292e42"
+selection: &selection "#283457"
+
+k9s:
+  body:
+    fgColor: *foreground
+    bgColor: *background
+    logoColor: *blue
+  prompt:
+    fgColor: *foreground
+    bgColor: *background
+    suggestColor: *orange
+  info:
+    fgColor: *comment
+    sectionColor: *green
+  help:
+    fgColor: *foreground
+    bgColor: *background
+    keyColor: *yellow
+    numKeyColor: *blue
+    sectionColor: *magenta
+  dialog:
+    fgColor: *foreground
+    bgColor: *background
+    buttonFgColor: *foreground
+    buttonBgColor: *green
+    buttonFocusFgColor: *black
+    buttonFocusBgColor: *blue
+    labelFgColor: *orange
+    fieldFgColor: *blue
+  frame:
+    border:
+      fgColor: *dark
+      focusColor: *blue
+    menu:
+      fgColor: *comment
+      keyColor: *yellow
+      numKeyColor: *yellow
+    crumbs:
+      fgColor: *black
+      bgColor: *blue
+      activeColor: *yellow
+    status:
+      newColor: *cyan
+      modifyColor: *green
+      addColor: *teal
+      pendingColor: *orange
+      errorColor: *red
+      highlightColor: *yellow
+      killColor: *magenta
+      completedColor: *comment
+    title:
+      fgColor: *blue
+      bgColor: *background
+      highlightColor: *magenta
+      counterColor: *foreground
+      filterColor: *cyan
+  views:
+    charts:
+      bgColor: *background
+      defaultDialColors:
+        - *green
+        - *red
+      defaultChartColors:
+        - *green
+        - *red
+    table:
+      fgColor: *foreground
+      bgColor: *background
+      cursorFgColor: *black
+      cursorBgColor: *blue
+      markColor: *yellow
+      header:
+        fgColor: *comment
+        bgColor: *background
+        sorterColor: *orange
+    xray:
+      fgColor: *blue
+      bgColor: *background
+      cursorColor: *foreground
+      graphicColor: *yellow
+      showIcons: false
+    yaml:
+      keyColor: *blue
+      colonColor: *comment
+      valueColor: *foreground
+    logs:
+      fgColor: *foreground
+      bgColor: *background
+      indicator:
+        fgColor: *blue
+        bgColor: *background
+        toggleOnColor: *green
+        toggleOffColor: *comment

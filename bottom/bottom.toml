@@ -1,8 +1,46 @@
 # Bottom (btm) - https://github.com/ClementTsang/bottom
 
-[colors]
-truecolor = true
-
 [options]
 update_time_ms = 1000
 temperature_type = "c"
+
+################################################################################
+# Tokyo Night theme
+################################################################################
+[styles.cpu]
+all_entry_color = "#9ece6a"
+avg_entry_color = "#f7768e"
+cpu_core_colors = ["#bb9af7", "#e0af68", "#7dcfff", "#9ece6a", "#7aa2f7", "#ff9e64", "#73daca", "#f7768e"]
+
+[styles.memory]
+ram_color = "#bb9af7"
+cache_color = "#f7768e"
+swap_color = "#e0af68"
+arc_color = "#7dcfff"
+gpu_colors = ["#7aa2f7", "#ff9e64", "#73daca", "#9ece6a", "#1abc9c", "#f7768e"]
+
+[styles.network]
+rx_color = "#bb9af7"
+tx_color = "#e0af68"
+rx_total_color = "#7dcfff"
+tx_total_color = "#9ece6a"
+
+[styles.battery]
+high_battery_color = "#9ece6a"
+medium_battery_color = "#e0af68"
+low_battery_color = "#f7768e"
+
+[styles.tables]
+headers = { color = "#7aa2f7", bold = true }
+
+[styles.graphs]
+graph_color = "#414868"
+legend_text = { color = "#a9b1d6" }
+
+[styles.widgets]
+border_color = "#414868"
+selected_border_color = "#7aa2f7"
+widget_title = { color = "#a9b1d6" }
+text = { color = "#c0caf5" }
+selected_text = { color = "#1a1b26", bg_color = "#7aa2f7" }
+disabled_text = { color = "#565f89" }

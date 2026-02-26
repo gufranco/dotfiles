@@ -3,3 +3,20 @@
 [updates]
 auto_update = true
 auto_update_interval_hours = 168
+
+################################################################################
+# Tokyo Night colors
+################################################################################
+[style.command_name]
+foreground = { r = 122, g = 162, b = 247 }
+bold = true
+
+[style.example_text]
+foreground = { r = 192, g = 202, b = 245 }
+
+[style.example_code]
+foreground = { r = 125, g = 207, b = 255 }
+
+[style.example_variable]
+foreground = { r = 187, g = 154, b = 247 }
+underline = true

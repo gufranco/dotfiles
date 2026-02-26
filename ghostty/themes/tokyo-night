@@ -4,9 +4,9 @@
 foreground = #c0caf5
 background = #1a1b26
 
-palette = 0=#15161d
+palette = 0=#15161e
 palette = 1=#f7768e
-palette = 2=#9ece69
+palette = 2=#9ece6a
 palette = 3=#e0af68
 palette = 4=#7aa2f7
 palette = 5=#bb9af7
@@ -14,7 +14,7 @@ palette = 6=#7dcfff
 palette = 7=#a9b1d6
 palette = 8=#414868
 palette = 9=#f7768e
-palette = 10=#9ece69
+palette = 10=#9ece6a
 palette = 11=#e0af68
 palette = 12=#7aa2f7
 palette = 13=#bb9af7
@@ -33,7 +33,7 @@ palette = 24=#b4f9f8
 palette = 25=#2ac3de
 palette = 26=#0db9d7
 palette = 27=#89ddff
-palette = 28=#9ece69
+palette = 28=#9ece6a
 palette = 29=#73daca
 palette = 30=#41a6b5
 palette = 31=#3d59a1
@@ -44,7 +44,7 @@ palette = 35=#394b70
 palette = 36=#364a82
 palette = 37=#7aa2f7
 
-palette = 232=#15161d
+palette = 232=#15161e
 palette = 233=#16161e
 palette = 234=#1a1b26
 palette = 235=#1f2335

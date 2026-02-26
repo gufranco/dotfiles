@@ -6,7 +6,15 @@ gui:
   scrollPastBottom: true
   theme:
     lightTheme: false
-    theme: "default"
+    activeBorderColor:
+      - '#7aa2f7'
+      - bold
+    inactiveBorderColor:
+      - '#414868'
+    selectedLineBgColor:
+      - '#283457'
+    optionsTextColor:
+      - '#7aa2f7'
   showAllContainers: false
 
 reporting: "off"

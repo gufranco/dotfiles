@@ -5,5 +5,32 @@ gui:
   scrollHeight: 2
   scrollPastBottom: true
   showCommandLog: true
+  theme:
+    activeBorderColor:
+      - '#7aa2f7'
+      - bold
+    inactiveBorderColor:
+      - '#414868'
+    searchingActiveBorderColor:
+      - '#7dcfff'
+      - bold
+    optionsTextColor:
+      - '#7aa2f7'
+    selectedLineBgColor:
+      - '#283457'
+    inactiveViewSelectedLineBgColor:
+      - bold
+    cherryPickedCommitFgColor:
+      - '#7aa2f7'
+    cherryPickedCommitBgColor:
+      - '#bb9af7'
+    markedBaseCommitFgColor:
+      - '#7aa2f7'
+    markedBaseCommitBgColor:
+      - '#e0af68'
+    unstagedChangesColor:
+      - '#f7768e'
+    defaultFgColor:
+      - default
 
 reporting: "off"

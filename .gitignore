@@ -151,15 +151,18 @@ pip-delete-this-directory.txt
 *.sublime-project
 
 ################################################################################
-# General IDE
+# General AI
 ################################################################################
 .cursor/
+.claude/
 claude/*
 !claude/settings.json
 !claude/CLAUDE.md
 !claude/README.md
 !claude/skills/
 !claude/rules/
+!claude/hooks/
+!claude/scripts/
 
 ################################################################################
 # Logs

@@ -6,7 +6,7 @@ Personal Claude Code setup with custom skills, engineering guidelines, and proje
 
 ```
 claude/
-  settings.json          # Permissions, attribution, and global settings
+  settings.json          # Permissions, hooks, statusline, MCP, and global settings
   CLAUDE.md              # Core engineering rules (lean, ~150 lines)
   rules/
     code-style.md        # Code conventions, comments, dependencies, backward compat
@@ -15,7 +15,18 @@ claude/
     code-review.md       # Author guidelines, review style, documentation checks
     security.md          # Secrets, auth checklist, audit logging
     database.md          # Schema rules, query optimization, migrations, naming
+    api-design.md        # REST conventions, error format, pagination, versioning
+    observability.md     # Structured logging, metrics, tracing, health checks
+    debugging.md         # Systematic debugging process, multi-component tracing
+    verification.md      # Verification-before-completion enforcement
     llm-docs.md          # LLM-optimized documentation references for common tech
+  hooks/
+    dangerous-command-blocker.py  # Blocks catastrophic bash commands (3 severity levels)
+    secret-scanner.py             # Scans staged files for 40+ secret patterns
+    conventional-commits.sh       # Validates commit message format
+    smart-formatter.sh            # Auto-formats files after edit by language
+  scripts/
+    context-monitor.py   # Statusline: context usage, git branch, cost
   skills/
     commit/SKILL.md      # Semantic commits from uncommitted changes
     pr/SKILL.md          # Pull request creation and updates
@@ -32,6 +43,8 @@ claude/
     morning/SKILL.md     # Start-of-day dashboard and standup prep
     scaffold/SKILL.md    # Boilerplate generation from existing patterns
     terraform/SKILL.md   # Terraform/OpenTofu workflows with safety gates
+    perf/SKILL.md        # Load testing and HTTP endpoint benchmarks
+    worktree/SKILL.md    # Git worktree management for parallel development
 ```
 
 ## Settings
@@ -42,7 +55,37 @@ Defined in `settings.json`:
 - **Language**: `english`. Always respond in English regardless of input language.
 - **Effort level**: `high`. Maximum reasoning depth on every response. Override per-session with `/effortLevel medium` or `low` for faster, lighter interactions.
 - **Attribution**: disabled. No "Co-authored-by" lines in commits or PRs.
-- **Permissions**: broad pre-approved access covering file I/O (`Read`, `Write`, `Edit`), web access (`WebFetch`, `WebSearch`), skills, and ~100 bash commands across categories: version control, package managers, runtimes, build tools, containers, infrastructure, databases, dev tooling, shell utilities, search, networking, archives, data processing, process management, and macOS system commands. Only unusual or destructive operations require manual approval.
+- **Permissions**: broad pre-approved access covering file I/O (`Read`, `Write`, `Edit`), web access (`WebFetch`, `WebSearch`), skills, and ~100 bash commands. Explicit deny rules for `.env`, `.env.local`, `.env.production`, `secrets/`, and `config/credentials.json`.
+- **Hooks**: four hooks enforcing rules at runtime (see Hooks section below).
+- **Statusline**: context monitor showing context usage percentage, git branch, and session cost.
+- **MCP servers**: Context7 for pulling version-specific library documentation into prompts.
+
+## Hooks
+
+Hooks enforce rules at runtime by intercepting tool calls. Defined in `settings.json`, scripts live in `hooks/`.
+
+### PreToolUse Hooks (Bash)
+
+**Dangerous command blocker** (`hooks/dangerous-command-blocker.py`): three severity levels.
+- Level 1 BLOCK: catastrophic commands (`rm -rf /`, `dd` to disk, `mkfs`, fork bombs, `chmod 777 /`, piping remote scripts to shell).
+- Level 2 BLOCK: critical path protection (deleting `.git/`, `.env`, `.claude/`, `git push --force`, `git reset --hard`, `git clean -f`, `git checkout .`).
+- Level 3 WARN: suspicious patterns (`rm` with wildcards, `find -delete`, `xargs rm`, writing to `/etc/`, `killall`).
+
+**Secret scanner** (`hooks/secret-scanner.py`): intercepts `git commit` commands and scans all staged files for 40+ secret patterns including AWS, Anthropic, OpenAI, Google, Stripe, GitHub, GitLab, Slack, Discord, Telegram, Vercel, Supabase, Hugging Face, npm, PyPI, private keys, JWTs, database URLs, and generic password/secret assignments. Skips lockfiles, binary files, and `.env.example`. Blocks the commit with a report listing each finding.
+
+**Conventional commits** (`hooks/conventional-commits.sh`): validates that `git commit` messages match the conventional commit format (`type(scope): subject`). Allows all standard types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert. Enforces max 72-char subject line. Skips amend, merge, and squash commits.
+
+### PostToolUse Hooks (Edit/Write)
+
+**Smart formatter** (`hooks/smart-formatter.sh`): runs the appropriate formatter after any Edit or Write operation based on file extension. JS/TS/JSON/CSS/HTML/YAML use prettier, Python uses black or ruff, Go uses gofmt, Rust uses rustfmt, Ruby uses rubocop, shell uses shfmt. Silently skips if the formatter is not installed.
+
+### Stop Hook
+
+**Desktop notification**: sends a macOS notification via `osascript` when Claude finishes responding. Allows switching to another window without polling.
+
+## MCP Servers
+
+**Context7** (`@upstash/context7-mcp`): pulls up-to-date, version-specific library documentation directly into prompts. Complements the `rules/llm-docs.md` curated references by automating doc lookups for any library, not just those in the reference table.
 
 ## CLAUDE.md Overview
 
@@ -68,6 +111,10 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 - **Code review** (`rules/code-review.md`): author guidelines, natural review comments, test evidence, documentation checks, pre-completion checklist.
 - **Security** (`rules/security.md`): secrets management, auth checklist, audit logging.
 - **Database** (`rules/database.md`): schema rules, query optimization, safe migrations, naming conventions.
+- **API design** (`rules/api-design.md`): REST conventions, status codes, error response format, pagination patterns, versioning, idempotency keys, rate limiting headers, bulk operations.
+- **Observability** (`rules/observability.md`): structured JSON logging, log levels, sensitive data masking, correlation IDs, metrics naming, health check endpoints, distributed tracing, alerting conventions.
+- **Debugging** (`rules/debugging.md`): systematic four-phase debugging process, multi-component tracing, common traps to avoid. Expands on the debugging approach in CLAUDE.md with specific techniques for reproduction, isolation, root cause analysis, and fix verification.
+- **Verification** (`rules/verification.md`): verification-before-completion enforcement. Gate function: identify what proves the claim, run it, read the output, verify it matches, only then claim done. Evidence requirements table for common claims. Covers partial completion reporting.
 - **LLM docs** (`rules/llm-docs.md`): curated `llms.txt` and `llms-full.txt` references for common technologies. Fetch official docs before relying on training data.
 
 ## Skills Reference
@@ -213,6 +260,26 @@ Runs Terraform or OpenTofu workflows with safety checks and approval gates.
 **Arguments**: no args for validate + plan, `init`, `fmt`, `validate`, `plan`, `apply`, `destroy`, or a directory path.
 
 Detects terraform or tofu and the working directory in parallel, using `.terraform-version` or `.opentofu-version` files to determine preference when both are installed. Checks direnv setup and Terraform-related environment variables. Always validates before planning, plans before applying. Saves plan files before apply and cleans them up after. Requires explicit approval for apply and destroy. Displays the active workspace in all outputs.
+
+---
+
+### /perf
+
+Runs load tests and benchmarks against HTTP endpoints.
+
+**Arguments**: a URL (required), `-n <requests>`, `-c <concurrency>`, `-d <duration>`, `--method <METHOD>`, `--body <json>`, `--header <key:value>`, `--compare`, `--script <path>`.
+
+Auto-detects installed load testing tools in order of preference: k6, wrk, hey, ab. Validates the target is reachable before starting. For k6, generates a temporary script or uses a custom one via `--script`. Parses results into a standard table: total requests, failures, requests/sec, latency avg/p50/p95/p99, and transfer rate. Flags tail latency above 1s and error rates above 1%. Compare mode runs the test twice with a pause between for changes, then shows a side-by-side diff with percentage deltas. Refuses to hit production URLs without explicit confirmation. Defaults to 1000 requests at 10 concurrency.
+
+---
+
+### /worktree
+
+Manages git worktrees for parallel development.
+
+**Arguments**: `init <task1> | <task2>`, `deliver`, `check`, `cleanup`, `cleanup --all`, `cleanup --branch <name>`, `cleanup --dry-run`.
+
+Enables working on multiple tasks simultaneously using git worktrees. `init` creates isolated worktrees from pipe-separated task descriptions, generating `wt/<kebab-task>` branches and `.worktree-task.md` files for context preservation. `deliver` commits, pushes, and creates a PR from inside a worktree using the task file as PR basis. `check` shows a status table of all worktrees with branch, commits ahead, and uncommitted changes. `cleanup` removes worktrees for merged branches, with `--all` for aggressive cleanup and `--dry-run` for preview. All worktree branches use the `wt/` prefix for safe identification.
 
 ## Review Checklist
 

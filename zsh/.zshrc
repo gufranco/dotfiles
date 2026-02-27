@@ -39,8 +39,3 @@ source "$HOME/.dotfiles/zsh/functions"
 # Infrastructure (VMs & Containers)
 ################################################################################
 source "$HOME/.dotfiles/zsh/infrastructure"
-
-################################################################################
-# zoxide (must load last - overrides cd and hooks into shell completion)
-################################################################################
-command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh --cmd cd)"

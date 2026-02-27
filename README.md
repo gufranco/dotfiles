@@ -81,7 +81,6 @@ These aliases are defined in `zsh/aliases` and only activate when the modern too
 |-------|-----------|----------|
 | `cat` | `bat` | Syntax-highlighted file viewer, plain output when piped |
 | `ls` | `eza` | Icons, git status, tree view via `lt` |
-| `cd` | `zoxide` | Frecency-based directory jumping, falls back to regular cd |
 | `du` | `dust` | Visual disk usage with tree output |
 | `df` | `duf` | Modern disk free with color output |
 | `ps` | `procs` | Process viewer with tree and color |
@@ -97,7 +96,6 @@ GNU coreutils, findutils, grep, sed, tar, make, and other GNU tools override the
 Zsh with Oh My Zsh, Spaceship prompt, and these integrations:
 
 - **direnv**: per-directory env via `.envrc`
-- **zoxide**: replaces `cd` with frecency matching (`zoxide init zsh --cmd cd`)
 - **fzf**: fuzzy finder with bat preview and Tokyo Night colors
 - **fzf-tab**: tab completion through fzf
 - **zsh-syntax-highlighting**: fish-like command highlighting

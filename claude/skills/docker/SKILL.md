@@ -42,7 +42,8 @@ This skill accepts optional arguments after `/docker`:
      - **Native daemon (Linux):** suggest `sudo systemctl start docker` or `sudo service docker start`.
    - If the daemon cannot be started, stop and tell the user.
 2. **Detect runtime, compose, and containers.** Once the daemon is reachable, run these **in parallel**:
-   - `docker context show` to detect the active runtime (colima, desktop-linux, default). If colima, also run `colima status` for VM info.
+   - `docker context show` to detect the active runtime (colima, desktop-linux, default). If colima, also run `colima status` and `colima list` for VM and profile info.
+   - **Resolve Docker context** (see "Context Resolution" section below). If the project specifies a different context, switch to it and record the original for restoration.
    - Look for compose files (`compose.yml`, `compose.yaml`, `docker-compose.yml`, `docker-compose.yaml`) and detect the compose command (`docker compose version` or `which docker-compose`).
    - `docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"` to list all containers including standalone ones.
    - If no compose file is found and the user requested a compose operation (up, down, build), say so and stop.
@@ -84,6 +85,23 @@ This skill accepts optional arguments after `/docker`:
     - Try bash first: run `docker exec -it <container> bash`.
     - If bash is not available (exit code 126 or 127), fall back to `docker exec -it <container> sh`.
 
+## Context Resolution
+
+Follows the borrow-and-restore pattern from `rules/borrow-restore.md`. Only applies when multiple Docker contexts exist.
+
+1. **Read current context:** `docker context show`.
+2. **Determine expected context** for this project:
+   - Check for `DOCKER_CONTEXT` env var in `.env` or `.envrc`.
+   - Check for `DOCKER_HOST` env var pointing to a specific Colima socket.
+   - If neither exists, the current context is assumed correct. Skip switching.
+3. **If the expected context differs from the current one:**
+   - If the runtime is Colima, verify the target profile is running with `colima list`. If stopped, suggest starting it with `colima start --profile <name>` or the user's custom function. Do not switch to a stopped profile's context.
+   - Switch with `docker context use <expected>`.
+   - Tell the user: "Switched Docker context from `<original>` to `<expected>` for this project."
+4. **After all operations complete**, restore the original context with `docker context use <original>`. Even if earlier steps fail.
+
+If Colima is not installed or the runtime is Docker Desktop or native Docker, skip the Colima profile check. Still apply context resolution if `DOCKER_CONTEXT` is set.
+
 ## Standalone container conventions
 
 The user has shell functions for managing standalone database and utility containers. These follow the pattern `<service>-<action>`:
@@ -109,6 +127,8 @@ When the user asks to manage one of these services, prefer suggesting the shell 
 - Never build or start containers in production mode unless the user explicitly asks.
 - If no compose file exists, work with standalone containers (ps, logs, exec, restart).
 - Never expose or forward ports that are not already defined in the compose file or the container's init function.
+- Always restore the original Docker context after all operations if a switch was performed. Even if earlier steps fail.
+- Never switch Docker context to a Colima profile that is not running. Suggest starting it first.
 
 ## Related skills
 

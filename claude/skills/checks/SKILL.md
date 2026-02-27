@@ -29,6 +29,7 @@ This skill accepts optional arguments after `/checks`:
    - `git remote get-url origin` to detect the git platform.
    - `git branch --show-current` to get the current branch name.
    - Determine the CLI tool from the remote URL: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
+   - **Resolve account:** run `gh auth status` (or `glab auth status`) to list all authenticated accounts. Parse the remote URL to identify the host. If the active account does not match the remote host/owner, find the matching account and switch with `gh auth switch --user <login>` (or the `glab` equivalent). Record the original active account to restore later. If no matching account is found, report the mismatch and stop.
 2. Check if a PR/MR exists:
    - If a number was provided, use that directly.
    - Otherwise, check the current branch:
@@ -77,6 +78,7 @@ This skill accepts optional arguments after `/checks`:
    ```
 
 8. After diagnosing, suggest next steps but do not automatically fix anything.
+9. **Restore the original active account** if a switch was performed in step 1. This step is mandatory even if earlier steps fail.
 
 ## Rules
 
@@ -87,6 +89,7 @@ This skill accepts optional arguments after `/checks`:
 - Never mark a task as complete if checks are still running or failing.
 - Do not automatically fix failures. Present the diagnosis and let the user decide.
 - If the required CLI tool (`gh` or `glab`) is not installed, stop and tell the user.
+- Always restore the original active account after all operations, even if earlier steps fail. Never leave the user on a different account than they started with.
 
 ## Related skills
 

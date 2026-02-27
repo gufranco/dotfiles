@@ -126,6 +126,18 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 - **Verification** (`rules/verification.md`): verification-before-completion enforcement. Gate function: identify what proves the claim, run it, read the output, verify it matches, only then claim done. Evidence requirements table for common claims. Covers partial completion reporting.
 - **LLM docs** (`rules/llm-docs.md`): curated `llms.txt` and `llms-full.txt` references for common technologies. Fetch official docs before relying on training data.
 
+## Multi-Account Support
+
+All skills that interact with `gh` or `glab` support multiple authenticated accounts. Before running any remote command, each skill resolves the correct account by matching the current repo's remote URL against all authenticated accounts. If the active account doesn't match, the skill switches automatically and restores the original account when done, even if earlier steps fail.
+
+**Skills with account resolution:** `/commit` (pipeline monitoring), `/pr`, `/checks`, `/review`, `/release`, `/worktree` (deliver), `/readme` (GitHub About). `/morning` has full multi-account support with per-account enumeration across all queries.
+
+The pattern in every skill:
+1. Parse the remote URL to identify host and owner.
+2. Run `gh auth status` (or `glab auth status`) to list all authenticated accounts.
+3. If the active account doesn't match, switch with `gh auth switch --user <login>`.
+4. Record the original account. Restore it after all operations complete.
+
 ## Skills Reference
 
 ### /commit

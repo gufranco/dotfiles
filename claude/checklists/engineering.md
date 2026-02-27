@@ -179,6 +179,9 @@ Reference: `rules/code-style.md` (Immutability and Explicit Side Effects)
 - [ ] Time-range boundaries computed at query time from user's local timezone?
 - [ ] NoSQL key design distributes writes evenly? No hot partitions?
 - [ ] Connection pooling configured? No connection leak (opening without closing)?
+- [ ] Query plans reviewed with EXPLAIN for new or changed queries? No full table scans on large tables?
+- [ ] Write amplification understood? Indexes add write cost proportional to their count.
+- [ ] Read replicas used for read-heavy queries that tolerate slight staleness?
 
 Reference: `rules/database.md` (Query Optimization, Time-Range Queries)
 
@@ -196,6 +199,9 @@ Reference: `rules/database.md` (Query Optimization, Time-Range Queries)
 - [ ] Alerts on symptoms, not causes? Tied to SLO violations? Runbook links on every alert?
 - [ ] SLIs defined (availability, latency, error rate)? SLOs set based on measured data, not guesses?
 - [ ] Error budget tracked? Reliability prioritized over features when budget is spent?
+- [ ] Every alert has a runbook with: what it means, how to diagnose, how to mitigate, and who to escalate to?
+- [ ] Distributed debugging path documented? Given a requestId, can an engineer trace the full request across services?
+- [ ] On-call handoff includes: known fragile areas, recent incidents, pending deployments, and alert context?
 
 Reference: `rules/observability.md`
 
@@ -311,5 +317,72 @@ Reference: `rules/resilience.md` (Dead Letter Queues, Partial Failure, Timeouts)
 - [ ] Feature flags for user-facing behavior changes that need gradual rollout?
 - [ ] Rollback plan: can revert deployment without data loss or manual intervention?
 - [ ] No hardcoded config: all environment-specific values from env vars or config service?
+- [ ] Canary promotion criteria defined? Metrics checked before widening rollout (error rate, latency, business KPIs)?
+- [ ] Rollback tested, not just planned? The rollback path has been exercised at least once?
+- [ ] Deployment frequency sustainable? Can the team ship this change independently without coordinating with other teams?
 
 Reference: `rules/distributed-systems.md` (Zero-Downtime Deployments), `rules/database.md` (Safe Migrations)
+
+## 21. Graceful Degradation
+
+- [ ] Each external dependency has a defined fallback UX when unavailable?
+- [ ] Core user flows work without non-critical dependencies (recommendations, analytics, notifications)?
+- [ ] Fallback responses identified per dependency: cached data, default values, or reduced functionality?
+- [ ] Degraded state communicated to the user? No silent failures that look like empty data.
+- [ ] Degraded paths tested? Chaos testing or dependency kill switches exercised?
+- [ ] Blast radius analyzed? A single dependency failure does not cascade to unrelated features.
+- [ ] Timeout-based degradation: if a dependency is slow but not down, the system switches to fallback before the user notices?
+
+Reference: `rules/resilience.md` (Circuit Breakers, Timeouts)
+
+## 22. Data Modeling
+
+- [ ] Aggregate boundaries defined? Each aggregate is the unit of consistency and transactional integrity.
+- [ ] Entity vs value object distinction clear? Entities have identity, value objects are compared by attributes.
+- [ ] Normalization level chosen deliberately? 3NF for write-heavy, denormalized for read-heavy, with documented trade-offs.
+- [ ] Relationship ownership explicit? One side owns the FK, the other side queries through it.
+- [ ] Domain events identified? State transitions that other parts of the system need to react to.
+- [ ] Natural keys vs surrogate keys: chosen per table with justification? Natural keys where stable, surrogate where not.
+- [ ] Schema designed for access patterns, not just data structure? Indexes, partitions, and key design serve the queries.
+- [ ] Enums and status fields use explicit string values, not magic integers? Readable in raw queries and logs.
+
+Reference: `rules/database.md` (Access Pattern Design, Schema Rules)
+
+## 23. Capacity Planning
+
+- [ ] Storage growth rate estimated? Data volume projected for 1 year, 3 years.
+- [ ] Read/write ratio understood? Informs caching strategy, replica topology, and index design.
+- [ ] Bottleneck identified? CPU-bound, memory-bound, I/O-bound, or network-bound under expected load.
+- [ ] Horizontal scaling path exists? No single-instance assumptions baked into the design (local file storage, in-memory state, sticky sessions).
+- [ ] Hot spots identified? Uneven distribution of load across partitions, shards, or instances.
+- [ ] Data retention and archival strategy defined? Old data moved to cold storage or deleted on schedule.
+- [ ] Connection and thread pool limits sized for expected concurrency, with headroom for spikes?
+- [ ] Cost of the current design at 10x scale estimated? No surprise bills from unbounded resources.
+
+Reference: `rules/database.md` (Connection Management, NoSQL Key Design), `rules/resilience.md` (Back Pressure)
+
+## 24. Testability
+
+- [ ] Dependencies injected, not instantiated inline? Every external dependency replaceable in tests without mocking frameworks.
+- [ ] Pure functions extracted from I/O? Business logic testable without databases, networks, or file systems.
+- [ ] Functional core, imperative shell? Core domain logic is pure and tested exhaustively, I/O is thin and tested via integration.
+- [ ] Contract tests at service boundaries? Consumer-driven contracts verify that provider changes do not break consumers.
+- [ ] Load test coverage for critical paths? Performance regressions caught before production, not after.
+- [ ] Feature flags testable? Both sides of every flag exercised in tests.
+- [ ] Test data builders or factories used? No brittle test setup with hardcoded object literals duplicated across tests.
+- [ ] Time and randomness injectable? Tests do not depend on the current clock or random output.
+
+Reference: `rules/testing.md` (Philosophy, Mock Policy), `rules/code-style.md` (Immutability and Explicit Side Effects)
+
+## 25. Cost Awareness
+
+- [ ] Query cost understood? Expensive queries identified and optimized or cached.
+- [ ] Compute right-sized? Instance types, Lambda memory, and container resources match actual usage, not guesses.
+- [ ] Storage tiers used appropriately? Hot data on fast storage, cold data on archive (S3 IA, Glacier, equivalent).
+- [ ] Batch vs real-time chosen deliberately? Real-time processing only when the use case requires it.
+- [ ] Egress costs considered? Cross-region and cross-AZ traffic minimized. CDN for static assets.
+- [ ] Cache ROI positive? The cost of the cache infrastructure is less than the cost of hitting the origin.
+- [ ] Unused resources cleaned up? No orphaned volumes, snapshots, or idle load balancers accumulating charges.
+- [ ] Cost alerts configured? Budget thresholds with notifications before spending spirals.
+
+Reference: `rules/caching.md` (When to Cache), `rules/database.md` (Query Optimization)

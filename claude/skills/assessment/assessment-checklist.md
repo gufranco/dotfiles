@@ -27,7 +27,7 @@ Reference: `rules/code-style.md` (Data Safety), `rules/resilience.md` (Idempoten
 
 Reference: `rules/database.md` (Transactions and Atomic Writes, Conditional Writes)
 
-## 3. Error Classification
+## 3. Error Classification and Retry
 
 - [ ] Every `catch` classifies the error as transient or permanent?
 - [ ] Transient errors (timeout, 429, 503, connection reset): logged as warn, retried with exponential backoff + jitter?
@@ -35,6 +35,9 @@ Reference: `rules/database.md` (Transactions and Atomic Writes, Conditional Writ
 - [ ] Ambiguous errors (500, unknown): retried up to 3 times, then treated as permanent?
 - [ ] Classification propagated upstream so callers can make informed decisions?
 - [ ] No bare catch blocks that log and rethrow without classification?
+- [ ] Retry parameters explicit: base delay (100-500ms), multiplier (2x), jitter (0-50%), max retries (3 sync, 5 async)?
+- [ ] Max delay cap set (never exceeds 30s between retries)?
+- [ ] Total retry time fits within the caller's timeout budget?
 
 Reference: `rules/code-style.md` (Error Classification), `rules/resilience.md` (Error Classification, Retry Strategy)
 
@@ -163,10 +166,97 @@ Reference: `rules/database.md` (Query Optimization, Time-Range Queries)
 
 - [ ] Structured JSON logging with required fields (level, message, timestamp, requestId, service)?
 - [ ] Log levels correct (error for failures, warn for handled-but-unexpected, info for business events)?
-- [ ] Correlation ID (requestId) propagated across all service calls?
-- [ ] No sensitive data logged (passwords, tokens, PII)?
-- [ ] Health check endpoints present (liveness + readiness)?
+- [ ] Correlation ID (requestId) propagated across all service calls via `X-Request-Id` header?
+- [ ] No sensitive data logged (passwords, tokens, PII)? Redaction patterns applied?
+- [ ] Health check endpoints present: liveness (process alive, no deps) + readiness (all deps reachable with latency)?
 - [ ] Metrics for request rate, error rate, latency (p50/p95/p99), saturation?
-- [ ] Alerts on symptoms, not causes? Runbook links on every alert?
+- [ ] Metric labels low-cardinality (never user IDs, request IDs, timestamps)?
+- [ ] Distributed tracing: W3C Trace Context headers, spans for inbound/outbound calls, DB queries, and queue ops?
+- [ ] Alerts on symptoms, not causes? Tied to SLO violations? Runbook links on every alert?
+- [ ] SLIs defined (availability, latency, error rate)? SLOs set based on measured data, not guesses?
+- [ ] Error budget tracked? Reliability prioritized over features when budget is spent?
 
 Reference: `rules/observability.md`
+
+## 16. Security and Access Control
+
+- [ ] Authentication: passwords hashed with bcrypt or argon2, never MD5 or SHA?
+- [ ] Rate limiting on auth endpoints (login, register, password reset)?
+- [ ] Token expiration configured? Refresh token rotation?
+- [ ] CSRF protection on state-changing endpoints (SameSite cookies, CSRF tokens, or origin validation)?
+- [ ] Access control: default deny? Permissions explicitly granted, never explicitly denied?
+- [ ] Per-resource authorization checked, not just per-role (IDOR prevention)?
+- [ ] Authorization logic centralized, not scattered across controllers?
+- [ ] Encryption in transit: TLS 1.2+ on all external connections?
+- [ ] Encryption at rest for sensitive data (platform-managed keys)?
+- [ ] Constant-time comparison for secrets (no timing side-channel)?
+- [ ] Data minimization: only collecting what's needed?
+- [ ] Retention policy defined per data type? Automated deletion after retention period?
+- [ ] Right to erasure: path to delete all of a user's personal data on request?
+- [ ] Audit logging for sensitive actions (login, password change, role change, record deletion, PII access)?
+- [ ] Supply chain: dependencies locked with exact versions? Lockfile committed? Audit in CI?
+- [ ] Input sanitization at system boundaries (user input, external APIs)?
+
+Reference: `rules/security.md`
+
+## 17. API Contract Design
+
+- [ ] Resources are plural nouns, actions use HTTP methods, max 2 levels of nesting?
+- [ ] Status codes correct: 201 for creates with Location header, 204 for no-content, 409 for conflicts, 422 for validation?
+- [ ] Error response shape consistent: machine-readable code, human message, requestId, optional field details?
+- [ ] No stack traces or internal paths exposed in production error responses?
+- [ ] Pagination on all list endpoints? Strategy chosen (cursor-based default, offset-based for random access)?
+- [ ] Default and maximum page size set?
+- [ ] Versioning strategy: URL path (`/v1/...`), at most two major versions active?
+- [ ] Deprecation lifecycle: `Deprecation` and `Sunset` headers, monitoring, documented migration path?
+- [ ] Rate limiting headers on every response (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`)?
+- [ ] `Retry-After` header on 429 responses?
+- [ ] POST endpoints that create resources support `Idempotency-Key` header?
+- [ ] Bulk operations return per-item results with individual status codes?
+- [ ] ISO 8601 dates, UTC timestamps, `Content-Type` header set?
+- [ ] Collections wrapped in `data` field? Consistent response envelope?
+
+Reference: `rules/api-design.md`
+
+## 18. External Dependency Resilience
+
+- [ ] Explicit timeout on every external call (connect + read for HTTP, statement for DB, visibility for queues)?
+- [ ] No reliance on framework defaults (often 30-60s, too generous)?
+- [ ] Circuit breakers for services that may be degraded (closed, open, half-open)?
+- [ ] Circuit breaker trips on sustained failure, not a single error?
+- [ ] Connection pooling: separate pool per external dependency?
+- [ ] Pool size based on expected concurrency, not defaults or guesses?
+- [ ] Idle timeout configured to reclaim unused connections?
+- [ ] For serverless: connection proxy (RDS Proxy, PgBouncer) to prevent exhaustion from cold starts?
+- [ ] Graceful degradation: fallback behavior defined when a dependency is unavailable?
+- [ ] Health check readiness endpoint reflects dependency status?
+
+Reference: `rules/resilience.md` (Circuit Breakers, Timeouts), `rules/database.md` (Connection Management)
+
+## 19. Async Processing Resilience
+
+- [ ] Dead letter queue configured on every queue and event source mapping?
+- [ ] `maxReceiveCount` set based on retry policy (typically 3-5)?
+- [ ] Partial batch failures reported: return individual failure IDs so successful messages are not redelivered?
+- [ ] DLQ depth monitored with alerts? Messages in DLQ mean data is not being processed.
+- [ ] Reprocessing path built: DLQ messages can be replayed after root cause fix?
+- [ ] Consumer processes each item independently? One failure does not abort the batch?
+- [ ] Per-item success/failure tracked and reported?
+- [ ] State consistent after partial failure (compensating actions or rollback)?
+- [ ] Background jobs have execution timeout with cleanup?
+
+Reference: `rules/resilience.md` (Dead Letter Queues, Partial Failure, Timeouts)
+
+## 20. Deployment Readiness
+
+- [ ] Backward compatibility: old and new versions coexist during rollout (rolling update, blue/green, canary)?
+- [ ] Database migrations run before deployment? Old code works with new schema?
+- [ ] Safe migration patterns used: nullable columns first, no renames or type changes in one step?
+- [ ] Liveness probe: returns 200 if process is running, no dependency checks?
+- [ ] Readiness probe: returns 200 only when all critical dependencies are reachable?
+- [ ] Graceful shutdown: stop accepting new requests, finish in-flight within timeout, then exit?
+- [ ] Feature flags for user-facing behavior changes that need gradual rollout?
+- [ ] Rollback plan: can revert deployment without data loss or manual intervention?
+- [ ] No hardcoded config: all environment-specific values from env vars or config service?
+
+Reference: `rules/distributed-systems.md` (Zero-Downtime Deployments), `rules/database.md` (Safe Migrations)

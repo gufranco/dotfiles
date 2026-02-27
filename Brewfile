@@ -102,7 +102,7 @@ brew 'delta'
 brew 'gh'
 brew 'git'
 brew 'glab'
-brew 'graphite'
+brew 'withgraphite/tap/graphite'
 brew 'lazygit'
 
 ################################################################################

@@ -35,6 +35,7 @@ This skill accepts optional arguments after `/review`:
    - `git remote get-url origin` to detect the git platform.
    - `git branch --show-current` to get the current branch.
    - Determine the CLI tool from the remote URL: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
+   - **Resolve account:** run `gh auth status` (or `glab auth status`) to list all authenticated accounts. Parse the remote URL to identify the host. If the active account does not match the remote host/owner, find the matching account and switch with `gh auth switch --user <login>` (or the `glab` equivalent). Record the original active account to restore later. If no matching account is found, report the mismatch and stop.
    - Parse flags: check if `--post` or `--local` was passed. Collect all remaining arguments as PR identifiers.
    - **If multiple PRs were given**, process each one sequentially through steps 2-9 below. Complete the full review cycle for one PR before starting the next. Between PRs, print a separator line so the user can tell where one review ends and the next begins.
 2. **Determine the review mode (PR or local):**
@@ -301,6 +302,7 @@ Check if the branch is up to date with the base branch. If it is behind, ask the
 - Never review a PR/MR that is not open. Check the state before doing any work. If merged or closed, tell the user and stop immediately.
 - In local mode, never post comments anywhere. Present the review to the user only.
 - In local mode, if the review is clean, suggest the user run `/pr` to open the PR.
+- Always restore the original active account after all operations, even if earlier steps fail. Never leave the user on a different account than they started with.
 
 ## Related skills
 

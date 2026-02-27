@@ -56,6 +56,7 @@ This skill accepts a subcommand after `/worktree`:
    - `cat .worktree-task.md` for the task description.
    - `git remote get-url origin` to detect the platform.
    - `git branch --show-current` for the branch name.
+   - **Resolve account:** run `gh auth status` (or `glab auth status`) to list all authenticated accounts. Parse the remote URL to identify the host. If the active account does not match the remote host/owner, find the matching account and switch with `gh auth switch --user <login>` (or the `glab` equivalent). Record the original active account to restore later.
 3. **Stage and commit.** If there are uncommitted changes:
    - Run `git add -A` (worktrees are task-scoped, so this is safe).
    - Remove `.worktree-task.md` from staging: `git reset HEAD .worktree-task.md`.
@@ -63,7 +64,8 @@ This skill accepts a subcommand after `/worktree`:
    - Show for approval, then commit.
 4. **Push.** `git push -u origin <branch>`.
 5. **Create PR.** Use the task description from `.worktree-task.md` as the basis for the PR body. Follow the same PR conventions as `/pr`: detect platform, use `gh pr create` or `glab mr create`, include What/How/Testing sections.
-6. **Report.** Show the PR URL and suggest `/worktree cleanup` when the PR is merged.
+6. **Restore the original active account** if a switch was performed in step 2.
+7. **Report.** Show the PR URL and suggest `/worktree cleanup` when the PR is merged.
 
 ### `check` subcommand
 
@@ -103,6 +105,7 @@ This skill accepts a subcommand after `/worktree`:
 - When delivering, always remove `.worktree-task.md` from staging.
 - Default branch detection: use `gh repo view --json defaultBranchRef` or fall back to `git remote show origin`.
 - If `--all` is used for cleanup, warn that unmerged work will be lost and require double confirmation.
+- Always restore the original active account after deliver operations, even if earlier steps fail.
 
 ## Related skills
 

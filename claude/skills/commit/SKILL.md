@@ -99,12 +99,14 @@ Only when needed:
 
 This section applies when `--pipeline` was passed. It runs after push completes successfully.
 
-### Step 1: Detect platform and locate checks
+### Step 1: Detect platform, resolve account, and locate checks
 
 Run **in parallel**:
 - `git remote get-url origin` to detect the git platform.
 - `git branch --show-current` to get the current branch.
 - Determine the CLI tool: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
+
+**Resolve account:** run `gh auth status` (or `glab auth status`) to list all authenticated accounts. Parse the remote URL to identify the host. If the active account does not match the remote host/owner, find the matching account and switch with `gh auth switch --user <login>` (or the `glab` equivalent). Record the original active account to restore later. If no matching account is found, report the mismatch and stop.
 
 Then check if a PR/MR exists for the branch:
 - GitHub: `gh pr view --json number,url,statusCheckRollup`.
@@ -173,6 +175,7 @@ After presenting all failures, ask the user:
 - Never include files that contain secrets or credentials.
 - If there are no changes to commit, say so and stop.
 - `--pipeline` without a push is meaningless. If the user declines to push, skip monitoring entirely.
+- Always restore the original active account after pipeline monitoring completes, even if earlier steps fail. Never leave the user on a different account than they started with.
 
 ## Related skills
 

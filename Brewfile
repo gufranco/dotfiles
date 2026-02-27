@@ -23,212 +23,328 @@ tap 'universal-ctags/universal-ctags'
 tap 'withgraphite/tap'
 
 ################################################################################
-# Homebrew packages
+# Shell & Terminal
 ################################################################################
-brew 'ack'
-brew 'act'
-brew 'actionlint'
-brew 'age'
-brew 'asciinema'
-brew 'autoconf'
-brew 'automake'
-brew 'awscli'
-brew 'bandwhich'
 brew 'bash'
-brew 'bat'
-brew 'bats'
+brew 'direnv'
+brew 'starship'
+brew 'tmux'
+brew 'zsh'
+brew 'zsh-syntax-highlighting'
+
+################################################################################
+# GNU & Core Utilities
+################################################################################
 brew 'bc'
 brew 'binutils'
-brew 'bottom'
-brew 'ca-certificates'
-brew 'chruby'
-brew 'cmake'
-brew 'cmus'
-brew 'cocoapods'
-brew 'colima'
 brew 'coreutils'
-brew 'cpufetch'
-brew 'curl'
-brew 'delta'
 brew 'diffutils'
-brew 'direnv'
-brew 'dive'
-brew 'docker-compose'
-brew 'docker-credential-helper'
-brew 'docker'
-brew 'duf'
-brew 'dust'
-brew 'entr'
-brew 'eza'
-brew 'fastfetch'
-brew 'fatsort'
-brew 'fd'
 brew 'findutils'
-brew 'flyctl'
-brew 'fzf'
 brew 'gawk'
-brew 'gettext'
-brew 'gh'
-brew 'git'
-brew 'gitleaks'
-brew 'glab'
-brew 'glow'
 brew 'gnu-indent'
 brew 'gnu-tar'
 brew 'gnu-time'
 brew 'gnu-units'
 brew 'gnu-which'
-brew 'gnupg'
-brew 'golang', link: true
-brew 'golangci-lint'
 brew 'gpatch'
-brew 'gping'
-brew 'graphite'
 brew 'grep'
 brew 'gsed'
+brew 'make'
+brew 'moreutils'
+brew 'p7zip'
+brew 'patchutils'
+brew 'unzip'
+brew 'zip'
+
+################################################################################
+# Libraries & Build Dependencies
+################################################################################
+brew 'autoconf'
+brew 'automake'
+brew 'ca-certificates'
+brew 'cmake'
+brew 'gettext'
+brew 'libtool'
+brew 'openssl'
+brew 'readline'
+brew 'shared-mime-info'
+brew 'zlib'
+
+################################################################################
+# File Navigation & Search
+################################################################################
+brew 'ack'
+brew 'eza'
+brew 'fd'
+brew 'fzf'
+brew 'nnn'
+brew 'ripgrep'
+brew 'yazi'
+
+################################################################################
+# Text Editors & Viewers
+################################################################################
+brew 'bat'
+brew 'glow'
 brew 'gum'
-brew 'helm'
-brew 'htop'
-brew 'httpie'
-brew 'hyperfine'
 brew 'jq'
-brew 'just'
+brew 'pygments'
+brew 'tealdeer'
+brew 'universal-ctags'
+brew 'vim'
+brew 'vint'
+brew 'yq'
+
+################################################################################
+# Git & Version Control
+################################################################################
+brew 'delta'
+brew 'gh'
+brew 'git'
+brew 'glab'
+brew 'graphite'
+brew 'lazygit'
+
+################################################################################
+# Networking & HTTP
+################################################################################
+brew 'bandwhich'
+brew 'curl'
+brew 'gping'
+brew 'httpie'
+brew 'lynx'
+brew 'mtr'
+brew 'nmap'
+brew 'telnet'
+brew 'wget'
+
+################################################################################
+# Containers & Kubernetes
+################################################################################
+brew 'colima'
+brew 'dive'
+brew 'docker'
+brew 'docker-compose'
+brew 'docker-credential-helper'
+brew 'helm'
 brew 'k9s'
 brew 'kubectl'
 brew 'lazydocker'
-brew 'lazygit'
-brew 'libpq'
-brew 'libtool'
 brew 'lima-additional-guestagents'
-brew 'lynx'
-brew 'mailutils'
-brew 'make'
-brew 'mas'
-brew 'media-control'
-brew 'mongocli'
-brew 'moreutils'
-brew 'mtr'
-brew 'neomutt'
-brew 'neovim'
-brew 'nmap'
-brew 'nnn'
+
+################################################################################
+# Cloud & Infrastructure
+################################################################################
+brew 'awscli'
+brew 'flyctl'
+brew 'opentofu'
+brew 'terraform'
+brew 'vercel-cli'
+
+################################################################################
+# Security & Encryption
+################################################################################
+brew 'age'
+brew 'gitleaks'
+brew 'gnupg'
+brew 'pinentry-mac'
+brew 'snyk-cli'
+brew 'sops'
+brew 'trivy'
+
+################################################################################
+# Languages & Package Managers
+################################################################################
+brew 'chruby'
+brew 'golang', link: true
+brew 'golangci-lint'
 brew 'node', link: true
 brew 'nvm'
 brew 'openjdk@17'
-brew 'openssl'
-brew 'opentofu'
 brew 'oven-sh/bun/bun', link: true
-brew 'p7zip'
-brew 'patchutils'
-brew 'pinentry-mac'
 brew 'pipx'
 brew 'pnpm'
-brew 'procs'
-brew 'pygments'
 brew 'python', link: true
-brew 'rclone'
-brew 'readline'
-brew 'restic'
-brew 'ripgrep'
-brew 'rsync'
-brew 'ruby-install'
 brew 'ruby', link: true
+brew 'ruby-install'
 brew 'rust', link: true
-brew 'shared-mime-info'
-brew 'shellcheck'
-brew 'snyk-cli'
-brew 'sops'
-brew 'starship'
-brew 'stripe-cli'
-brew 'supabase'
-brew 'tealdeer'
-brew 'telnet'
-brew 'terraform'
-brew 'tmux'
-brew 'tokei'
-brew 'trivy'
-brew 'tty-clock'
-brew 'ucon64'
-brew 'UltimateNova1203/maxcso/maxcso'
-brew 'universal-ctags'
-brew 'unzip'
-brew 'urlview'
 brew 'uv'
-brew 'vercel-cli'
-brew 'vim'
-brew 'vint'
-brew 'watchman'
-brew 'wget'
 brew 'yarn'
-brew 'yazi'
-brew 'yq'
-brew 'zip'
-brew 'zlib'
-brew 'zsh-syntax-highlighting'
-brew 'zsh'
 
 ################################################################################
-# Homebrew casks
+# Development Tools
 ################################################################################
-# cask 'orbstack'
-# cask 'raycast'
-cask '1password'
+brew 'act'
+brew 'actionlint'
+brew 'bats'
+brew 'cocoapods'
+brew 'entr'
+brew 'hyperfine'
+brew 'just'
+brew 'shellcheck'
+brew 'tokei'
+brew 'watchman'
+brew 'xcodes'
+
+################################################################################
+# Database & SaaS CLIs
+################################################################################
+brew 'libpq'
+brew 'mongocli'
+brew 'stripe-cli'
+brew 'supabase'
+
+################################################################################
+# Monitoring & System Info
+################################################################################
+brew 'bottom'
+brew 'cpufetch'
+brew 'duf'
+brew 'dust'
+brew 'fastfetch'
+brew 'htop'
+brew 'procs'
+brew 'tty-clock'
+
+################################################################################
+# Email
+################################################################################
+brew 'mailutils'
+brew 'neomutt'
+brew 'urlview'
+
+################################################################################
+# Media & Retro Gaming
+################################################################################
+brew 'asciinema'
+brew 'cmus'
+brew 'fatsort'
+brew 'media-control'
+brew 'UltimateNova1203/maxcso/maxcso'
+brew 'ucon64'
+
+################################################################################
+# Backup & Sync
+################################################################################
+brew 'rclone'
+brew 'restic'
+brew 'rsync'
+
+################################################################################
+# macOS
+################################################################################
+brew 'mas'
+
+################################################################################
+# Casks - Terminals
+################################################################################
+cask 'ghostty'
+cask 'iterm2'
+cask 'kitty'
+
+################################################################################
+# Casks - Code Editors & IDEs
+################################################################################
 cask 'android-studio'
-cask 'balenaetcher'
-cask 'claude-code'
-cask 'cleanmymac'
-cask 'clickup'
-cask 'coconutbattery'
-cask 'codex-app'
-cask 'codex'
-cask 'cursor-cli'
 cask 'cursor'
-cask 'cyberduck'
+cask 'cursor-cli'
+cask 'sublime-text'
+cask 'textmate'
+cask 'visual-studio-code'
+
+################################################################################
+# Casks - AI Tools
+################################################################################
+cask 'claude-code'
+cask 'codex'
+cask 'codex-app'
+
+################################################################################
+# Casks - API & Database
+################################################################################
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
-cask 'discord'
-cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu)
-cask 'figma'
-cask 'firefox'
-cask 'flixtools'
-cask 'ghostty'
-cask 'google-chrome'
-cask 'grandperspective'
-cask 'granola'
 cask 'insomnia'
-cask 'istat-menus'
-cask 'iterm2'
-cask 'jdownloader'
-cask 'keka'
-cask 'kitty'
-cask 'lastpass'
-cask 'linear-linear'
-cask 'logi-options+'
-cask 'maccy'
-cask 'macs-fan-control' unless /\AApple M[\d]\z/.match?(cpu)
-cask 'maestral'
 cask 'mongodb-compass'
-cask 'monitorcontrol'
-cask 'mx-power-gadget' if architecture == 'arm64'
 cask 'ngrok'
-cask 'nordvpn'
-cask 'parallels' if architecture == 'arm64'
 cask 'postman'
 cask 'proxyman'
 cask 'redis-insight'
 cask 'session-manager-plugin'
+
+################################################################################
+# Casks - Browsers
+################################################################################
+cask 'firefox'
+cask 'google-chrome'
+
+################################################################################
+# Casks - Productivity
+################################################################################
+# cask 'raycast'
+cask 'clickup'
+cask 'granola'
+cask 'linear-linear'
+cask 'maccy'
 cask 'shottr'
+
+################################################################################
+# Casks - Communication
+################################################################################
+cask 'discord'
 cask 'slack'
-cask 'spotify', args: { no_quarantine: true }
-cask 'sublime-text'
-cask 'textmate'
-cask 'transmission'
+
+################################################################################
+# Casks - Design
+################################################################################
+cask 'figma'
+
+################################################################################
+# Casks - Security & VPN
+################################################################################
+cask '1password'
+cask 'lastpass'
+cask 'nordvpn'
 cask 'tunnelblick'
-cask 'visual-studio-code'
+
+################################################################################
+# Casks - System & Hardware
+################################################################################
+cask 'cleanmymac'
+cask 'coconutbattery'
+cask 'displaylink' if /\AApple M[\d]\z/.match?(cpu)
+cask 'grandperspective'
+cask 'istat-menus'
+cask 'logi-options+'
+cask 'macs-fan-control' unless /\AApple M[\d]\z/.match?(cpu)
+cask 'monitorcontrol'
+cask 'mx-power-gadget' if architecture == 'arm64'
+
+################################################################################
+# Casks - File Management & Utilities
+################################################################################
+cask 'balenaetcher'
+cask 'cyberduck'
+cask 'keka'
+cask 'maestral'
+
+################################################################################
+# Casks - Media & Entertainment
+################################################################################
+cask 'flixtools'
+cask 'jdownloader'
+cask 'spotify', args: { no_quarantine: true }
+cask 'transmission'
 cask 'vlc'
 
 ################################################################################
-# Homebrew fonts
+# Casks - Virtualization
+################################################################################
+# cask 'orbstack'
+cask 'parallels' if architecture == 'arm64'
+
+################################################################################
+# Fonts
 ################################################################################
 cask 'font-0xproto-nerd-font'
 cask 'font-3270-nerd-font'

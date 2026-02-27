@@ -21,6 +21,9 @@ This skill accepts optional arguments after `/commit`:
 
 - No arguments: commit changes and ask whether to push afterward.
 - `--push`: commit and push to remote automatically without asking.
+- `--pipeline`: commit, push, and monitor CI/CD checks until they pass or fail. Implies push. If `--push` is not also passed, asks for confirmation before pushing. On failure, offers to diagnose, fix, and re-push automatically.
+
+Arguments can be combined: `/commit --push --pipeline`.
 
 ## Steps
 
@@ -39,13 +42,17 @@ This skill accepts optional arguments after `/commit`:
    - Commit following the message format below.
 4. After all commits, run `git status` and `git log --oneline` **in parallel** to verify clean tree and show summary.
 5. **Push to remote:**
-   - If `--push` was passed, push immediately without asking.
-   - Otherwise, ask the user: "Want me to push to remote?"
-   - If yes, or if `--push`:
+   - If `--push` or `--pipeline` was passed:
+     - If `--push` was passed, push immediately without asking.
+     - If only `--pipeline` was passed (no `--push`), ask the user: "Push to remote and monitor pipeline?"
+     - If the user declines the push, stop here. `--pipeline` requires push to work.
+   - Otherwise (no flags), ask the user: "Want me to push to remote?"
+   - When pushing:
      - Check if an upstream exists: `git rev-parse --abbrev-ref @{upstream}`.
      - If no upstream, push with `git push -u origin <branch>`.
      - If upstream exists, push with `git push`.
    - If the user declines, stop. Suggest `/pr` if they want to open a pull request.
+6. **If `--pipeline` was passed, enter the pipeline monitoring loop** (see "Pipeline Monitoring" section below).
 
 ## Commit Message Format
 
@@ -88,14 +95,86 @@ Only when needed:
 - `BREAKING CHANGE: <description>` for breaking changes.
 - `Fixes #123`, `Closes #456`, `Refs #789` for issue references.
 
+## Pipeline Monitoring
+
+This section applies when `--pipeline` was passed. It runs after push completes successfully.
+
+### Step 1: Detect platform and locate checks
+
+Run **in parallel**:
+- `git remote get-url origin` to detect the git platform.
+- `git branch --show-current` to get the current branch.
+- Determine the CLI tool: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
+
+Then check if a PR/MR exists for the branch:
+- GitHub: `gh pr view --json number,url,statusCheckRollup`.
+- GitLab: `glab mr view`.
+- If no PR/MR exists, use branch pipeline checks instead.
+
+### Step 2: Wait for checks
+
+- **With PR/MR:**
+  - GitHub: `timeout 600 gh pr checks --watch`.
+  - GitLab: `timeout 600 glab ci status --wait`.
+- **Without PR/MR (branch pipelines):**
+  - GitHub: `gh run list --branch <branch> --limit 1` to find the latest run, then `timeout 600 gh run watch <id>`.
+  - GitLab: `timeout 600 glab ci status --wait`.
+- If the timeout is reached (exit code 124), report that checks are still running, show the URL, and stop.
+
+### Step 3: Evaluate results
+
+- **All checks pass:** report success with a summary and stop. The task is done.
+- **Any check fails:** proceed to Step 4.
+
+### Step 4: Diagnose failures
+
+For each failed check:
+
+- **GitHub:** fetch logs with `gh run view <id> --log-failed`. Fetch all failed runs **in parallel**.
+- **GitLab:** fetch logs with `glab ci trace <job-id>`. Fetch all failed jobs **in parallel**.
+
+Before suggesting a fix, search for existing fixes:
+- Recent commits on the branch: `git log --oneline -5`.
+- Open PRs/MRs that might address it:
+  - GitHub: `gh pr list --search "<failed check name>"`.
+  - GitLab: `glab mr list --search "<failed check name>"`.
+- If an existing fix is found, report it and stop.
+
+Present the diagnosis:
+
+```
+### <check name>
+**URL:** <direct link to the failed check>
+**Error:**
+<relevant error message, file/line if available>
+
+**Log excerpt:**
+<the most relevant 10-20 lines from the failure log>
+```
+
+### Step 5: Offer to fix
+
+After presenting all failures, ask the user:
+
+- **"Fix and re-push"**: apply the fix, stage the changed files (specific files, never `git add -A`), commit with an appropriate message (e.g., `fix(ci): correct linting errors`), push, and go back to Step 2.
+- **"Stop monitoring"**: show a summary of what passed and what failed, then stop.
+
+### Guardrails
+
+- **Max 3 fix-and-retry cycles.** After 3 attempts, stop and report the current state. Infinite loops help nobody.
+- **Only fix what you can confidently fix.** If the failure is ambiguous, unclear, or requires domain knowledge you don't have, present the diagnosis and stop. Don't guess.
+- **Each fix is its own commit.** Never amend the user's original commits. CI fixes get their own commit with a clear message.
+- **Never skip hooks.** No `--no-verify` on any commit or push. If a hook blocks the fix, report it.
+
 ## Rules
 
 - Never combine unrelated changes into a single commit.
 - Never use `git add -A` or `git add .`.
 - Never include files that contain secrets or credentials.
 - If there are no changes to commit, say so and stop.
+- `--pipeline` without a push is meaningless. If the user declines to push, skip monitoring entirely.
 
 ## Related skills
 
 - `/pr` - After committing, create or update a pull request.
-- `/checks` - After pushing, monitor CI/CD pipeline status.
+- `/checks` - Monitor CI/CD pipeline status independently (without the fix loop).

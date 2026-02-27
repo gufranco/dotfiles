@@ -27,9 +27,10 @@ This skill accepts optional arguments after `/pr`:
 - `--reviewer <user>`: request review from a specific user. Can be repeated for multiple reviewers.
 - `--assignee <user>`: assign the PR/MR to a user.
 - `--label <name>`: add a label. Can be repeated for multiple labels.
+- `--pipeline`: after creating/updating the PR, monitor CI/CD checks until they pass or fail. On failure, offers to diagnose, fix, and re-push automatically.
 - `update` or an existing PR/MR number: update the title and description of an existing PR/MR.
 
-Arguments can be combined: `/pr --draft --base develop --reviewer alice --label bugfix`.
+Arguments can be combined: `/pr --draft --base develop --reviewer alice --label bugfix --pipeline`.
 
 ## Steps
 
@@ -88,6 +89,7 @@ Arguments can be combined: `/pr --draft --base develop --reviewer alice --label 
     - **Update (GitLab):** `glab mr update <number> --title "<title>" --description-file <tmpfile>`. Fall back to `--description "$(cat <tmpfile>)"` if `--description-file` is not supported.
     - Always clean up the temp file after the command completes, whether it succeeded or failed. Use a trap or finally block.
 12. **Show the PR/MR URL when done.**
+13. **If `--pipeline` was passed, enter the pipeline monitoring loop** (see "Pipeline Monitoring" section below).
 
 ## PR Title
 
@@ -146,6 +148,64 @@ If issue references were found in the branch name or commits, add them at the en
 - Use bullet points for lists.
 - Do not hard-wrap lines. Let the markdown render naturally in the web UI.
 
+## Pipeline Monitoring
+
+This section applies when `--pipeline` was passed. It runs after step 12, once the PR/MR is created/updated and the URL has been shown.
+
+### Step 1: Wait for checks
+
+The push already happened in step 9, so checks should already be queued or running.
+
+- **GitHub:** `timeout 600 gh pr checks --watch`.
+- **GitLab:** `timeout 600 glab ci status --wait`.
+- If the timeout is reached (exit code 124), report that checks are still running, show the PR URL, and stop.
+
+### Step 2: Evaluate results
+
+- **All checks pass:** report success with a summary and stop. The PR is ready for review.
+- **Any check fails:** proceed to Step 3.
+
+### Step 3: Diagnose failures
+
+For each failed check:
+
+- **GitHub:** fetch logs with `gh run view <id> --log-failed`. Fetch all failed runs **in parallel**.
+- **GitLab:** fetch logs with `glab ci trace <job-id>`. Fetch all failed jobs **in parallel**.
+
+Before suggesting a fix, search for existing fixes:
+- Recent commits on the branch: `git log --oneline -5`.
+- Open PRs/MRs that might address it:
+  - GitHub: `gh pr list --search "<failed check name>"`.
+  - GitLab: `glab mr list --search "<failed check name>"`.
+- If an existing fix is found, report it and stop.
+
+Present the diagnosis:
+
+```
+### <check name>
+**URL:** <direct link to the failed check>
+**Error:**
+<relevant error message, file/line if available>
+
+**Log excerpt:**
+<the most relevant 10-20 lines from the failure log>
+```
+
+### Step 4: Offer to fix
+
+After presenting all failures, ask the user:
+
+- **"Fix and re-push"**: apply the fix, stage the changed files (specific files, never `git add -A`), commit with an appropriate message (e.g., `fix(ci): correct linting errors`), push, and go back to Step 1.
+- **"Stop monitoring"**: show a summary of what passed and what failed, then stop.
+
+### Guardrails
+
+- **Max 3 fix-and-retry cycles.** After 3 attempts, stop and report the current state.
+- **Only fix what you can confidently fix.** If the failure is ambiguous or requires domain knowledge you don't have, present the diagnosis and stop.
+- **Each fix is its own commit.** Never amend the user's original commits. CI fixes get their own commit with a clear message.
+- **Never skip hooks.** No `--no-verify` on any commit or push.
+- **Update PR description** after fixing. If the fix is non-trivial, append a note to the Testing section of the PR description explaining what was fixed.
+
 ## Rules
 
 - Always detect the git platform from the remote URL. Never assume GitHub or GitLab.
@@ -163,6 +223,6 @@ If issue references were found in the branch name or commits, add them at the en
 
 ## Related skills
 
-- `/commit` - Create semantic commits before opening a PR.
-- `/checks` - Monitor CI/CD pipeline status after pushing.
+- `/commit` - Create semantic commits before opening a PR. Also supports `--pipeline`.
+- `/checks` - Monitor CI/CD pipeline status independently (without the fix loop).
 - `/review` - Review a PR/MR before merging.

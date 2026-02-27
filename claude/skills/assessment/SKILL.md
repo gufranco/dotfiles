@@ -62,7 +62,7 @@ This skill accepts optional arguments after `/assessment`:
    - `data`: 2, 4, 5, 13, 14
    - `ops`: 15, 19, 20
 
-4. **Audit against each applicable category.** For every category that applies based on step 3, evaluate the implementation. Use the full checklist from `assessment-checklist.md` in this directory. For each finding, assign:
+4. **Audit against each applicable category.** For every category that applies based on step 3, evaluate the implementation. Use the full checklist from `checklists/engineering.md`. For each finding, assign:
 
    **Status**: PRESENT, PARTIAL, or MISSING.
 
@@ -84,7 +84,7 @@ This skill accepts optional arguments after `/assessment`:
 
 ## Assessment Checklist Categories
 
-The full checklist lives in `assessment-checklist.md`. Categories:
+The full checklist lives in `checklists/engineering.md` (shared with `/review`). Categories:
 
 1. **Idempotency and deduplication** — Can every write operation run twice safely?
 2. **Atomicity and transactions** — Are related writes atomic? Conditional writes prevent lost updates?

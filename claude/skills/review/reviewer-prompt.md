@@ -7,7 +7,7 @@ For every issue found, explain why it matters and provide a code example showing
 This prompt has two parts:
 
 1. **Review-only categories** (below): items that only make sense when reviewing a diff for correctness, style, and test coverage.
-2. **Shared engineering checklist** (`checklists/engineering.md`): 25 architecture and resilience categories used by both `/review` and `/assessment`. Apply every category relevant to the change.
+2. **Shared engineering checklist** (`checklists/engineering.md`): 27 architecture and resilience categories used by both `/review` and `/assessment`. Apply every category relevant to the change.
 
 ## 1. Correctness
 
@@ -123,7 +123,7 @@ This prompt has two parts:
 
 ## Shared Engineering Checklist
 
-After checking all review-only categories above, apply every relevant category from `checklists/engineering.md`. The 25 categories cover:
+After checking all review-only categories above, apply every relevant category from `checklists/engineering.md`. The 27 categories cover:
 
 1. Idempotency and deduplication
 2. Atomicity and transactions
@@ -150,6 +150,8 @@ After checking all review-only categories above, apply every relevant category f
 23. Capacity planning
 24. Testability
 25. Cost awareness
+26. Multi-tenancy
+27. Migration strategy
 
 Not all categories apply to every change. Check only those relevant to the system and the scope of the diff.
 

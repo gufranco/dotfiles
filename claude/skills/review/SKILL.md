@@ -8,7 +8,7 @@ Review a pull request, merge request, or local branch changes with an extremely 
 Use two checklists as structured guides:
 
 1. `reviewer-prompt.md` in this directory for review-only categories (correctness, performance, testing, code quality, naming, dependencies, PR quality).
-2. `checklists/engineering.md` for the 25 shared architecture and resilience categories (also used by `/assessment`).
+2. `checklists/engineering.md` for the 27 shared architecture and resilience categories (also used by `/assessment`).
 
 Go through every applicable category. Do not skip sections because the changes "look simple."
 

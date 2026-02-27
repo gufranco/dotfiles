@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT
 if [ -z "$SCRIPT_DIR" ] || [ ! -f "$SCRIPT_DIR/zsh/utilities" ]; then
   # Running via curl | bash - download utilities to temp location
   TEMP_UTILITIES=$(mktemp)
-  if curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/zsh/utilities -o "$TEMP_UTILITIES" 2>/dev/null; then
+  if curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/gufranco/dotfiles/master/zsh/utilities -o "$TEMP_UTILITIES" 2>/dev/null; then
     # shellcheck source=/dev/null
     source "$TEMP_UTILITIES"
     rm -f "$TEMP_UTILITIES"
@@ -138,7 +138,7 @@ case "$(uname)" in
     log_info "Setting up dotfiles..."
     git_clone_or_update "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles"
     git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
-    git -C "$HOME/.dotfiles" submodule update --init --recursive 2>/dev/null || true
+    git -C "$HOME/.dotfiles" submodule update --init --recursive 2>/dev/null || log_warning "Submodule update failed (tmux plugins may be missing)"
     log_success "Dotfiles configured"
 
     ############################################################################
@@ -185,7 +185,7 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists node || [ "$(node --version | cut -d. -f1 | tr -d v)" -lt 24 ]; then
       log_info "Installing Node.js 24..."
-      curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg 2>/dev/null || true
+      curl -fsSL --connect-timeout 10 --max-time 30 https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg 2>/dev/null || true
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq nodejs
@@ -242,7 +242,7 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists gh; then
       log_info "Installing GitHub CLI..."
-      curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
+      curl -fsSL --connect-timeout 10 --max-time 30 https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq gh
@@ -272,7 +272,7 @@ case "$(uname)" in
     if ! cmd_exists eza; then
       log_info "Installing eza..."
       sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg 2>/dev/null || true
+      curl -fsSL --connect-timeout 10 --max-time 30 https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg 2>/dev/null || true
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq eza
@@ -286,9 +286,12 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists delta; then
       log_info "Installing delta..."
-      DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep tag_name | cut -d '"' -f 4)
-      curl -#fLo /tmp/delta.deb "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb" 2>/dev/null || true
-      sudo dpkg -i /tmp/delta.deb 2>/dev/null || true
+      DELTA_VERSION=$(curl -s --connect-timeout 10 --max-time 30 https://api.github.com/repos/dandavison/delta/releases/latest | grep tag_name | cut -d '"' -f 4)
+      if curl -#fLo /tmp/delta.deb --connect-timeout 10 --max-time 120 "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb" 2>/dev/null; then
+        sudo dpkg -i /tmp/delta.deb 2>/dev/null || log_warning "Failed to install delta .deb"
+      else
+        log_warning "Failed to download delta"
+      fi
       rm -f /tmp/delta.deb
       log_success "Delta installed"
     else
@@ -300,7 +303,7 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists starship; then
       log_info "Installing Starship..."
-      curl -sS https://starship.rs/install.sh | sh -s -- -y >/dev/null 2>&1
+      curl -sS --connect-timeout 10 --max-time 60 https://starship.rs/install.sh | sh -s -- -y >/dev/null 2>&1
       log_success "Starship installed"
     else
       log_skip "Starship already installed"
@@ -324,7 +327,7 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists rustc; then
       log_info "Installing Rust..."
-      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y >/dev/null 2>&1
+      curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 60 https://sh.rustup.rs | sh -s -- -y >/dev/null 2>&1
       log_success "Rust installed"
     else
       log_skip "Rust already installed"
@@ -335,7 +338,7 @@ case "$(uname)" in
     ############################################################################
     if ! pkg_installed spotify-client; then
       log_info "Installing Spotify..."
-      curl -fsSL https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg 2>/dev/null || true
+      curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg 2>/dev/null || true
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq spotify-client
@@ -349,7 +352,7 @@ case "$(uname)" in
     ############################################################################
     if ! pkg_installed google-chrome-stable; then
       log_info "Installing Google Chrome..."
-      curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg 2>/dev/null || true
+      curl -fsSL --connect-timeout 10 --max-time 30 https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg 2>/dev/null || true
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq google-chrome-stable
@@ -377,7 +380,7 @@ case "$(uname)" in
     if ! pkg_installed code; then
       log_info "Installing VS Code..."
       sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg 2>/dev/null || true
+      curl -fsSL --connect-timeout 10 --max-time 30 https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg 2>/dev/null || true
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq code
@@ -411,12 +414,12 @@ case "$(uname)" in
     mkdir -p "$HOME/.local/share/fonts"
 
     if [ ! -f "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" ]; then
-      curl -#fLo "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" \
+      curl -#fLo "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" --connect-timeout 10 --max-time 120 \
         https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf
     fi
 
     if [ ! -f "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" ]; then
-      curl -#fLo "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" \
+      curl -#fLo "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" --connect-timeout 10 --max-time 120 \
         https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/JetBrainsMono/Ligatures/Regular/JetBrainsMonoNerdFont-Regular.ttf
     fi
 
@@ -481,7 +484,7 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists brew; then
       log_info "Installing Homebrew..."
-      CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      CI=1 /bin/bash -c "$(curl -fsSL --connect-timeout 10 --max-time 120 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       log_success "Homebrew installed"
     else
       log_skip "Homebrew already installed"
@@ -515,9 +518,9 @@ case "$(uname)" in
     log_info "Setting up dotfiles..."
     if [ -d "$HOME/.dotfiles/.git" ]; then
       git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git 2>/dev/null || true
-      git -C "$HOME/.dotfiles" pull --no-edit 2>/dev/null || true
+      git -C "$HOME/.dotfiles" pull --no-edit 2>/dev/null || log_warning "Failed to pull dotfiles"
       git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
-      git -C "$HOME/.dotfiles" submodule update --init --recursive 2>/dev/null || true
+      git -C "$HOME/.dotfiles" submodule update --init --recursive 2>/dev/null || log_warning "Submodule update failed"
       log_success "Dotfiles updated"
     else
       git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"
@@ -530,9 +533,9 @@ case "$(uname)" in
     ############################################################################
     log_info "Installing Homebrew packages..."
     brew update
-    brew bundle --file "$HOME/.dotfiles/Brewfile" || true
+    brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
-    brew upgrade || true
+    brew upgrade || log_warning "Brew upgrade had failures"
     cmd_exists brew-cu && brew cu --all --yes --cleanup 2>/dev/null || true
     brew cleanup -s || true
     log_success "Homebrew packages updated"
@@ -624,7 +627,7 @@ esac
 
 # Import GPG keys (idempotent - import is safe to repeat)
 for key in "$HOME/.gnupg/keys/"*.pgp; do
-  [ -f "$key" ] && gpg --batch --yes --quiet --import "$key" 2>/dev/null || true
+  [ -f "$key" ] && { gpg --batch --yes --quiet --import "$key" 2>/dev/null || log_warning "Failed to import GPG key: $(basename "$key")"; }
 done
 
 ############################################################################

@@ -372,19 +372,18 @@ function __update_token() {
     return 1
   fi
 
-  # shellcheck disable=SC2155
-  local cache_file="/tmp/${cache_file_name}_$(whoami).cache"
+  local cache_dir="$HOME/.cache/dotfiles-tokens"
+  mkdir -p "$cache_dir" && chmod 700 "$cache_dir" 2>/dev/null
+  local cache_file="${cache_dir}/${cache_file_name}.cache"
   local token_content
 
   # Try to load from cache first (unless force is true)
   if [ "$force" != "true" ] && [ -f "$cache_file" ]; then
     token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
-    # Validate that token is not empty
     if [ -n "$token_content" ]; then
       export "${env_var_name}"="$token_content"
       return 0
     else
-      # Cache file exists but is empty, remove it and try to reload
       rm -f "$cache_file" 2>/dev/null
     fi
   fi
@@ -400,19 +399,14 @@ function __update_token() {
   fi
 
   # Decrypt GPG file and save to cache
-  if ! gpg --quiet --batch --yes -d "$gpg_file" 2>/dev/null | tr -d '\n' > "$cache_file"; then
-    # GPG decryption failed, remove invalid cache file
+  if ! (umask 077 && gpg --quiet --batch --yes -d "$gpg_file" 2>/dev/null | tr -d '\n' > "$cache_file"); then
     rm -f "$cache_file" 2>/dev/null
     return 1
   fi
 
-  # Set proper permissions on cache file
-  chmod 600 "$cache_file" 2>/dev/null
-
   # Read token from cache and validate
   token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
   if [ -z "$token_content" ]; then
-    # Token is empty, remove invalid cache file
     rm -f "$cache_file" 2>/dev/null
     return 1
   fi
@@ -477,7 +471,10 @@ function __apt_add_key_and_repo() {
 
   if [ ! -f "$key_file" ]; then
     sudo mkdir -p "$(dirname "$key_file")" 2>/dev/null || true
-    curl -fsSL "$key_url" | sudo gpg --dearmor --yes -o "$key_file" 2>/dev/null || true
+    if ! curl -fsSL --connect-timeout 10 --max-time 30 "$key_url" | sudo gpg --dearmor --yes -o "$key_file" 2>/dev/null; then
+      __log_warning "Failed to download GPG key: $key_url"
+      return 1
+    fi
     echo "$repo_line" | sudo tee "$repo_file" >/dev/null
     sudo apt update -qq
 
@@ -508,7 +505,7 @@ function __git_clone_or_update() {
 
   if [ -d "$target/.git" ]; then
     git -C "$target" remote set-url "$remote_name" "$url" 2>/dev/null || true
-    git -C "$target" pull --no-edit 2>/dev/null || true
+    git -C "$target" pull --no-edit 2>/dev/null || __log_warning "Failed to update: $(basename "$target")"
   else
     git clone --recursive --depth=1 "$url" "$target"
   fi

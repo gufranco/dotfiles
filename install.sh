@@ -609,9 +609,9 @@ safe_link "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
 # GPG
 ############################################################################
 log_info "Setting up GPG..."
-chmod 700 "$HOME/.dotfiles/gnupg" 2>/dev/null || log_warning "Failed to set gnupg permissions"
-chmod 400 "$HOME/.dotfiles/gnupg/keys/"* 2>/dev/null || true
 safe_link "$HOME/.dotfiles/gnupg" "$HOME/.gnupg"
+chmod 700 "$HOME/.gnupg" 2>/dev/null || log_warning "Failed to set gnupg permissions"
+chmod 400 "$HOME/.gnupg/keys/"* 2>/dev/null || true
 
 case "$(uname)" in
   "Linux")
@@ -631,11 +631,11 @@ done
 # SSH
 ############################################################################
 log_info "Setting up SSH..."
-chmod 700 "$HOME/.dotfiles/ssh" 2>/dev/null || log_warning "Failed to set ssh permissions"
-chmod 600 "$HOME/.dotfiles/ssh/config" 2>/dev/null || true
-chmod 400 "$HOME/.dotfiles/ssh/id_"* 2>/dev/null || true
-chmod 644 "$HOME/.dotfiles/ssh/"*.pub 2>/dev/null || true
 safe_link "$HOME/.dotfiles/ssh" "$HOME/.ssh"
+chmod 700 "$HOME/.ssh" 2>/dev/null || log_warning "Failed to set ssh permissions"
+chmod 600 "$HOME/.ssh/config" 2>/dev/null || true
+chmod 400 "$HOME/.ssh/id_"* 2>/dev/null || true
+chmod 644 "$HOME/.ssh/"*.pub 2>/dev/null || true
 
 ############################################################################
 # Neomutt

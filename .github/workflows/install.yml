@@ -73,7 +73,7 @@ jobs:
           set -euo pipefail
           check_perm() {
             local path="$1" expected="$2"
-            actual=$(stat -c %a "$path" 2>/dev/null || echo "missing")
+            actual=$(stat -Lc %a "$path" 2>/dev/null || echo "missing")
             if [ "$actual" = "$expected" ]; then
               echo "OK: $path ($actual)"
             else
@@ -141,7 +141,7 @@ jobs:
           set -euo pipefail
           check_perm() {
             local path="$1" expected="$2"
-            actual=$(stat -f %Lp "$path" 2>/dev/null || echo "missing")
+            actual=$(stat -Lf %Lp "$path" 2>/dev/null || echo "missing")
             if [ "$actual" = "$expected" ]; then
               echo "OK: $path ($actual)"
             else

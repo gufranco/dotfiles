@@ -27,7 +27,7 @@ This skill accepts optional arguments after `/assessment`:
 - No arguments: assess all changed files on the current branch compared to the base branch.
 - A file or directory path: assess those specific files.
 - `--scope <description>`: provide a description of what was implemented so the assessment can focus on relevant patterns.
-- `--focus <area>`: narrow the assessment to a specific concern: `security`, `resilience`, `api`, `data`, `ops`, `quality`, or `all` (default).
+- `--focus <area>`: narrow the assessment to a specific concern: `security`, `resilience`, `api`, `data`, `ops`, `quality`, `tenancy`, or `all` (default).
 - `--comments`: when fixing gaps, add inline comments explaining the reasoning behind each change. Useful for interview take-homes where reviewers need to understand your decision-making process.
 
 ## Steps
@@ -56,14 +56,17 @@ This skill accepts optional arguments after `/assessment`:
    | Exposes an API | REST/GraphQL endpoints | 17 |
    | Runs in production | Deployed service, not a script or CLI | 15, 18, 20, 21, 25 |
    | Has testable logic | Business rules, domain logic, state machines | 24 |
+   | Serves multiple tenants | SaaS, shared infrastructure, per-customer data | 26 |
+   | Replaces existing system | Migration, rewrite, platform change | 27 |
 
    If `--focus` was provided, only check categories in that area:
    - `security`: 16, 17 (auth/input parts)
    - `resilience`: 3, 6, 7, 8, 18, 19, 21
    - `api`: 1, 17
    - `data`: 2, 4, 5, 13, 14, 22
-   - `ops`: 15, 19, 20, 23, 25
+   - `ops`: 15, 19, 20, 23, 25, 27
    - `quality`: 24
+   - `tenancy`: 26
 
 4. **Audit against each applicable category.** For every category that applies based on step 3, evaluate the implementation. Use the full checklist from `checklists/engineering.md`. For each finding, assign:
 
@@ -143,6 +146,8 @@ The full checklist lives in `checklists/engineering.md` (shared with `/review`).
 23. **Capacity planning** — Growth rate estimated? Bottleneck identified? Horizontal scaling path?
 24. **Testability** — Dependencies injected? Pure functions extracted? Contract tests? Functional core, imperative shell?
 25. **Cost awareness** — Query cost understood? Compute right-sized? Storage tiered? Egress minimized?
+26. **Multi-tenancy** — Tenant data isolation? Noisy neighbor prevention? Per-tenant limits?
+27. **Migration strategy** — Strangler fig or parallel run? Feature parity validated? Rollback path?
 
 ## Output Format
 
@@ -154,7 +159,7 @@ The full checklist lives in `checklists/engineering.md` (shared with `/review`).
 [Focus area if --focus was used]
 
 ## Classification
-[System traits detected and which of the 25 categories apply]
+[System traits detected and which of the 27 categories apply]
 
 ## Findings
 

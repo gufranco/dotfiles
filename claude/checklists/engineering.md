@@ -202,6 +202,8 @@ Reference: `rules/database.md` (Query Optimization, Time-Range Queries)
 - [ ] Every alert has a runbook with: what it means, how to diagnose, how to mitigate, and who to escalate to?
 - [ ] Distributed debugging path documented? Given a requestId, can an engineer trace the full request across services?
 - [ ] On-call handoff includes: known fragile areas, recent incidents, pending deployments, and alert context?
+- [ ] Business metrics instrumented? Conversion rates, feature adoption, funnel drop-off tracked alongside technical metrics.
+- [ ] A/B test observability? Experiment assignment logged, metrics split by variant, statistical significance tracked.
 
 Reference: `rules/observability.md`
 
@@ -332,6 +334,9 @@ Reference: `rules/distributed-systems.md` (Zero-Downtime Deployments), `rules/da
 - [ ] Degraded paths tested? Chaos testing or dependency kill switches exercised?
 - [ ] Blast radius analyzed? A single dependency failure does not cascade to unrelated features.
 - [ ] Timeout-based degradation: if a dependency is slow but not down, the system switches to fallback before the user notices?
+- [ ] RTO (Recovery Time Objective) and RPO (Recovery Point Objective) defined per service? How fast must it recover, and how much data loss is tolerable?
+- [ ] Backup strategy validated? Backups tested with actual restore, not just "backups run nightly."
+- [ ] Cross-region failover plan exists for critical services? Traffic can shift to a secondary region if the primary is unavailable.
 
 Reference: `rules/resilience.md` (Circuit Breakers, Timeouts)
 
@@ -345,6 +350,9 @@ Reference: `rules/resilience.md` (Circuit Breakers, Timeouts)
 - [ ] Natural keys vs surrogate keys: chosen per table with justification? Natural keys where stable, surrogate where not.
 - [ ] Schema designed for access patterns, not just data structure? Indexes, partitions, and key design serve the queries.
 - [ ] Enums and status fields use explicit string values, not magic integers? Readable in raw queries and logs.
+- [ ] Bounded contexts identified? Each context has its own model of shared concepts, no single "God object" used everywhere.
+- [ ] Anti-corruption layer at context boundaries? Translation between external models and internal domain models happens at the edge, not throughout the codebase.
+- [ ] Ubiquitous language consistent? The same term means the same thing in code, database, API, and conversation. No synonyms for the same concept.
 
 Reference: `rules/database.md` (Access Pattern Design, Schema Rules)
 
@@ -386,3 +394,29 @@ Reference: `rules/testing.md` (Philosophy, Mock Policy), `rules/code-style.md` (
 - [ ] Cost alerts configured? Budget thresholds with notifications before spending spirals.
 
 Reference: `rules/caching.md` (When to Cache), `rules/database.md` (Query Optimization)
+
+## 26. Multi-Tenancy
+
+- [ ] Tenant data isolation enforced? Row-level (shared DB, tenant_id column), schema-level (tenant per schema), or instance-level (tenant per DB)?
+- [ ] Every query scoped to the tenant? No accidental cross-tenant data leakage through missing WHERE clauses or cache key collisions?
+- [ ] Noisy neighbor prevention? One tenant's heavy usage cannot degrade performance for others (per-tenant rate limits, queue isolation, connection limits).
+- [ ] Per-tenant resource limits defined? Storage quotas, API rate limits, concurrent connection caps.
+- [ ] Tenant context propagated across service boundaries? Every downstream call carries the tenant identifier.
+- [ ] Tenant-aware caching? Cache keys include tenant ID. Invalidation scoped to the affected tenant.
+- [ ] Tenant onboarding and offboarding automated? Provisioning and deprovisioning do not require manual steps or code changes.
+- [ ] Tenant-specific configuration supported? Feature flags, plan limits, and custom settings per tenant without code deploys.
+
+Reference: `rules/security.md` (Access Control), `rules/database.md` (Access Pattern Design)
+
+## 27. Migration Strategy
+
+- [ ] Migration approach chosen? Strangler fig (gradual replacement), parallel run (old + new simultaneously), or big bang (with rollback plan)?
+- [ ] Feature parity validated? Automated comparison between old and new system outputs for the same inputs.
+- [ ] Data migration plan defined? Backfill strategy, data transformation, validation checksums, rollback path for data.
+- [ ] Dark launching used for high-risk migrations? New path runs in shadow mode, results compared but not served to users.
+- [ ] Cutover criteria explicit? What metrics must hold for the migration to be considered complete?
+- [ ] Rollback during migration possible? Can traffic be routed back to the old system at any point without data loss?
+- [ ] Migration progress observable? Percentage of traffic or data migrated, error rates on old vs new, latency comparison.
+- [ ] Old system decommission planned? Timeline for shutting down the previous implementation after migration completes.
+
+Reference: `rules/distributed-systems.md` (Zero-Downtime Deployments), `rules/database.md` (Safe Migrations)

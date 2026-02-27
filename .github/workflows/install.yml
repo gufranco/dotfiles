@@ -1,0 +1,152 @@
+name: Install
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'install.sh'
+      - 'zsh/**'
+      - 'Brewfile'
+      - '.github/workflows/install.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'install.sh'
+      - 'zsh/**'
+      - 'Brewfile'
+      - '.github/workflows/install.yml'
+
+env:
+  CI: "1"
+  DEBIAN_FRONTEND: noninteractive
+  GIT_TERMINAL_PROMPT: "0"
+
+jobs:
+  linux:
+    name: Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run install.sh
+        run: bash install.sh
+
+      - name: Verify symlinks
+        run: |
+          set -euo pipefail
+          errors=0
+          check() {
+            if [ -L "$2" ]; then
+              echo "OK: $1"
+            else
+              echo "FAIL: $1 ($2 is not a symlink)"
+              errors=$((errors + 1))
+            fi
+          }
+          check "zshrc"       "$HOME/.zshrc"
+          check "gitconfig"   "$HOME/.gitconfig"
+          check "vimrc"       "$HOME/.vimrc"
+          check "vim"         "$HOME/.vim"
+          check "tmux.conf"   "$HOME/.tmux.conf"
+          check "curlrc"      "$HOME/.curlrc"
+          check "wgetrc"      "$HOME/.wgetrc"
+          check "inputrc"     "$HOME/.inputrc"
+          check "ripgreprc"   "$HOME/.ripgreprc"
+          exit $errors
+
+      - name: Verify commands
+        run: |
+          set -euo pipefail
+          for cmd in zsh git vim tmux curl wget fzf ripgrep bat; do
+            if command -v "$cmd" >/dev/null 2>&1 || dpkg -l "$cmd" 2>/dev/null | grep -q "^ii"; then
+              echo "OK: $cmd"
+            else
+              echo "WARN: $cmd not found (may use alternate name)"
+            fi
+          done
+
+      - name: Verify permissions
+        run: |
+          set -euo pipefail
+          check_perm() {
+            local path="$1" expected="$2"
+            actual=$(stat -c %a "$path" 2>/dev/null || echo "missing")
+            if [ "$actual" = "$expected" ]; then
+              echo "OK: $path ($actual)"
+            else
+              echo "FAIL: $path (expected $expected, got $actual)"
+              return 1
+            fi
+          }
+          check_perm "$HOME/.gnupg" "700"
+          check_perm "$HOME/.ssh" "700"
+
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run install.sh
+        run: bash install.sh
+
+      - name: Verify symlinks
+        run: |
+          set -euo pipefail
+          errors=0
+          check() {
+            if [ -L "$2" ]; then
+              echo "OK: $1"
+            else
+              echo "FAIL: $1 ($2 is not a symlink)"
+              errors=$((errors + 1))
+            fi
+          }
+          check "zshrc"       "$HOME/.zshrc"
+          check "gitconfig"   "$HOME/.gitconfig"
+          check "vimrc"       "$HOME/.vimrc"
+          check "vim"         "$HOME/.vim"
+          check "tmux.conf"   "$HOME/.tmux.conf"
+          check "curlrc"      "$HOME/.curlrc"
+          check "wgetrc"      "$HOME/.wgetrc"
+          check "inputrc"     "$HOME/.inputrc"
+          check "ripgreprc"   "$HOME/.ripgreprc"
+          check "ghostty"     "$HOME/.config/ghostty"
+          check "bat-config"  "$HOME/.config/bat/config"
+          check "eza"         "$HOME/.config/eza"
+          check "yazi"        "$HOME/.config/yazi"
+          exit $errors
+
+      - name: Verify Homebrew packages
+        run: |
+          set -euo pipefail
+          for cmd in bat eza fzf fd rg delta git zsh tmux vim; do
+            if command -v "$cmd" >/dev/null 2>&1; then
+              echo "OK: $cmd ($(command -v "$cmd"))"
+            else
+              echo "FAIL: $cmd not found"
+              exit 1
+            fi
+          done
+
+      - name: Verify permissions
+        run: |
+          set -euo pipefail
+          check_perm() {
+            local path="$1" expected="$2"
+            actual=$(stat -f %Lp "$path" 2>/dev/null || echo "missing")
+            if [ "$actual" = "$expected" ]; then
+              echo "OK: $path ($actual)"
+            else
+              echo "FAIL: $path (expected $expected, got $actual)"
+              return 1
+            fi
+          }
+          check_perm "$HOME/.gnupg" "700"
+          check_perm "$HOME/.ssh" "700"

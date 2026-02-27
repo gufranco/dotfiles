@@ -28,6 +28,7 @@ This skill accepts optional arguments after `/assessment`:
 - A file or directory path: assess those specific files.
 - `--scope <description>`: provide a description of what was implemented so the assessment can focus on relevant patterns.
 - `--focus <area>`: narrow the assessment to a specific concern: `security`, `resilience`, `api`, `data`, `ops`, `quality`, or `all` (default).
+- `--comments`: when fixing gaps, add inline comments explaining the reasoning behind each change. Useful for interview take-homes where reviewers need to understand your decision-making process.
 
 ## Steps
 
@@ -83,6 +84,35 @@ This skill accepts optional arguments after `/assessment`:
 5. **Present the assessment.** Format the output as described below.
 
 6. **Offer to fix.** After presenting the assessment, ask: "Want me to implement the missing patterns?" If yes, work through them by priority: all CRITICAL first, then HIGH, then MEDIUM. Within the same severity, prefer lower effort. Each fix gets its own commit.
+
+   **If `--comments` was passed**, add an inline comment above each significant code change explaining:
+   - **What** pattern is being applied and **why** it matters here.
+   - **What would go wrong** without this pattern, using a concrete scenario.
+
+   Comment guidelines:
+   - Write comments as short, direct explanations. One to three lines per comment. No essays.
+   - Use the language's comment syntax. No doc-comment format unless it is a public API.
+   - Only comment on non-obvious decisions. Do not comment self-explanatory code like variable declarations or standard error handling.
+   - Focus on the "why", not the "what". The code shows what; the comment shows the reasoning.
+   - Sound like a human engineer, not a generated template. Vary phrasing. No labels like "Pattern:" or "Reason:".
+
+   Example:
+
+   ```typescript
+   // Dedup by orderId so a network retry from the payment gateway
+   // doesn't charge the customer twice.
+   const existing = await db.payment.findUnique({ where: { orderId } });
+   if (existing) return existing;
+   ```
+
+   ```typescript
+   // Circuit breaker: if the recommendation service is down, return an
+   // empty list instead of failing the entire product page.
+   const recommendations = await withFallback(
+     () => recommendationClient.getFor(productId),
+     () => [],
+   );
+   ```
 
 ## Assessment Checklist Categories
 
@@ -181,6 +211,8 @@ The full checklist lives in `checklists/engineering.md` (shared with `/review`).
 - After the assessment, always offer to implement the missing patterns, prioritized by severity then effort.
 - Security findings are always at least HIGH severity. A missing auth check or exposed secret is CRITICAL.
 - Do not flag deployment readiness for code that is explicitly a prototype, proof-of-concept, or interview take-home unless `--focus ops` was specified.
+- When `--comments` is active, every comment must pass this test: would a senior engineer reading this code for the first time learn something from the comment that the code alone does not convey? If not, delete the comment.
+- `--comments` only affects the fix step. The assessment output itself is unchanged.
 
 ## Related skills
 

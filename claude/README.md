@@ -23,6 +23,7 @@ claude/
     debugging.md         # Systematic debugging process, multi-component tracing
     verification.md      # Verification-before-completion enforcement
     llm-docs.md          # LLM-optimized documentation references for common tech
+    borrow-restore.md    # Borrow-and-restore pattern for global mutable CLI state
   hooks/
     dangerous-command-blocker.py  # Blocks catastrophic bash commands (3 severity levels)
     secret-scanner.py             # Scans staged files for 40+ secret patterns
@@ -125,18 +126,27 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 - **Debugging** (`rules/debugging.md`): systematic four-phase debugging process, multi-component tracing, common traps to avoid. Expands on the debugging approach in CLAUDE.md with specific techniques for reproduction, isolation, root cause analysis, and fix verification.
 - **Verification** (`rules/verification.md`): verification-before-completion enforcement. Gate function: identify what proves the claim, run it, read the output, verify it matches, only then claim done. Evidence requirements table for common claims. Covers partial completion reporting.
 - **LLM docs** (`rules/llm-docs.md`): curated `llms.txt` and `llms-full.txt` references for common technologies. Fetch official docs before relying on training data.
+- **Borrow and restore** (`rules/borrow-restore.md`): two patterns for handling context-dependent CLI tools. Per-command context flags for tools that support them (Docker `--context`, `kubectl --context`, `aws --profile`): no global mutation, no restore needed, safe for parallel sessions. Borrow-and-restore for tools with no per-command option (`gh`, `glab`, `nvm`, Terraform): read current state, switch, work, restore. Detection order: env var, project config, convention, current state. Includes Docker/Colima section for per-command context resolution with profile running verification.
 
-## Multi-Account Support
+## Context Resolution
 
-All skills that interact with `gh` or `glab` support multiple authenticated accounts. Before running any remote command, each skill resolves the correct account by matching the current repo's remote URL against all authenticated accounts. If the active account doesn't match, the skill switches automatically and restores the original account when done, even if earlier steps fail.
+Skills that interact with context-dependent CLI tools resolve the correct context before running commands. Two strategies, defined in `rules/borrow-restore.md`:
+
+### Per-command context (Docker, kubectl, aws)
+
+When the tool supports a `--context` or `--profile` flag, pass it on every command. No global mutation, no restore step, safe for parallel sessions.
+
+**Docker/Colima**: skills resolve the expected context from `DOCKER_CONTEXT` or `DOCKER_HOST` in `.env`/`.envrc`, then pass `--context <name>` on every `docker` invocation. When Colima is the runtime, each profile creates a context (`colima-<profile>`), and the wrong context sends commands to the wrong containers. The skill verifies the target profile is running before using it. Never uses `docker context use`.
+
+**Skills with Docker context resolution:** `/docker`, `/db`, `/logs`.
+
+### Borrow-and-restore (gh, glab)
+
+When the tool has no per-command option, the skill reads the current state, switches, works, and restores. Always. Even on failure.
+
+**Account resolution**: skills that interact with `gh` or `glab` match the repo's remote URL against all authenticated accounts. If the active account doesn't match, the skill switches with `gh auth switch --user <login>` and restores when done.
 
 **Skills with account resolution:** `/commit` (pipeline monitoring), `/pr`, `/checks`, `/review`, `/release`, `/worktree` (deliver), `/readme` (GitHub About). `/morning` has full multi-account support with per-account enumeration across all queries.
-
-The pattern in every skill:
-1. Parse the remote URL to identify host and owner.
-2. Run `gh auth status` (or `glab auth status`) to list all authenticated accounts.
-3. If the active account doesn't match, switch with `gh auth switch --user <login>`.
-4. Record the original account. Restore it after all operations complete.
 
 ## Skills Reference
 
@@ -176,9 +186,9 @@ Works in two modes. PR mode fetches the diff and metadata from the remote. Local
 
 Architecture completeness audit for an implementation. Finds what's **missing**, not just what's wrong.
 
-**Arguments**: no args for changed files on current branch, a file or directory path, `--scope <description>` to focus the assessment.
+**Arguments**: no args for changed files on current branch, a file or directory path, `--scope <description>` to focus the assessment, `--focus <area>` to narrow to `security`, `resilience`, `api`, `data`, or `ops`.
 
-Unlike `/review` which checks diffs for correctness, `/assessment` reads the full implementation and identifies missing architectural patterns. Classifies the system type first (write path, read path, external dependencies, async processing, multi-service, variable load, data storage), then audits only the applicable categories. Uses a 15-category checklist: idempotency/deduplication, atomicity/transactions, error classification, caching, consistency models, back pressure/load management, bulkhead isolation, concurrency control, saga/outbox, event ordering/delivery guarantees, distributed locking, schema evolution, immutability, query optimization, and observability. Output is a structured gap analysis with PRESENT/MISSING/PARTIAL status per category, concrete code examples for every gap, and a ranked top-3 impact list. After the assessment, offers to implement the missing patterns.
+Unlike `/review` which checks diffs for correctness, `/assessment` reads the full implementation and identifies missing architectural patterns. Classifies the system by traits (write path, read path, external dependencies, async processing, multi-service, variable load, data storage, auth/user data, API exposure, production deployment), then audits only the applicable categories from a 20-category checklist. Categories span four domains: data integrity (idempotency, atomicity, consistency, immutability, schema evolution, query optimization), resilience (error classification, back pressure, bulkhead, concurrency, saga/outbox, event ordering, distributed locking, external dependency resilience, async processing resilience), security and API (security/access control, API contract design), and operations (observability, deployment readiness). Each finding gets a status (PRESENT/PARTIAL/MISSING), severity (CRITICAL/HIGH/MEDIUM/LOW), and effort estimate (S/M/L/XL). Output is a structured gap analysis with concrete code examples for every gap, a summary table, and a priority matrix grouped by severity. After the assessment, offers to implement fixes starting with CRITICAL gaps.
 
 ---
 
@@ -228,7 +238,7 @@ Manages database migrations, containers, and data operations.
 
 **Arguments**: no args for status, `migrate`, `rollback`, `create <name>`, `seed`, `reset`, `start`, `stop`, `terminal`.
 
-Detects container status, migration tool, and package manager in parallel. Supports Prisma, Knex, Sequelize, TypeORM, Drizzle, Alembic, Goose, and Diesel. Drizzle uses `migrate` for migration-based workflows and `push` only in dev/prototyping when explicitly requested. Aware of standalone containers managed by shell functions like `postgres-start`, `mongo-init`, `redis-start`, following `/docker`'s container conventions. Checks container health before migration operations. Requires explicit approval for rollback and reset.
+Detects container status, migration tool, and package manager in parallel. Resolves Docker context from `.env`/`.envrc` and passes `--context` per command (never switches globally). Supports Prisma, Knex, Sequelize, TypeORM, Drizzle, Alembic, Goose, and Diesel. Drizzle uses `migrate` for migration-based workflows and `push` only in dev/prototyping when explicitly requested. Aware of standalone containers managed by shell functions like `postgres-start`, `mongo-init`, `redis-start`, following `/docker`'s container conventions. Checks container health before migration operations. Requires explicit approval for rollback and reset.
 
 **Container defaults**: postgres on 127.0.0.1:5432 (postgres:postgres), mongo on :27017 (mongo:mongo), redis on :6379 (no auth), valkey on :7000, redict on :6379.
 
@@ -240,7 +250,7 @@ Manages Docker containers, compose services, and the container runtime.
 
 **Arguments**: no args for status, `build [service]`, `up [service]`, `down`, `restart [service]`, `logs [service]`, `shell <service|container>`.
 
-Detects runtime, compose files, and running containers in parallel. Runtime-agnostic: works with Colima, Docker Desktop, or native daemon. Suggests `colima-start` when Colima is installed but stopped. Distinguishes compose services from standalone containers. Asks approval before `down`.
+Detects runtime, compose files, and running containers in parallel. Runtime-agnostic: works with Colima, Docker Desktop, or native daemon. Resolves Docker context from `DOCKER_CONTEXT` or `DOCKER_HOST` in `.env`/`.envrc` and passes `--context <name>` on every command, never switching the global context. Verifies the target Colima profile is running before using it. Suggests `colima-start` when Colima is installed but stopped. Distinguishes compose services from standalone containers. Asks approval before `down`.
 
 ---
 
@@ -260,7 +270,7 @@ Views and analyzes logs from Docker containers, log files, or process managers.
 
 **Arguments**: no args for recent logs, service or container name, `--level <level>`, `--since <time>`, `--grep <pattern>`.
 
-Detects Docker runtime and log sources in parallel. Supports Docker Compose services, standalone containers, pm2, and log files. Auto-detects JSON structured logs. Masks sensitive fields matching patterns like password, token, secret, authorization, credential, key, jwt, auth, apikey, access_token, refresh_token. Shows error count, frequency, and repeated patterns.
+Detects Docker runtime and log sources in parallel. Resolves Docker context from `.env`/`.envrc` and passes `--context` per command (never switches globally). Supports Docker Compose services, standalone containers, pm2, and log files. Auto-detects JSON structured logs. Masks sensitive fields matching patterns like password, token, secret, authorization, credential, key, jwt, auth, apikey, access_token, refresh_token. Shows error count, frequency, and repeated patterns.
 
 ---
 
@@ -344,20 +354,36 @@ The `/review` skill uses a 15-category checklist defined in `skills/review/revie
 
 ## Assessment Checklist
 
-The `/assessment` skill uses a 15-category architecture completeness checklist defined in `skills/assessment/assessment-checklist.md`:
+The `/assessment` skill uses a 20-category architecture completeness checklist defined in `skills/assessment/assessment-checklist.md`. Each finding gets a severity (CRITICAL/HIGH/MEDIUM/LOW) and effort estimate (S/M/L/XL).
+
+**Data integrity:**
 
 1. **Idempotency and deduplication**: every write safe to execute twice, guard per layer, durable dedup with TTL.
 2. **Atomicity and transactions**: related writes atomic, conditional writes prevent lost updates, short transaction scope.
-3. **Error classification**: every catch classifies transient/permanent/ambiguous, retry only transient with backoff+jitter.
-4. **Caching**: strategy explicit, invalidation chosen, TTL jitter, stampede prevention, warming, eviction.
 5. **Consistency model**: explicit choice (strong/eventual/read-your-writes/causal), weakest tolerable model used.
+12. **Schema evolution**: backward/forward compatible, version field, no removed/renamed fields.
+13. **Immutability**: pure functions, const default, new state per transition, append-only audit data.
+14. **Query optimization**: no N+1, pagination, timezone-aware time ranges, database-level filtering.
+
+**Resilience:**
+
+3. **Error classification and retry**: every catch classifies transient/permanent/ambiguous, retry with backoff+jitter, timeout budgets.
+4. **Caching**: strategy explicit, invalidation chosen, TTL jitter, stampede prevention, warming, eviction.
 6. **Back pressure and load management**: bounded queues, load shedding by priority, 10x traffic plan.
 7. **Bulkhead isolation**: separate pool per dependency, critical/non-critical workload separation.
 8. **Concurrency control**: bounded fan-out, worker pool sizing, per-unit timeout.
 9. **Saga and cross-service coordination**: compensating actions, outbox pattern, no dual writes.
 10. **Event ordering and delivery**: delivery guarantee explicit, per-entity ordering, out-of-order handling.
 11. **Distributed locking**: lease expiry, fencing tokens, stale write prevention.
-12. **Schema evolution**: backward/forward compatible, version field, no removed/renamed fields.
-13. **Immutability**: pure functions, const default, new state per transition, append-only audit data.
-14. **Query optimization**: no N+1, pagination, timezone-aware time ranges, database-level filtering.
-15. **Observability**: structured logging, correlation IDs, health checks, metrics, alerts on symptoms.
+18. **External dependency resilience**: explicit timeouts on all calls, circuit breakers, connection pooling per dependency, graceful degradation.
+19. **Async processing resilience**: DLQ on every queue, partial batch failure reporting, reprocessing path, monitoring.
+
+**Security and API:**
+
+16. **Security and access control**: auth with bcrypt/argon2, rate limiting, CSRF, default-deny authorization, IDOR prevention, encryption in transit/at rest, data privacy, audit logging, supply chain.
+17. **API contract design**: REST conventions, correct status codes, consistent error format, pagination, versioning with deprecation lifecycle, rate limiting headers, idempotency keys, bulk operations.
+
+**Operations:**
+
+15. **Observability**: structured logging, correlation IDs, health checks (liveness + readiness), metrics, distributed tracing, SLIs/SLOs, alerts on SLO violations.
+20. **Deployment readiness**: backward compatibility during rollout, safe migrations, health probes, graceful shutdown, feature flags, rollback plan.

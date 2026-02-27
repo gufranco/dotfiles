@@ -27,6 +27,7 @@ claude/
     llm-docs.md          # LLM-optimized documentation references for common tech
     borrow-restore.md    # Borrow-and-restore pattern for global mutable CLI state
     infrastructure.md    # IaC, networking, container orchestration, CI/CD, cloud architecture
+    pre-flight.md        # Pre-implementation confidence gate (duplicate check, architecture fit, interface verification)
   hooks/
     dangerous-command-blocker.py  # Blocks catastrophic bash commands (3 severity levels)
     secret-scanner.py             # Scans staged files for 40+ secret patterns
@@ -130,6 +131,7 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 - **LLM docs** (`rules/llm-docs.md`): curated `llms.txt` and `llms-full.txt` references for common technologies. Fetch official docs before relying on training data.
 - **Infrastructure** (`rules/infrastructure.md`): Infrastructure as Code (state management, drift detection, immutable infra, module design), networking and service discovery (DNS, load balancing algorithms, mTLS, VPC design, CDN), container orchestration (resource management, scaling strategies, availability patterns, deployment strategies, sidecar patterns), CI/CD pipeline design (stage ordering, artifact immutability, progressive delivery, pipeline security, DORA metrics), cloud architecture (multi-region strategies, blast radius containment, auto-scaling, traffic management, DDoS mitigation, data residency, cost allocation).
 - **Borrow and restore** (`rules/borrow-restore.md`): two patterns for handling context-dependent CLI tools. Per-command context flags for tools that support them (Docker `--context`, `kubectl --context`, `aws --profile`): no global mutation, no restore needed, safe for parallel sessions. Borrow-and-restore for tools with no per-command option (`gh`, `glab`, `nvm`, Terraform): read current state, switch, work, restore. Detection order: env var, project config, convention, current state. Includes Docker/Colima section for per-command context resolution with profile running verification.
+- **Pre-flight** (`rules/pre-flight.md`): pre-implementation confidence gate. Five checks before writing code: duplicate check (codebase, PRs, branches), architecture fit (patterns, abstractions, callers), interface verification (signatures, APIs, docs, schema), root cause confirmation (bug fixes only), and scope agreement. Complements verification.md: one guards the entrance, the other guards the exit.
 
 ## Context Resolution
 

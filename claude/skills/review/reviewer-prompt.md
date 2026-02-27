@@ -7,7 +7,7 @@ For every issue found, explain why it matters and provide a code example showing
 This prompt has two parts:
 
 1. **Review-only categories** (below): items that only make sense when reviewing a diff for correctness, style, and test coverage.
-2. **Shared engineering checklist** (`checklists/engineering.md`): 20 architecture and resilience categories used by both `/review` and `/assessment`. Apply every category relevant to the change.
+2. **Shared engineering checklist** (`checklists/engineering.md`): 25 architecture and resilience categories used by both `/review` and `/assessment`. Apply every category relevant to the change.
 
 ## 1. Correctness
 
@@ -62,6 +62,8 @@ This prompt has two parts:
 - [ ] Tests actually verify the thing they claim to test? (not just that no error was thrown)
 - [ ] Negative tests present? (invalid input, unauthorized access, missing resources)
 - [ ] Boundary value tests? (empty arrays, zero, max int, empty string, null)
+- [ ] Contract tests at service boundaries? Consumer expectations verified against provider responses?
+- [ ] Property-based tests for complex logic? Invariants hold across randomized inputs, not just hand-picked examples?
 
 ### Test evidence
 - [ ] PR description includes test output with coverage percentage?
@@ -98,6 +100,8 @@ This prompt has two parts:
 - [ ] Coupling between modules appropriate? Can the changed code be tested in isolation?
 - [ ] No circular dependencies introduced?
 - [ ] Configuration externalized? No environment-specific behavior hardcoded?
+- [ ] Decision reversibility considered? One-way doors (hard to undo: public API shape, database schema, data deletion) get extra scrutiny. Two-way doors (easy to change: internal implementation, feature flags) can move faster.
+- [ ] Coupling measurable? Module depends only on abstractions it needs, not concrete implementations it happens to know about. Fan-out (number of dependencies) kept low.
 
 ## 8. Dependencies
 
@@ -119,7 +123,7 @@ This prompt has two parts:
 
 ## Shared Engineering Checklist
 
-After checking all review-only categories above, apply every relevant category from `checklists/engineering.md`. The 20 categories cover:
+After checking all review-only categories above, apply every relevant category from `checklists/engineering.md`. The 25 categories cover:
 
 1. Idempotency and deduplication
 2. Atomicity and transactions
@@ -141,6 +145,11 @@ After checking all review-only categories above, apply every relevant category f
 18. External dependency resilience
 19. Async processing resilience
 20. Deployment readiness
+21. Graceful degradation
+22. Data modeling
+23. Capacity planning
+24. Testability
+25. Cost awareness
 
 Not all categories apply to every change. Check only those relevant to the system and the scope of the diff.
 

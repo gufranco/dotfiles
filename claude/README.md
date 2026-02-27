@@ -9,7 +9,7 @@ claude/
   settings.json          # Permissions, hooks, statusline, MCP, and global settings
   CLAUDE.md              # Core engineering rules (lean, ~150 lines)
   checklists/
-    engineering.md       # 20-category shared checklist (used by /review and /assessment)
+    engineering.md       # 25-category shared checklist (used by /review and /assessment)
   rules/
     code-style.md        # Code conventions, data safety gate, comments, dependencies
     testing.md           # Test philosophy, mock policy, AAA pattern, scenario planning
@@ -177,7 +177,7 @@ Reviews a pull request or local branch changes with rigorous, line-by-line analy
 
 **Arguments**: no args for current branch PR, one or more PR numbers or URLs, `--local` to skip PR lookup, `--post` to auto-post without confirmation.
 
-Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses two checklists: 9 review-only categories in `reviewer-prompt.md` for correctness, algorithmic performance, frontend performance, testing, code quality, naming, architecture patterns, dependencies, and PR quality, plus the 20-category shared engineering checklist in `checklists/engineering.md` for architecture and resilience concerns. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
+Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses two checklists: 9 review-only categories in `reviewer-prompt.md` for correctness, algorithmic performance, frontend performance, testing, code quality, naming, architecture patterns, dependencies, and PR quality, plus the 25-category shared engineering checklist in `checklists/engineering.md` for architecture and resilience concerns. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
 
 **Verdicts**: APPROVE, REQUEST_CHANGES, or COMMENT. Defaults to REQUEST_CHANGES when in doubt.
 
@@ -189,7 +189,7 @@ Architecture completeness audit for an implementation. Finds what's **missing**,
 
 **Arguments**: no args for changed files on current branch, a file or directory path, `--scope <description>` to focus the assessment, `--focus <area>` to narrow to `security`, `resilience`, `api`, `data`, or `ops`.
 
-Unlike `/review` which checks diffs for correctness, `/assessment` reads the full implementation and identifies missing architectural patterns. Classifies the system by traits (write path, read path, external dependencies, async processing, multi-service, variable load, data storage, auth/user data, API exposure, production deployment), then audits only the applicable categories from a 20-category checklist. Categories span four domains: data integrity (idempotency, atomicity, consistency, immutability, schema evolution, query optimization), resilience (error classification, back pressure, bulkhead, concurrency, saga/outbox, event ordering, distributed locking, external dependency resilience, async processing resilience), security and API (security/access control, API contract design), and operations (observability, deployment readiness). Each finding gets a status (PRESENT/PARTIAL/MISSING), severity (CRITICAL/HIGH/MEDIUM/LOW), and effort estimate (S/M/L/XL). Output is a structured gap analysis with concrete code examples for every gap, a summary table, and a priority matrix grouped by severity. After the assessment, offers to implement fixes starting with CRITICAL gaps.
+Unlike `/review` which checks diffs for correctness, `/assessment` reads the full implementation and identifies missing architectural patterns. Classifies the system by traits (write path, read path, external dependencies, async processing, multi-service, variable load, data storage, auth/user data, API exposure, production deployment, testable logic), then audits only the applicable categories from a 25-category checklist. Categories span five domains: data integrity (idempotency, atomicity, consistency, immutability, schema evolution, query optimization, data modeling), resilience (error classification, back pressure, bulkhead, concurrency, saga/outbox, event ordering, distributed locking, external dependency resilience, async processing resilience, graceful degradation), security and API (security/access control, API contract design), operations (observability, deployment readiness, capacity planning, cost awareness), and quality (testability). Each finding gets a status (PRESENT/PARTIAL/MISSING), severity (CRITICAL/HIGH/MEDIUM/LOW), and effort estimate (S/M/L/XL). Output is a structured gap analysis with concrete code examples for every gap, a summary table, and a priority matrix grouped by severity. After the assessment, offers to implement fixes starting with CRITICAL gaps.
 
 ---
 
@@ -335,7 +335,7 @@ Enables working on multiple tasks simultaneously using git worktrees. `init` cre
 
 ## Engineering Checklist
 
-Both `/review` and `/assessment` share a single 20-category engineering checklist defined in `checklists/engineering.md`. Each skill applies it with a different lens: `/review` checks items against the diff for correctness, `/assessment` checks the full implementation for completeness.
+Both `/review` and `/assessment` share a single 25-category engineering checklist defined in `checklists/engineering.md`. Each skill applies it with a different lens: `/review` checks items against the diff for correctness, `/assessment` checks the full implementation for completeness.
 
 ### Review-only categories
 
@@ -344,16 +344,16 @@ Both `/review` and `/assessment` share a single 20-category engineering checklis
 1. **Correctness**: logic tracing, off-by-one, null handling, boolean logic, type coercion, regex, date/time, floating point, recursion termination.
 2. **Algorithmic performance**: O(n^2) detection, data structure choices, unbounded memory, allocations in hot loops, sync I/O in async paths.
 3. **Frontend performance**: unnecessary re-renders, list virtualization, bundle size, main thread blocking.
-4. **Testing**: branch coverage at 80%+, AAA pattern, specific assertions, no mocked internals, negative and boundary tests.
+4. **Testing**: branch coverage at 80%+, AAA pattern, specific assertions, no mocked internals, negative and boundary tests, contract tests at service boundaries, property-based tests for complex logic.
 5. **Code quality**: function size, single responsibility, DRY, no dead code, composition over inheritance, isolated side effects.
 6. **Naming**: descriptive variables, verb-based functions, boolean prefixes, no misleading names.
-7. **Architecture patterns**: follows existing patterns, appropriate coupling, no circular dependencies, externalized config.
+7. **Architecture patterns**: follows existing patterns, appropriate coupling, no circular dependencies, externalized config, decision reversibility (one-way/two-way doors), fan-out measurement.
 8. **Dependencies**: justified, maintained, pinned, license-compatible, size-appropriate.
 9. **Documentation and PR quality**: PR description explains what and why, breaking changes documented, README updated, env vars in .env.example.
 
 ### Shared engineering categories
 
-The 20 categories in `checklists/engineering.md`, organized by domain:
+The 25 categories in `checklists/engineering.md`, organized by domain:
 
 **Data integrity:**
 
@@ -362,7 +362,8 @@ The 20 categories in `checklists/engineering.md`, organized by domain:
 5. **Consistency model**: explicit choice (strong/eventual/read-your-writes/causal), weakest tolerable model used.
 12. **Schema evolution**: backward/forward compatible, version field, no removed/renamed fields.
 13. **Immutability**: pure functions, const default, new state per transition, append-only audit data.
-14. **Query optimization**: no N+1, pagination, timezone-aware time ranges, NoSQL key distribution, connection pooling.
+14. **Query optimization**: no N+1, pagination, timezone-aware time ranges, NoSQL key distribution, connection pooling, EXPLAIN analysis, write amplification, read replica routing.
+22. **Data modeling**: aggregate boundaries, entity vs value object, normalization level, relationship ownership, domain events, schema serves access patterns.
 
 **Resilience:**
 
@@ -376,6 +377,7 @@ The 20 categories in `checklists/engineering.md`, organized by domain:
 11. **Distributed locking**: lease expiry, fencing tokens, stale write prevention.
 18. **External dependency resilience**: explicit timeouts on all calls, circuit breakers, connection pooling per dependency, graceful degradation.
 19. **Async processing resilience**: DLQ on every queue, partial batch failure reporting, reprocessing path, visibility timeout alignment.
+21. **Graceful degradation**: per-dependency fallback UX, core flow independence, degraded state communication, blast radius analysis, timeout-based degradation.
 
 **Security and API:**
 
@@ -384,5 +386,11 @@ The 20 categories in `checklists/engineering.md`, organized by domain:
 
 **Operations:**
 
-15. **Observability**: structured logging, correlation IDs, health checks (liveness + readiness), metrics, distributed tracing, SLIs/SLOs, alerts on SLO violations.
-20. **Deployment readiness**: backward compatibility during rollout, safe migrations, health probes, graceful shutdown, feature flags, rollback plan.
+15. **Observability**: structured logging, correlation IDs, health checks (liveness + readiness), metrics, distributed tracing, SLIs/SLOs, alerts on SLO violations, runbooks per alert, distributed debugging path, on-call handoff docs.
+20. **Deployment readiness**: backward compatibility during rollout, safe migrations, health probes, graceful shutdown, feature flags, rollback plan, canary promotion criteria, rollback tested, deployment frequency.
+23. **Capacity planning**: storage growth rate, read/write ratio, bottleneck identification, horizontal scaling path, hot spot identification, data retention/archival, cost at 10x scale.
+25. **Cost awareness**: query cost, compute right-sizing, storage tiers, batch vs real-time, egress costs, cache ROI, unused resource cleanup, budget alerts.
+
+**Quality:**
+
+24. **Testability**: dependency injection, pure function extraction, functional core/imperative shell, contract tests, load test coverage, feature flag testability, test data builders, injectable time/randomness.

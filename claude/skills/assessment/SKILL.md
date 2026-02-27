@@ -27,7 +27,7 @@ This skill accepts optional arguments after `/assessment`:
 - No arguments: assess all changed files on the current branch compared to the base branch.
 - A file or directory path: assess those specific files.
 - `--scope <description>`: provide a description of what was implemented so the assessment can focus on relevant patterns.
-- `--focus <area>`: narrow the assessment to a specific concern: `security`, `resilience`, `api`, `data`, `ops`, or `all` (default).
+- `--focus <area>`: narrow the assessment to a specific concern: `security`, `resilience`, `api`, `data`, `ops`, `quality`, or `all` (default).
 
 ## Steps
 
@@ -44,23 +44,25 @@ This skill accepts optional arguments after `/assessment`:
 
    | Trait | Signal | Categories to check |
    |:------|:-------|:-------------------|
-   | Has a write path | API endpoints, event handlers, DB writes | 1, 2, 17 |
+   | Has a write path | API endpoints, event handlers, DB writes | 1, 2, 17, 22 |
    | Has a read path | Queries, API responses, dashboards | 4, 14, 17 |
-   | Has external deps | HTTP calls, third-party APIs, DB connections | 3, 7, 18 |
+   | Has external deps | HTTP calls, third-party APIs, DB connections | 3, 7, 18, 21, 25 |
    | Has async processing | Queues, events, background jobs | 1, 10, 19 |
-   | Spans multiple services | Service-to-service calls, event bus | 5, 9, 11, 12 |
-   | Handles variable load | Public API, webhook receiver, batch processor | 6, 8 |
-   | Stores data | Database reads/writes, file storage | 2, 13, 14 |
+   | Spans multiple services | Service-to-service calls, event bus | 5, 9, 11, 12, 24 |
+   | Handles variable load | Public API, webhook receiver, batch processor | 6, 8, 23 |
+   | Stores data | Database reads/writes, file storage | 2, 13, 14, 22, 23 |
    | Has auth/user data | Login, signup, roles, PII | 16 |
    | Exposes an API | REST/GraphQL endpoints | 17 |
-   | Runs in production | Deployed service, not a script or CLI | 15, 18, 20 |
+   | Runs in production | Deployed service, not a script or CLI | 15, 18, 20, 21, 25 |
+   | Has testable logic | Business rules, domain logic, state machines | 24 |
 
    If `--focus` was provided, only check categories in that area:
    - `security`: 16, 17 (auth/input parts)
-   - `resilience`: 3, 6, 7, 8, 18, 19
+   - `resilience`: 3, 6, 7, 8, 18, 19, 21
    - `api`: 1, 17
-   - `data`: 2, 4, 5, 13, 14
-   - `ops`: 15, 19, 20
+   - `data`: 2, 4, 5, 13, 14, 22
+   - `ops`: 15, 19, 20, 23, 25
+   - `quality`: 24
 
 4. **Audit against each applicable category.** For every category that applies based on step 3, evaluate the implementation. Use the full checklist from `checklists/engineering.md`. For each finding, assign:
 
@@ -99,13 +101,18 @@ The full checklist lives in `checklists/engineering.md` (shared with `/review`).
 11. **Distributed locking** — Lease expiry? Fencing tokens?
 12. **Schema evolution** — Backward/forward compatible? Version field present?
 13. **Immutability** — Functions pure? State transitions produce new state? Audit data append-only?
-14. **Query optimization** — No N+1? Pagination? Timezone-aware time ranges?
-15. **Observability** — Structured logging? Correlation IDs? Health checks? SLOs?
+14. **Query optimization** — No N+1? Pagination? Timezone-aware time ranges? EXPLAIN analysis?
+15. **Observability** — Structured logging? Correlation IDs? Health checks? SLOs? Runbooks?
 16. **Security and access control** — Auth, authorization, encryption, data privacy, supply chain?
 17. **API contract design** — REST conventions, error format, pagination, versioning, rate limiting?
 18. **External dependency resilience** — Timeouts, circuit breakers, connection pooling, graceful degradation?
 19. **Async processing resilience** — DLQ, partial failure reporting, reprocessing path?
-20. **Deployment readiness** — Backward compat, health probes, graceful shutdown, safe migrations?
+20. **Deployment readiness** — Backward compat, health probes, graceful shutdown, safe migrations? Canary criteria?
+21. **Graceful degradation** — Per-dependency fallback UX? Core flows independent? Degraded state communicated?
+22. **Data modeling** — Aggregate boundaries? Entity vs value object? Schema serves access patterns?
+23. **Capacity planning** — Growth rate estimated? Bottleneck identified? Horizontal scaling path?
+24. **Testability** — Dependencies injected? Pure functions extracted? Contract tests? Functional core, imperative shell?
+25. **Cost awareness** — Query cost understood? Compute right-sized? Storage tiered? Egress minimized?
 
 ## Output Format
 
@@ -117,7 +124,7 @@ The full checklist lives in `checklists/engineering.md` (shared with `/review`).
 [Focus area if --focus was used]
 
 ## Classification
-[System traits detected and which of the 20 categories apply]
+[System traits detected and which of the 25 categories apply]
 
 ## Findings
 

@@ -15,7 +15,7 @@
 
 ---
 
-**33** tool configs · **139** brew packages · **53** desktop apps · **72** Nerd Fonts · **14** Tokyo Night themed tools · **60** Git aliases · **6** Docker services · **18** Claude Code skills
+**33** tool configs · **141** brew packages · **57** desktop apps · **72** Nerd Fonts · **19** Tokyo Night themed tools · **60** Git aliases · **6** Docker services · **18** Claude Code skills
 
 <table>
 <tr>
@@ -23,7 +23,7 @@
 
 ### Tokyo Night Everywhere
 
-One color palette across 14 tools: terminals, editors, file managers, git diffs, monitoring dashboards, and fuzzy finders.
+One color palette across 19 tools: terminals, editors, file managers, email, music, git diffs, monitoring dashboards, and fuzzy finders.
 
 </td>
 <td width="50%" valign="top">
@@ -200,7 +200,7 @@ Each service has `-init`, `-start`, `-stop`, `-purge`, and `-terminal` functions
 | `/terraform` | Terraform workflows with safety gates |
 | `/docker` | Container management with Colima awareness |
 
-Plus 13 rule files covering code style, resilience, caching, API design, testing, security, database patterns, distributed systems, observability, debugging, git workflow, verification, and LLM documentation references.
+Plus 17 rule files covering code style, resilience, caching, API design, testing, security, database patterns, distributed systems, observability, debugging, git workflow, verification, LLM documentation references, infrastructure, pre-flight checks, and borrow-restore patterns.
 
 ## Tokyo Night Theme
 
@@ -210,6 +210,7 @@ All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-them
 |:-----|:-------|
 | Ghostty | Custom theme file |
 | Kitty | Custom theme file |
+| iTerm2 | `.itermcolors` theme file |
 | Tilix | Exported color scheme |
 | Bat | Theme in `bat/themes/` |
 | Vim | `tokyonight-vim` plugin |
@@ -220,7 +221,11 @@ All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-them
 | Lazydocker | Theme colors in config |
 | Tealdeer | RGB values in `config.toml` |
 | Yazi | Full theme in `theme.toml` |
+| eza | Full theme in `theme.yml` |
+| Mutt | Custom theme in `mutt/themes/` |
+| cmus | Color scheme in `rc` |
 | fzf | `FZF_DEFAULT_OPTS --color` |
+| nnn | `NNN_FCOLORS` palette |
 | Git | `[color]` sections in `.gitconfig` |
 
 ## System Update
@@ -291,11 +296,11 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 .dotfiles/
 ├── bat/              # Bat config + Tokyo Night theme
 ├── bottom/           # Bottom system monitor, Tokyo Night styled
-├── claude/           # Claude Code: 13 rules, 18 skills, hooks, MCP
-├── cmus/             # cmus music player
+├── claude/           # Claude Code: 17 rules, 18 skills, hooks, MCP
+├── cmus/             # cmus music player, Tokyo Night themed
 ├── conky/            # Conky system monitor (Linux)
 ├── curl/             # Curl config
-├── eza/              # eza (ls replacement) config
+├── eza/              # eza (ls replacement) config + Tokyo Night theme
 ├── fd/               # fd (find replacement) config
 ├── gh/               # GitHub CLI config
 ├── ghostty/          # Ghostty terminal + Tokyo Night theme
@@ -308,21 +313,21 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── lazydocker/       # Lazydocker config, Tokyo Night
 ├── lazygit/          # Lazygit config, Tokyo Night
 ├── mailcap/          # Mailcap config
-├── mutt/             # Neomutt email client
+├── mutt/             # Neomutt email client + Tokyo Night theme
 ├── nodejs/           # npm, yarn, pnpm configs + GPG-encrypted tokens
 ├── readline/         # Readline config
 ├── ripgrep/          # Ripgrep config
 ├── ssh/              # SSH config and public keys
 ├── tealdeer/         # Tealdeer (tldr) config, Tokyo Night
 ├── telnet/           # Telnet config
-├── themes/           # Terminal themes (iTerm2, Tilix)
+├── themes/           # Terminal themes (iTerm2)
 ├── tilix/            # Tilix terminal config
 ├── tmux/             # Tmux config + 8 plugins
 ├── vim/              # Vim/Neovim config + 24 plugins
 ├── wget/             # Wget config
 ├── yazi/             # Yazi file manager + Tokyo Night theme
 ├── zsh/              # Zsh: aliases, functions, paths, settings, infrastructure
-├── Brewfile          # 139 packages, 53 apps, 72 fonts
+├── Brewfile          # 141 packages, 57 apps, 72 fonts
 ├── install.sh        # Cross-platform installer
 └── LICENSE           # MIT
 ```

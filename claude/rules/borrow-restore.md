@@ -15,17 +15,28 @@ This is the CLI equivalent of a `try/finally` block. The restore step is not opt
 
 Apply this pattern whenever you use a tool that has a single global "active context" that persists across commands. Changing it affects every subsequent command in the terminal, not just yours.
 
-## Tools That Need This
+## Prefer Per-Command Context
+
+Some tools support passing the context as a flag on each command instead of switching the global state. When available, this is strictly better: no global mutation, no restore step, no risk to parallel sessions.
+
+| Tool | Per-command flag | Example |
+|:-----|:-----------------|:--------|
+| Docker | `--context <name>` | `docker --context colima-myproject compose ps` |
+| `kubectl` | `--context <name>` | `kubectl --context prod get pods` |
+| `aws` | `--profile <name>` | `aws --profile company-prod s3 ls` |
+
+**Default rule**: if a tool supports per-command context, use it. Only fall back to borrow-and-restore when the tool has no per-command option.
+
+## Tools That Need Borrow-and-Restore
+
+These tools have no per-command alternative. The global switch + restore pattern is required.
 
 | Tool | Global state | Read current | Switch | Restore |
 |:-----|:-------------|:-------------|:-------|:--------|
 | `gh` | Active GitHub account | `gh auth status` | `gh auth switch --user <login>` | Same switch back |
 | `glab` | Active GitLab instance | `glab auth status` | Switch to target instance | Same switch back |
-| Docker | Active context (daemon socket) | `docker context show` | `docker context use <name>` | Same use back |
-| `kubectl` | Active cluster context | `kubectl config current-context` | `kubectl config use-context <name>` | Same use back |
-| Terraform | Active workspace | `terraform workspace show` | `terraform workspace select <name>` | Same select back |
-| `aws` | Active profile | `echo $AWS_PROFILE` | `export AWS_PROFILE=<name>` | Restore the original env var |
 | `nvm` | Active Node.js version | `nvm current` | `nvm use <version>` | Same use back |
+| Terraform | Active workspace | `terraform workspace show` | `terraform workspace select <name>` | Same select back |
 
 Not all of these will be relevant in every project. Only apply the pattern when the tool is actually used and multiple contexts exist.
 
@@ -47,21 +58,35 @@ You need a way to determine which context the current project expects. In order 
 - **Skip if unnecessary.** If the current context already matches the required one, do not switch and do not restore. No-op is always safe.
 - **Do not switch if you cannot determine the target.** If there's no signal (env var, config file, convention) telling you which context to use, work with whatever is currently active. Guessing is worse than asking.
 
-## Colima and Docker Contexts
+## Docker Context Resolution
 
-Colima creates a Docker context for each profile. The naming convention is:
+Docker supports `--context` as a per-command flag, so never use `docker context use` to switch globally. The user may have multiple projects open in different terminals, each targeting a different Colima profile. A global switch would break the other sessions.
+
+### Colima naming convention
+
+Colima creates a Docker context for each profile:
 
 - Default profile: context name is `colima`
 - Named profile: context name is `colima-<profile>`
 
 When Colima is the runtime and multiple profiles exist, the Docker context determines which Colima VM receives the commands. Wrong context means commands hit the wrong set of containers.
 
-Detection order for the expected Docker context:
+### Detection order
 
 1. `DOCKER_CONTEXT` env var in `.env` or `.envrc`.
-2. `DOCKER_HOST` env var pointing to a specific Colima socket (e.g., `unix:///Users/<user>/.colima/<profile>/docker.sock`).
-3. If neither exists, use the current `docker context show` value as-is.
+2. `DOCKER_HOST` env var pointing to a specific Colima socket (e.g., `unix:///Users/<user>/.colima/<profile>/docker.sock`). Extract the profile name from the socket path to derive the context name.
+3. If neither exists, do not pass `--context`. Use whatever context is currently active.
 
-Before switching Docker context, verify the target Colima profile is running with `colima list`. If the profile is stopped, suggest starting it with `colima start --profile <name>` or the user's custom function. Do not switch to a context whose backend is not running.
+### Usage
+
+Once the expected context is determined, pass it on every Docker command:
+
+```
+docker --context <name> ps
+docker --context <name> compose up -d
+docker --context <name> logs --tail=100 <container>
+```
+
+Before running commands, verify the target Colima profile is running with `colima list`. If the profile is stopped, suggest starting it with `colima start --profile <name>` or the user's custom function. Do not send commands to a context whose backend is not running.
 
 If Colima is not installed or the runtime is Docker Desktop or native, this section does not apply. Only handle Colima contexts when Colima is the detected runtime.

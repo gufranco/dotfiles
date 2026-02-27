@@ -126,6 +126,7 @@ jobs:
       - name: Verify Homebrew packages
         run: |
           set -euo pipefail
+          eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
           for cmd in bat eza fzf fd rg delta git zsh tmux vim; do
             if command -v "$cmd" >/dev/null 2>&1; then
               echo "OK: $cmd ($(command -v "$cmd"))"

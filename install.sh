@@ -334,71 +334,68 @@ case "$(uname)" in
     fi
 
     ############################################################################
-    # Spotify
+    # Desktop apps (skip in CI - no GUI available)
     ############################################################################
-    if ! pkg_installed spotify-client; then
-      log_info "Installing Spotify..."
-      curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq spotify-client
-      log_success "Spotify installed"
-    else
-      log_skip "Spotify already installed"
-    fi
+    if [[ -z "$CI" ]]; then
+      # Spotify
+      if ! pkg_installed spotify-client; then
+        log_info "Installing Spotify..."
+        curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg 2>/dev/null || true
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
+        sudo apt update -qq
+        sudo apt install -y -qq spotify-client
+        log_success "Spotify installed"
+      else
+        log_skip "Spotify already installed"
+      fi
 
-    ############################################################################
-    # Google Chrome
-    ############################################################################
-    if ! pkg_installed google-chrome-stable; then
-      log_info "Installing Google Chrome..."
-      curl -fsSL --connect-timeout 10 --max-time 30 https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq google-chrome-stable
-      log_success "Chrome installed"
-    else
-      log_skip "Chrome already installed"
-    fi
+      # Google Chrome
+      if ! pkg_installed google-chrome-stable; then
+        log_info "Installing Google Chrome..."
+        curl -fsSL --connect-timeout 10 --max-time 30 https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg 2>/dev/null || true
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
+        sudo apt update -qq
+        sudo apt install -y -qq google-chrome-stable
+        log_success "Chrome installed"
+      else
+        log_skip "Chrome already installed"
+      fi
 
-    ############################################################################
-    # DBeaver
-    ############################################################################
-    if ! pkg_installed dbeaver-ce; then
-      log_info "Installing DBeaver..."
-      sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce >/dev/null 2>&1 || true
-      sudo apt update -qq
-      sudo apt install -y -qq dbeaver-ce
-      log_success "DBeaver installed"
-    else
-      log_skip "DBeaver already installed"
-    fi
+      # DBeaver
+      if ! pkg_installed dbeaver-ce; then
+        log_info "Installing DBeaver..."
+        sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce >/dev/null 2>&1 || true
+        sudo apt update -qq
+        sudo apt install -y -qq dbeaver-ce
+        log_success "DBeaver installed"
+      else
+        log_skip "DBeaver already installed"
+      fi
 
-    ############################################################################
-    # Visual Studio Code
-    ############################################################################
-    if ! pkg_installed code; then
-      log_info "Installing VS Code..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq code
-      log_success "VS Code installed"
-    else
-      log_skip "VS Code already installed"
-    fi
+      # Visual Studio Code
+      if ! pkg_installed code; then
+        log_info "Installing VS Code..."
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL --connect-timeout 10 --max-time 30 https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg 2>/dev/null || true
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
+        sudo apt update -qq
+        sudo apt install -y -qq code
+        log_success "VS Code installed"
+      else
+        log_skip "VS Code already installed"
+      fi
 
-    ############################################################################
-    # Snap packages
-    ############################################################################
-    if cmd_exists snap; then
-      snap_installed postman || { log_info "Installing Postman..."; sudo snap install postman 2>/dev/null || true; }
-      snap_installed slack || { log_info "Installing Slack..."; sudo snap install slack 2>/dev/null || true; }
-      snap_installed discord || { log_info "Installing Discord..."; sudo snap install discord 2>/dev/null || true; }
-      snap_installed sublime-text || { log_info "Installing Sublime Text..."; sudo snap install sublime-text --classic 2>/dev/null || true; }
-      snap_installed insomnia || { log_info "Installing Insomnia..."; sudo snap install insomnia 2>/dev/null || true; }
-      snap_installed steam || { log_info "Installing Steam..."; sudo snap install steam 2>/dev/null || true; }
+      # Snap packages
+      if cmd_exists snap; then
+        snap_installed postman || { log_info "Installing Postman..."; sudo snap install postman 2>/dev/null || true; }
+        snap_installed slack || { log_info "Installing Slack..."; sudo snap install slack 2>/dev/null || true; }
+        snap_installed discord || { log_info "Installing Discord..."; sudo snap install discord 2>/dev/null || true; }
+        snap_installed sublime-text || { log_info "Installing Sublime Text..."; sudo snap install sublime-text --classic 2>/dev/null || true; }
+        snap_installed insomnia || { log_info "Installing Insomnia..."; sudo snap install insomnia 2>/dev/null || true; }
+        snap_installed steam || { log_info "Installing Steam..."; sudo snap install steam 2>/dev/null || true; }
+      fi
+    else
+      log_skip "Desktop apps (CI environment)"
     fi
 
     ############################################################################

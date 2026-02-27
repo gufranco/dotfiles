@@ -49,6 +49,7 @@ claude/
     scaffold/SKILL.md    # Boilerplate generation from existing patterns
     terraform/SKILL.md   # Terraform/OpenTofu workflows with safety gates
     perf/SKILL.md        # Load testing and HTTP endpoint benchmarks
+    readme/SKILL.md      # Marketing-grade README and GitHub About generation
     worktree/SKILL.md    # Git worktree management for parallel development
 ```
 
@@ -131,9 +132,9 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 
 Analyzes uncommitted changes and creates semantic commits following conventional commit format.
 
-**Arguments**: `--push` to push automatically after committing.
+**Arguments**: `--push` to push automatically after committing, `--pipeline` to push and monitor CI/CD checks with automatic fix-and-retry loop.
 
-Runs `git status`, `git diff`, `git diff --cached`, and `git log` in parallel to gather context. Groups related changes into logical commits. Follows the commit format defined in `rules/git-workflow.md` and `git/.gitmessage`. Never uses `git add -A`, always stages specific files. After committing, asks whether to push to remote. Use `--push` to skip the question and push immediately.
+Runs `git status`, `git diff`, `git diff --cached`, and `git log` in parallel to gather context. Groups related changes into logical commits. Follows the commit format defined in `rules/git-workflow.md` and `git/.gitmessage`. Never uses `git add -A`, always stages specific files. After committing, asks whether to push to remote. Use `--push` to skip the question and push immediately. Use `--pipeline` to push and enter a closed-loop CI monitor: waits for checks, diagnoses failures with log fetching, searches for existing fixes, offers to apply fixes and re-push automatically. Max 3 fix-and-retry cycles. Each CI fix gets its own commit, never amends the user's original work.
 
 ---
 
@@ -141,9 +142,9 @@ Runs `git status`, `git diff`, `git diff --cached`, and `git log` in parallel to
 
 Creates or updates a pull request with structured descriptions.
 
-**Arguments**: `--draft`, `--base <branch>`, `--reviewer <user>`, `--assignee <user>`, `--label <name>`, `update`, or a PR number.
+**Arguments**: `--draft`, `--base <branch>`, `--reviewer <user>`, `--assignee <user>`, `--label <name>`, `--pipeline`, `update`, or a PR number.
 
-Detects GitHub or GitLab from the remote URL. Fetches and rebases on the target branch before opening. Performs self-review of the diff for debug statements, secrets, and large files. Scales the description to PR size: subject-only for trivial changes, full "What/How/Testing" structure for larger ones. Warns on PRs over 400 lines and asks for confirmation over 1000 lines.
+Detects GitHub or GitLab from the remote URL. Fetches and rebases on the target branch before opening. Performs self-review of the diff for debug statements, secrets, and large files. Scales the description to PR size: subject-only for trivial changes, full "What/How/Testing" structure for larger ones. Warns on PRs over 400 lines and asks for confirmation over 1000 lines. Use `--pipeline` to monitor CI/CD checks after PR creation: waits for checks, diagnoses failures with parallel log fetching, searches for existing fixes, offers to apply fixes and re-push automatically. Max 3 fix-and-retry cycles. Updates the PR description's Testing section when non-trivial fixes are applied.
 
 ---
 
@@ -288,6 +289,16 @@ Runs load tests and benchmarks against HTTP endpoints.
 **Arguments**: a URL (required), `-n <requests>`, `-c <concurrency>`, `-d <duration>`, `--method <METHOD>`, `--body <json>`, `--header <key:value>`, `--compare`, `--script <path>`.
 
 Auto-detects installed load testing tools in order of preference: k6, wrk, hey, ab. Validates the target is reachable before starting. For k6, generates a temporary script or uses a custom one via `--script`. Parses results into a standard table: total requests, failures, requests/sec, latency avg/p50/p95/p99, and transfer rate. Flags tail latency above 1s and error rates above 1%. Compare mode runs the test twice with a pause between for changes, then shows a side-by-side diff with percentage deltas. Refuses to hit production URLs without explicit confirmation. Defaults to 1000 requests at 10 concurrency.
+
+---
+
+### /readme
+
+Generates a visually striking, marketing-grade README and GitHub repository description that sells the project at first glance.
+
+**Arguments**: no args for full generation, `--about-only` for just the GitHub description and topics, `--section <name>` to regenerate one section, `--diff` to update based on recent changes.
+
+Deep-scans the project in parallel: package manifests, infrastructure configs, source tree, env files, git context, visual assets, and license. Classifies project type, stack, scale signals, differentiators, and personality. Generates a README designed to feel like a product landing page: centered hero section with logo and badges, bold metrics bar with concrete numbers, HTML feature grids for visual highlights, Mermaid architecture diagrams, comparison tables with checkmarks, prominent quick start, collapsible FAQ and project structure, and light/dark mode image support. Every claim is evidence-based: features, paths, and numbers are verified against the codebase. Also generates a GitHub About description (max 350 chars) and 8-15 topic tags. Presents everything for approval before writing.
 
 ---
 

@@ -9,7 +9,7 @@ claude/
   settings.json          # Permissions, hooks, statusline, MCP, and global settings
   CLAUDE.md              # Core engineering rules (lean, ~150 lines)
   checklists/
-    engineering.md       # 27-category shared checklist (used by /review and /assessment)
+    engineering.md       # 32-category shared checklist (used by /review and /assessment)
   rules/
     code-style.md        # Code conventions, data safety gate, comments, dependencies
     testing.md           # Test philosophy, mock policy, AAA pattern, scenario planning
@@ -26,6 +26,7 @@ claude/
     verification.md      # Verification-before-completion enforcement
     llm-docs.md          # LLM-optimized documentation references for common tech
     borrow-restore.md    # Borrow-and-restore pattern for global mutable CLI state
+    infrastructure.md    # IaC, networking, container orchestration, CI/CD, cloud architecture
   hooks/
     dangerous-command-blocker.py  # Blocks catastrophic bash commands (3 severity levels)
     secret-scanner.py             # Scans staged files for 40+ secret patterns
@@ -127,6 +128,7 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 - **Debugging** (`rules/debugging.md`): systematic four-phase debugging process, multi-component tracing, common traps to avoid. Expands on the debugging approach in CLAUDE.md with specific techniques for reproduction, isolation, root cause analysis, and fix verification.
 - **Verification** (`rules/verification.md`): verification-before-completion enforcement. Gate function: identify what proves the claim, run it, read the output, verify it matches, only then claim done. Evidence requirements table for common claims. Covers partial completion reporting.
 - **LLM docs** (`rules/llm-docs.md`): curated `llms.txt` and `llms-full.txt` references for common technologies. Fetch official docs before relying on training data.
+- **Infrastructure** (`rules/infrastructure.md`): Infrastructure as Code (state management, drift detection, immutable infra, module design), networking and service discovery (DNS, load balancing algorithms, mTLS, VPC design, CDN), container orchestration (resource management, scaling strategies, availability patterns, deployment strategies, sidecar patterns), CI/CD pipeline design (stage ordering, artifact immutability, progressive delivery, pipeline security, DORA metrics), cloud architecture (multi-region strategies, blast radius containment, auto-scaling, traffic management, DDoS mitigation, data residency, cost allocation).
 - **Borrow and restore** (`rules/borrow-restore.md`): two patterns for handling context-dependent CLI tools. Per-command context flags for tools that support them (Docker `--context`, `kubectl --context`, `aws --profile`): no global mutation, no restore needed, safe for parallel sessions. Borrow-and-restore for tools with no per-command option (`gh`, `glab`, `nvm`, Terraform): read current state, switch, work, restore. Detection order: env var, project config, convention, current state. Includes Docker/Colima section for per-command context resolution with profile running verification.
 
 ## Context Resolution
@@ -177,7 +179,7 @@ Reviews a pull request or local branch changes with rigorous, line-by-line analy
 
 **Arguments**: no args for current branch PR, one or more PR numbers or URLs, `--local` to skip PR lookup, `--post` to auto-post without confirmation.
 
-Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses two checklists: 9 review-only categories in `reviewer-prompt.md` for correctness, algorithmic performance, frontend performance, testing, code quality, naming, architecture patterns, dependencies, and PR quality, plus the 27-category shared engineering checklist in `checklists/engineering.md` for architecture and resilience concerns. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
+Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses two checklists: 9 review-only categories in `reviewer-prompt.md` for correctness, algorithmic performance, frontend performance, testing, code quality, naming, architecture patterns, dependencies, and PR quality, plus the 32-category shared engineering checklist in `checklists/engineering.md` for architecture, resilience, and infrastructure concerns. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
 
 **Verdicts**: APPROVE, REQUEST_CHANGES, or COMMENT. Defaults to REQUEST_CHANGES when in doubt.
 
@@ -187,9 +189,9 @@ Works in two modes. PR mode fetches the diff and metadata from the remote. Local
 
 Architecture completeness audit for an implementation. Finds what's **missing**, not just what's wrong.
 
-**Arguments**: no args for changed files on current branch, a file or directory path, `--scope <description>` to focus the assessment, `--focus <area>` to narrow to `security`, `resilience`, `api`, `data`, `ops`, `quality`, or `tenancy`, `--comments` to add inline explanatory comments when fixing gaps.
+**Arguments**: no args for changed files on current branch, a file or directory path, `--scope <description>` to focus the assessment, `--focus <area>` to narrow to `security`, `resilience`, `api`, `data`, `ops`, `quality`, `tenancy`, `infra`, or `all` (default), `--comments` to add inline explanatory comments when fixing gaps.
 
-Unlike `/review` which checks diffs for correctness, `/assessment` reads the full implementation and identifies missing architectural patterns. Classifies the system by traits (write path, read path, external dependencies, async processing, multi-service, variable load, data storage, auth/user data, API exposure, production deployment, testable logic, multi-tenancy, system migration), then audits only the applicable categories from a 27-category checklist. Categories span six domains: data integrity (idempotency, atomicity, consistency, immutability, schema evolution, query optimization, data modeling), resilience (error classification, back pressure, bulkhead, concurrency, saga/outbox, event ordering, distributed locking, external dependency resilience, async processing resilience, graceful degradation), security and API (security/access control, API contract design), operations (observability, deployment readiness, capacity planning, cost awareness, migration strategy), quality (testability), and tenancy (multi-tenancy). Each finding gets a status (PRESENT/PARTIAL/MISSING), severity (CRITICAL/HIGH/MEDIUM/LOW), and effort estimate (S/M/L/XL). Output is a structured gap analysis with concrete code examples for every gap, a summary table, and a priority matrix grouped by severity. After the assessment, offers to implement fixes starting with CRITICAL gaps. Use `--comments` to add inline code comments explaining the reasoning behind each fix, useful for interview take-homes where reviewers evaluate decision-making, not just code.
+Unlike `/review` which checks diffs for correctness, `/assessment` reads the full implementation and identifies missing architectural patterns. Classifies the system by traits (write path, read path, external dependencies, async processing, multi-service, variable load, data storage, auth/user data, API exposure, production deployment, testable logic, multi-tenancy, system migration, infrastructure config, cloud services), then audits only the applicable categories from a 32-category checklist. Categories span seven domains: data integrity (idempotency, atomicity, consistency, immutability, schema evolution, query optimization, data modeling), resilience (error classification, back pressure, bulkhead, concurrency, saga/outbox, event ordering, distributed locking, external dependency resilience, async processing resilience, graceful degradation), security and API (security/access control, API contract design), operations (observability, deployment readiness, capacity planning, cost awareness, migration strategy), quality (testability), tenancy (multi-tenancy), and infrastructure (IaC, networking/service discovery, container orchestration, CI/CD pipeline design, cloud architecture). Each finding gets a status (PRESENT/PARTIAL/MISSING), severity (CRITICAL/HIGH/MEDIUM/LOW), and effort estimate (S/M/L/XL). Output is a structured gap analysis with concrete code examples for every gap, a summary table, and a priority matrix grouped by severity. After the assessment, offers to implement fixes starting with CRITICAL gaps. Use `--comments` to add inline code comments explaining the reasoning behind each fix, useful for interview take-homes where reviewers evaluate decision-making, not just code.
 
 ---
 
@@ -335,7 +337,7 @@ Enables working on multiple tasks simultaneously using git worktrees. `init` cre
 
 ## Engineering Checklist
 
-Both `/review` and `/assessment` share a single 27-category engineering checklist defined in `checklists/engineering.md`. Each skill applies it with a different lens: `/review` checks items against the diff for correctness, `/assessment` checks the full implementation for completeness.
+Both `/review` and `/assessment` share a single 32-category engineering checklist defined in `checklists/engineering.md`. Each skill applies it with a different lens: `/review` checks items against the diff for correctness, `/assessment` checks the full implementation for completeness.
 
 ### Review-only categories
 
@@ -353,7 +355,7 @@ Both `/review` and `/assessment` share a single 27-category engineering checklis
 
 ### Shared engineering categories
 
-The 27 categories in `checklists/engineering.md`, organized by domain:
+The 32 categories in `checklists/engineering.md`, organized by domain:
 
 **Data integrity:**
 
@@ -377,18 +379,18 @@ The 27 categories in `checklists/engineering.md`, organized by domain:
 11. **Distributed locking**: lease expiry, fencing tokens, stale write prevention.
 18. **External dependency resilience**: explicit timeouts on all calls, circuit breakers, connection pooling per dependency, graceful degradation.
 19. **Async processing resilience**: DLQ on every queue, partial batch failure reporting, reprocessing path, visibility timeout alignment.
-21. **Graceful degradation**: per-dependency fallback UX, core flow independence, degraded state communication, blast radius analysis, timeout-based degradation, RTO/RPO targets, backup validation, cross-region failover.
+21. **Graceful degradation**: per-dependency fallback UX, core flow independence, degraded state communication, blast radius analysis, timeout-based degradation, RTO/RPO targets, backup validation, cross-region failover, chaos engineering, game days.
 
 **Security and API:**
 
-16. **Security and access control**: injection prevention (SQL, XSS, command, path traversal, SSRF), auth with bcrypt/argon2, rate limiting, CSRF, default-deny authorization, IDOR prevention, encryption in transit/at rest, data privacy, audit logging, supply chain.
+16. **Security and access control**: injection prevention (SQL, XSS, command, path traversal, SSRF), auth with bcrypt/argon2, rate limiting, CSRF, default-deny authorization, IDOR prevention, encryption in transit/at rest, data privacy, audit logging, supply chain, IAM least privilege, secrets vault with rotation, network segmentation, zero trust, certificate management.
 17. **API contract design**: REST conventions, correct status codes, consistent error format, pagination, versioning with deprecation lifecycle, rate limiting headers, idempotency keys, bulk operations.
 
 **Operations:**
 
-15. **Observability**: structured logging, correlation IDs, health checks (liveness + readiness), metrics, distributed tracing, SLIs/SLOs, alerts on SLO violations, runbooks per alert, distributed debugging path, on-call handoff docs, business metrics, A/B test instrumentation.
+15. **Observability**: structured logging, correlation IDs, health checks (liveness + readiness), metrics, distributed tracing, SLIs/SLOs, alerts on SLO violations, runbooks per alert, distributed debugging path, on-call handoff docs, business metrics, A/B test instrumentation, incident severity classification, communication protocol, blameless postmortems.
 20. **Deployment readiness**: backward compatibility during rollout, safe migrations, health probes, graceful shutdown, feature flags, rollback plan, canary promotion criteria, rollback tested, deployment frequency.
-23. **Capacity planning**: storage growth rate, read/write ratio, bottleneck identification, horizontal scaling path, hot spot identification, data retention/archival, cost at 10x scale.
+23. **Capacity planning**: storage growth rate, read/write ratio, bottleneck identification, horizontal scaling path, hot spot identification, data retention/archival, cost at 10x scale, auto-scaling validation, storage IOPS sizing.
 25. **Cost awareness**: query cost, compute right-sizing, storage tiers, batch vs real-time, egress costs, cache ROI, unused resource cleanup, budget alerts.
 27. **Migration strategy**: strangler fig or parallel run, feature parity validation, data migration plan, dark launching, cutover criteria, rollback path, old system decommission.
 
@@ -399,3 +401,11 @@ The 27 categories in `checklists/engineering.md`, organized by domain:
 **Tenancy:**
 
 26. **Multi-tenancy**: tenant data isolation (row/schema/instance), query scoping, noisy neighbor prevention, per-tenant rate limits, tenant context propagation, tenant-aware caching, onboarding/offboarding automation.
+
+**Infrastructure:**
+
+28. **Infrastructure as Code**: all infra in code, idempotent provisioning, remote state with locking, drift detection, immutable infrastructure, environment parity, module versioning.
+29. **Networking and service discovery**: service discovery mechanism, load balancing algorithm, DNS TTL, mTLS, network policies, VPC design, CDN, ingress/egress controls.
+30. **Container orchestration**: resource requests/limits, HPA, pod disruption budgets, anti-affinity, rolling updates, health probes, graceful shutdown, resource quotas, sidecar patterns.
+31. **CI/CD pipeline design**: feedback-ordered stages, artifact immutability, environment promotion, progressive delivery, pipeline security, DORA metrics, automated rollback.
+32. **Cloud architecture**: multi-region strategy, blast radius containment, AZ independence, cell-based architecture, service quotas, auto-scaling, DDoS mitigation, data residency, cost allocation.

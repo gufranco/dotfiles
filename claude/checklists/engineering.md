@@ -204,6 +204,9 @@ Reference: `rules/database.md` (Query Optimization, Time-Range Queries)
 - [ ] On-call handoff includes: known fragile areas, recent incidents, pending deployments, and alert context?
 - [ ] Business metrics instrumented? Conversion rates, feature adoption, funnel drop-off tracked alongside technical metrics.
 - [ ] A/B test observability? Experiment assignment logged, metrics split by variant, statistical significance tracked.
+- [ ] Incident severity classification defined? SEV1-SEV4 with response time expectations and escalation paths.
+- [ ] Communication protocol during incidents? Status page updates, stakeholder notifications, war room coordination.
+- [ ] Blameless postmortem conducted within 48h of SEV1/SEV2? Timeline, root cause, contributing factors, action items with owners.
 
 Reference: `rules/observability.md`
 
@@ -254,7 +257,14 @@ Reference: `rules/observability.md`
 ### Supply chain
 - [ ] Dependencies locked with exact versions? Lockfile committed? Audit in CI?
 
-Reference: `rules/security.md`
+### Infrastructure security
+- [ ] IAM follows least privilege? Service accounts scoped per service, no shared credentials across services.
+- [ ] Secrets managed through a vault (HashiCorp Vault, AWS Secrets Manager, GCP Secret Manager)? Rotated automatically on schedule.
+- [ ] Network segmentation enforced? Services only reachable from expected sources. No flat network where everything can talk to everything.
+- [ ] Zero trust applied? No implicit trust based on network location. Every request authenticated and authorized regardless of origin.
+- [ ] Certificate management automated? TLS certificates rotated before expiry. No manual cert renewal in production.
+
+Reference: `rules/security.md`, `rules/infrastructure.md` (Networking and Service Discovery)
 
 ## 17. API Contract Design
 
@@ -337,6 +347,8 @@ Reference: `rules/distributed-systems.md` (Zero-Downtime Deployments), `rules/da
 - [ ] RTO (Recovery Time Objective) and RPO (Recovery Point Objective) defined per service? How fast must it recover, and how much data loss is tolerable?
 - [ ] Backup strategy validated? Backups tested with actual restore, not just "backups run nightly."
 - [ ] Cross-region failover plan exists for critical services? Traffic can shift to a secondary region if the primary is unavailable.
+- [ ] Chaos engineering practiced? Failure injection tested in non-production or controlled production environments.
+- [ ] Game days scheduled? Team exercises simulating outages to validate runbooks, monitoring, and incident response.
 
 Reference: `rules/resilience.md` (Circuit Breakers, Timeouts)
 
@@ -366,8 +378,10 @@ Reference: `rules/database.md` (Access Pattern Design, Schema Rules)
 - [ ] Data retention and archival strategy defined? Old data moved to cold storage or deleted on schedule.
 - [ ] Connection and thread pool limits sized for expected concurrency, with headroom for spikes?
 - [ ] Cost of the current design at 10x scale estimated? No surprise bills from unbounded resources.
+- [ ] Auto-scaling validated under load? Scale-up and scale-down behavior tested, not just configured.
+- [ ] Storage IOPS and throughput sized for peak? Not just capacity but performance under concurrent access.
 
-Reference: `rules/database.md` (Connection Management, NoSQL Key Design), `rules/resilience.md` (Back Pressure)
+Reference: `rules/database.md` (Connection Management, NoSQL Key Design), `rules/resilience.md` (Back Pressure), `rules/infrastructure.md` (Cloud Architecture)
 
 ## 24. Testability
 
@@ -420,3 +434,74 @@ Reference: `rules/security.md` (Access Control), `rules/database.md` (Access Pat
 - [ ] Old system decommission planned? Timeline for shutting down the previous implementation after migration completes.
 
 Reference: `rules/distributed-systems.md` (Zero-Downtime Deployments), `rules/database.md` (Safe Migrations)
+
+## 28. Infrastructure as Code
+
+- [ ] All infrastructure defined in code (Terraform, Pulumi, CloudFormation)? No manually provisioned resources?
+- [ ] Provisioning idempotent? Running the same code twice produces the same infrastructure with no orphaned resources.
+- [ ] State managed remotely with locking? No local state files for shared infrastructure.
+- [ ] State isolation: separate state per environment and per service? One blast radius per state file.
+- [ ] Immutable infrastructure: dependencies baked into images, instances replaced not patched?
+- [ ] Environment parity: dev, staging, production from the same templates with environment-specific variables?
+- [ ] Drift detection automated? Scheduled `plan` runs alert on manual changes to infrastructure.
+- [ ] Modules versioned and pinned? No unintentional module updates during apply.
+- [ ] Secrets not stored in IaC state or templates? Sensitive values from a vault or secrets manager.
+- [ ] Plan reviewed before apply? No blind applies in production.
+
+Reference: `rules/infrastructure.md` (Infrastructure as Code)
+
+## 29. Networking and Service Discovery
+
+- [ ] Service discovery mechanism chosen? DNS-based, client-side, server-side LB, or service mesh?
+- [ ] Load balancing algorithm appropriate? Round-robin for stateless, least-connections for variable duration, consistent hashing for stateful.
+- [ ] DNS TTL configured for failover requirements? Low enough for fast failover, not so low it hammers DNS.
+- [ ] mTLS between services? Service-to-service traffic encrypted, not relying on network trust.
+- [ ] Network policies / security groups follow least privilege? Default deny, explicit allow only for required traffic.
+- [ ] VPC / subnet design isolates tiers? Public, private, and data subnets. Databases never in public subnets.
+- [ ] CDN configured for static assets and cacheable responses? Cache invalidation strategy defined.
+- [ ] Ingress and egress controls defined? Known set of external endpoints. Unexpected egress investigated.
+
+Reference: `rules/infrastructure.md` (Networking and Service Discovery)
+
+## 30. Container Orchestration
+
+- [ ] Resource requests and limits set on every container? Requests based on actual usage, limits with headroom for peaks.
+- [ ] Horizontal pod autoscaling configured? Metric (CPU, custom) chosen, min/max replicas set, cooldown tuned.
+- [ ] Pod disruption budgets defined? Minimum available during voluntary disruptions (node drain, upgrade).
+- [ ] Anti-affinity spreads replicas across nodes and availability zones? No single-point-of-failure co-location.
+- [ ] Rolling update strategy tuned? maxUnavailable and maxSurge set for zero-downtime deploys.
+- [ ] Health probes configured correctly? Liveness (restart on hang), readiness (remove from LB on unready), startup (slow-starting apps).
+- [ ] Graceful shutdown: preStop hook, terminationGracePeriodSeconds long enough to drain connections?
+- [ ] Resource quotas and limit ranges per namespace? One team cannot consume the entire cluster.
+- [ ] Sidecar pattern used for cross-cutting concerns (mesh proxy, log collector, secrets injector)?
+
+Reference: `rules/infrastructure.md` (Container Orchestration)
+
+## 31. CI/CD Pipeline Design
+
+- [ ] Pipeline stages ordered by feedback speed? Lint and static analysis first, deploy last.
+- [ ] Artifact built once and promoted through environments? No rebuilding for production.
+- [ ] Artifacts tagged with git SHA? No `latest` as a deployment strategy.
+- [ ] Artifacts signed and verified before deployment?
+- [ ] Environment promotion strategy explicit? Push-based, GitOps, or manual promotion?
+- [ ] Progressive delivery configured? Canary with auto-promote/rollback based on metrics, feature flags, or dark launching.
+- [ ] Pipeline security: secrets injected at runtime, not in repo or build logs? Least-privilege credentials per stage.
+- [ ] DORA metrics tracked? Deployment frequency, lead time, change failure rate, MTTR.
+- [ ] Rollback automated or one-click? Not a multi-step manual process.
+
+Reference: `rules/infrastructure.md` (CI/CD Pipeline Design)
+
+## 32. Cloud Architecture
+
+- [ ] Multi-region strategy chosen? Single, active-passive, or active-active? Trade-offs (cost, complexity, RTO) understood.
+- [ ] Blast radius contained at infrastructure level? Account/project isolation per environment and workload class.
+- [ ] AZ-independent? Losing one availability zone does not degrade service. Resources spread across 2+ AZs.
+- [ ] Cell-based architecture where appropriate? Independent cells by geography, customer segment, or shard.
+- [ ] Service quotas known and monitored? Hitting a cloud provider limit in production is an outage.
+- [ ] Auto-scaling validated? Scale-up and scale-down tested under load. Predictive scaling for known patterns.
+- [ ] DDoS mitigation: WAF, rate limiting at edge, cloud-native shield on public load balancers?
+- [ ] Data residency requirements met? Storage and processing regions comply with regulations (GDPR, LGPD).
+- [ ] Cost allocation tags on all resources? Environment, team, service, cost center.
+- [ ] Reserved capacity or savings plans for stable workloads? Spot/preemptible for fault-tolerant jobs.
+
+Reference: `rules/infrastructure.md` (Cloud Architecture)

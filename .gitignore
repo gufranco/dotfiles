@@ -159,6 +159,7 @@ claude/*
 !claude/settings.json
 !claude/CLAUDE.md
 !claude/README.md
+!claude/checklists/
 !claude/skills/
 !claude/rules/
 !claude/hooks/

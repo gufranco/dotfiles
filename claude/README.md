@@ -8,6 +8,8 @@ Personal Claude Code setup with custom skills, engineering guidelines, and proje
 claude/
   settings.json          # Permissions, hooks, statusline, MCP, and global settings
   CLAUDE.md              # Core engineering rules (lean, ~150 lines)
+  checklists/
+    engineering.md       # 20-category shared checklist (used by /review and /assessment)
   rules/
     code-style.md        # Code conventions, data safety gate, comments, dependencies
     testing.md           # Test philosophy, mock policy, AAA pattern, scenario planning
@@ -35,9 +37,8 @@ claude/
     commit/SKILL.md      # Semantic commits from uncommitted changes
     pr/SKILL.md          # Pull request creation and updates
     review/SKILL.md      # Code review for PRs and local branches
-      reviewer-prompt.md # 15-category review checklist with expanded architecture checks
+      reviewer-prompt.md # 9 review-only categories + reference to shared engineering checklist
     assessment/SKILL.md  # Architecture completeness audit (finds missing patterns, not bugs)
-      assessment-checklist.md # 15-category architecture assessment checklist
     checks/SKILL.md      # CI/CD pipeline monitoring and diagnosis
     release/SKILL.md     # Tagged releases with auto-generated changelogs
     test/SKILL.md        # Test runner detection and execution
@@ -176,7 +177,7 @@ Reviews a pull request or local branch changes with rigorous, line-by-line analy
 
 **Arguments**: no args for current branch PR, one or more PR numbers or URLs, `--local` to skip PR lookup, `--post` to auto-post without confirmation.
 
-Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses a 15-category checklist covering correctness, security, error handling, performance (including caching, time-range timezone alignment), concurrency (including bounded concurrency, distributed locking with fencing), data integrity (including schema evolution, append-only audit data), API design, testing, code quality (including immutability enforcement), naming, architecture (including consistency models, read-your-writes, outbox pattern), observability, dependencies, documentation, and resilience/fault tolerance (including saga/compensation, back pressure with load shedding, bulkhead isolation). Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
+Works in two modes. PR mode fetches the diff and metadata from the remote. Local mode diffs committed changes against the base branch, useful before opening a PR. If no PR exists, automatically falls back to local mode. Supports batch reviews: pass multiple PR numbers or URLs to review them sequentially in one invocation. Uses two checklists: 9 review-only categories in `reviewer-prompt.md` for correctness, algorithmic performance, frontend performance, testing, code quality, naming, architecture patterns, dependencies, and PR quality, plus the 20-category shared engineering checklist in `checklists/engineering.md` for architecture and resilience concerns. Every issue includes what's wrong, why it matters, and a code example showing the fix. Post-review behavior is authorship-aware: on your own PR or in local mode, offers to fix issues directly. On someone else's PR, acts as a reviewer only and posts inline comments with REQUEST_CHANGES/APPROVE/COMMENT after approval. Use `--post` to skip the confirmation step and post immediately.
 
 **Verdicts**: APPROVE, REQUEST_CHANGES, or COMMENT. Defaults to REQUEST_CHANGES when in doubt.
 
@@ -332,29 +333,27 @@ Manages git worktrees for parallel development.
 
 Enables working on multiple tasks simultaneously using git worktrees. `init` creates isolated worktrees from pipe-separated task descriptions, generating `wt/<kebab-task>` branches and `.worktree-task.md` files for context preservation. `deliver` commits, pushes, and creates a PR from inside a worktree using the task file as PR basis. `check` shows a status table of all worktrees with branch, commits ahead, and uncommitted changes. `cleanup` removes worktrees for merged branches, with `--all` for aggressive cleanup and `--dry-run` for preview. All worktree branches use the `wt/` prefix for safe identification.
 
-## Review Checklist
+## Engineering Checklist
 
-The `/review` skill uses a 15-category checklist defined in `skills/review/reviewer-prompt.md`:
+Both `/review` and `/assessment` share a single 20-category engineering checklist defined in `checklists/engineering.md`. Each skill applies it with a different lens: `/review` checks items against the diff for correctness, `/assessment` checks the full implementation for completeness.
+
+### Review-only categories
+
+`/review` also checks 9 categories that only make sense when reviewing a diff. These live in `skills/review/reviewer-prompt.md`:
 
 1. **Correctness**: logic tracing, off-by-one, null handling, boolean logic, type coercion, regex, date/time, floating point, recursion termination.
-2. **Security**: injection (SQL, XSS, command, path traversal, SSRF, header, template), auth/authz, data exposure, cryptography.
-3. **Error handling**: meaningful catches, context in errors, error classification (transient vs permanent), retry with backoff, async error handling, partial failure and batch failure reporting.
-4. **Performance**: algorithmic complexity, N+1 queries, SELECT *, pagination, conditional writes, time-range query design with timezone alignment, NoSQL key distribution, memory/IO, caching strategies and invalidation, thundering herd prevention, frontend re-renders.
-5. **Concurrency**: shared mutable state, TOCTOU bugs, missing await, fire-and-forget, deadlock potential, bounded concurrency (semaphore/worker pool), distributed locking with fencing tokens, event ordering and delivery guarantees.
-6. **Data integrity**: boundary validation, database constraints, safe migrations, UTC timestamps, append-only for audit data, schema evolution (backward/forward compatibility).
-7. **API design**: REST conventions, response consistency, pagination, error format, idempotency.
-8. **Testing**: branch coverage at 80%+, AAA pattern, specific assertions, no mocked internals, negative and boundary tests.
-9. **Code quality**: function size, single responsibility, DRY, no dead code, composition over inheritance, immutability (pure functions, new state per transition, derived values via selectors).
-10. **Naming**: descriptive variables, verb-based functions, boolean prefixes, no misleading names.
-11. **Architecture**: follows existing patterns, appropriate coupling, no circular dependencies, externalized config, consistency model chosen explicitly, read-your-writes for user mutations, outbox pattern for cross-service event publishing.
-12. **Observability**: appropriate log levels, correlation identifier (requestId, traceId, or similar) in logs, no sensitive data logged, health checks.
-13. **Dependencies**: justified, maintained, pinned, license-compatible, size-appropriate.
-14. **Documentation**: PR description explains what and why, breaking changes documented, README updated, env vars in .env.example.
-15. **Resilience**: idempotent handlers with durable deduplication, conditional/atomic writes, DLQ with partial batch failure reporting, explicit timeouts on all external calls, circuit breakers for degraded services, saga with compensating actions and outbox, back pressure with load shedding by priority, bulkhead isolation per dependency.
+2. **Algorithmic performance**: O(n^2) detection, data structure choices, unbounded memory, allocations in hot loops, sync I/O in async paths.
+3. **Frontend performance**: unnecessary re-renders, list virtualization, bundle size, main thread blocking.
+4. **Testing**: branch coverage at 80%+, AAA pattern, specific assertions, no mocked internals, negative and boundary tests.
+5. **Code quality**: function size, single responsibility, DRY, no dead code, composition over inheritance, isolated side effects.
+6. **Naming**: descriptive variables, verb-based functions, boolean prefixes, no misleading names.
+7. **Architecture patterns**: follows existing patterns, appropriate coupling, no circular dependencies, externalized config.
+8. **Dependencies**: justified, maintained, pinned, license-compatible, size-appropriate.
+9. **Documentation and PR quality**: PR description explains what and why, breaking changes documented, README updated, env vars in .env.example.
 
-## Assessment Checklist
+### Shared engineering categories
 
-The `/assessment` skill uses a 20-category architecture completeness checklist defined in `skills/assessment/assessment-checklist.md`. Each finding gets a severity (CRITICAL/HIGH/MEDIUM/LOW) and effort estimate (S/M/L/XL).
+The 20 categories in `checklists/engineering.md`, organized by domain:
 
 **Data integrity:**
 
@@ -363,24 +362,24 @@ The `/assessment` skill uses a 20-category architecture completeness checklist d
 5. **Consistency model**: explicit choice (strong/eventual/read-your-writes/causal), weakest tolerable model used.
 12. **Schema evolution**: backward/forward compatible, version field, no removed/renamed fields.
 13. **Immutability**: pure functions, const default, new state per transition, append-only audit data.
-14. **Query optimization**: no N+1, pagination, timezone-aware time ranges, database-level filtering.
+14. **Query optimization**: no N+1, pagination, timezone-aware time ranges, NoSQL key distribution, connection pooling.
 
 **Resilience:**
 
-3. **Error classification and retry**: every catch classifies transient/permanent/ambiguous, retry with backoff+jitter, timeout budgets.
+3. **Error classification and retry**: every catch classifies transient/permanent/ambiguous, retry with backoff+jitter, timeout budgets, partial failure handling, async error handling.
 4. **Caching**: strategy explicit, invalidation chosen, TTL jitter, stampede prevention, warming, eviction.
 6. **Back pressure and load management**: bounded queues, load shedding by priority, 10x traffic plan.
 7. **Bulkhead isolation**: separate pool per dependency, critical/non-critical workload separation.
-8. **Concurrency control**: bounded fan-out, worker pool sizing, per-unit timeout.
+8. **Concurrency control**: bounded fan-out, worker pool sizing, per-unit timeout, TOCTOU prevention, deadlock avoidance.
 9. **Saga and cross-service coordination**: compensating actions, outbox pattern, no dual writes.
 10. **Event ordering and delivery**: delivery guarantee explicit, per-entity ordering, out-of-order handling.
 11. **Distributed locking**: lease expiry, fencing tokens, stale write prevention.
 18. **External dependency resilience**: explicit timeouts on all calls, circuit breakers, connection pooling per dependency, graceful degradation.
-19. **Async processing resilience**: DLQ on every queue, partial batch failure reporting, reprocessing path, monitoring.
+19. **Async processing resilience**: DLQ on every queue, partial batch failure reporting, reprocessing path, visibility timeout alignment.
 
 **Security and API:**
 
-16. **Security and access control**: auth with bcrypt/argon2, rate limiting, CSRF, default-deny authorization, IDOR prevention, encryption in transit/at rest, data privacy, audit logging, supply chain.
+16. **Security and access control**: injection prevention (SQL, XSS, command, path traversal, SSRF), auth with bcrypt/argon2, rate limiting, CSRF, default-deny authorization, IDOR prevention, encryption in transit/at rest, data privacy, audit logging, supply chain.
 17. **API contract design**: REST conventions, correct status codes, consistent error format, pagination, versioning with deprecation lifecycle, rate limiting headers, idempotency keys, bulk operations.
 
 **Operations:**

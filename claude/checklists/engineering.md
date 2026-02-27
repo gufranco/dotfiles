@@ -1,6 +1,11 @@
-# Architecture Assessment Checklist
+# Engineering Checklist
 
-Use this checklist to audit an implementation for completeness. Only apply categories relevant to the system type. For each item, determine: PRESENT (implemented), PARTIAL (partially implemented), or MISSING (not addressed).
+Shared checklist used by both `/review` and `/assessment`. Each skill applies it differently:
+
+- `/review` checks these items against the **diff**: is what's written correct?
+- `/assessment` checks these items against the **full implementation**: is the pattern present, partial, or missing?
+
+Only apply categories relevant to the system type. A CLI tool doesn't need caching. A single-service app doesn't need saga.
 
 ## 1. Idempotency and Deduplication
 
@@ -11,8 +16,9 @@ Use this checklist to audit an implementation for completeness. Only apply categ
   - Database: upsert, `ON CONFLICT DO NOTHING`, or conditional expression
   - State machine: check current state before transitioning
 - [ ] Natural deduplication key identified (request ID, event ID, user+action+date)?
-- [ ] Dedup state stored durably (database, not in-memory)?
+- [ ] Dedup state stored durably (database, not in-memory)? Survives restarts?
 - [ ] Dedup window (TTL) exceeds maximum retry/redelivery time?
+- [ ] POST endpoints that create resources support `Idempotency-Key` header?
 
 Reference: `rules/code-style.md` (Data Safety), `rules/resilience.md` (Idempotency, Deduplication)
 
@@ -24,6 +30,7 @@ Reference: `rules/code-style.md` (Data Safety), `rules/resilience.md` (Idempoten
 - [ ] Explicit rollback on failure, not relying on implicit cleanup?
 - [ ] NoSQL: `TransactWriteItems` or conditional expressions for multi-item atomicity?
 - [ ] Conditional write failures classified: conflict (retry with fresh read) vs duplicate (skip)?
+- [ ] Multi-step workflows handle partial failure with rollback or compensating actions?
 
 Reference: `rules/database.md` (Transactions and Atomic Writes, Conditional Writes)
 
@@ -38,6 +45,13 @@ Reference: `rules/database.md` (Transactions and Atomic Writes, Conditional Writ
 - [ ] Retry parameters explicit: base delay (100-500ms), multiplier (2x), jitter (0-50%), max retries (3 sync, 5 async)?
 - [ ] Max delay cap set (never exceeds 30s between retries)?
 - [ ] Total retry time fits within the caller's timeout budget?
+- [ ] Caught errors include context: what operation failed, with what input, and why?
+- [ ] Async errors handled? No unhandled promise rejections? No missing `await`?
+- [ ] Error propagation consistent? Not mixing thrown exceptions with returned error codes in the same layer?
+- [ ] HTTP status codes correct for each error type (400, 401, 403, 404, 409, 422, 500)?
+- [ ] Partial failure: if step 3 of 5 fails, are steps 1-2 rolled back or is the state consistent?
+- [ ] Batch processing: individual item failures reported without aborting the batch?
+- [ ] Errors in cleanup code (finally blocks, defer) handled separately?
 
 Reference: `rules/code-style.md` (Error Classification), `rules/resilience.md` (Error Classification, Retry Strategy)
 
@@ -91,6 +105,10 @@ Reference: `rules/resilience.md` (Bulkhead)
 - [ ] Worker pool size configured, not left at defaults?
 - [ ] Timeout set on each unit of work (stuck worker does not permanently reduce capacity)?
 - [ ] Queue depth, active workers, and rejection count instrumented?
+- [ ] Shared mutable state protected by locks, mutexes, or atomic operations?
+- [ ] No TOCTOU (time-of-check-to-time-of-use) bugs? Check-then-act patterns use database constraints or CAS?
+- [ ] Async operations awaited where the result matters? No fire-and-forget without error handler?
+- [ ] No deadlock potential from acquiring multiple locks?
 
 Reference: `rules/resilience.md` (Concurrency Control)
 
@@ -159,6 +177,8 @@ Reference: `rules/code-style.md` (Immutability and Explicit Side Effects)
 - [ ] Aggregation at database level, not fetching rows and aggregating in app?
 - [ ] Time-range queries: timezone-aware? Not assuming UTC alignment for daily buckets?
 - [ ] Time-range boundaries computed at query time from user's local timezone?
+- [ ] NoSQL key design distributes writes evenly? No hot partitions?
+- [ ] Connection pooling configured? No connection leak (opening without closing)?
 
 Reference: `rules/database.md` (Query Optimization, Time-Range Queries)
 
@@ -168,6 +188,7 @@ Reference: `rules/database.md` (Query Optimization, Time-Range Queries)
 - [ ] Log levels correct (error for failures, warn for handled-but-unexpected, info for business events)?
 - [ ] Correlation ID (requestId) propagated across all service calls via `X-Request-Id` header?
 - [ ] No sensitive data logged (passwords, tokens, PII)? Redaction patterns applied?
+- [ ] No logging inside tight loops?
 - [ ] Health check endpoints present: liveness (process alive, no deps) + readiness (all deps reachable with latency)?
 - [ ] Metrics for request rate, error rate, latency (p50/p95/p99), saturation?
 - [ ] Metric labels low-cardinality (never user IDs, request IDs, timestamps)?
@@ -180,22 +201,50 @@ Reference: `rules/observability.md`
 
 ## 16. Security and Access Control
 
-- [ ] Authentication: passwords hashed with bcrypt or argon2, never MD5 or SHA?
+### Injection and input handling
+- [ ] SQL injection: all queries parameterized or using ORM? No string concatenation in queries?
+- [ ] XSS: all user input escaped before rendering? Framework auto-escaping not bypassed?
+- [ ] Command injection: no user input passed to `exec`, `spawn`, or shell commands without sanitization?
+- [ ] Path traversal: no user input used in file paths without validation? `../` sequences blocked?
+- [ ] SSRF: no user-controlled URLs fetched without allowlist validation?
+- [ ] Header injection: no user input in HTTP headers without sanitization?
+- [ ] Template injection: no user input in template strings evaluated server-side?
+- [ ] Input sanitization at all system boundaries (user input, external APIs)?
+
+### Authentication and authorization
+- [ ] Passwords hashed with bcrypt or argon2, never MD5 or SHA?
 - [ ] Rate limiting on auth endpoints (login, register, password reset)?
 - [ ] Token expiration configured? Refresh token rotation?
+- [ ] Tokens validated for expiration, signature, and audience?
+- [ ] Session management: tokens rotated after auth state changes? Proper invalidation on logout?
 - [ ] CSRF protection on state-changing endpoints (SameSite cookies, CSRF tokens, or origin validation)?
 - [ ] Access control: default deny? Permissions explicitly granted, never explicitly denied?
 - [ ] Per-resource authorization checked, not just per-role (IDOR prevention)?
 - [ ] Authorization logic centralized, not scattered across controllers?
+
+### Data protection
 - [ ] Encryption in transit: TLS 1.2+ on all external connections?
 - [ ] Encryption at rest for sensitive data (platform-managed keys)?
 - [ ] Constant-time comparison for secrets (no timing side-channel)?
+- [ ] No secrets, API keys, tokens, or credentials in code, comments, or config files?
+- [ ] No sensitive data in logs, error messages, or stack traces?
+- [ ] No PII leaked through API responses beyond what the caller needs?
+- [ ] Error messages generic in production, no internal paths or query details?
+- [ ] CORS configured correctly? Not using `*` with credentials?
+
+### Cryptography
+- [ ] No custom crypto implementations? Using well-known libraries?
+- [ ] No weak algorithms (MD5, SHA1 for security purposes, DES)?
+- [ ] Random values generated with cryptographically secure source?
+
+### Data privacy
 - [ ] Data minimization: only collecting what's needed?
 - [ ] Retention policy defined per data type? Automated deletion after retention period?
 - [ ] Right to erasure: path to delete all of a user's personal data on request?
 - [ ] Audit logging for sensitive actions (login, password change, role change, record deletion, PII access)?
-- [ ] Supply chain: dependencies locked with exact versions? Lockfile committed? Audit in CI?
-- [ ] Input sanitization at system boundaries (user input, external APIs)?
+
+### Supply chain
+- [ ] Dependencies locked with exact versions? Lockfile committed? Audit in CI?
 
 Reference: `rules/security.md`
 
@@ -205,8 +254,10 @@ Reference: `rules/security.md`
 - [ ] Status codes correct: 201 for creates with Location header, 204 for no-content, 409 for conflicts, 422 for validation?
 - [ ] Error response shape consistent: machine-readable code, human message, requestId, optional field details?
 - [ ] No stack traces or internal paths exposed in production error responses?
+- [ ] Request/response shapes consistent with existing endpoints?
 - [ ] Pagination on all list endpoints? Strategy chosen (cursor-based default, offset-based for random access)?
 - [ ] Default and maximum page size set?
+- [ ] Filtering and sorting on list endpoints?
 - [ ] Versioning strategy: URL path (`/v1/...`), at most two major versions active?
 - [ ] Deprecation lifecycle: `Deprecation` and `Sunset` headers, monitoring, documented migration path?
 - [ ] Rate limiting headers on every response (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`)?
@@ -215,6 +266,7 @@ Reference: `rules/security.md`
 - [ ] Bulk operations return per-item results with individual status codes?
 - [ ] ISO 8601 dates, UTC timestamps, `Content-Type` header set?
 - [ ] Collections wrapped in `data` field? Consistent response envelope?
+- [ ] Response includes only necessary data? No over-fetching?
 
 Reference: `rules/api-design.md`
 
@@ -244,6 +296,7 @@ Reference: `rules/resilience.md` (Circuit Breakers, Timeouts), `rules/database.m
 - [ ] Per-item success/failure tracked and reported?
 - [ ] State consistent after partial failure (compensating actions or rollback)?
 - [ ] Background jobs have execution timeout with cleanup?
+- [ ] Message visibility timeout aligned with expected processing time?
 
 Reference: `rules/resilience.md` (Dead Letter Queues, Partial Failure, Timeouts)
 

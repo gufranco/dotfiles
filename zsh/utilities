@@ -338,7 +338,20 @@ function __create_lazy_stubs() {
 # NVM helpers
 ################################################################################
 function __load_nvm() {
-  if [ ! -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ]; then
+  local nvm_sh=""
+  local nvm_completion=""
+
+  # Homebrew NVM (macOS and Linux)
+  if [ -s "${HOMEBREW_PREFIX:-}/opt/nvm/nvm.sh" ]; then
+    nvm_sh="$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
+    nvm_completion="$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
+  # Manual NVM install fallback
+  elif [ -s "$HOME/.nvm/nvm.sh" ]; then
+    nvm_sh="$HOME/.nvm/nvm.sh"
+    nvm_completion="$HOME/.nvm/bash_completion"
+  fi
+
+  if [ -z "$nvm_sh" ]; then
     __log_skip "NVM not found, skipping initialization"
     return
   fi
@@ -352,10 +365,10 @@ function __load_nvm() {
   unset -f pnpm 2>/dev/null
 
   # Load NVM
-  # shellcheck disable=SC1091
-  source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
-  # shellcheck disable=SC1091
-  [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && source "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
+  # shellcheck disable=SC1090
+  source "$nvm_sh"
+  # shellcheck disable=SC1090
+  [ -n "$nvm_completion" ] && [ -s "$nvm_completion" ] && source "$nvm_completion"
 }
 
 ################################################################################
@@ -827,6 +840,16 @@ function __f5_update_linux() {
     __log_success "Linux packages updated"
   else
     __log_error "Failed to update Linux packages"
+  fi
+
+  if __cmd_exists brew; then
+    __log_info "Updating Homebrew packages..."
+    if brew update && brew upgrade; then
+      brew cleanup -s || true
+      __log_success "Homebrew packages updated"
+    else
+      __log_warning "Homebrew update had failures"
+    fi
   fi
 }
 

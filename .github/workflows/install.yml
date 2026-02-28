@@ -25,7 +25,7 @@ jobs:
   linux:
     name: Ubuntu
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,16 +55,27 @@ jobs:
           check "wgetrc"      "$HOME/.wgetrc"
           check "inputrc"     "$HOME/.inputrc"
           check "ripgreprc"   "$HOME/.ripgreprc"
+          check "ghostty"     "$HOME/.config/ghostty"
+          check "bat-config"  "$HOME/.config/bat/config"
+          check "eza"         "$HOME/.config/eza"
+          check "yazi"        "$HOME/.config/yazi"
+          check "bottom"      "$HOME/.config/bottom/bottom.toml"
+          check "lazygit"     "$HOME/.config/lazygit/config.yml"
+          check "lazydocker"  "$HOME/.config/lazydocker/config.yml"
+          check "k9s"         "$HOME/.config/k9s/config.yml"
+          check "tealdeer"    "$HOME/.config/tealdeer/config.toml"
           exit $errors
 
       - name: Verify commands
         run: |
           set -euo pipefail
-          for cmd in zsh git vim tmux curl wget fzf ripgrep bat; do
-            if command -v "$cmd" >/dev/null 2>&1 || dpkg -l "$cmd" 2>/dev/null | grep -q "^ii"; then
-              echo "OK: $cmd"
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          for cmd in zsh git vim tmux curl wget fzf bat eza delta gh starship btm lazygit kubectl; do
+            if command -v "$cmd" >/dev/null 2>&1; then
+              echo "OK: $cmd ($(command -v "$cmd"))"
             else
-              echo "WARN: $cmd not found (may use alternate name)"
+              echo "FAIL: $cmd not found"
+              exit 1
             fi
           done
 

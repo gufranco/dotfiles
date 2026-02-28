@@ -5,6 +5,22 @@
 ################################################################################
 case "$(uname)" in
   "Linux")
+    # Homebrew on Linux
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv 2>/dev/null)" || true
+
+    # Development environments
+    export NVM_DIR="$HOME/.nvm"
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+    __add_to_path "$PNPM_HOME"
+
+    # Rust
+    __add_to_path "$HOME/.cargo/bin"
+
+    # Java
+    export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+    __add_to_path "$JAVA_HOME/bin"
+
+    # Neomutt
     __add_to_path "/usr/libexec/neomutt"
     ;;
 

@@ -149,7 +149,6 @@ case "$(uname)" in
     brew update
 
     # Taps
-    brew tap stripe/stripe-cli 2>/dev/null || true
     brew tap supabase/tap 2>/dev/null || true
     brew tap withgraphite/tap 2>/dev/null || true
     brew tap oven-sh/bun 2>/dev/null || true
@@ -186,7 +185,7 @@ case "$(uname)" in
       act actionlint bats entr hyperfine just tokei watchman
 
       # Database CLIs
-      libpq mongocli stripe/stripe-cli/stripe supabase/tap/supabase
+      libpq mongocli supabase/tap/supabase
 
       # Monitoring
       bottom cpufetch duf dust fastfetch procs
@@ -202,7 +201,7 @@ case "$(uname)" in
     )
 
     for formula in "${BREW_FORMULAS[@]}"; do
-      brew_install_if_missing "$formula"
+      brew_install_if_missing "$formula" || log_warning "Failed: $formula"
     done
     log_success "Homebrew packages installed"
 

@@ -133,79 +133,6 @@ case "$(uname)" in
     log_success "Basic packages installed"
 
     ############################################################################
-    # Homebrew on Linux
-    ############################################################################
-    if ! cmd_exists brew; then
-      log_info "Installing Homebrew..."
-      CI=1 /bin/bash -c "$(curl -fsSL --connect-timeout 10 --max-time 120 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      log_success "Homebrew installed"
-    else
-      log_skip "Homebrew already installed"
-    fi
-
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-    log_info "Installing Homebrew packages..."
-    brew update
-
-    # Taps
-    brew tap supabase/tap 2>/dev/null || true
-    brew tap withgraphite/tap 2>/dev/null || true
-    brew tap oven-sh/bun 2>/dev/null || true
-
-    BREW_FORMULAS=(
-      # Shell & Terminal
-      direnv starship
-
-      # File Navigation
-      eza fzf nnn yazi
-
-      # Text & Viewers
-      bat glow gum jq pygments tealdeer universal-ctags vint yq
-
-      # Git & VCS
-      delta gh glab lazygit withgraphite/tap/graphite
-
-      # Networking
-      bandwhich gping
-
-      # Containers & K8s
-      dive helm k9s kubectl lazydocker
-
-      # Cloud & Infra
-      awscli flyctl opentofu terraform vercel-cli
-
-      # Security
-      age gitleaks sops snyk-cli trivy
-
-      # Languages
-      oven-sh/bun/bun chruby golangci-lint nvm pipx pnpm ruby-install uv yarn
-
-      # Dev Tools
-      act actionlint bats entr hyperfine just tokei watchman
-
-      # Database CLIs
-      libpq mongocli supabase/tap/supabase
-
-      # Monitoring
-      bottom cpufetch duf dust fastfetch procs
-
-      # Email
-      neomutt
-
-      # Media
-      asciinema cmus
-
-      # Backup
-      restic rclone
-    )
-
-    for formula in "${BREW_FORMULAS[@]}"; do
-      brew_install_if_missing "$formula" || log_warning "Failed: $formula"
-    done
-    log_success "Homebrew packages installed"
-
-    ############################################################################
     # Dotfiles repository
     ############################################################################
     log_info "Setting up dotfiles..."
@@ -287,17 +214,20 @@ case "$(uname)" in
       # File managers & Cloud
       nautilus-dropbox
 
-      # Web
-      lynx
+      # Search & Navigation
+      fzf universal-ctags
+
+      # Email & Web
+      neomutt lynx
 
       # Media
-      vlc
+      vlc cmus asciinema
 
       # Desktop
       conky-all kitty fonts-hack-ttf transmission caffeine flameshot
 
       # Dev tools
-      tty-clock
+      hyperfine tokei tty-clock
     )
 
     for app in "${APPS[@]}"; do
@@ -306,6 +236,78 @@ case "$(uname)" in
         sudo apt install -y -qq "$app" 2>/dev/null || log_warning "Failed: $app"
       fi
     done
+
+    ############################################################################
+    # GitHub CLI
+    ############################################################################
+    if ! cmd_exists gh; then
+      log_info "Installing GitHub CLI..."
+      curl -fsSL --connect-timeout 10 --max-time 30 https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq gh
+      log_success "GitHub CLI installed"
+    else
+      log_skip "GitHub CLI already installed"
+    fi
+
+    ############################################################################
+    # Bat (cat replacement)
+    ############################################################################
+    if ! cmd_exists bat && ! cmd_exists batcat; then
+      log_info "Installing bat..."
+      sudo apt install -y -qq bat 2>/dev/null || true
+      # Ubuntu uses 'batcat' instead of 'bat'
+      if cmd_exists batcat && ! cmd_exists bat; then
+        sudo ln -sf "$(command -v batcat)" /usr/local/bin/bat
+      fi
+      log_success "Bat installed"
+    else
+      log_skip "Bat already installed"
+    fi
+
+    ############################################################################
+    # eza (ls replacement)
+    ############################################################################
+    if ! cmd_exists eza; then
+      log_info "Installing eza..."
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL --connect-timeout 10 --max-time 30 https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq eza
+      log_success "eza installed"
+    else
+      log_skip "eza already installed"
+    fi
+
+    ############################################################################
+    # Delta (git diff)
+    ############################################################################
+    if ! cmd_exists delta; then
+      log_info "Installing delta..."
+      DELTA_VERSION=$(curl -s --connect-timeout 10 --max-time 30 https://api.github.com/repos/dandavison/delta/releases/latest | grep tag_name | cut -d '"' -f 4)
+      if curl -#fLo /tmp/delta.deb --connect-timeout 10 --max-time 120 "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb" 2>/dev/null; then
+        sudo dpkg -i /tmp/delta.deb 2>/dev/null || log_warning "Failed to install delta .deb"
+      else
+        log_warning "Failed to download delta"
+      fi
+      rm -f /tmp/delta.deb
+      log_success "Delta installed"
+    else
+      log_skip "Delta already installed"
+    fi
+
+    ############################################################################
+    # Starship prompt
+    ############################################################################
+    if ! cmd_exists starship; then
+      log_info "Installing Starship..."
+      curl -sS --connect-timeout 10 --max-time 60 https://starship.rs/install.sh | sh -s -- -y >/dev/null 2>&1
+      log_success "Starship installed"
+    else
+      log_skip "Starship already installed"
+    fi
 
     ############################################################################
     # Golang
@@ -329,17 +331,6 @@ case "$(uname)" in
       log_success "Rust installed"
     else
       log_skip "Rust already installed"
-    fi
-
-    ############################################################################
-    # Java 17
-    ############################################################################
-    if ! dpkg -l openjdk-17-jdk 2>/dev/null | grep -q "^ii"; then
-      log_info "Installing Java 17..."
-      sudo apt install -y -qq openjdk-17-jdk
-      log_success "Java 17 installed"
-    else
-      log_skip "Java 17 already installed"
     fi
 
     ############################################################################
@@ -402,7 +393,6 @@ case "$(uname)" in
         snap_installed sublime-text || { log_info "Installing Sublime Text..."; sudo snap install sublime-text --classic 2>/dev/null || true; }
         snap_installed insomnia || { log_info "Installing Insomnia..."; sudo snap install insomnia 2>/dev/null || true; }
         snap_installed steam || { log_info "Installing Steam..."; sudo snap install steam 2>/dev/null || true; }
-        snap_installed figma-linux || { log_info "Installing Figma..."; sudo snap install figma-linux 2>/dev/null || true; }
       fi
     else
       log_skip "Desktop apps (CI environment)"
@@ -417,47 +407,21 @@ case "$(uname)" in
     ############################################################################
     # Nerd Fonts
     ############################################################################
-    if [[ -z "$CI" ]]; then
-      log_info "Installing Nerd Fonts..."
-      FONT_DIR="$HOME/.local/share/fonts"
-      mkdir -p "$FONT_DIR"
+    log_info "Installing Nerd Fonts..."
+    mkdir -p "$HOME/.local/share/fonts"
 
-      NERD_FONTS=(
-        0xProto 3270 Agave AnonymicePro Arimo AurulentSansMono
-        BigBlueTerminal BitstreamVeraSansMono CascadiaCode CascadiaMono
-        CodeNewRoman ComicShannsMono CommitMono Cousine D2Coding
-        DaddyTimeMono DejaVuSansMono DepartureMono DroidSansMono
-        EnvyCodeR FantasqueSansMono FiraCode FiraMono GeistMono
-        Go-Mono Gohu Hack Hasklig HeavyData Hermit iA-Writer
-        IBMPlexMono Inconsolata InconsolataGo InconsolataLGC
-        IntelOneMono Iosevka IosevkaTerm IosevkaTermSlab
-        JetBrainsMono Lekton LiberationMono Lilex MartianMono
-        Meslo Monaspace Monocraft Monofur Monoid Mononoki MPlus
-        NerdFontsSymbolsOnly Noto OpenDyslexic Overpass ProFont
-        ProggyClean Recursive RobotoMono ShareTechMono SourceCodePro
-        SpaceMono Terminus Tinos Ubuntu UbuntuMono UbuntuSans
-        VictorMono ZedMono
-      )
-
-      NERD_FONTS_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
-
-      for font in "${NERD_FONTS[@]}"; do
-        if [ -d "$FONT_DIR/$font" ] && [ "$(ls -A "$FONT_DIR/$font" 2>/dev/null)" ]; then
-          continue
-        fi
-        mkdir -p "$FONT_DIR/$font"
-        if curl -fLo "/tmp/${font}.tar.xz" --connect-timeout 10 --max-time 120 \
-          "${NERD_FONTS_URL}/${font}.tar.xz" 2>/dev/null; then
-          tar -xf "/tmp/${font}.tar.xz" -C "$FONT_DIR/$font/" 2>/dev/null || true
-        fi
-        rm -f "/tmp/${font}.tar.xz"
-      done
-
-      sudo fc-cache -fv >/dev/null 2>&1
-      log_success "Nerd Fonts installed"
-    else
-      log_skip "Nerd Fonts (CI environment)"
+    if [ ! -f "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" ]; then
+      curl -#fLo "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" --connect-timeout 10 --max-time 120 \
+        https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf
     fi
+
+    if [ ! -f "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" ]; then
+      curl -#fLo "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" --connect-timeout 10 --max-time 120 \
+        https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/JetBrainsMono/Ligatures/Regular/JetBrainsMonoNerdFont-Regular.ttf
+    fi
+
+    sudo fc-cache -fv >/dev/null 2>&1
+    log_success "Fonts installed"
 
     ############################################################################
     # Conky
@@ -852,7 +816,6 @@ case "$(uname)" in
   "Linux")
     sudo apt autoremove -y -qq 2>/dev/null || true
     sudo apt clean 2>/dev/null || true
-    brew cleanup -s 2>/dev/null || true
     ;;
   "Darwin")
     brew cleanup -s 2>/dev/null || true

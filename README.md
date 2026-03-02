@@ -7,6 +7,7 @@
 <br>
 <br>
 
+[![CI](https://img.shields.io/github/actions/workflow/status/gufranco/dotfiles/install.yml?branch=master&style=flat-square&label=install)](https://github.com/gufranco/dotfiles/actions/workflows/install.yml)
 [![License](https://img.shields.io/github/license/gufranco/dotfiles?style=flat-square)](LICENSE)
 [![Shell](https://img.shields.io/badge/shell-zsh-blue?style=flat-square)]()
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square)]()
@@ -125,7 +126,7 @@ Aliases activate only when the modern tool is installed:
 
 ### Editor
 
-Vim with 25 plugins managed by vim-plug:
+Vim with 24 plugins managed by vim-plug:
 
 | Category | Plugins |
 |:---------|:--------|
@@ -325,7 +326,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── themes/           # Terminal themes (iTerm2)
 ├── tilix/            # Tilix terminal config
 ├── tmux/             # Tmux config + 10 plugins
-├── vim/              # Vim config + 25 plugins
+├── vim/              # Vim config + 24 plugins
 ├── wget/             # Wget config
 ├── yazi/             # Yazi file manager + Tokyo Night theme
 ├── zsh/              # Zsh: aliases, functions, paths, settings, infrastructure

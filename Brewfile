@@ -420,24 +420,26 @@ cask 'font-victor-mono-nerd-font'
 cask 'font-zed-mono-nerd-font'
 
 ################################################################################
-# App Store - Apps
+# App Store (skip in CI - no authenticated App Store session)
 ################################################################################
-mas 'Xcode', id: 497_799_835
-mas 'Amphetamine', id: 937_984_704
-mas 'Magnet', id: 441_258_766
+unless ENV['CI']
+  mas 'Xcode', id: 497_799_835
+  mas 'Amphetamine', id: 937_984_704
+  mas 'Magnet', id: 441_258_766
 
-################################################################################
-# App Store - Games
-################################################################################
-if architecture == 'arm64' && storage >= 512
-  mas 'Cyberpunk 2077', id: 6_633_429_424
-  mas 'Death Stranding', id: 6_449_748_961
-  mas 'Resident Evil 2', id: 1_640_632_432
-  mas 'Resident Evil 3', id: 1_640_630_077
-  mas 'Resident Evil 4', id: 6_462_360_082
-  mas 'Resident Evil 7', id: 1_640_629_241
-  mas 'Resident Evil 8', id: 1_640_627_334
-  mas 'Stray', id: 6_451_498_949
+  ############################################################################
+  # App Store - Games
+  ############################################################################
+  if architecture == 'arm64' && storage >= 512
+    mas 'Cyberpunk 2077', id: 6_633_429_424
+    mas 'Death Stranding', id: 6_449_748_961
+    mas 'Resident Evil 2', id: 1_640_632_432
+    mas 'Resident Evil 3', id: 1_640_630_077
+    mas 'Resident Evil 4', id: 6_462_360_082
+    mas 'Resident Evil 7', id: 1_640_629_241
+    mas 'Resident Evil 8', id: 1_640_627_334
+    mas 'Stray', id: 6_451_498_949
+  end
 end
 
 ################################################################################

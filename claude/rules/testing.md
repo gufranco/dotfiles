@@ -18,13 +18,15 @@ Tests should verify real behavior, not mock behavior.
 
 ## Test Structure (AAA Pattern)
 
-Every test MUST follow Arrange-Act-Assert with these exact comments:
+Every test MUST follow Arrange-Act-Assert with these exact comments, verbatim, with no additional text:
 
 ```
 // Arrange
 // Act
 // Assert
 ```
+
+These are bare section markers. Never append descriptions, colons, or explanations to them. Write `// Act`, never `// Act: do something`. The test name and the code itself communicate intent. If extra context is needed, the test is too complex and should be split or renamed.
 
 ## Test Naming
 

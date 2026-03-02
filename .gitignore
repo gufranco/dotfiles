@@ -156,7 +156,6 @@ pip-delete-this-directory.txt
 .cursor/
 .claude/
 claude/*
-!claude/settings.json
 !claude/CLAUDE.md
 !claude/README.md
 !claude/checklists/

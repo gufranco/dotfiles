@@ -8,7 +8,7 @@ Review a pull request, merge request, or local branch changes with an extremely 
 Use two checklists as structured guides:
 
 1. `reviewer-prompt.md` in this directory for review-only categories (correctness, performance, testing, code quality, naming, dependencies, PR quality).
-2. `checklists/engineering.md` for the 32 shared architecture, resilience, and infrastructure categories (also used by `/assessment`).
+2. `../../checklists/engineering.md` for the 32 shared architecture, resilience, and infrastructure categories (also used by `/assessment`).
 
 Go through every applicable category. Do not skip sections because the changes "look simple."
 
@@ -82,7 +82,7 @@ This skill accepts optional arguments after `/review`:
    - In PR mode: read the PR description and commit messages for intent.
    - In local mode: read the commit messages for intent. There is no PR description yet.
    - If the changes touch files you're not familiar with, read the surrounding code in those files to understand existing patterns, conventions, and architecture. Do not review code in isolation.
-5. **Deep analysis of every changed file.** Go through every category in `reviewer-prompt.md` and every applicable category in `checklists/engineering.md`. For each file, evaluate:
+5. **Deep analysis of every changed file.** Go through every category in `reviewer-prompt.md` and every applicable category in `../../checklists/engineering.md`. For each file, evaluate:
    - **Correctness:** Does the logic actually do what it claims? Trace through the code mentally with concrete inputs, especially edge cases. Look for off-by-one errors, null/undefined access, wrong operator precedence, incorrect boolean logic, missing return statements, unreachable code.
    - **Security:** Apply the full OWASP top 10 lens. Check for injection, broken auth, sensitive data exposure, XXE, broken access control, misconfig, XSS, insecure deserialization, known vulnerable components, insufficient logging. Check for secrets, tokens, or credentials in the diff.
    - **Error handling:** Are all error paths covered? Are errors caught with context, or silently swallowed? Are error messages helpful for debugging? Is the error propagation strategy consistent? Could a thrown exception crash a request handler?

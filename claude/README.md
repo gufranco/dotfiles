@@ -55,6 +55,7 @@ claude/
     perf/SKILL.md        # Load testing and HTTP endpoint benchmarks
     readme/SKILL.md      # Marketing-grade README and GitHub About generation
     worktree/SKILL.md    # Git worktree management for parallel development
+    retro/SKILL.md       # Session retrospective: captures patterns and preferences as durable config
 ```
 
 ## Settings
@@ -112,6 +113,7 @@ The global `CLAUDE.md` is intentionally lean, containing only rules that change 
 - **Mandatory verification**: run tests, lint, build before declaring done.
 - **Context compaction**: preserve modified files, test results, and user decisions.
 - **Debugging approach**: reproduce, isolate, root cause, fix+verify.
+- **Session retrospective**: after significant multi-step work or sessions with corrections, run `/retro` to capture patterns and preferences as durable configuration.
 
 **Rules directory covers:**
 
@@ -336,6 +338,16 @@ Manages git worktrees for parallel development.
 **Arguments**: `init <task1> | <task2>`, `deliver`, `check`, `cleanup`, `cleanup --all`, `cleanup --branch <name>`, `cleanup --dry-run`.
 
 Enables working on multiple tasks simultaneously using git worktrees. `init` creates isolated worktrees from pipe-separated task descriptions, generating `wt/<kebab-task>` branches and `.worktree-task.md` files for context preservation. `deliver` commits, pushes, and creates a PR from inside a worktree using the task file as PR basis. `check` shows a status table of all worktrees with branch, commits ahead, and uncommitted changes. `cleanup` removes worktrees for merged branches, with `--all` for aggressive cleanup and `--dry-run` for preview. All worktree branches use the `wt/` prefix for safe identification.
+
+### /retro
+
+Analyzes the conversation for corrections, preferences, and recurring patterns, then proposes additions to the Claude configuration.
+
+**Arguments**: no args for full analysis, `--dry-run` to show proposals without writing, `--memory-only` to skip rule proposals.
+
+Scans the entire conversation extracting six categories: corrections the user made, preferences expressed, repeated mistakes, architectural decisions, tool/workflow preferences, and project-specific knowledge. Deduplicates against existing CLAUDE.md rules, rules files, and memory files. Classifies each finding by destination: memory file for project-specific facts, CLAUDE.md for universal behavioral rules, rules file for domain conventions, or skill update for operational changes. Presents a summary table with proposed changes and exact text. Asks approval before writing. Updates README.md when any `~/.claude/` file changes. Runs proactively after significant sessions per the "Session Retrospective" rule in CLAUDE.md.
+
+---
 
 ## Engineering Checklist
 

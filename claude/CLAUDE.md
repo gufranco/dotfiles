@@ -140,6 +140,10 @@ When compacting context, always preserve: the list of modified files, test comma
 
 When you make a mistake, say so plainly, fix it, and move on. No ceremony.
 
+## Session Retrospective
+
+After completing significant multi-step work or sessions where corrections were given, run a `/retro` analysis before wrapping up. This captures recurring patterns, preferences, and mistakes as durable configuration so they do not repeat in future sessions. Skip for trivial single-task conversations with no corrections.
+
 ---
 
 ## Claude Configuration Documentation

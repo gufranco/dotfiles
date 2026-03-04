@@ -131,8 +131,13 @@ When scope filtering is active, report at the start of the review: how many file
 5. **Understand the context before judging the code:**
    - In PR mode: read the PR description and commit messages for intent.
    - In local mode: read the commit messages for intent. There is no PR description yet.
-   - If the changes touch files you're not familiar with, read the surrounding code in those files to understand existing patterns, conventions, and architecture. Do not review code in isolation.
-6. **Deep analysis of every changed file.** Go through every category in `reviewer-prompt.md` and every applicable category in `../../checklists/engineering.md`. For each in-scope file, evaluate:
+   - **Read every changed file in full**, not just the diff hunks. The diff shows what changed, but the full file shows whether the change fits the surrounding code, whether existing patterns were followed, and whether the change breaks something the diff doesn't show. This is non-negotiable: do not review a diff in isolation.
+   - When a new import is added, **read the imported module** to understand its behavior, side effects, error types, and configuration requirements. An import is not just a line of code; it's a dependency with consequences.
+   - **Check existing reviews** (PR mode only). If the PR already has review comments from previous rounds, read them. Verify that previously raised issues were actually addressed in subsequent commits, not just acknowledged. If a prior reviewer asked for a change and it wasn't made, flag it. Do not rediscover and re-raise the same issue without acknowledging the history.
+   - **Verify PR description matches the diff** (PR mode only). Compare what the PR description claims to do against what the diff actually does. Flag undocumented changes: code in the diff that the description doesn't mention. Flag missing changes: things the description promises but the diff doesn't deliver. Flag scope creep: unrelated changes bundled into the PR without explanation.
+6. **Deep analysis: three explicit passes.** Do not treat this as a single scan. Execute three distinct passes, each with a different lens. Findings from earlier passes inform later ones. Do not stop after finding a few issues: exhaustive coverage across all passes is the goal.
+
+   **Pass 1: Per-file analysis.** For each in-scope file, go through every category in `reviewer-prompt.md` and every applicable category in `../../checklists/engineering.md`:
    - **Correctness:** Does the logic actually do what it claims? Trace through the code mentally with concrete inputs, especially edge cases. Look for off-by-one errors, null/undefined access, wrong operator precedence, incorrect boolean logic, missing return statements, unreachable code.
    - **Security:** Apply the full OWASP top 10 lens. Check for injection, broken auth, sensitive data exposure, XXE, broken access control, misconfig, XSS, insecure deserialization, known vulnerable components, insufficient logging. Check for secrets, tokens, or credentials in the diff.
    - **Error handling:** Are all error paths covered? Are errors caught with context, or silently swallowed? Are error messages helpful for debugging? Is the error propagation strategy consistent? Could a thrown exception crash a request handler?
@@ -142,21 +147,54 @@ When scope filtering is active, report at the start of the review: how many file
    - **Naming and readability:** Are variables, functions, and files named with precision? Could someone unfamiliar with the codebase understand this code? Are abstractions at the right level? Is the code self-documenting or does it need comments that are missing?
    - **Design:** Single responsibility respected? Coupling between modules appropriate? Dependencies flowing in the right direction? Composition over inheritance? Is this the simplest solution that works, or is it over/under-engineered?
    - **Testing:** Are the changes covered by meaningful tests? Do tests verify real behavior or just mock behavior? Are edge cases and error paths tested? Is the test structure clean (AAA pattern)? Are assertions specific enough to catch regressions?
+   - **Mock policy (STRICT, blocking):** Tests must connect to real infrastructure: database, Redis, queues, caches. These dependencies belong in docker-compose for the test environment, with `beforeAll()` hooks to seed data. Only external third-party APIs, time, and randomness may be mocked. Mocking your own database, services, or modules is a blocking issue: the test may pass while the actual integration is broken, which is worse than no test. If any test mocks something that should be real, flag it as a blocking issue with a code example showing the real-connection approach.
    - **Consistency:** Does the code follow the existing patterns in the codebase? Is the style consistent with surrounding code? Are similar problems solved the same way?
+
+   **Pass 2: Cross-file consistency.** After reviewing each file individually, review the diff as a whole. Look for contradictions and implicit assumptions that only become visible when files interact:
+   - **Design contradictions:** Does one file assume graceful degradation while another enforces a hard dependency? Does one file treat a field as optional while another treats it as required? Does one file validate input while another trusts it blindly?
+   - **Import chain side effects:** When a new module is imported, trace the full import chain. Does it trigger module-level side effects like connections, env validation, or scheduled tasks that change startup behavior? Would a missing env var crash the entire process at import time?
+   - **Configuration completeness:** When a new env var, dependency, or infrastructure requirement is introduced, verify all environments can satisfy it: local dev, CI, staging, production. Check `.env.example`, Docker configs, CI pipelines, and IaC templates.
+   - **Contract alignment:** Does the frontend send data in the exact format the backend expects? Do header names, field names, parameter positions, and types match? Is the API client updated to match the API changes?
+   - **Error path consistency:** If module A classifies or throws errors in a specific way, does module B handle those error types correctly? Do error responses from the backend match what the frontend catches and displays?
+   - **Behavioral symmetry:** If an operation has setup, does it have teardown? If a resource is acquired, is it released on all paths? If a feature is enabled, can it be disabled?
+
+   **Pass 3: Cascading fix analysis.** For every issue found in passes 1 and 2, think one step ahead. If the author implements the suggested fix exactly as described, what new problems could that introduce?
+   - Would the fix add a new dependency, env var, or startup requirement?
+   - Would the fix change a function signature, breaking callers not in this diff?
+   - Would the fix require coordinated changes in files not touched by this PR?
+   - Would the fix change error behavior that other code relies on?
+   - Would the fix behave differently across environments (dev vs staging vs production)?
+   - Would the fix introduce a new test requirement that isn't mentioned?
+
+   When the answer to any of these is yes, include a "When implementing this fix, also..." note in the review comment. This front-loads what would otherwise become a second review round. The goal is that the author can address every issue and its downstream effects in a single iteration.
 7. **Run local verification.** Detect test, lint, and build commands using the same lockfile and config detection as `/test`. Run them and report the results.
-8. **Check branch freshness and test evidence.** Do both **in parallel**:
+8. **Check branch freshness, CI status, test evidence, and PR size.** Do these **in parallel**:
    - Verify the branch is up to date with the base branch. If behind, this is a blocking issue.
+   - In PR mode: check CI status. GitHub: `gh pr checks <number>`. If any required check has failed, this is a blocking issue. If checks are still running, note it.
    - In PR mode: verify the PR includes evidence of tests passing with coverage percentage. If missing, this is a blocking issue.
-   - In local mode: skip the test evidence check on the PR description since there is no PR yet. Running tests locally in step 7 serves as the evidence.
+   - In local mode: skip the CI and test evidence checks since there is no PR yet. Running tests locally in step 7 serves as the evidence.
+   - **PR size check.** Count the total lines added and deleted in the diff. If the diff exceeds 400 lines, note that the PR is large and suggest splitting if the changes span unrelated concerns. If the diff exceeds 1000 lines, flag it as a blocking issue unless the PR is a single cohesive feature that cannot be meaningfully split.
 9. **Present the full review to the user.** Format as described below.
    - In local mode: clearly label the review as "Local Review" so the user knows this was not posted anywhere.
    - If scope filtering was applied, include the scope in the header: "Local Review (backend only)" or "PR Review (frontend only)".
 10. **Ask the user what to do next.** After presenting the review, the behavior depends on whether this is your own PR, someone else's PR, or a local review:
 
     **Own PR (`isOwnPR = true`) or local mode:**
-    - If issues were found, ask the user: "Want me to fix these issues?" If yes, apply the fixes directly, then run tests to verify. After fixing, suggest `/commit` to commit.
+    - If issues were found, ask the user: "Want me to fix these issues?" If yes, apply the fixes directly, then enter the convergence loop.
+    - **Convergence loop (max 5 iterations).** Fixes can introduce new issues, break existing tests, or create cross-file contradictions. After applying fixes, verify convergence:
+      1. **Re-verify.** Run lint, typecheck, build, and tests. If any gate fails, fix the failure before continuing.
+      2. **Re-read.** Read every file that was modified during the fix pass.
+      3. **Re-audit.** Run all three review passes (per-file, cross-file consistency, cascading fix analysis) on the modified files. Check specifically:
+         - Did any fix violate project conventions from CLAUDE.md or the rules directory?
+         - Did any fix introduce a cross-file contradiction?
+         - Did any fix change a public interface without updating all callers?
+         - Did any fix introduce a new dependency or configuration requirement without updating env files, CI, or documentation?
+         - Are all new code paths covered by tests?
+      4. **If new issues are found:** fix them and repeat from step 1.
+      5. **If no new issues:** convergence achieved. Proceed.
+    - After convergence, suggest `/commit` to commit.
     - In local mode: do NOT post anything. If the review is clean, suggest `/pr` to open the PR.
-    - In PR mode on your own PR: after fixing, push the changes.
+    - In PR mode on your own PR: after fixing and converging, push the changes.
 
     **Someone else's PR (`isOwnPR = false`):**
     - Do NOT offer to fix the code directly. You are a reviewer, not a co-author.
@@ -306,6 +344,26 @@ ALTER TABLE users ADD CONSTRAINT users_email_unique UNIQUE (email);
 ```
 ````
 
+Cascading fix warning (when the fix itself could introduce a new problem):
+
+````
+This handler doesn't validate `userId` before passing it to the query.
+
+Validate and type-cast at the boundary:
+
+```typescript
+const userId = parseInt(req.params.userId, 10);
+if (Number.isNaN(userId) || userId <= 0) {
+  return res.status(400).json({ error: { code: 'INVALID_ID', message: 'userId must be a positive integer' } });
+}
+```
+
+When implementing this fix, also update the integration tests in
+`users.test.ts` to cover the new 400 response path. The existing tests
+only send valid IDs, so without a new test case, the validation could
+regress silently.
+````
+
 Brief positive note when something is genuinely well done:
 
 ```
@@ -317,6 +375,13 @@ existing code.
 ## Review Summary
 
 The overall review body should be a direct, honest assessment. Start with what the PR gets right, then list what needs attention. Be specific: name the files and the issues.
+
+**Operational risk assessment.** For non-trivial changes, include a brief risk section at the end of the review body. Cover:
+- **Blast radius:** what breaks if this change has a bug? One endpoint, one user flow, all users, the entire service?
+- **Rollback:** can this be reverted cleanly, or does it include a database migration, new infrastructure, or data format change that makes rollback complex?
+- **Deployment dependencies:** does this change require anything beyond a code deploy? New env vars, infrastructure provisioning, feature flags, coordinated deploys with other services?
+
+Skip this section for trivial changes like typos, config tweaks, or small refactors where the risk is self-evident.
 
 Choose the verdict based on what you found:
 - **APPROVE**: Zero issues found. Tests pass, coverage is adequate, code is clean. This is a high bar.
@@ -341,6 +406,8 @@ Check if the branch is up to date with the base branch. If it is behind, ask the
 
 ## Rules
 
+- Always execute all three review passes (per-file, cross-file consistency, cascading fix analysis). Do not skip passes because the diff looks simple or because enough issues were already found. The most expensive bugs hide in cross-file interactions and downstream fix effects.
+- Every comment that suggests a fix must include a cascading analysis: what could the fix itself break? If the fix could introduce a new problem, include a "When implementing this fix, also..." note. The goal is zero second-round surprises.
 - Always detect the git platform from the remote URL. Never assume GitHub or GitLab.
 - Always read surrounding code to understand context before reviewing changes. Never review a diff in isolation.
 - Always present the full review to the user before posting any comments.

@@ -6,7 +6,7 @@ For every issue found, explain why it matters and provide a code example showing
 
 This prompt has two parts:
 
-1. **Review-only categories** (below): items that only make sense when reviewing a diff for correctness, style, and test coverage.
+1. **Review-only categories** (below): 12 categories for correctness, style, backward compatibility, and test coverage.
 2. **Shared engineering checklist** (`../../checklists/engineering.md`): 32 architecture, resilience, and infrastructure categories used by both `/review` and `/assessment`. Apply every category relevant to the change.
 
 ## 1. Correctness
@@ -58,12 +58,19 @@ This prompt has two parts:
 - [ ] Assertions specific enough to catch regressions? Not just `toBeTruthy()` when a specific value matters?
 - [ ] No test-only backdoors in production code?
 - [ ] Tests independent? No shared mutable state between tests? No ordering dependency?
-- [ ] Mocks used only for external services, time, and randomness? Database, own modules, and own services not mocked?
 - [ ] Tests actually verify the thing they claim to test? (not just that no error was thrown)
 - [ ] Negative tests present? (invalid input, unauthorized access, missing resources)
 - [ ] Boundary value tests? (empty arrays, zero, max int, empty string, null)
 - [ ] Contract tests at service boundaries? Consumer expectations verified against provider responses?
 - [ ] Property-based tests for complex logic? Invariants hold across randomized inputs, not just hand-picked examples?
+
+### Mock policy (STRICT, blocking issue if violated)
+- [ ] **Database never mocked.** Tests that interact with the database must use a real database connection. Add the database to docker-compose test dependencies. Use `beforeAll()` to seed required data and `afterAll()` to clean up.
+- [ ] **Redis, queues, and caches never mocked.** If the code uses Redis, the test connects to a real Redis instance. Same for any message queue, cache layer, or data store. Add these to docker-compose.
+- [ ] **Own services and modules never mocked.** If the code calls an internal service, the test calls the real service. Mocking your own code proves the mock works, not the code.
+- [ ] **Only external third-party APIs may be mocked.** Payment gateways, email providers, SMS services, and other services outside your control are the only valid mock targets.
+- [ ] **Time and randomness may be mocked.** `Date.now()`, `Math.random()`, and similar non-deterministic sources are valid mock targets for deterministic tests.
+- [ ] If a test mocks something that should be real, this is a **blocking issue**. The test may pass while the actual integration is broken, which is worse than having no test at all.
 
 ### Test evidence
 - [ ] PR description includes test output with coverage percentage?
@@ -103,7 +110,17 @@ This prompt has two parts:
 - [ ] Decision reversibility considered? One-way doors (hard to undo: public API shape, database schema, data deletion) get extra scrutiny. Two-way doors (easy to change: internal implementation, feature flags) can move faster.
 - [ ] Coupling measurable? Module depends only on abstractions it needs, not concrete implementations it happens to know about. Fan-out (number of dependencies) kept low.
 
-## 8. Dependencies
+## 8. Backward Compatibility
+
+- [ ] Does this change break existing callers, consumers, or clients? Check function signatures, API responses, event payloads, and configuration formats.
+- [ ] If a public function signature changed, are all callers in the codebase updated?
+- [ ] If an API response shape changed, are frontend consumers and external integrations updated?
+- [ ] If a database column was renamed, removed, or retyped, does the migration follow the safe migration pattern (add new, dual-write, migrate readers, drop old)?
+- [ ] If a message or event schema changed, can existing consumers still process old messages in flight?
+- [ ] If environment variables were renamed or removed, are deployment configs, CI pipelines, and documentation updated?
+- [ ] If a feature was removed, is there a deprecation path or migration guide?
+
+## 9. Dependencies
 
 - [ ] New dependency justified? Could this be done with existing code or stdlib?
 - [ ] Dependency actively maintained? Recent commits? Known vulnerabilities?
@@ -112,7 +129,7 @@ This prompt has two parts:
 - [ ] Bundle size impact acceptable? (for frontend dependencies)
 - [ ] Dev dependencies correctly separated from production dependencies?
 
-## 9. Documentation and PR Quality
+## 10. Documentation and PR Quality
 
 - [ ] PR description explains what changed and why?
 - [ ] Breaking changes documented with migration steps?
@@ -120,6 +137,29 @@ This prompt has two parts:
 - [ ] New env vars documented in `.env.example`?
 - [ ] PR scope focused? One logical change, not a grab-bag of unrelated fixes?
 - [ ] Commit history clean and logical?
+
+## 11. Cross-File Consistency
+
+This section applies after all per-file checks are done. Review the diff as a whole, looking for contradictions between files.
+
+- [ ] Design assumptions consistent? If one file assumes graceful degradation, no other file in the diff enforces a hard dependency on the same resource.
+- [ ] Module-level side effects traced? New imports do not trigger connections, env validation throws, or scheduled tasks that change startup behavior for the entire application.
+- [ ] Configuration complete? Every new env var, dependency, or infrastructure requirement introduced in the diff is also added to `.env.example`, Docker configs, CI pipelines, and documentation.
+- [ ] Contracts aligned across boundaries? Frontend sends data in the exact format backend expects: header names, field names, parameter types, and positions all match.
+- [ ] Error types flow correctly? Errors thrown in one module are caught and handled correctly by callers. No unhandled error types crossing module boundaries.
+- [ ] Symmetry maintained? Resources acquired are released on all paths. Features enabled can be disabled. Data written can be read back consistently.
+
+## 12. Cascading Fix Analysis
+
+For every issue found in sections 1-11, evaluate the downstream effects of the suggested fix.
+
+- [ ] Would the fix introduce a new dependency, env var, or startup requirement?
+- [ ] Would the fix change a function signature or public interface, breaking callers not in this diff?
+- [ ] Would the fix require coordinated changes in files not touched by this PR?
+- [ ] Would the fix change error behavior that other code relies on?
+- [ ] Would the fix need new tests that are not mentioned in the review comment?
+
+When any answer is yes, the review comment must include a "When implementing this fix, also..." note. The goal is that the author can address the issue and all its downstream effects in a single iteration.
 
 ## Shared Engineering Checklist
 

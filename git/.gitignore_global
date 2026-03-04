@@ -95,16 +95,11 @@ atlassian-ide-plugin.xml
 cmake-build-*/
 
 ################################################################################
-# Visual Studio Code / Cursor
+# Visual Studio Code / Cursor / Claude Code
 ################################################################################
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-.cursor/*
-!.cursor/rules
+.vscode/
+.cursor/
+.claude/
 *.code-workspace
 .history/
 .ionide
@@ -153,18 +148,6 @@ service-account*.json
 .netrc
 .npmrc
 .pypirc
-
-################################################################################
-# Version Managers
-################################################################################
-.tool-versions
-.node-version
-.nvmrc
-.python-version
-.ruby-version
-.java-version
-.go-version
-.terraform-version
 
 ################################################################################
 # Environment & Config

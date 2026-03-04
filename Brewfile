@@ -348,6 +348,9 @@ cask 'parallels' if architecture == 'arm64'
 ################################################################################
 # Fonts
 ################################################################################
+cask 'font-geist'
+cask 'font-geist-mono'
+cask 'font-inter'
 cask 'font-0xproto-nerd-font'
 cask 'font-3270-nerd-font'
 cask 'font-adwaita-mono-nerd-font'

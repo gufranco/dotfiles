@@ -13,6 +13,67 @@
 - **Never swallow errors**: no empty catch; log with context, rethrow or handle
 - **No deep nesting**: max 3 levels of indentation. Use guard clauses and early returns to flatten control flow. If a function needs deeper nesting, extract the inner logic into a separate function
 - **Strong typing**: use explicit types for function parameters, return values, and public interfaces. Never use `any` as a type. If the type is truly unknown, use `unknown` and narrow it. Enable strict mode in TypeScript projects
+- **Enums over string literal unions**: never use inline string literal unions for domain values like statuses, roles, or categories. Define a string enum instead. Enums exist at runtime, can be iterated, validated, and referenced as values, not just types. They are the single source of truth for the set of allowed values
+
+```typescript
+// Bad: type-only, vanishes at runtime, duplicated at every usage site
+declare status: 'new' | 'in_progress' | 'terminated';
+
+// Good: single source of truth, usable as both type and value
+enum ContractStatus {
+  New = 'new',
+  InProgress = 'in_progress',
+  Terminated = 'terminated',
+}
+declare status: ContractStatus;
+```
+
+## TypeScript Type Constructs
+
+Use the right construct for the job. Do not default to `type` for everything.
+
+| Construct | When to use |
+|-----------|------------|
+| `interface` | Object shapes: DTOs, props, service contracts, anything a class might implement. Prefer for public APIs |
+| `type` | Unions, intersections, mapped types, conditional types, tuples, function signatures. Anything `interface` cannot express |
+| `enum` (string) | Fixed sets of domain values that need runtime existence: statuses, roles, categories, event types |
+| `as const` object | Lookup tables and config maps where each value carries metadata or when you need both keys and values as derived types |
+
+### Rules
+
+- **`interface` for object shapes, `type` for the rest.** This is the dividing line. Do not mix them for the same purpose in the same codebase.
+- **Consistency within a codebase.** If DTOs use `interface`, all DTOs use `interface`. No exceptions.
+- **Never use `type` to alias a single primitive.** `type UserId = string` adds indirection without safety. If you need a branded/opaque type, use a branded pattern that the compiler actually enforces.
+- **Prefer `interface` when either works.** `interface` produces clearer error messages, supports declaration merging, and signals "this is a shape" at a glance.
+- **`as const` objects for rich enumerations.** When each value needs associated metadata, a `const` object with a derived union type beats a parallel enum plus map.
+
+```typescript
+// interface: object shapes
+interface CreateUserDto {
+  email: string;
+  name: string;
+}
+
+// type: unions, intersections, function signatures
+type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
+type Handler = (req: Request, res: Response) => Promise<void>;
+
+// enum: domain value sets with runtime presence
+enum Role {
+  Admin = 'admin',
+  Member = 'member',
+  Guest = 'guest',
+}
+
+// as const: lookup tables with metadata
+const HTTP_STATUS = {
+  OK: { code: 200, message: 'OK' },
+  NOT_FOUND: { code: 404, message: 'Not Found' },
+  INTERNAL: { code: 500, message: 'Internal Server Error' },
+} as const;
+
+type HttpStatusKey = keyof typeof HTTP_STATUS;
+```
 
 ## Immutability and Explicit Side Effects
 

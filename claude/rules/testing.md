@@ -33,6 +33,35 @@ Every test MUST follow Arrange-Act-Assert with these exact comments, verbatim, w
 
 These are bare section markers. Never append descriptions, colons, or explanations to them. Write `// Act`, never `// Act: do something`. The test name and the code itself communicate intent. If extra context is needed, the test is too complex and should be split or renamed.
 
+## Test Data
+
+Use a fake data generator to produce test data. Never use hardcoded static values like `"test@example.com"`, `"John Doe"`, or `"password123"` in test setup.
+
+Static values hide implicit couplings. A test that passes with `"test@example.com"` might fail with `"María.O'Connor+tag@subdomain.example.co.uk"`. Fake data generators produce realistic variety that catches these edge cases.
+
+**Seeding:** always seed the generator per test file or describe block to keep tests deterministic. A seeded generator produces the same sequence on every run, satisfying the deterministic test requirement.
+
+| Language | Library |
+|----------|---------|
+| TypeScript / JavaScript | `@faker-js/faker` |
+| Python | `faker` |
+| Go | `gofakeit` |
+| Ruby | `faker` |
+| Rust | `fake` |
+| Java / Kotlin | `datafaker` |
+
+```typescript
+// Bad: static values hide edge cases
+const user = { name: 'John Doe', email: 'test@example.com' };
+
+// Good: realistic, deterministic via seed
+import { faker } from '@faker-js/faker';
+faker.seed(12345);
+const user = { name: faker.person.fullName(), email: faker.internet.email() };
+```
+
+During code review, static test data is a **blocking issue** with the same severity as mocking internal infrastructure.
+
 ## Test Naming
 
 - Describe behavior, not implementation
@@ -84,7 +113,7 @@ Every test must produce the same result on every run, on every machine. A test t
 | Source of flakiness | Fix |
 |---------------------|-----|
 | Current time | Inject a fixed clock or mock `Date.now()` |
-| Random values | Use a seeded generator or fixed values |
+| Random values | Seed the fake data generator per test file. Never use unseeded random generation |
 | Network calls | Mock external APIs (allowed by mock policy) |
 | Shared database state | Isolate per test: unique IDs, transactions that rollback, or fresh schema |
 | Test execution order | No shared mutable state between tests. Each test sets up its own data |

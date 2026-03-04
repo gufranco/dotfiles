@@ -16,7 +16,7 @@
 
 ---
 
-**33** tool configs · **141** brew packages · **57** desktop apps · **72** Nerd Fonts · **19** Tokyo Night themed tools · **54** Git aliases · **6** Docker services · **18** Claude Code skills
+**33** tool configs · **141** brew packages · **57** desktop apps · **72** Nerd Fonts · **19** Tokyo Night themed tools · **60** Git aliases · **6** Docker services · **18** Claude Code skills
 
 <table>
 <tr>
@@ -140,16 +140,13 @@ CoC extensions: TypeScript, ESLint, Prettier, CSS, JSON, Shell, snippets, import
 
 ### Terminal Multiplexer
 
-Tmux with 10 plugins and vim-style keybindings:
+Tmux with 7 plugins and vim-style keybindings:
 
 | Plugin | What it does |
 |:-------|:-------------|
-| Yoru Revamped | Status bar with system stats, git info, weather, and network |
-| Tokyo Night Revamped | Color scheme matching the global Tokyo Night palette |
+| Yoru Revamped | Status bar with system stats, git info, weather, network, and Tokyo Night theme |
 | tmux-resurrect | Save and restore sessions across reboots |
-| tmux-continuum | Automatic session saving and restoration |
 | tmux-yank | Copy to system clipboard |
-| tmux-weather | Weather widget in status bar |
 | extrakto | Extract URLs and file paths with fzf |
 | tmux-session-wizard | Fuzzy session switcher |
 | tmux-mighty-scroll | Better scrolling in fullscreen apps |
@@ -157,7 +154,7 @@ Tmux with 10 plugins and vim-style keybindings:
 
 ### Git
 
-54 aliases, performance-tuned config, and Tokyo Night colors for diffs, status, branches, and blame:
+60 aliases, performance-tuned config, and Tokyo Night colors for diffs, status, branches, and blame:
 
 | Alias | Command | What it does |
 |:------|:--------|:-------------|
@@ -307,7 +304,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── fd/               # fd (find replacement) config
 ├── gh/               # GitHub CLI config
 ├── ghostty/          # Ghostty terminal + Tokyo Night theme
-├── git/              # Git config, hooks, message template, aliases
+├── git/              # Git config, hooks, message template, 60 aliases
 ├── glab/             # GitLab CLI config
 ├── gnupg/            # GPG config and public keys
 ├── htop/             # htop config
@@ -325,7 +322,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── telnet/           # Telnet config
 ├── themes/           # Terminal themes (iTerm2)
 ├── tilix/            # Tilix terminal config
-├── tmux/             # Tmux config + 10 plugins
+├── tmux/             # Tmux config + 7 plugins
 ├── vim/              # Vim config + 24 plugins
 ├── wget/             # Wget config
 ├── yazi/             # Yazi file manager + Tokyo Night theme

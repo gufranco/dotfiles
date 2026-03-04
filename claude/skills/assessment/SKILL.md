@@ -78,7 +78,7 @@ This skill accepts optional arguments after `/assessment`:
 
    Record all results for inclusion in the assessment output.
 
-5. **Hunt for planted defects.** Some projects, especially interview take-homes and coding challenges, contain **intentional bugs, anti-patterns, or subtle correctness issues** designed to test whether the candidate can spot and fix them. Read the code with suspicion. For each file, look for: logic bugs, data bugs, validation gaps, concurrency bugs, security flaws, anti-patterns, configuration issues, dependency traps, test gaps, and structural violations. The specific criteria for each category are defined in `reviewer-prompt.md` sections 1-8 and `../../checklists/engineering.md`. Use those checklists as the hunting guide, but read with the assumption that defects may be intentional.
+5. **Hunt for planted defects.** Some projects, especially interview take-homes and coding challenges, contain **intentional bugs, anti-patterns, or subtle correctness issues** designed to test whether the candidate can spot and fix them. Read the code with suspicion. For each file, look for: logic bugs, data bugs, validation gaps, concurrency bugs, security flaws, anti-patterns, configuration issues, dependency traps, test gaps, mock abuse, and structural violations. The specific criteria for each category are defined in `reviewer-prompt.md` sections 1-9 and `../../checklists/engineering.md`. Use those checklists as the hunting guide, but read with the assumption that defects may be intentional. Pay special attention to tests that mock internal infrastructure like databases, Redis, or queues instead of using real connections: this is a common defect that makes tests pass while the actual code is broken.
 
    If any defect is found, classify it with the same severity/effort scale used for missing patterns. Planted bugs that affect correctness or security are always CRITICAL.
 
@@ -142,6 +142,13 @@ This skill accepts optional arguments after `/assessment`:
 
 7. **Audit against each applicable category.** For every category that applies based on step 6, evaluate the implementation against both the engineering checklist (`../../checklists/engineering.md`) and the requirements gathered in step 1. Include any defects found in step 5 and verification failures from step 4 as findings under the most relevant category.
 
+   After auditing each file individually, perform a **cross-file consistency check**:
+   - **Design contradictions:** Does one module assume graceful degradation while another enforces a hard dependency? Does one file treat a field as optional while another treats it as required?
+   - **Import chain side effects:** Trace import chains for module-level side effects like connections, env validation, or scheduled tasks. Would a missing env var crash the entire process at import time even though the feature claims graceful degradation?
+   - **Configuration completeness:** Every new env var, dependency, or infrastructure requirement must be satisfiable in all environments: local dev, CI, staging, production. Check `.env.example`, Docker configs, CI pipelines, and IaC templates.
+   - **Contract alignment:** Do types, field names, and data formats align across module boundaries? Does the API match what the consumer sends? Do error types thrown in one layer match what the caller catches?
+   - **Behavioral symmetry:** If a resource is acquired, is it released on all code paths? If a feature is enabled, can it be disabled? If data is written, can it be read back consistently?
+
    In addition to the 32 engineering categories, also assess:
 
    - **README and presentation quality.** The README is the first thing a reviewer reads. Check: does it explain what the project does, how to set it up, how to run it, and how to test it? Are architecture decisions documented? Is there a clear project structure section? For interview submissions, a well-structured README with setup instructions, architecture explanation, and trade-off discussion can be the difference between an interview and a rejection. A missing or minimal README is a HIGH finding.
@@ -191,6 +198,15 @@ This skill accepts optional arguments after `/assessment`:
 
 9. **Offer to fix.** After presenting the assessment, ask: "Want me to implement the missing patterns?" If yes, work through them by priority: all CRITICAL first, then HIGH, then MEDIUM. Within the same severity, prefer lower effort. Each fix gets its own commit.
 
+   **Cascading fix prediction.** Before implementing each fix, analyze what it could break:
+   - Would the fix change a function signature, breaking existing callers?
+   - Would the fix introduce a new dependency or startup requirement?
+   - Would the fix change error behavior that other code relies on?
+   - Would the fix require coordinated changes in files not part of the current finding?
+   - Would the fix behave differently across environments (dev vs production)?
+
+   If any answer is yes, address the downstream effects in the same fix. Do not create fixes that introduce new problems for the convergence loop to catch. Front-loading this analysis reduces the number of convergence iterations.
+
    **First, set up developer tooling** if missing: `.editorconfig`, formatter (Prettier, Black, gofmt, etc.), linter (ESLint, Ruff, golangci-lint, etc.), type checker, pre-commit hooks (husky + lint-staged, pre-commit framework, lefthook), and commit linter (commitlint). All at strictest settings. This is a single commit.
 
    **Then, create a CI pipeline** if the project does not already have one. The pipeline must run on every push and pull request to the default branch. Detect the git platform from the remote URL and create the appropriate config file:
@@ -219,6 +235,8 @@ This skill accepts optional arguments after `/assessment`:
    **Test data must use a faker library, not hardcoded literals.** Every test that generates input data, whether for names, emails, amounts, dates, or IDs, must use a faker library for the language ecosystem (`@faker-js/faker` for JS/TS, `Faker` for Python, `faker` for Ruby, etc.). Install the library as a dev dependency if not already present. Hardcoded test data like `"John"`, `"test@example.com"`, or `42` makes tests brittle and hides assumptions about valid input ranges. Faker generates realistic, randomized values that exercise more code paths and make tests more expressive. The exception is when a specific value is part of the test assertion, like verifying a known seed data record exists.
 
    Faker values that need to be deterministic across runs, like IDs referencing seed data, should remain as literals. Use faker for values where the specific value does not matter: deposit amounts, invalid input strings, non-existent IDs, future dates, random names. This is a MEDIUM finding if tests use hardcoded data where faker would be appropriate.
+
+   **Mock policy (STRICT).** Tests must connect to real infrastructure. If the code talks to a database, the test connects to a real database. If it uses Redis, the test uses a real Redis instance. Same for queues, caches, and any other data store. Add test dependencies to docker-compose with a `beforeAll()` hook to seed required data. Only external third-party APIs outside your control, time, and randomness may be mocked. Mocking your own database, services, or modules is a CRITICAL finding: the test may pass while the actual integration is broken, which is worse than no test at all. When fixing mock violations, replace the mock with a real connection, add the dependency to docker-compose if missing, and use `beforeAll()` / `afterAll()` for setup and teardown.
 
    **For any fix involving transactions**, follow `../../checklists/engineering.md` category 2: explicit lock type, explicit isolation level, conditional expressions for NoSQL.
 
@@ -260,6 +278,10 @@ This skill accepts optional arguments after `/assessment`:
     3. **Re-audit.** Evaluate the modified files against all applicable categories from step 6. Also check:
        - Did any fix violate a rule from `~/.claude/CLAUDE.md` or `~/.dotfiles/claude/rules/`? (AAA comments, code style, naming, immutability, etc.)
        - Did any fix introduce a new dependency, pattern, or code path that itself needs assessment?
+       - Did any fix create a cross-file contradiction? (one module now assumes behavior that another module does not support)
+       - Did any fix introduce a new startup dependency or configuration requirement without updating all relevant config files (.env.example, Docker, CI)?
+       - Did any fix change a public interface without updating all callers and consumers?
+       - Did any fix leave dead code behind? Check for unused imports, orphaned functions, unreferenced variables, and stale exports after extractions or refactors.
        - Are all new tests following project conventions? (faker for test data, AAA structure, no mocks for DB)
        - Did the README, CI config, or other generated artifacts become stale due to the fixes?
     4. **Classify new findings.** If there are new PARTIAL or MISSING findings, or new defects introduced by the fixes, collect them.

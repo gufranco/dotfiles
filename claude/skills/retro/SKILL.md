@@ -53,15 +53,17 @@ Skip anything already covered. Flag items that partially overlap and could be st
 
 ### 3. Classify each finding
 
-Assign each unique finding to a destination:
+Assign each unique finding to a destination. **Default to `~/.claude/` files, not memory.** Memory is the exception for facts that only apply to one project. If a preference, convention, or behavioral rule could apply across projects, it belongs in `CLAUDE.md` or a rules file.
 
 | Destination | When | Example |
 |-------------|------|---------|
-| **Memory file** | Project-specific fact or preference, not a universal rule | "RAM bar should be single-color in this project" |
-| **CLAUDE.md rule** | Universal behavioral change that applies to all projects | "Never add docstrings to code you didn't change" |
-| **Rules file** (new or existing) | Domain-specific convention that needs detail | New testing convention, new code style rule |
+| **`~/.claude/CLAUDE.md`** | Universal behavioral change, writing style, communication preference, workflow rule | "Use GMT in reports", "Always provide UI walkthroughs for instructions" |
+| **`~/.claude/rules/*.md`** (new or existing) | Domain-specific convention that needs detail or belongs with related rules | New testing convention, new code style rule, new API design pattern |
 | **Skill update** | Change to how a skill operates | "/commit should also check for X" |
+| **Memory file** | Project-specific fact that only applies to one codebase: infra details, team members, architecture decisions | "Aurora cluster ID is database", "ECS cluster name is webservices" |
 | **No action** | One-time context, not a pattern | "Fix the typo on line 42" |
+
+**Classification test:** "Would this rule improve my behavior in a different project?" If yes, it goes in `~/.claude/`. If it only makes sense in the context of this specific codebase, it goes in memory.
 
 ### 4. Present findings
 

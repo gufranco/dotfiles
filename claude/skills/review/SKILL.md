@@ -33,6 +33,49 @@ This skill accepts optional arguments after `/review`:
 - One or more URLs: review the PRs/MRs at those URLs sequentially.
 - `--local`: skip PR lookup entirely and review the local branch diff against the base branch. Useful before opening a PR.
 - `--post`: automatically post the review as inline comments without asking for confirmation. Only applies to someone else's PR. Has no effect in local mode or on your own PR.
+- `--backend`: review only backend and infrastructure files. Excludes frontend files from the diff. See "Scope Filtering" for classification rules.
+- `--frontend`: review only frontend files. Excludes backend and infrastructure files from the diff. See "Scope Filtering" for classification rules.
+- If neither `--backend` nor `--frontend` is passed, review all files (default behavior).
+
+## Scope Filtering
+
+When `--backend` or `--frontend` is passed, classify each file in the diff and exclude files outside the requested scope. Files that don't clearly belong to either scope are included in both.
+
+### Classification rules
+
+Detect the project structure from the diff file paths. Use these signals to classify:
+
+**Frontend signals:**
+- Directories: paths containing `frontend/`, `web/`, `client/`, `src/app/` (Next.js/React app router), `src/pages/`, `src/components/`, `src/hooks/`, `src/styles/`, `public/`
+- Extensions: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.scss`, `.less`, `.sass`
+- Config files: `next.config.*`, `vite.config.*`, `webpack.config.*`, `tailwind.config.*`, `postcss.config.*`, `tsconfig.json` inside a frontend directory
+
+**Backend signals:**
+- Directories: paths containing `backend/`, `server/`, `api/`, `services/`, `workers/`, `jobs/`, `lambdas/`, `functions/`
+- Extensions: `.go`, `.py`, `.rb`, `.rs`, `.java`, `.kt` (these are always backend)
+- Config files: `Dockerfile`, `docker-compose.*`, `serverless.*`
+
+**Infrastructure signals (included with `--backend`):**
+- Directories: paths containing `infra/`, `infrastructure/`, `terraform/`, `cdk/`, `pulumi/`, `deploy/`, `k8s/`, `helm/`
+- Extensions: `.tf`, `.tfvars`, `.hcl`
+- Files: `*.yaml`/`*.yml` in infra-related directories
+
+**Shared (included in both scopes):**
+- Shared packages: paths containing `packages/`, `libs/`, `shared/`, `common/`
+- Root config: `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`, `.eslintrc.*`, `.prettierrc.*`, `.gitignore`, `.env.example`
+- Database: `prisma/`, `migrations/`, `seeds/` (included in both because schema changes affect frontend types)
+
+### Monorepo detection
+
+In monorepos, use the top-level directory name as the primary signal. If a file is at `apps/web/src/...`, it's frontend. If at `apps/api/src/...`, it's backend. The workspace name is more reliable than the file extension.
+
+### Ambiguous files
+
+If a file cannot be classified with confidence, include it. Reviewing an extra file is cheaper than missing a bug.
+
+### Reporting
+
+When scope filtering is active, report at the start of the review: how many files are in scope, how many were excluded, and from which directories. This makes the filtering transparent.
 
 ## Steps
 
@@ -41,8 +84,8 @@ This skill accepts optional arguments after `/review`:
    - `git branch --show-current` to get the current branch.
    - Determine the CLI tool from the remote URL: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
    - **Resolve account:** run `gh auth status` (or `glab auth status`) to list all authenticated accounts. Parse the remote URL to identify the host. If the active account does not match the remote host/owner, find the matching account and switch with `gh auth switch --user <login>` (or the `glab` equivalent). Record the original active account to restore later. If no matching account is found, report the mismatch and stop.
-   - Parse flags: check if `--post` or `--local` was passed. Collect all remaining arguments as PR identifiers.
-   - **If multiple PRs were given**, process each one sequentially through steps 2-9 below. Complete the full review cycle for one PR before starting the next. Between PRs, print a separator line so the user can tell where one review ends and the next begins.
+   - Parse flags: check if `--post`, `--local`, `--backend`, or `--frontend` was passed. Collect all remaining arguments as PR identifiers.
+   - **If multiple PRs were given**, process each one sequentially through steps 2-10 below. Complete the full review cycle for one PR before starting the next. Between PRs, print a separator line so the user can tell where one review ends and the next begins.
 2. **Determine the review mode (PR or local):**
    - If `--local` was passed, go directly to **local mode** (step 3B).
    - If a PR/MR number or URL was provided, look up that specific PR/MR:
@@ -78,11 +121,18 @@ This skill accepts optional arguments after `/review`:
      - `git diff origin/<base>...HEAD` for the full diff.
    - If the branch also has uncommitted changes (`git status --porcelain`), warn the user that only committed changes are being reviewed.
 
-4. **Understand the context before judging the code:**
+4. **Apply scope filter.** If `--backend` or `--frontend` was passed:
+   - Parse the file list from the diff stat summary.
+   - Classify each file using the rules in "Scope Filtering" above.
+   - Exclude files outside the requested scope from the diff.
+   - Report the scope: "Reviewing N backend files (M frontend files excluded)" or vice versa. List the excluded directories briefly.
+   - If all files are excluded by the filter, tell the user and stop: "No <scope> files found in this diff."
+   - If neither flag was passed, skip this step entirely.
+5. **Understand the context before judging the code:**
    - In PR mode: read the PR description and commit messages for intent.
    - In local mode: read the commit messages for intent. There is no PR description yet.
    - If the changes touch files you're not familiar with, read the surrounding code in those files to understand existing patterns, conventions, and architecture. Do not review code in isolation.
-5. **Deep analysis of every changed file.** Go through every category in `reviewer-prompt.md` and every applicable category in `../../checklists/engineering.md`. For each file, evaluate:
+6. **Deep analysis of every changed file.** Go through every category in `reviewer-prompt.md` and every applicable category in `../../checklists/engineering.md`. For each in-scope file, evaluate:
    - **Correctness:** Does the logic actually do what it claims? Trace through the code mentally with concrete inputs, especially edge cases. Look for off-by-one errors, null/undefined access, wrong operator precedence, incorrect boolean logic, missing return statements, unreachable code.
    - **Security:** Apply the full OWASP top 10 lens. Check for injection, broken auth, sensitive data exposure, XXE, broken access control, misconfig, XSS, insecure deserialization, known vulnerable components, insufficient logging. Check for secrets, tokens, or credentials in the diff.
    - **Error handling:** Are all error paths covered? Are errors caught with context, or silently swallowed? Are error messages helpful for debugging? Is the error propagation strategy consistent? Could a thrown exception crash a request handler?
@@ -93,14 +143,15 @@ This skill accepts optional arguments after `/review`:
    - **Design:** Single responsibility respected? Coupling between modules appropriate? Dependencies flowing in the right direction? Composition over inheritance? Is this the simplest solution that works, or is it over/under-engineered?
    - **Testing:** Are the changes covered by meaningful tests? Do tests verify real behavior or just mock behavior? Are edge cases and error paths tested? Is the test structure clean (AAA pattern)? Are assertions specific enough to catch regressions?
    - **Consistency:** Does the code follow the existing patterns in the codebase? Is the style consistent with surrounding code? Are similar problems solved the same way?
-6. **Run local verification.** Detect test, lint, and build commands using the same lockfile and config detection as `/test`. Run them and report the results.
-7. **Check branch freshness and test evidence.** Do both **in parallel**:
+7. **Run local verification.** Detect test, lint, and build commands using the same lockfile and config detection as `/test`. Run them and report the results.
+8. **Check branch freshness and test evidence.** Do both **in parallel**:
    - Verify the branch is up to date with the base branch. If behind, this is a blocking issue.
    - In PR mode: verify the PR includes evidence of tests passing with coverage percentage. If missing, this is a blocking issue.
-   - In local mode: skip the test evidence check on the PR description since there is no PR yet. Running tests locally in step 6 serves as the evidence.
-8. **Present the full review to the user.** Format as described below.
+   - In local mode: skip the test evidence check on the PR description since there is no PR yet. Running tests locally in step 7 serves as the evidence.
+9. **Present the full review to the user.** Format as described below.
    - In local mode: clearly label the review as "Local Review" so the user knows this was not posted anywhere.
-9. **Ask the user what to do next.** After presenting the review, the behavior depends on whether this is your own PR, someone else's PR, or a local review:
+   - If scope filtering was applied, include the scope in the header: "Local Review (backend only)" or "PR Review (frontend only)".
+10. **Ask the user what to do next.** After presenting the review, the behavior depends on whether this is your own PR, someone else's PR, or a local review:
 
     **Own PR (`isOwnPR = true`) or local mode:**
     - If issues were found, ask the user: "Want me to fix these issues?" If yes, apply the fixes directly, then run tests to verify. After fixing, suggest `/commit` to commit.

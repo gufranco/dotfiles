@@ -207,3 +207,18 @@ Group by domain context in folders: `schemas/`, `services/`, `controllers/`, etc
 - Always use the latest stable or LTS version of languages, runtimes, and dependencies
 - When a platform has version constraints (AWS Lambda, Vercel), use the latest version available on that platform
 - Check for available upgrades during assessment or project setup
+
+## Code Examples
+
+Every code snippet produced in any context must follow every rule in this file and all other project rules. This applies to review comments, PR descriptions, documentation, chat responses, commit messages, and any other output that contains code.
+
+A code example that violates a rule is a defect, regardless of where it appears. Common violations to watch for:
+
+- `any` as a type. Use `unknown` and narrow, or provide the correct type
+- Bare `catch` blocks that log and rethrow without classifying the error
+- Missing error handling on operations that can fail
+- Magic numbers instead of named constants
+- Inline string literal unions instead of enums for domain values
+- Empty catch blocks that swallow errors silently
+
+If a fix suggestion in a review comment introduces a rule violation, the suggestion itself is a review defect. The reviewer must hold their own examples to the same standard as the code they are reviewing.

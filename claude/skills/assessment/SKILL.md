@@ -253,7 +253,7 @@ This skill accepts optional arguments after `/assessment`:
 
 10. **Convergence loop.** Fixes can introduce new findings, reveal masked issues, or break existing quality gates. After completing all fixes in step 9, loop until the codebase is clean. **This loop runs autonomously with no user interaction.**
 
-    **For each iteration (max 5 iterations):**
+    **For each iteration (max 20 iterations):**
 
     1. **Re-verify.** Run all quality gates in parallel: lint, typecheck, build, tests. If any gate fails, fix the failure before continuing. A fix that breaks the build is worse than no fix.
     2. **Re-read.** Read every file that was modified in the previous fix pass, plus any new files created.
@@ -266,7 +266,7 @@ This skill accepts optional arguments after `/assessment`:
     5. **If no new findings:** break the loop. Convergence achieved.
     6. **If new findings exist:** fix them using the same priority order (CRITICAL → HIGH → MEDIUM, lower effort first). Each fix gets its own commit. Then go to step 10.1.
 
-    **Termination:** If after 5 iterations there are still new findings, stop the loop, list the remaining findings, and inform the user. Five iterations is enough for any reasonable convergence. Infinite loops indicate a structural problem that needs human judgment.
+    **Termination:** If after 20 iterations there are still new findings, stop the loop, list the remaining findings, and inform the user. Twenty iterations is enough for any reasonable convergence. Infinite loops indicate a structural problem that needs human judgment.
 
     **What to look for in each re-audit pass:**
     - Quality gate regressions: did a fix break lint, types, or tests?

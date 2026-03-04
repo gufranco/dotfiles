@@ -39,3 +39,8 @@ source "$HOME/.dotfiles/zsh/functions"
 # Infrastructure (VMs & Containers)
 ################################################################################
 source "$HOME/.dotfiles/zsh/infrastructure"
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:$HOME/.lmstudio/bin"
+# End of LM Studio CLI section
+

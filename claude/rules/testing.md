@@ -12,9 +12,14 @@ Tests should verify real behavior, not mock behavior.
 
 ## Mocks Policy (STRICT)
 
-**Allowed:** External APIs, Time/Date, Randomness
+**Allowed:** External third-party APIs outside your control, Time/Date, Randomness
 
-**NEVER Mock:** Database, your own services, your own modules
+**NEVER Mock:**
+- **Database**: connect to a real database. Add it to docker-compose for the test environment. Use `beforeAll()` to seed, `afterAll()` to clean up
+- **Redis, caches, queues**: connect to real instances. Add them to docker-compose
+- **Your own services and modules**: if the code calls an internal service, the test calls the real service. Mocking your own code proves the mock works, not the code
+
+A test that mocks infrastructure it depends on may pass while the actual integration is broken. This is worse than having no test at all. During code review, mocking internal infrastructure is a **blocking issue**.
 
 ## Test Structure (AAA Pattern)
 

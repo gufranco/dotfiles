@@ -8,6 +8,8 @@
 - For functions with many arguments, pass one options object. Return objects.
 - File order: main export first, then subcomponents, helpers, static content, types
 - Design for change: isolate business logic from the framework. Prefer dependency inversion.
+- **Domain exception boundary**: services and domain logic throw domain-specific error classes, never framework HTTP exceptions. An exception filter or middleware at the boundary maps domain errors to HTTP responses. This keeps business logic testable without an HTTP context.
+- **Validation infrastructure**: in NestJS projects, register validation globally via interceptor + method decorator, not per-parameter pipes. Controllers should have no validation imports or logic. The decorator declares the schema, the interceptor enforces it.
 - Prefer composition over inheritance
 - Use braces for all control structures
 - **Never swallow errors**: no empty catch; log with context, rethrow or handle
@@ -183,3 +185,25 @@ Classify at the boundary where the error originates. Propagate the classificatio
 4. **Size.** Avoid heavy packages for simple tasks.
 5. Pin exact versions. Separate dev dependencies. Commit lockfile.
 6. Prefer native/stdlib over third-party when equivalent.
+
+## Validation
+
+- **Zod** is the preferred validation library for TypeScript projects
+- Validate semantically, not just syntactically: verify monetary values are positive, dates are valid and in expected ranges, enums match allowed values
+- Validate both input and output schemas at system boundaries
+
+## File Naming
+
+For projects using domain-driven structure, follow the `name-of-content.type.ts` pattern:
+
+- `user-credentials.service.ts`
+- `create-order.dto.ts`
+- `payment-status.enum.ts`
+
+Group by domain context in folders: `schemas/`, `services/`, `controllers/`, etc.
+
+## Versions
+
+- Always use the latest stable or LTS version of languages, runtimes, and dependencies
+- When a platform has version constraints (AWS Lambda, Vercel), use the latest version available on that platform
+- Check for available upgrades during assessment or project setup

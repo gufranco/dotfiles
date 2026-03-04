@@ -105,7 +105,8 @@ For DynamoDB, Cassandra, and similar:
 | Add column | Nullable first, backfill, constraint |
 | Remove column | Stop reading, deploy, remove |
 | Rename column | Add new, copy, migrate code, remove old |
-| Add index | CONCURRENTLY |
+| Add index (manual/ad-hoc) | CONCURRENTLY |
+| Add index (ORM migration) | Standard CREATE INDEX. ORMs like Prisma do not support CONCURRENTLY in their migration workflow. If zero-downtime is needed, create the index manually with CONCURRENTLY and mark the migration as applied |
 | Change column type | Add new column, dual-write, migrate reads, drop old |
 | Add NOT NULL | Add nullable, backfill, add constraint with NOT VALID, validate separately |
 
@@ -116,6 +117,18 @@ For DynamoDB, Cassandra, and similar:
 - Configure idle timeout to reclaim unused connections
 - Handle connection errors gracefully: retry on transient failures, fail fast on auth errors
 - For serverless: use a connection proxy (RDS Proxy, PgBouncer) to avoid connection exhaustion from cold starts
+
+## Locking Strategy
+
+- Prefer `SELECT ... FOR UPDATE` over advisory locks for row-level concurrency control
+- Advisory locks (`pg_advisory_lock`) are aggressive: they block at the session or transaction level regardless of which rows are involved, causing performance problems under contention
+- Only use advisory locks where provably necessary and where row-level locking is insufficient
+
+## Production Safety
+
+- Never run destructive operations (DELETE, TRUNCATE, DROP, schema changes) on production databases without explicit confirmation
+- Use dev or test environments for experimentation and data exploration
+- When modifying production data, always wrap in a transaction and verify before committing
 
 ## Naming
 

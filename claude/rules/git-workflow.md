@@ -104,3 +104,10 @@ If a change causes problems:
 3. Fix properly in new commit
 
 **Never** force push or amend pushed commits.
+
+## Ignored Artifacts
+
+Build output directories must never be committed:
+
+- `dist/`, `build/`, `.next/`, `out/`, `coverage/`, `node_modules/`
+- Verify these are in `.gitignore` when setting up or reviewing a project

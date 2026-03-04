@@ -212,6 +212,8 @@ Write every comment as if you are a senior engineer mentoring a colleague. Be di
 
 Do not use prefix labels like `issue:`, `suggestion:`, or `nit:`. Just say what you mean. The severity should be obvious from the content.
 
+Code examples in review comments must comply with all project coding standards defined in `rules/code-style.md`. A fix suggestion that introduces a rule violation, like using `any` as a type, bare `catch` blocks, magic numbers, or inline string literal unions, is itself a review defect. Hold your own examples to the same standard as the code you are reviewing.
+
 ### Example comments
 
 Detailed issue with fix:

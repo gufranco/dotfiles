@@ -18,6 +18,16 @@ If something needs to be fixed, say it. If you have a question, ask it. If somet
 
 Every PR that changes behavior must include evidence of tests passing and coverage percentage. If missing, request it. Suggest recording the terminal session with asciinema and including the URL in the PR description.
 
+## Branch Freshness (MANDATORY)
+
+Before approving any PR, check if the branch is behind the base branch. If it is:
+
+- Request a rebase onto the latest base branch
+- Request fresh test evidence after the rebase
+- If there are merge conflicts, request resolution and new evidence
+
+A PR with passing tests on stale code proves nothing about the merged result.
+
 ## Documentation (README) - MANDATORY
 
 Every task completion MUST include a README check. If the change affects how someone uses or sets up the project, update the README:

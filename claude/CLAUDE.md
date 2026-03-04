@@ -54,6 +54,19 @@ All text that other people will read, like PR descriptions, review comments, com
 - Each review comment should feel independent, not like items from a checklist.
 - Read what you wrote before posting. If it sounds like a report, rewrite it.
 
+### Timestamps
+
+Use GMT for all timestamps in reports, post mortems, incident timelines, and documentation. Never use local timezones like BRT.
+
+### Instructions for Others
+
+Not everyone reading instructions will have CLI knowledge. When writing steps for other people to follow:
+
+- Always provide step-by-step console/dashboard UI walkthroughs with exact navigation paths.
+- If a CLI equivalent exists, provide both the UI walkthrough and the CLI commands.
+- If only one method exists, provide that one.
+- Be maximally detailed. Assume no prior knowledge of the tool.
+
 ## Confidence
 
 **Rule: if you haven't read it or run it in this session, you don't know it.**
@@ -92,6 +105,7 @@ When caught hallucinating: stop, correct, re-verify from source.
 - Complete ONE task fully before starting another
 - Ask before expanding scope
 - Max 3 to 5 files per task
+- **Default to "all".** When presenting a list of improvements, fixes, or assessment findings, implement all of them without asking which to do. The user's default answer is always "all"
 
 ## External Tools
 
@@ -100,6 +114,14 @@ Before using any external tool or CLI command:
 1. **Verify tool is installed.** Run `which <tool>` or `<tool> --version`.
 2. **If not installed.** Ask before installing.
 3. **Never assume availability.** Even common tools like gh, docker, and aws may not be installed.
+4. **Linux package management.** Never use Homebrew on Linux. Use the distribution's native package manager.
+5. **Preferred package manager.** Use pnpm for JavaScript and TypeScript projects. Never default to npm.
+
+### Shell Alias Safety
+
+Common commands may be aliased to different tools (`du` to `dust`, `ls` to `eza`). These aliases change flags and output format, causing unexpected failures.
+
+**Rule: always prefix shell commands with `command` to bypass aliases.** Examples: `command du -sh`, `command ls -la`, `command stat`. This applies to any command where you rely on standard flags or output format.
 
 ## Think Before You Code
 

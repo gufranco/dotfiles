@@ -65,16 +65,14 @@ This prompt has two parts:
 - [ ] Property-based tests for complex logic? Invariants hold across randomized inputs, not just hand-picked examples?
 
 ### Mock policy (STRICT, blocking issue if violated)
-- [ ] **Database never mocked.** Tests that interact with the database must use a real database connection. Add the database to docker-compose test dependencies. Use `beforeAll()` to seed required data and `afterAll()` to clean up.
-- [ ] **Redis, queues, and caches never mocked.** If the code uses Redis, the test connects to a real Redis instance. Same for any message queue, cache layer, or data store. Add these to docker-compose.
-- [ ] **Own services and modules never mocked.** If the code calls an internal service, the test calls the real service. Mocking your own code proves the mock works, not the code.
-- [ ] **Only external third-party APIs may be mocked.** Payment gateways, email providers, SMS services, and other services outside your control are the only valid mock targets.
-- [ ] **Time and randomness may be mocked.** `Date.now()`, `Math.random()`, and similar non-deterministic sources are valid mock targets for deterministic tests.
-- [ ] If a test mocks something that should be real, this is a **blocking issue**. The test may pass while the actual integration is broken, which is worse than having no test at all.
+Per `rules/testing.md` mock policy. Verify:
+- [ ] Database, Redis, queues, and caches use real connections via docker-compose, with `beforeAll()` seed and `afterAll()` cleanup?
+- [ ] Own services and modules tested with real implementations, not mocks?
+- [ ] Only external third-party APIs, time, and randomness are mocked?
+- [ ] Any mock of internal infrastructure flagged as a **blocking issue**?
 
 ### Test evidence
-- [ ] PR description includes test output with coverage percentage?
-- [ ] If missing, this is a blocking issue. Ask for it.
+- [ ] Test evidence present per `rules/code-review.md` "Test Evidence" policy? CI passing counts. Manual output only when tests are not automated.
 
 ## 5. Code Quality and Design
 
@@ -324,6 +322,26 @@ And make sure the migration includes the constraint:
 ```sql
 ALTER TABLE users ADD CONSTRAINT users_email_unique UNIQUE (email);
 ```
+````
+
+Cascading fix warning (when the fix itself could introduce a new problem):
+
+````
+This handler doesn't validate `userId` before passing it to the query.
+
+Validate and type-cast at the boundary:
+
+```typescript
+const userId = parseInt(req.params.userId, 10);
+if (Number.isNaN(userId) || userId <= 0) {
+  return res.status(400).json({ error: { code: 'INVALID_ID', message: 'userId must be a positive integer' } });
+}
+```
+
+When implementing this fix, also update the integration tests in
+`users.test.ts` to cover the new 400 response path. The existing tests
+only send valid IDs, so without a new test case, the validation could
+regress silently.
 ````
 
 Brief positive note when something is genuinely well done:

@@ -16,7 +16,7 @@ If something needs to be fixed, say it. If you have a question, ask it. If somet
 
 ## Test Evidence (MANDATORY)
 
-Every PR that changes behavior must include evidence of tests passing and coverage percentage. If missing, request it. Suggest recording the terminal session with asciinema and including the URL in the PR description.
+Every PR that changes behavior must have evidence of tests passing. Check CI first: if the PR has a pipeline that runs tests and they pass, that is sufficient evidence. Only request manual test output with coverage percentage when the project has no CI pipeline, when the pipeline does not run tests, or when the pipeline has not executed yet. Do not ask authors to paste terminal output for something CI already verifies.
 
 ## Branch Freshness (MANDATORY)
 

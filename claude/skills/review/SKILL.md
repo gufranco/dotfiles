@@ -83,7 +83,7 @@ When scope filtering is active, report at the start of the review: how many file
    - `git remote get-url origin` to detect the git platform.
    - `git branch --show-current` to get the current branch.
    - Determine the CLI tool from the remote URL: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
-   - **Resolve account:** run `gh auth status` (or `glab auth status`) to list all authenticated accounts. Parse the remote URL to identify the host. If the active account does not match the remote host/owner, find the matching account and switch with `gh auth switch --user <login>` (or the `glab` equivalent). Record the original active account to restore later. If no matching account is found, report the mismatch and stop.
+   - **Resolve account** per `rules/borrow-restore.md`: match the remote URL against authenticated `gh`/`glab` accounts, switch if needed, record the original to restore later.
    - Parse flags: check if `--post`, `--local`, `--backend`, or `--frontend` was passed. Collect all remaining arguments as PR identifiers.
    - **If multiple PRs were given**, process each one sequentially through steps 2-10 below. Complete the full review cycle for one PR before starting the next. Between PRs, print a separator line so the user can tell where one review ends and the next begins.
 2. **Determine the review mode (PR or local):**
@@ -171,8 +171,8 @@ When scope filtering is active, report at the start of the review: how many file
 8. **Check branch freshness, CI status, test evidence, and PR size.** Do these **in parallel**:
    - Verify the branch is up to date with the base branch. If behind, this is a blocking issue.
    - In PR mode: check CI status. GitHub: `gh pr checks <number>`. If any required check has failed, this is a blocking issue. If checks are still running, note it.
-   - In PR mode: verify the PR includes evidence of tests passing with coverage percentage. If missing, this is a blocking issue.
-   - In local mode: skip the CI and test evidence checks since there is no PR yet. Running tests locally in step 7 serves as the evidence.
+   - In PR mode: check test evidence per the "Test Evidence" section below.
+   - In local mode: skip CI and test evidence checks. Running tests locally in step 7 serves as the evidence.
    - **PR size check.** Count the total lines added and deleted in the diff. If the diff exceeds 400 lines, note that the PR is large and suggest splitting if the changes span unrelated concerns. If the diff exceeds 1000 lines, flag it as a blocking issue unless the PR is a single cohesive feature that cannot be meaningfully split.
 9. **Present the full review to the user.** Format as described below.
    - In local mode: clearly label the review as "Local Review" so the user knows this was not posted anywhere.
@@ -222,155 +222,7 @@ Be demanding, but always be helpful. The goal is to make the code excellent, not
 
 ## Comment Format
 
-Every comment must include three things:
-
-1. **What's wrong:** State the issue directly.
-2. **Why it matters:** Explain the concrete risk or consequence. Not "this is bad practice" but "this will cause X when Y happens."
-3. **How to fix it:** Provide a code example showing the correct approach. Use fenced code blocks with the right language tag.
-
-Write every comment as if you are a senior engineer mentoring a colleague. Be direct and precise, but generous with explanation. The developer should finish reading your comment knowing exactly what to do and why.
-
-Do not use prefix labels like `issue:`, `suggestion:`, or `nit:`. Just say what you mean. The severity should be obvious from the content.
-
-### Example comments
-
-Detailed issue with fix:
-
-````
-This handler doesn't validate `userId` before passing it to the database query.
-If someone sends a request with `userId=; DROP TABLE users`, the ORM might not
-parameterize this correctly depending on how `findByRawId` is implemented
-internally. Even if the current ORM handles it, this is a defense-in-depth
-problem: the next person who touches this code might swap the query method.
-
-Validate and type-cast at the boundary:
-
-```typescript
-const userId = parseInt(req.params.userId, 10);
-if (Number.isNaN(userId) || userId <= 0) {
-  return res.status(400).json({ error: { code: 'INVALID_ID', message: 'userId must be a positive integer' } });
-}
-const user = await userRepository.findById(userId);
-```
-````
-
-Performance concern with alternative:
-
-````
-`getAllUsers()` fetches every user from the database and then filters in memory
-with `.filter()`. Right now there are 500 users so it's fine, but this is O(n)
-memory and O(n) time on every request. When the user table grows, this becomes
-a real problem, and it's easy to forget this is happening since the code looks
-innocent.
-
-Push the filter down to the database:
-
-```typescript
-const activeUsers = await userRepository.find({
-  where: { status: 'active', role },
-  take: pageSize,
-  skip: (page - 1) * pageSize,
-});
-```
-````
-
-Missing test coverage:
-
-````
-This function has three branches: success, validation error, and database error.
-The test only covers the success case. If someone refactors the error handling
-later, there's no test to catch a regression.
-
-Add tests for the other two paths:
-
-```typescript
-it('should return 400 when email format is invalid', () => {
-  // Arrange
-  const invalidPayload = { email: 'not-an-email', name: 'Test' };
-
-  // Act
-  const response = await request(app).post('/users').send(invalidPayload);
-
-  // Assert
-  expect(response.status).toBe(400);
-  expect(response.body.error.code).toBe('VALIDATION_ERROR');
-});
-
-it('should return 500 and log the error when the database is unavailable', () => {
-  // Arrange
-  jest.spyOn(userRepository, 'save').mockRejectedValue(new Error('connection refused'));
-
-  // Act
-  const response = await request(app).post('/users').send(validPayload);
-
-  // Assert
-  expect(response.status).toBe(500);
-  expect(logger.error).toHaveBeenCalledWith(
-    expect.stringContaining('connection refused'),
-    expect.objectContaining({ requestId: expect.any(String) }),
-  );
-});
-```
-````
-
-Concurrency issue:
-
-````
-There's a race condition between the `findOne` check and the `save` call. Two
-requests hitting this endpoint at the same time with the same email could both
-pass the uniqueness check, and you'd end up with duplicate records. This is a
-classic TOCTOU bug.
-
-Use a database-level unique constraint and handle the conflict:
-
-```typescript
-try {
-  const user = userRepository.create({ email, name });
-  await userRepository.save(user);
-} catch (error) {
-  if (error.code === '23505') { // PostgreSQL unique violation
-    return res.status(409).json({
-      error: { code: 'DUPLICATE_EMAIL', message: 'A user with this email already exists' },
-    });
-  }
-  throw error;
-}
-```
-
-And make sure the migration includes the constraint:
-
-```sql
-ALTER TABLE users ADD CONSTRAINT users_email_unique UNIQUE (email);
-```
-````
-
-Cascading fix warning (when the fix itself could introduce a new problem):
-
-````
-This handler doesn't validate `userId` before passing it to the query.
-
-Validate and type-cast at the boundary:
-
-```typescript
-const userId = parseInt(req.params.userId, 10);
-if (Number.isNaN(userId) || userId <= 0) {
-  return res.status(400).json({ error: { code: 'INVALID_ID', message: 'userId must be a positive integer' } });
-}
-```
-
-When implementing this fix, also update the integration tests in
-`users.test.ts` to cover the new 400 response path. The existing tests
-only send valid IDs, so without a new test case, the validation could
-regress silently.
-````
-
-Brief positive note when something is genuinely well done:
-
-```
-Clean use of the strategy pattern here. Each payment processor
-is independently testable and adding a new one doesn't touch
-existing code.
-```
+Follow the comment format, code example standards, and examples defined in `reviewer-prompt.md`. Every comment must include what's wrong, why it matters, and a code example showing the fix.
 
 ## Review Summary
 
@@ -385,18 +237,14 @@ Skip this section for trivial changes like typos, config tweaks, or small refact
 
 Choose the verdict based on what you found:
 - **APPROVE**: Zero issues found. Tests pass, coverage is adequate, code is clean. This is a high bar.
-- **REQUEST_CHANGES**: Any bugs, security issues, missing error handling, missing tests, stale branch, or missing test evidence. Most reviews will land here.
+- **REQUEST_CHANGES**: Any bugs, security issues, missing error handling, missing tests, or stale branch. Most reviews will land here.
 - **COMMENT**: Minor suggestions only, nothing that would cause problems in production.
 
 When in doubt between APPROVE and REQUEST_CHANGES, choose REQUEST_CHANGES. It's always better to ask for one more look than to let a problem through.
 
 ## Test Evidence
 
-Always check if the PR includes evidence of tests passing and coverage percentage. If missing, leave a comment asking the author to:
-- Run the test suite and show the output with coverage.
-- Record it with asciinema and include the URL in the PR description.
-
-This applies to any PR that changes behavior. Do not approve without test evidence.
+Follow the test evidence policy in `rules/code-review.md`. CI pipeline passing counts as sufficient evidence. Only request manual output when tests are not automated.
 
 If tests exist but coverage is below 80% for the changed code, flag it. If the PR adds new behavior with zero tests, that alone is enough for REQUEST_CHANGES.
 
@@ -415,8 +263,8 @@ Check if the branch is up to date with the base branch. If it is behind, ask the
 - Always include a code example in every comment that points out an issue. The developer should see exactly what the fix looks like.
 - Never post comments without explicit user approval, unless `--post` was passed.
 - Never approve a PR that has failing tests or lint errors.
-- Never approve a PR without evidence of tests passing and coverage percentage.
-- Never approve a PR whose branch is behind the base branch. Ask for rebase and fresh test evidence.
+- Never approve without test evidence (see "Test Evidence" section).
+- Never approve a stale branch (see "Branch Freshness" section).
 - Never approve a PR where new behavior is not covered by tests.
 - Never let something slide because "it's a small PR" or "it's just a refactor." Small changes can introduce big bugs.
 - Every comment must sound like a real person wrote it. No prefix labels, no formulaic language, no template-driven phrasing.
@@ -425,7 +273,7 @@ Check if the branch is up to date with the base branch. If it is behind, ask the
 - Never review a PR/MR that is not open. Check the state before doing any work. If merged or closed, tell the user and stop immediately.
 - In local mode, never post comments anywhere. Present the review to the user only.
 - In local mode, if the review is clean, suggest the user run `/pr` to open the PR.
-- Always restore the original active account after all operations, even if earlier steps fail. Never leave the user on a different account than they started with.
+- Always restore the original account per `rules/borrow-restore.md`, even if earlier steps fail.
 
 ## Related skills
 

@@ -66,11 +66,11 @@ Generate a concise repo description (max 350 characters) and a list of topic tag
 1. Show the full README to the user for review.
 2. Show the GitHub About description and topics.
 3. Ask if they want changes before writing.
-4. **Resolve account** before applying GitHub About. Run `gh auth status` to list all authenticated accounts. Parse the remote URL to identify the host. If the active account does not match the remote host/owner, switch with `gh auth switch --user <login>`. Record the original active account to restore after.
+4. **Resolve account** per `rules/borrow-restore.md` before applying GitHub About. Match the remote URL against authenticated accounts, switch if needed.
 5. After approval:
    - Write the README.md file.
    - Apply the GitHub About using `gh repo edit --description "<desc>"` and `gh repo edit --add-topic <topic>` commands.
-   - Restore the original active account if a switch was performed.
+   - Restore the original account per `rules/borrow-restore.md`.
 
 ## README Structure
 

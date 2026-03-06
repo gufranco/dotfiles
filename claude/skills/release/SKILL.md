@@ -31,7 +31,7 @@ This skill accepts optional arguments after `/release`:
    - `git describe --tags --abbrev=0` to find the latest tag (if no tags, use root commit).
    - `git status --porcelain` to check for uncommitted changes.
    - Determine the CLI tool from the remote URL: `github.com` means `gh`, `gitlab` means `glab`. Verify with `which <tool>`.
-   - **Resolve account:** run `gh auth status` (or `glab auth status`) to list all authenticated accounts. Parse the remote URL to identify the host. If the active account does not match the remote host/owner, find the matching account and switch with `gh auth switch --user <login>` (or the `glab` equivalent). Record the original active account to restore later. If no matching account is found, report the mismatch and stop.
+   - **Resolve account** per `rules/borrow-restore.md`: match the remote URL against authenticated `gh`/`glab` accounts, switch if needed, record the original to restore later.
    - If the working tree is dirty, stop and warn the user.
 2. Gather all commits since the last tag:
    - Run `git log --oneline <last-tag>..HEAD` (or `git log --oneline` if no tags).
@@ -82,7 +82,7 @@ This skill accepts optional arguments after `/release`:
      - GitLab: `glab release create v<version> --notes-file <tmpfile>`.
    - Clean up the temp file after the command completes, whether it succeeded or failed.
 9. Show the release URL when done.
-10. **Restore the original active account** if a switch was performed in step 1. This step is mandatory even if earlier steps fail.
+10. **Restore the original account** per `rules/borrow-restore.md`.
 
 ## Rules
 
@@ -93,7 +93,7 @@ This skill accepts optional arguments after `/release`:
 - Never release if the working tree is dirty. Run `git status` and warn if there are uncommitted changes.
 - Always write release notes to a temp file to avoid shell escaping issues. Clean up the temp file on both success and failure.
 - If the required CLI tool (`gh` or `glab`) is not installed, stop and tell the user.
-- Always restore the original active account after all operations, even if earlier steps fail. Never leave the user on a different account than they started with.
+- Always restore the original account per `rules/borrow-restore.md`, even if earlier steps fail.
 
 ## Related skills
 

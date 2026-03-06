@@ -12,6 +12,7 @@ Exit 0 = allow, exit 2 = block.
 
 import json
 import re
+import subprocess
 import sys
 
 # Level 1: Catastrophic commands. Always block.
@@ -70,6 +71,31 @@ def main():
     for pattern, reason in CRITICAL_PATHS:
         if re.search(pattern, command):
             print(f"BLOCKED: {reason}\nCommand: {command}")
+            sys.exit(2)
+
+    # Level 2.5: Protected branch push detection
+    if re.search(r"\bgit\s+push\b", command) and not re.search(r"--force", command):
+        try:
+            branch = subprocess.check_output(
+                ["git", "branch", "--show-current"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+        except Exception:
+            branch = ""
+
+        targets_protected = (
+            "origin main" in command
+            or "origin master" in command
+            or "origin develop" in command
+            or (branch in ("main", "master", "develop") and "origin " not in command)
+        )
+        if targets_protected:
+            print(
+                f"BLOCKED: Direct push to protected branch ({branch or 'main/develop'}).\n"
+                "Use a feature branch and create a PR instead.\n"
+                f"Command: {command}"
+            )
             sys.exit(2)
 
     # Level 3: Suspicious (warn via stderr, allow)

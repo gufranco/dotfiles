@@ -114,48 +114,19 @@ Before writing any code that mutates state, whether database, API, queue, file, 
 
 ### 1. Is this idempotent?
 
-Can this operation run twice with the same input without causing damage? If not, add a guard:
-
-| Layer | Guard |
-|-------|-------|
-| API endpoint | `Idempotency-Key` header, return cached response on duplicate |
-| Event/message handler | Deduplicate by message ID before processing |
-| Database write | Upsert, `ON CONFLICT DO NOTHING`, or conditional expression |
-| State transition | Check current state before transitioning, reject duplicates |
-| File/object write | Precondition check (ETag, version) or write to temp + atomic rename |
+Can this operation run twice with the same input without causing damage? If not, add a guard. See `rules/resilience.md` (Idempotency) for patterns by layer: API, event handler, database, state machine, file storage.
 
 ### 2. Is this atomic?
 
-If multiple writes must succeed or fail together, they need a transaction. No exceptions.
-
-| Scope | Pattern |
-|-------|---------|
-| Single SQL database | Transaction |
-| Single NoSQL item | Conditional expression |
-| Multiple NoSQL items | `TransactWriteItems` or equivalent batch |
-| Cross-service | Outbox table + event, or saga with compensating actions |
+If multiple writes must succeed or fail together, they need a transaction. No exceptions. See `rules/database.md` (Transactions and Atomic Writes) for patterns by scope: SQL, NoSQL, cross-service.
 
 ### 3. Can duplicates reach this code?
 
-Networks retry. Queues redeliver. Users double-click. Cron jobs overlap. If any of these apply:
-
-- Extract a natural deduplication key: request ID, event ID, or composite like user + action + date
-- Check before processing, record after processing
-- Use a durable store for dedup state, never in-memory only
-
-See `rules/resilience.md` for retry and dedup strategies, `rules/database.md` for conditional write and transaction patterns.
+Networks retry. Queues redeliver. Users double-click. Cron jobs overlap. If any of these apply, extract a natural deduplication key and use a durable store for dedup state. See `rules/resilience.md` (Deduplication) for message processing and database-level dedup patterns.
 
 ## Error Classification
 
-Every `catch` block and error callback must classify the error before deciding what to do. A bare catch that logs and rethrows without classification is a bug.
-
-| Classification | Action |
-|---------------|--------|
-| Transient: timeout, 429, 503, connection reset, lock contention | Log as warn, retry with exponential backoff + jitter |
-| Permanent: 400, 404, validation failure, auth rejected | Log as error with context, fail immediately, never retry |
-| Ambiguous: 500, unknown exception | Retry up to 3 times, then treat as permanent |
-
-Classify at the boundary where the error originates. Propagate the classification upstream so callers know whether to retry. See `rules/resilience.md` for retry strategies, circuit breakers, and timeout budgets.
+Every `catch` block and error callback must classify the error before deciding what to do. A bare catch that logs and rethrows without classification is a bug. Classify as transient (retry with backoff), permanent (fail immediately), or ambiguous (retry with limit, then treat as permanent). See `rules/resilience.md` for the full classification table, retry strategies, circuit breakers, and timeout budgets.
 
 ## Comments Policy
 

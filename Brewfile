@@ -253,6 +253,7 @@ cask 'cursor-cli'
 cask 'sublime-text'
 cask 'textmate'
 cask 'visual-studio-code'
+cask 'windsurf'
 
 ################################################################################
 # AI & Local Inference

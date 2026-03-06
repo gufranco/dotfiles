@@ -60,6 +60,23 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/smart-formatter.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/change-tracker.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/smart-formatter.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/change-tracker.sh"
           }
         ]
       },
@@ -69,6 +86,21 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/smart-formatter.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/change-tracker.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Response complete\" with title \"Claude Code\"' 2>/dev/null || true"
           }
         ]
       }
@@ -87,6 +119,9 @@
         "-y",
         "@upstash/context7-mcp"
       ]
+    },
+    "sentry": {
+      "url": "https://mcp.sentry.dev/mcp"
     }
   },
   "effortLevel": "high"

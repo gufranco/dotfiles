@@ -167,7 +167,7 @@ The push already happened in step 9, so checks should already be queued or runni
 
 ### Step 2: Evaluate results
 
-- **All checks pass:** report success with a summary and stop. The PR is ready for review.
+- **All checks pass:** proceed to Step 5 (review comment check).
 - **Any check fails:** proceed to Step 3.
 
 ### Step 3: Diagnose failures
@@ -202,6 +202,38 @@ After presenting all failures, ask the user:
 
 - **"Fix and re-push"**: apply the fix, stage the changed files (specific files, never `git add -A`), commit with an appropriate message (e.g., `fix(ci): correct linting errors`), push, and go back to Step 1.
 - **"Stop monitoring"**: show a summary of what passed and what failed, then stop.
+
+### Step 5: Check for review comments
+
+After CI passes (from Step 2) or after a successful fix cycle (from Step 4), check if bots or reviewers have left comments on the PR.
+
+- **GitHub:** `gh api repos/{owner}/{repo}/pulls/{number}/comments` to get inline review comments, and `gh api repos/{owner}/{repo}/issues/{number}/comments` for top-level comments.
+- **GitLab:** `glab mr note list <number>`.
+
+Filter for actionable comments: ignore bot summary comments, status badges, and auto-generated walkthrough text. Focus on comments that suggest code changes, flag bugs, or raise concerns.
+
+For each actionable comment found:
+
+1. Read the referenced file and line to understand the context.
+2. Verify the suggestion against the actual code. Bot reviewers can hallucinate or misunderstand constraints like database schema requirements. Do not blindly apply suggestions.
+3. Classify: **valid and actionable**, **valid but out of scope**, or **incorrect/not applicable**.
+
+Present findings to the user:
+
+```
+### Review Comments Found
+
+**<reviewer>** on `<file>:<line>`:
+<brief summary of the comment>
+Verdict: <valid and fixable / not applicable because ...>
+```
+
+If there are valid, actionable comments:
+- Ask the user: **"Fix these and re-push"** or **"Skip, PR is ready for review"**.
+- If fixing, apply changes, run tests, commit, push, and re-enter the pipeline loop from Step 1.
+- The same guardrails apply: max 3 fix cycles, each fix is its own commit, never skip hooks.
+
+If no actionable comments are found, report that the PR is clean and ready for review.
 
 ### Guardrails
 

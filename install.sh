@@ -18,10 +18,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT
 if [ -z "$SCRIPT_DIR" ] || [ ! -f "$SCRIPT_DIR/zsh/utilities" ]; then
   # Running via curl | bash - download utilities to temp location
   TEMP_UTILITIES=$(mktemp)
+  trap 'rm -f "$TEMP_UTILITIES"' EXIT
   if curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/gufranco/dotfiles/master/zsh/utilities -o "$TEMP_UTILITIES" 2>/dev/null; then
     # shellcheck source=/dev/null
     source "$TEMP_UTILITIES"
     rm -f "$TEMP_UTILITIES"
+    trap - EXIT
   else
     echo "ERROR: Could not download utility functions"
     exit 1
@@ -49,7 +51,30 @@ apt_install_if_missing() { __apt_install_if_missing "$@"; }
 apt_add_key_and_repo() { __apt_add_key_and_repo "$@"; }
 brew_install_if_missing() { __brew_install_if_missing "$@"; }
 brew_install_cask_if_missing() { __brew_install_cask_if_missing "$@"; }
-git_clone_or_update() { __git_clone_or_update "$@"; }
+github_repo_sync() {
+  local https_url="$1"
+  local target_dir="$2"
+  local label="$3"
+  local ssh_url="${https_url/https:\/\/github.com\//git@github.com:}"
+
+  log_info "Setting up ${label}..."
+  if [ -d "$target_dir/.git" ]; then
+    git -C "$target_dir" remote set-url origin "$https_url" 2>/dev/null || true
+    git -C "$target_dir" pull --no-edit 2>/dev/null || log_warning "Failed to pull ${label}"
+    git -C "$target_dir" remote set-url origin "$ssh_url" 2>/dev/null || true
+    git -C "$target_dir" submodule update --init --recursive 2>/dev/null || log_warning "Submodule update failed"
+    log_success "${label} updated"
+  else
+    git clone --recursive "$https_url" "$target_dir"
+    git -C "$target_dir" remote set-url origin "$ssh_url" 2>/dev/null || true
+    log_success "${label} cloned"
+  fi
+}
+
+################################################################################
+# Error handling
+################################################################################
+trap 'log_error "Installation failed at line $LINENO"' ERR
 
 ################################################################################
 # Installation
@@ -109,7 +134,7 @@ case "$(uname)" in
       exfat-fuse exfatprogs p7zip-full p7zip-rar rar unrar unzip zip zlib1g-dev
 
       # Shell & Terminal
-      bash zsh tmux snapd trash-cli xsel bc
+      bash tmux snapd trash-cli xsel bc
 
       # Text & Search
       ack vim neovim ripgrep fd-find jq moreutils patchutils urlview
@@ -135,11 +160,7 @@ case "$(uname)" in
     ############################################################################
     # Dotfiles repository
     ############################################################################
-    log_info "Setting up dotfiles..."
-    git_clone_or_update "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles"
-    git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
-    git -C "$HOME/.dotfiles" submodule update --init --recursive 2>/dev/null || log_warning "Submodule update failed (tmux plugins may be missing)"
-    log_success "Dotfiles configured"
+    github_repo_sync "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles" "dotfiles"
 
     ############################################################################
     # Zsh
@@ -185,8 +206,9 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists node || [ "$(node --version | cut -d. -f1 | tr -d v)" -lt 24 ]; then
       log_info "Installing Node.js 24..."
-      curl -fsSL --connect-timeout 10 --max-time 30 https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL --connect-timeout 10 --max-time 30 https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq nodejs
       log_success "Node.js installed"
@@ -195,16 +217,22 @@ case "$(uname)" in
     fi
 
     ############################################################################
-    # Python 3.14
+    # Python (latest from deadsnakes)
     ############################################################################
-    if ! cmd_exists python3.14; then
-      log_info "Installing Python 3.14..."
-      sudo add-apt-repository -y ppa:deadsnakes/ppa >/dev/null 2>&1 || true
-      sudo apt update -qq
-      sudo apt install -y -qq python3.14
-      log_success "Python 3.14 installed"
+    log_info "Setting up Python..."
+    sudo add-apt-repository -y ppa:deadsnakes/ppa >/dev/null 2>&1 || true
+    sudo apt update -qq
+    PYTHON_LATEST=$(apt-cache pkgnames python3. 2>/dev/null | grep -E '^python3\.[0-9]+$' | sort -t. -k2 -n | tail -1)
+    if [ -n "$PYTHON_LATEST" ]; then
+      if ! cmd_exists "$PYTHON_LATEST"; then
+        log_info "Installing ${PYTHON_LATEST}..."
+        sudo apt install -y -qq "$PYTHON_LATEST"
+        log_success "${PYTHON_LATEST} installed"
+      else
+        log_skip "${PYTHON_LATEST} already installed"
+      fi
     else
-      log_skip "Python 3.14 already installed"
+      log_warning "Could not determine latest Python version from deadsnakes"
     fi
 
     ############################################################################
@@ -242,8 +270,9 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists gh; then
       log_info "Installing GitHub CLI..."
-      curl -fsSL --connect-timeout 10 --max-time 30 https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL --connect-timeout 10 --max-time 30 https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli.gpg >/dev/null
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq gh
       log_success "GitHub CLI installed"
@@ -284,30 +313,12 @@ case "$(uname)" in
     ############################################################################
     # Delta (git diff)
     ############################################################################
-    if ! cmd_exists delta; then
-      log_info "Installing delta..."
-      DELTA_VERSION=$(curl -s --connect-timeout 10 --max-time 30 https://api.github.com/repos/dandavison/delta/releases/latest | grep tag_name | cut -d '"' -f 4)
-      if curl -#fLo /tmp/delta.deb --connect-timeout 10 --max-time 120 "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb" 2>/dev/null; then
-        sudo dpkg -i /tmp/delta.deb 2>/dev/null || log_warning "Failed to install delta .deb"
-      else
-        log_warning "Failed to download delta"
-      fi
-      rm -f /tmp/delta.deb
-      log_success "Delta installed"
-    else
-      log_skip "Delta already installed"
-    fi
+    apt_install_if_missing git-delta
 
     ############################################################################
     # Starship prompt
     ############################################################################
-    if ! cmd_exists starship; then
-      log_info "Installing Starship..."
-      curl -sS --connect-timeout 10 --max-time 60 https://starship.rs/install.sh | sh -s -- -y >/dev/null 2>&1
-      log_success "Starship installed"
-    else
-      log_skip "Starship already installed"
-    fi
+    apt_install_if_missing starship
 
     ############################################################################
     # Golang
@@ -327,8 +338,17 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists rustc; then
       log_info "Installing Rust..."
-      curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 60 https://sh.rustup.rs | sh -s -- -y >/dev/null 2>&1
-      log_success "Rust installed"
+      if snap_installed rustup; then
+        log_skip "rustup snap already installed"
+      else
+        sudo snap install rustup --classic 2>/dev/null || true
+      fi
+      if cmd_exists rustup; then
+        rustup default stable >/dev/null 2>&1
+        log_success "Rust installed"
+      else
+        log_warning "Rust not available via snap"
+      fi
     else
       log_skip "Rust already installed"
     fi
@@ -340,8 +360,9 @@ case "$(uname)" in
       # Spotify
       if ! pkg_installed spotify-client; then
         log_info "Installing Spotify..."
-        curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg 2>/dev/null || true
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/spotify.gpg 2>/dev/null || true
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
         sudo apt update -qq
         sudo apt install -y -qq spotify-client
         log_success "Spotify installed"
@@ -352,8 +373,9 @@ case "$(uname)" in
       # Google Chrome
       if ! pkg_installed google-chrome-stable; then
         log_info "Installing Google Chrome..."
-        curl -fsSL --connect-timeout 10 --max-time 30 https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg 2>/dev/null || true
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL --connect-timeout 10 --max-time 30 https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/keyrings/google-chrome.gpg 2>/dev/null || true
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
         sudo apt update -qq
         sudo apt install -y -qq google-chrome-stable
         log_success "Chrome installed"
@@ -405,19 +427,22 @@ case "$(uname)" in
     apt_install_if_missing pinentry-curses
 
     ############################################################################
-    # Nerd Fonts
+    # Nerd Fonts (no apt/snap package available, direct download required)
     ############################################################################
     log_info "Installing Nerd Fonts..."
     mkdir -p "$HOME/.local/share/fonts"
 
+    NERD_FONTS_VERSION=$(curl -s --connect-timeout 10 --max-time 30 https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | grep tag_name | cut -d '"' -f 4)
+    NERD_FONTS_VERSION="${NERD_FONTS_VERSION:-v3.3.0}"
+
     if [ ! -f "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" ]; then
       curl -#fLo "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" --connect-timeout 10 --max-time 120 \
-        https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf
+        "https://github.com/ryanoasis/nerd-fonts/raw/${NERD_FONTS_VERSION}/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf"
     fi
 
     if [ ! -f "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" ]; then
       curl -#fLo "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" --connect-timeout 10 --max-time 120 \
-        https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/JetBrainsMono/Ligatures/Regular/JetBrainsMonoNerdFont-Regular.ttf
+        "https://github.com/ryanoasis/nerd-fonts/raw/${NERD_FONTS_VERSION}/patched-fonts/JetBrainsMono/Ligatures/Regular/JetBrainsMonoNerdFont-Regular.ttf"
     fi
 
     sudo fc-cache -fv >/dev/null 2>&1
@@ -443,7 +468,7 @@ case "$(uname)" in
     sudo apt -y upgrade -qq
 
     if ! pkg_installed "nvidia-driver-$NVIDIA_VERSION"; then
-      sudo apt install -y nvidia-driver-$NVIDIA_VERSION libnvidia-gl-$NVIDIA_VERSION:i386
+      sudo apt install -y "nvidia-driver-${NVIDIA_VERSION}" "libnvidia-gl-${NVIDIA_VERSION}:i386"
       log_success "NVIDIA drivers installed"
     else
       log_skip "NVIDIA drivers already installed"
@@ -487,43 +512,15 @@ case "$(uname)" in
       log_skip "Homebrew already installed"
     fi
 
-    # Set Homebrew environment
     case "$(uname -m)" in
-      "arm64")
-        export HOMEBREW_PREFIX="/opt/homebrew"
-        export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
-        export HOMEBREW_REPOSITORY="/opt/homebrew"
-        export HOMEBREW_SHELLENV_PREFIX="/opt/homebrew"
-        export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
-        export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
-        export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
-        ;;
-      "x86_64")
-        export HOMEBREW_PREFIX="/usr/local"
-        export HOMEBREW_CELLAR="/usr/local/Cellar"
-        export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
-        export HOMEBREW_SHELLENV_PREFIX="/usr/local"
-        export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}"
-        export MANPATH="/usr/local/share/man${MANPATH+:$MANPATH}:"
-        export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
-        ;;
+      "arm64") __setup_homebrew "/opt/homebrew" ;;
+      "x86_64") __setup_homebrew "/usr/local" ;;
     esac
 
     ############################################################################
     # Dotfiles repository
     ############################################################################
-    log_info "Setting up dotfiles..."
-    if [ -d "$HOME/.dotfiles/.git" ]; then
-      git -C "$HOME/.dotfiles" remote set-url origin https://github.com/gufranco/dotfiles.git 2>/dev/null || true
-      git -C "$HOME/.dotfiles" pull --no-edit 2>/dev/null || log_warning "Failed to pull dotfiles"
-      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
-      git -C "$HOME/.dotfiles" submodule update --init --recursive 2>/dev/null || log_warning "Submodule update failed"
-      log_success "Dotfiles updated"
-    else
-      git clone --recursive --depth=1 https://github.com/gufranco/dotfiles.git "$HOME/.dotfiles"
-      git -C "$HOME/.dotfiles" remote set-url origin git@github.com:gufranco/dotfiles.git 2>/dev/null || true
-      log_success "Dotfiles cloned"
-    fi
+    github_repo_sync "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles" "dotfiles"
 
     ############################################################################
     # Homebrew packages
@@ -534,7 +531,6 @@ case "$(uname)" in
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade || log_warning "Brew upgrade had failures"
     cmd_exists brew-cu && brew cu --all --yes --cleanup 2>/dev/null || true
-    brew cleanup -s || true
     log_success "Homebrew packages updated"
 
     ############################################################################
@@ -584,11 +580,11 @@ mkdir -p "$HOME/.nvm"
 log_info "Setting up Oh My Zsh..."
 safe_link "$HOME/.dotfiles/zsh/.zshrc" "$HOME/.zshrc"
 
-git_sync "https://github.com/robbyrussell/oh-my-zsh.git" "$HOME/.oh-my-zsh" 1
-git_sync "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" 1
-git_sync "https://github.com/zsh-users/zsh-completions.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" 1
-git_sync "https://github.com/Aloxaf/fzf-tab.git" "$HOME/.oh-my-zsh/custom/plugins/fzf-tab" 1
-git_sync "https://github.com/denysdovhan/spaceship-prompt.git" "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" 1
+github_repo_sync "https://github.com/robbyrussell/oh-my-zsh.git" "$HOME/.oh-my-zsh" "Oh My Zsh"
+github_repo_sync "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" "zsh-syntax-highlighting"
+github_repo_sync "https://github.com/zsh-users/zsh-completions.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" "zsh-completions"
+github_repo_sync "https://github.com/Aloxaf/fzf-tab.git" "$HOME/.oh-my-zsh/custom/plugins/fzf-tab" "fzf-tab"
+github_repo_sync "https://github.com/denysdovhan/spaceship-prompt.git" "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" "spaceship-prompt"
 
 safe_link "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme" "$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
 
@@ -805,8 +801,7 @@ safe_link "$HOME/.dotfiles/yazi" "$HOME/.config/yazi"
 ############################################################################
 # Claude Code
 ############################################################################
-log_info "Setting up Claude Code..."
-safe_link "$HOME/.dotfiles/claude" "$HOME/.claude"
+github_repo_sync "https://github.com/gufranco/claude-engineering-rules.git" "$HOME/.claude" "Claude engineering rules"
 
 ############################################################################
 # Cleanup

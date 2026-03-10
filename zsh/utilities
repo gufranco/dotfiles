@@ -75,7 +75,6 @@ function __safe_link() {
 function __git_sync() {
   local url="$1"
   local path="$2"
-  local depth="${3:-1}"
   local repo_name
   repo_name=$(basename "$path")
 
@@ -89,7 +88,7 @@ function __git_sync() {
     fi
   else
     rm -rf "$path"
-    if git clone --quiet --depth="$depth" "$url" "$path" >/dev/null 2>&1; then
+    if git clone --quiet "$url" "$path" >/dev/null 2>&1; then
       __log_success "Cloned: $repo_name"
       return 0
     else
@@ -507,7 +506,7 @@ function __git_clone_or_update() {
     git -C "$target" remote set-url "$remote_name" "$url" 2>/dev/null || true
     git -C "$target" pull --no-edit 2>/dev/null || __log_warning "Failed to update: $(basename "$target")"
   else
-    git clone --recursive --depth=1 "$url" "$target"
+    git clone --recursive "$url" "$target"
   fi
 }
 
@@ -754,6 +753,21 @@ function __f5_update_dotfiles() {
     fi
   else
     __log_warning "Failed to update dotfiles"
+  fi
+}
+
+function __f5_update_claude() {
+  __log_info "Updating Claude engineering rules..."
+
+  if [ ! -d "$HOME/.claude/.git" ]; then
+    __log_skip "Claude engineering rules not a git repository"
+    return
+  fi
+
+  if __f5_update_git_repo "$HOME/.claude"; then
+    __log_success "Claude engineering rules updated"
+  else
+    __log_warning "Failed to update Claude engineering rules"
   fi
 }
 

@@ -14,6 +14,7 @@ function f5() {
   echo ""
 
   __f5_update_dotfiles
+  __f5_update_claude
   __f5_update_vim
   __f5_update_plugins
   __f5_update_nodejs
@@ -227,6 +228,50 @@ function zero_fill_verify() {
 # Sync games library
 ################################################################################
 function sync_games() {
+  # Region filters shared by Redump and No-Intro syncs
+  local REGION_FILTERS=(
+    --filter "- *Europe\)*"
+    --filter "- *Germany\)*"
+    --filter "- *France\)*"
+    --filter "- *Spain\)*"
+    --filter "- *Italy\)*"
+    --filter "- *Netherlands\)*"
+    --filter "- *Sweden\)*"
+    --filter "- *Denmark\)*"
+    --filter "- *Norway\)*"
+    --filter "- *Finland\)*"
+    --filter "- *Belgium\)*"
+    --filter "- *Austria\)*"
+    --filter "- *Switzerland\)*"
+    --filter "- *Portugal\)*"
+    --filter "- *Greece\)*"
+    --filter "- *Poland\)*"
+    --filter "- *Russia\)*"
+    --filter "- *Czech\)*"
+    --filter "- *Hungary\)*"
+    --filter "- *Romania\)*"
+    --filter "- *Croatia\)*"
+    --filter "- *Serbia\)*"
+    --filter "- *Slovakia\)*"
+    --filter "- *Bulgaria\)*"
+    --filter "- *Ireland\)*"
+    --filter "- *Iceland\)*"
+    --filter "- *UK\)*"
+    --filter "- *Australia\)*"
+    --filter "- *New Zealand\)*"
+    --filter "- *Scandinavia\)*"
+    --filter "- *Asia\)*"
+    --filter "- *Korea\)*"
+    --filter "- *China\)*"
+    --filter "- *Taiwan\)*"
+    --filter "- *Hong Kong\)*"
+    --filter "+ *World\)*"
+    --filter "+ *USA\)*"
+    --filter "+ *Japan\)*"
+    --filter "+ *Brazil\)*"
+    --filter "- *"
+  )
+
   __sync_redump() {
   local group="Redump"
   local folders=(
@@ -263,50 +308,7 @@ function sync_games() {
       --multi-thread-streams=0 \
       --size-only \
       --delete-excluded \
-      \
-      --filter "- *Europe\)*" \
-      --filter "- *Germany\)*" \
-      --filter "- *France\)*" \
-      --filter "- *Spain\)*" \
-      --filter "- *Italy\)*" \
-      --filter "- *Netherlands\)*" \
-      --filter "- *Sweden\)*" \
-      --filter "- *Denmark\)*" \
-      --filter "- *Norway\)*" \
-      --filter "- *Finland\)*" \
-      --filter "- *Belgium\)*" \
-      --filter "- *Austria\)*" \
-      --filter "- *Switzerland\)*" \
-      --filter "- *Portugal\)*" \
-      --filter "- *Greece\)*" \
-      --filter "- *Poland\)*" \
-      --filter "- *Russia\)*" \
-      --filter "- *Czech\)*" \
-      --filter "- *Hungary\)*" \
-      --filter "- *Romania\)*" \
-      --filter "- *Croatia\)*" \
-      --filter "- *Serbia\)*" \
-      --filter "- *Slovakia\)*" \
-      --filter "- *Bulgaria\)*" \
-      --filter "- *Ireland\)*" \
-      --filter "- *Iceland\)*" \
-      --filter "- *UK\)*" \
-      --filter "- *Australia\)*" \
-      --filter "- *New Zealand\)*" \
-      --filter "- *Scandinavia\)*" \
-      --filter "- *Asia\)*" \
-      --filter "- *Korea\)*" \
-      --filter "- *China\)*" \
-      --filter "- *Taiwan\)*" \
-      --filter "- *Hong Kong\)*" \
-      \
-      --filter "+ *World\)*" \
-      --filter "+ *USA\)*" \
-      --filter "+ *Japan\)*" \
-      --filter "+ *Brazil\)*" \
-      \
-      --filter "- *" \
-      \
+      "${REGION_FILTERS[@]}" \
       --http-url "https://myrient.erista.me/files/$group/" \
       ":http:$folder/" \
       "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
@@ -479,50 +481,7 @@ function sync_games() {
       --multi-thread-streams=0 \
       --size-only \
       --delete-excluded \
-      \
-      --filter "- *Europe\)*" \
-      --filter "- *Germany\)*" \
-      --filter "- *France\)*" \
-      --filter "- *Spain\)*" \
-      --filter "- *Italy\)*" \
-      --filter "- *Netherlands\)*" \
-      --filter "- *Sweden\)*" \
-      --filter "- *Denmark\)*" \
-      --filter "- *Norway\)*" \
-      --filter "- *Finland\)*" \
-      --filter "- *Belgium\)*" \
-      --filter "- *Austria\)*" \
-      --filter "- *Switzerland\)*" \
-      --filter "- *Portugal\)*" \
-      --filter "- *Greece\)*" \
-      --filter "- *Poland\)*" \
-      --filter "- *Russia\)*" \
-      --filter "- *Czech\)*" \
-      --filter "- *Hungary\)*" \
-      --filter "- *Romania\)*" \
-      --filter "- *Croatia\)*" \
-      --filter "- *Serbia\)*" \
-      --filter "- *Slovakia\)*" \
-      --filter "- *Bulgaria\)*" \
-      --filter "- *Ireland\)*" \
-      --filter "- *Iceland\)*" \
-      --filter "- *UK\)*" \
-      --filter "- *Australia\)*" \
-      --filter "- *New Zealand\)*" \
-      --filter "- *Scandinavia\)*" \
-      --filter "- *Asia\)*" \
-      --filter "- *Korea\)*" \
-      --filter "- *China\)*" \
-      --filter "- *Taiwan\)*" \
-      --filter "- *Hong Kong\)*" \
-      \
-      --filter "+ *World\)*" \
-      --filter "+ *USA\)*" \
-      --filter "+ *Japan\)*" \
-      --filter "+ *Brazil\)*" \
-      \
-      --filter "- *" \
-      \
+      "${REGION_FILTERS[@]}" \
       --http-url "https://myrient.erista.me/files/$group/" \
       ":http:$folder/" \
       "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"

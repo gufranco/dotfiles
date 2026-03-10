@@ -757,17 +757,23 @@ function __f5_update_dotfiles() {
 }
 
 function __f5_update_claude() {
-  __log_info "Updating Claude engineering rules..."
+  local found=0
 
-  if [ ! -d "$HOME/.claude/.git" ]; then
-    __log_skip "Claude engineering rules not a git repository"
-    return
-  fi
+  for dir in "$HOME/.claude" "$HOME"/.claude-*; do
+    [ -d "$dir/.git" ] || continue
+    found=1
+    local label
+    label=$(basename "$dir")
 
-  if __f5_update_git_repo "$HOME/.claude"; then
-    __log_success "Claude engineering rules updated"
-  else
-    __log_warning "Failed to update Claude engineering rules"
+    if __f5_update_git_repo "$dir"; then
+      __log_success "Updated: $label"
+    else
+      __log_warning "Failed to update: $label"
+    fi
+  done
+
+  if [ "$found" -eq 0 ]; then
+    __log_skip "No Claude engineering rules repositories found"
   fi
 }
 

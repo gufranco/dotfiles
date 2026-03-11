@@ -318,7 +318,13 @@ case "$(uname)" in
     ############################################################################
     # Starship prompt
     ############################################################################
-    apt_install_if_missing starship
+    if ! cmd_exists starship; then
+      log_info "Installing Starship..."
+      curl -sS --connect-timeout 10 --max-time 120 https://starship.rs/install.sh | sh -s -- --yes
+      log_success "Starship installed"
+    else
+      log_skip "Starship already installed"
+    fi
 
     ############################################################################
     # Golang

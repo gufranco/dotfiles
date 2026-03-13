@@ -345,6 +345,7 @@ cask 'maestral'
 cask 'flixtools'
 cask 'jdownloader'
 cask 'spotify', args: { no_quarantine: true }
+cask 'steam'
 cask 'transmission'
 cask 'vlc'
 

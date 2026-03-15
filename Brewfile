@@ -258,17 +258,17 @@ cask 'windsurf'
 ################################################################################
 # AI & Local Inference
 ################################################################################
-brew 'llama.cpp'
-brew 'ollama'
+brew 'llama.cpp' if architecture == 'arm64'
+brew 'ollama' if architecture == 'arm64'
 
 ################################################################################
 # Casks - AI Tools
 ################################################################################
 cask 'claude-code'
 cask 'codex'
-cask 'codex-app'
-cask 'jan'
-cask 'lm-studio'
+cask 'codex-app' if architecture == 'arm64'
+cask 'jan' if architecture == 'arm64'
+cask 'lm-studio' if architecture == 'arm64'
 
 ################################################################################
 # Casks - API & Database
@@ -353,7 +353,7 @@ cask 'vlc'
 # Casks - Virtualization
 ################################################################################
 # cask 'orbstack'
-# cask 'parallels' if architecture == 'arm64'
+cask 'parallels' if architecture == 'arm64'
 
 ################################################################################
 # Fonts

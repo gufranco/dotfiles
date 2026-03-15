@@ -756,29 +756,33 @@ function __f5_update_dotfiles() {
   fi
 }
 
+function __f5_update_aws() {
+  if [ ! -d "$HOME/.aws/.git" ]; then
+    __log_warning "No AWS configuration repository found"
+    return
+  fi
+
+  __log_info "Updating AWS configuration..."
+
+  if __f5_update_git_repo "$HOME/.aws"; then
+    __log_success "AWS configuration updated"
+  else
+    __log_warning "Failed to update AWS configuration"
+  fi
+}
+
 function __f5_update_claude() {
+  if [ ! -d "$HOME/.claude/.git" ]; then
+    __log_warning "No Claude engineering rules repository found"
+    return
+  fi
+
   __log_info "Updating Claude engineering rules..."
 
-  local repo_count=0
-  local repo_errors=0
-
-  for dir in "$HOME/.claude" "$HOME"/.claude-*; do
-    [ -d "$dir/.git" ] || continue
-
-    if __f5_update_git_repo "$dir"; then
-      ((repo_count++))
-    else
-      ((repo_errors++))
-      __log_warning "Failed to update: $(basename "$dir")"
-    fi
-  done
-
-  if [ "$((repo_count + repo_errors))" -eq 0 ]; then
-    __log_skip "No Claude engineering rules repositories found"
-  elif [ "$repo_errors" -gt 0 ]; then
-    __log_warning "Updated $repo_count repositories ($repo_errors failed)"
+  if __f5_update_git_repo "$HOME/.claude"; then
+    __log_success "Claude engineering rules updated"
   else
-    __log_success "Updated $repo_count Claude repositories"
+    __log_warning "Failed to update Claude engineering rules"
   fi
 }
 

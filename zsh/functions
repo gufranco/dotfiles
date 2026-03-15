@@ -14,6 +14,7 @@ function f5() {
   echo ""
 
   __f5_update_dotfiles
+  __f5_update_aws
   __f5_update_claude
   __f5_update_vim
   __f5_update_plugins

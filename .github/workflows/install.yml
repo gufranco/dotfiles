@@ -24,8 +24,16 @@ env:
 
 jobs:
   linux:
-    name: Ubuntu
-    runs-on: ubuntu-latest
+    name: Ubuntu (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
@@ -47,27 +55,95 @@ jobs:
               errors=$((errors + 1))
             fi
           }
+
+          # Shell & Editor
           check "zshrc"       "$HOME/.zshrc"
           check "gitconfig"   "$HOME/.gitconfig"
           check "vimrc"       "$HOME/.vimrc"
           check "vim"         "$HOME/.vim"
           check "tmux.conf"   "$HOME/.tmux.conf"
+          check "tmux"        "$HOME/.tmux"
+
+          # Network
           check "curlrc"      "$HOME/.curlrc"
           check "wgetrc"      "$HOME/.wgetrc"
+          check "telnetrc"    "$HOME/.telnetrc"
+
+          # Search & Input
           check "inputrc"     "$HOME/.inputrc"
           check "ripgreprc"   "$HOME/.ripgreprc"
+          check "fdrc"        "$HOME/.fdrc"
+
+          # Node.js
+          check "npmrc"       "$HOME/.npmrc"
+          check "yarnrc"      "$HOME/.yarnrc.yml"
+          check "pnpmrc"      "$HOME/.pnpmrc"
+
+          # Email
+          check "muttrc"      "$HOME/.muttrc"
+          check "mutt"        "$HOME/.mutt"
+          check "mailcap"     "$HOME/.mailcap"
+
+          # Security
+          check "gnupg"       "$HOME/.gnupg"
+          check "ssh"         "$HOME/.ssh"
+
+          # App configs
+          check "htop"        "$HOME/.config/htop/htoprc"
+          check "ghostty"     "$HOME/.config/ghostty"
+          check "kitty"       "$HOME/.config/kitty/kitty.conf"
+          check "bat-config"  "$HOME/.config/bat/config"
+          check "bat-themes"  "$HOME/.config/bat/themes"
+          check "eza"         "$HOME/.config/eza"
+          check "cmus"        "$HOME/.config/cmus/rc"
+          check "yazi"        "$HOME/.config/yazi"
+          check "gh"          "$HOME/.config/gh/config.yml"
+          check "glab"        "$HOME/.config/glab-cli/config.yml"
+          check "tealdeer"    "$HOME/.config/tealdeer/config.toml"
+          check "bottom"      "$HOME/.config/bottom/bottom.toml"
+          check "lazygit"     "$HOME/.config/lazygit/config.yml"
+          check "lazydocker"  "$HOME/.config/lazydocker/config.yml"
+          check "k9s"         "$HOME/.config/k9s/config.yml"
+
+          # Linux-only
+          check "conkyrc"     "$HOME/.conkyrc"
+
           exit $errors
 
       - name: Verify commands
         run: |
           set -euo pipefail
-          for cmd in zsh git vim tmux curl wget fzf ripgrep bat; do
-            if command -v "$cmd" >/dev/null 2>&1 || dpkg -l "$cmd" 2>/dev/null | grep -q "^ii"; then
-              echo "OK: $cmd"
+          errors=0
+          for cmd in zsh git vim tmux curl wget fzf rg bat eza fd delta gh node go starship docker; do
+            if command -v "$cmd" >/dev/null 2>&1; then
+              echo "OK: $cmd ($(command -v "$cmd"))"
+            elif dpkg -l "$cmd" 2>/dev/null | grep -q "^ii"; then
+              echo "OK: $cmd (dpkg)"
             else
-              echo "WARN: $cmd not found (may use alternate name)"
+              echo "FAIL: $cmd not found"
+              errors=$((errors + 1))
             fi
           done
+          exit $errors
+
+      - name: Verify Oh My Zsh
+        run: |
+          set -euo pipefail
+          errors=0
+          for dir in \
+            "$HOME/.oh-my-zsh" \
+            "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" \
+            "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" \
+            "$HOME/.oh-my-zsh/custom/plugins/fzf-tab" \
+            "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt"; do
+            if [ -d "$dir/.git" ]; then
+              echo "OK: $(basename "$dir")"
+            else
+              echo "FAIL: $(basename "$dir") not found"
+              errors=$((errors + 1))
+            fi
+          done
+          exit $errors
 
       - name: Verify permissions
         run: |
@@ -86,8 +162,16 @@ jobs:
           check_perm "$HOME/.ssh" "700"
 
   macos:
-    name: macOS
-    runs-on: macos-latest
+    name: macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: x64
+          - runner: macos-26
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
@@ -109,33 +193,92 @@ jobs:
               errors=$((errors + 1))
             fi
           }
+
+          # Shell & Editor
           check "zshrc"       "$HOME/.zshrc"
           check "gitconfig"   "$HOME/.gitconfig"
           check "vimrc"       "$HOME/.vimrc"
           check "vim"         "$HOME/.vim"
           check "tmux.conf"   "$HOME/.tmux.conf"
+          check "tmux"        "$HOME/.tmux"
+
+          # Network
           check "curlrc"      "$HOME/.curlrc"
           check "wgetrc"      "$HOME/.wgetrc"
+          check "telnetrc"    "$HOME/.telnetrc"
+
+          # Search & Input
           check "inputrc"     "$HOME/.inputrc"
           check "ripgreprc"   "$HOME/.ripgreprc"
+          check "fdrc"        "$HOME/.fdrc"
+
+          # Node.js
+          check "npmrc"       "$HOME/.npmrc"
+          check "yarnrc"      "$HOME/.yarnrc.yml"
+          check "pnpmrc"      "$HOME/.pnpmrc"
+
+          # Email
+          check "muttrc"      "$HOME/.muttrc"
+          check "mutt"        "$HOME/.mutt"
+          check "mailcap"     "$HOME/.mailcap"
+
+          # Security
+          check "gnupg"       "$HOME/.gnupg"
+          check "ssh"         "$HOME/.ssh"
+
+          # App configs
+          check "htop"        "$HOME/.config/htop/htoprc"
           check "ghostty"     "$HOME/.config/ghostty"
+          check "kitty"       "$HOME/.config/kitty/kitty.conf"
           check "bat-config"  "$HOME/.config/bat/config"
+          check "bat-themes"  "$HOME/.config/bat/themes"
           check "eza"         "$HOME/.config/eza"
+          check "cmus"        "$HOME/.config/cmus/rc"
           check "yazi"        "$HOME/.config/yazi"
+          check "gh"          "$HOME/.config/gh/config.yml"
+          check "glab"        "$HOME/.config/glab-cli/config.yml"
+          check "tealdeer"    "$HOME/.config/tealdeer/config.toml"
+          check "bottom"      "$HOME/.config/bottom/bottom.toml"
+          check "lazygit"     "$HOME/.config/lazygit/config.yml"
+          check "lazydocker"  "$HOME/.config/lazydocker/config.yml"
+          check "k9s"         "$HOME/.config/k9s/config.yml"
+          check "k9s-skins"   "$HOME/.config/k9s/skins"
+
           exit $errors
 
       - name: Verify Homebrew packages
         run: |
           set -euo pipefail
           eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
-          for cmd in bat eza fzf fd rg delta git zsh tmux vim; do
+          errors=0
+          for cmd in bat eza fzf fd rg delta git zsh tmux vim gh node nvm bun pnpm; do
             if command -v "$cmd" >/dev/null 2>&1; then
               echo "OK: $cmd ($(command -v "$cmd"))"
             else
               echo "FAIL: $cmd not found"
-              exit 1
+              errors=$((errors + 1))
             fi
           done
+          exit $errors
+
+      - name: Verify Oh My Zsh
+        run: |
+          set -euo pipefail
+          errors=0
+          for dir in \
+            "$HOME/.oh-my-zsh" \
+            "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" \
+            "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" \
+            "$HOME/.oh-my-zsh/custom/plugins/fzf-tab" \
+            "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt"; do
+            if [ -d "$dir/.git" ]; then
+              echo "OK: $(basename "$dir")"
+            else
+              echo "FAIL: $(basename "$dir") not found"
+              errors=$((errors + 1))
+            fi
+          done
+          exit $errors
 
       - name: Verify permissions
         run: |

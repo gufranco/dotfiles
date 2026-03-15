@@ -863,7 +863,25 @@ function __f5_update_macos() {
   __log_info "Updating macOS packages..."
 
   if brew update; then
-    brew bundle --file "$HOME/.dotfiles/Brewfile" || __log_warning "Brewfile sync failed"
+    local brew_bundle_attempts=3
+    local brew_bundle_ok=false
+
+    for ((i=1; i <= brew_bundle_attempts; i++)); do
+      if brew bundle --file "$HOME/.dotfiles/Brewfile"; then
+        brew_bundle_ok=true
+        break
+      fi
+
+      if [ "$i" -lt "$brew_bundle_attempts" ]; then
+        __log_warning "Brewfile sync had failures, retrying ($((i + 1))/$brew_bundle_attempts)..."
+        sleep 5
+      fi
+    done
+
+    if [ "$brew_bundle_ok" = false ]; then
+      __log_warning "Brewfile sync failed after $brew_bundle_attempts attempts"
+    fi
+
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade || __log_warning "Brew upgrade failed"
     brew cu --all --yes --cleanup || true

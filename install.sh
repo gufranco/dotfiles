@@ -127,20 +127,20 @@ case "$(uname)" in
 
     BASIC_PKGS=(
       # Build essentials
-      apt-transport-https build-essential ca-certificates cmake curl g++ gcc
-      git gnupg make software-properties-common autoconf automake libtool gettext
+      build-essential ca-certificates cmake curl
+      git gnupg software-properties-common autoconf automake libtool gettext
 
       # Compression
-      exfat-fuse exfatprogs p7zip-full unrar unzip zip zlib1g-dev
+      exfatprogs p7zip-full unrar unzip zip zlib1g-dev
 
       # Shell & Terminal
       bash tmux snapd trash-cli xsel bc
 
       # Text & Search
-      ack vim neovim ripgrep fd-find jq moreutils patchutils urlview
+      vim neovim ripgrep fd-find jq moreutils patchutils urlview
 
       # Network
-      curl wget rsync rclone nmap mtr telnet httpie
+      wget rsync rclone nmap mtr telnet httpie
 
       # System monitoring
       htop

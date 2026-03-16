@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Run ShellCheck
-        run: shellcheck --severity=warning install.sh
+        run: shellcheck install.sh
 
   zsh-syntax:
     name: Zsh syntax
@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           errors=0
           while IFS= read -r f; do
-            if yamllint -d "{extends: relaxed, rules: {line-length: disable}}" "$f" 2>&1; then
+            if yamllint -d "{extends: default, rules: {line-length: disable, truthy: disable}}" "$f" 2>&1; then
               echo "OK: $f"
             else
               errors=$((errors + 1))

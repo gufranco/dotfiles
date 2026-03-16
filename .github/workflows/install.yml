@@ -3,6 +3,8 @@ name: Install
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 */12 * * *'
   push:
     branches: [master]
     paths:
@@ -17,6 +19,10 @@ on:
       - 'zsh/**'
       - 'Brewfile'
       - '.github/workflows/install.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CI: "1"

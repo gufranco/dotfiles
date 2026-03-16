@@ -466,33 +466,37 @@ case "$(uname)" in
     safe_link "$HOME/.dotfiles/tilix/tokyonight-night-tilix.json" "$HOME/.config/tilix/schemes/tokyonight-night.json"
 
     ############################################################################
-    # GPU drivers
+    # GPU drivers (x86_64 only)
     ############################################################################
-    log_info "Installing NVIDIA drivers..."
-    NVIDIA_VERSION=550
-    sudo dpkg --add-architecture i386
-    sudo apt update -qq
-    sudo apt -y upgrade -qq
+    if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+      log_info "Installing NVIDIA drivers..."
+      NVIDIA_VERSION=550
+      sudo dpkg --add-architecture i386
+      sudo apt update -qq
+      sudo apt -y upgrade -qq
 
-    if ! pkg_installed "nvidia-driver-$NVIDIA_VERSION"; then
-      sudo apt install -y "nvidia-driver-${NVIDIA_VERSION}" "libnvidia-gl-${NVIDIA_VERSION}:i386"
-      log_success "NVIDIA drivers installed"
+      if ! pkg_installed "nvidia-driver-$NVIDIA_VERSION"; then
+        sudo apt install -y "nvidia-driver-${NVIDIA_VERSION}" "libnvidia-gl-${NVIDIA_VERSION}:i386"
+        log_success "NVIDIA drivers installed"
+      else
+        log_skip "NVIDIA drivers already installed"
+      fi
+
+      # Mesa drivers (point release)
+      log_info "Installing Mesa drivers (point release)..."
+      sudo add-apt-repository -y ppa:kisak/kisak-mesa >/dev/null 2>&1 || true
+      sudo apt update -qq
+      sudo apt -y upgrade -qq
+
+      # Mesa drivers (bleeding edge)
+      log_info "Installing Mesa drivers (bleeding edge)..."
+      sudo add-apt-repository -y ppa:oibaf/graphics-drivers >/dev/null 2>&1 || true
+      sudo apt update -qq
+      sudo apt -y upgrade -qq
+      log_success "GPU drivers configured"
     else
-      log_skip "NVIDIA drivers already installed"
+      log_skip "GPU drivers (not supported on $(dpkg --print-architecture))"
     fi
-
-    # Mesa drivers (point release)
-    log_info "Installing Mesa drivers (point release)..."
-    sudo add-apt-repository -y ppa:kisak/kisak-mesa >/dev/null 2>&1 || true
-    sudo apt update -qq
-    sudo apt -y upgrade -qq
-
-    # Mesa drivers (bleeding edge)
-    log_info "Installing Mesa drivers (bleeding edge)..."
-    sudo add-apt-repository -y ppa:oibaf/graphics-drivers >/dev/null 2>&1 || true
-    sudo apt update -qq
-    sudo apt -y upgrade -qq
-    log_success "GPU drivers configured"
 
     ;;
 

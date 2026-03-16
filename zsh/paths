@@ -9,9 +9,12 @@ case "$(uname)" in
     ;;
 
   "Darwin")
-    # Setup Homebrew based on architecture
+    # Architecture-specific paths
     case "$(uname -m)" in
-      "arm64")  __setup_homebrew "/opt/homebrew" ;;
+      "arm64")
+        __setup_homebrew "/opt/homebrew"
+        __add_to_path "$HOME/.lmstudio/bin"
+        ;;
       "x86_64") __setup_homebrew "/usr/local" ;;
     esac
 

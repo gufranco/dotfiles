@@ -450,6 +450,7 @@ function __load_chruby() {
   # shellcheck disable=SC1091
   [ -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh" ] && source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
 
+  export __CHRUBY_LOADED=1
   __log_success "Chruby loaded"
 }
 
@@ -533,9 +534,10 @@ function __setup_homebrew() {
   [ "$prefix" = "/opt/homebrew" ] && export HOMEBREW_REPOSITORY="/opt/homebrew"
   [ "$prefix" = "/usr/local" ] && export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
   export HOMEBREW_SHELLENV_PREFIX="$prefix"
-  export PATH="$prefix/bin:$prefix/sbin${PATH+:$PATH}"
-  export MANPATH="$prefix/share/man${MANPATH+:$MANPATH}:"
-  export INFOPATH="$prefix/share/info:${INFOPATH:-}"
+  __add_to_path "$prefix/bin"
+  __add_to_path "$prefix/sbin"
+  [[ ":$MANPATH:" != *":$prefix/share/man:"* ]] && export MANPATH="$prefix/share/man${MANPATH+:$MANPATH}:"
+  [[ ":$INFOPATH:" != *":$prefix/share/info:"* ]] && export INFOPATH="$prefix/share/info:${INFOPATH:-}"
 }
 
 ################################################################################

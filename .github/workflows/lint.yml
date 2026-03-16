@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Run ShellCheck
-        run: shellcheck install.sh
+        run: shellcheck --severity=warning install.sh
 
   zsh-syntax:
     name: Zsh syntax

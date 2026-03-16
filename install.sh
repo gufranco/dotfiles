@@ -540,8 +540,7 @@ case "$(uname)" in
     brew update
     brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
-    brew upgrade || log_warning "Brew upgrade had failures"
-    if cmd_exists brew-cu; then brew cu --all --yes --cleanup 2>/dev/null || true; fi
+    brew upgrade --greedy || log_warning "Brew upgrade had failures"
     log_success "Homebrew packages updated"
 
     ############################################################################

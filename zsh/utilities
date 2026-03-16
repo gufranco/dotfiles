@@ -883,8 +883,7 @@ function __f5_update_macos() {
     fi
 
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
-    brew upgrade || __log_warning "Brew upgrade failed"
-    brew cu --all --yes --cleanup || true
+    brew upgrade --greedy || __log_warning "Brew upgrade failed"
     brew cleanup -s || true
   else
     __log_warning "Brew update failed"

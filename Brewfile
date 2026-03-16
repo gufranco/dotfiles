@@ -15,7 +15,6 @@ single_display = /\AApple M[12]\z/.match?(cpu) || /\AMacBook(8,1|9,1|10,1|Air[89
 # Homebrew taps
 ################################################################################
 tap 'aws/tap'
-tap 'buo/cask-upgrade'
 tap 'neomutt/neomutt'
 tap 'oven-sh/bun'
 tap 'stripe/stripe-cli'

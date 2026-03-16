@@ -328,4 +328,3 @@ jobs:
           }
           check_perm "$HOME/.gnupg" "700"
           check_perm "$HOME/.ssh" "700"
-

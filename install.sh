@@ -536,7 +536,7 @@ case "$(uname)" in
     brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade || log_warning "Brew upgrade had failures"
-    cmd_exists brew-cu && brew cu --all --yes --cleanup 2>/dev/null || true
+    if cmd_exists brew-cu; then brew cu --all --yes --cleanup 2>/dev/null || true; fi
     log_success "Homebrew packages updated"
 
     ############################################################################
@@ -720,7 +720,7 @@ log_info "Setting up Bat..."
 safe_link "$HOME/.dotfiles/bat/config" "$HOME/.config/bat/config"
 safe_link "$HOME/.dotfiles/bat/themes" "$HOME/.config/bat/themes"
 
-cmd_exists bat && bat cache --build >/dev/null 2>&1 || true
+if cmd_exists bat; then bat cache --build >/dev/null 2>&1 || true; fi
 
 ############################################################################
 # eza
@@ -754,7 +754,7 @@ safe_link "$HOME/.dotfiles/glab/config.yml" "$HOME/.config/glab-cli/config.yml"
 log_info "Setting up Tealdeer..."
 mkdir -p "$HOME/.config/tealdeer"
 safe_link "$HOME/.dotfiles/tealdeer/config.toml" "$HOME/.config/tealdeer/config.toml"
-cmd_exists tldr && tldr --update 2>/dev/null || true
+if cmd_exists tldr; then tldr --update 2>/dev/null || true; fi
 
 ############################################################################
 # Bottom (btm)

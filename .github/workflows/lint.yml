@@ -1,0 +1,111 @@
+name: Lint
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run ShellCheck
+        run: shellcheck install.sh
+
+  zsh-syntax:
+    name: Zsh syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install zsh
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+      - name: Check zsh files
+        run: |
+          set -euo pipefail
+          errors=0
+          for f in zsh/*; do
+            [ -f "$f" ] || continue
+            if zsh -n "$f" 2>&1; then
+              echo "OK: $f"
+            else
+              echo "FAIL: $f"
+              errors=$((errors + 1))
+            fi
+          done
+          exit "$errors"
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run actionlint
+        run: |
+          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint
+
+  config-lint:
+    name: YAML & TOML lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install yamllint
+        run: pip install --quiet yamllint
+      - name: Lint YAML files
+        run: |
+          set -euo pipefail
+          errors=0
+          while IFS= read -r f; do
+            if yamllint -d "{extends: relaxed, rules: {line-length: disable}}" "$f" 2>&1; then
+              echo "OK: $f"
+            else
+              errors=$((errors + 1))
+            fi
+          done < <(find . \( -name '*.yml' -o -name '*.yaml' \) \
+            -not -path './tmux/plugins/*' \
+            -not -path './vim/plugged/*' | sort)
+          exit "$errors"
+      - name: Lint TOML files
+        run: |
+          set -euo pipefail
+          python3 -c "
+          import tomllib, sys, pathlib
+
+          excludes = ('tmux/plugins', 'vim/plugged')
+          files = [f for f in pathlib.Path('.').rglob('*.toml')
+                   if not any(e in str(f) for e in excludes)]
+          errors = 0
+          for f in sorted(files):
+              try:
+                  tomllib.load(open(f, 'rb'))
+                  print(f'OK: {f}')
+              except Exception as e:
+                  print(f'FAIL: {f}: {e}')
+                  errors += 1
+          sys.exit(errors)
+          "
+
+  secrets:
+    name: Secrets scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          gh release download --repo gitleaks/gitleaks --pattern 'gitleaks_*_linux_x64.tar.gz' --output gitleaks.tar.gz
+          tar xzf gitleaks.tar.gz gitleaks
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Scan for secrets
+        run: ./gitleaks detect --source . --verbose

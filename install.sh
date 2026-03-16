@@ -131,7 +131,7 @@ case "$(uname)" in
       git gnupg make software-properties-common autoconf automake libtool gettext
 
       # Compression
-      exfat-fuse exfatprogs p7zip-full p7zip-rar rar unrar unzip zip zlib1g-dev
+      exfat-fuse exfatprogs p7zip-full unrar unzip zip zlib1g-dev
 
       # Shell & Terminal
       bash tmux snapd trash-cli xsel bc
@@ -155,6 +155,13 @@ case "$(uname)" in
     for pkg in "${BASIC_PKGS[@]}"; do
       apt_install_if_missing "$pkg"
     done
+
+    # x86-only proprietary packages (not available on arm64)
+    if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+      apt_install_if_missing rar
+      apt_install_if_missing p7zip-rar
+    fi
+
     log_success "Basic packages installed"
 
     ############################################################################

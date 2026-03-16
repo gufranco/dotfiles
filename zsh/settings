@@ -104,7 +104,10 @@ export SPACESHIP_CHAR_SUFFIX=" "
 # Chruby (lazy loading)
 ################################################################################
 # Create stub functions that trigger Chruby loading on first use
-__create_lazy_stubs __load_chruby chruby ruby gem bundle rake rails
+# Skip if already loaded (prevents overwriting real functions on reload)
+if [ -z "$__CHRUBY_LOADED" ]; then
+  __create_lazy_stubs __load_chruby chruby ruby gem bundle rake rails
+fi
 
 ################################################################################
 # NPM Token

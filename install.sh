@@ -156,12 +156,6 @@ case "$(uname)" in
       apt_install_if_missing "$pkg"
     done
 
-    # x86-only proprietary packages (not available on arm64)
-    if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-      apt_install_if_missing rar
-      apt_install_if_missing p7zip-rar
-    fi
-
     log_success "Basic packages installed"
 
     ############################################################################

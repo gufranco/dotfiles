@@ -539,7 +539,6 @@ case "$(uname)" in
     log_info "Installing Homebrew packages..."
     brew update
     brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
-    brew link --overwrite awscli cocoapods 2>/dev/null || true
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade || log_warning "Brew upgrade had failures"
     if cmd_exists brew-cu; then brew cu --all --yes --cleanup 2>/dev/null || true; fi

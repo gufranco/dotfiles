@@ -24,15 +24,15 @@ env:
 
 jobs:
   linux:
-    name: Ubuntu (${{ matrix.arch }})
+    name: ${{ matrix.name }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-24.04
-            arch: x64
+          - runner: ubuntu-latest
+            name: Ubuntu latest (x64)
           - runner: ubuntu-24.04-arm
-            arch: arm64
+            name: Ubuntu 24.04 (arm64)
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
@@ -162,15 +162,17 @@ jobs:
           check_perm "$HOME/.ssh" "700"
 
   macos:
-    name: macOS (${{ matrix.arch }})
+    name: ${{ matrix.name }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - runner: macos-15-intel
-            arch: x64
-          - runner: macos-26
-            arch: arm64
+            name: macOS Sequoia (x64)
+          - runner: macos-26-intel
+            name: macOS Tahoe (x64)
+          - runner: macos-latest
+            name: macOS latest (arm64)
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     steps:

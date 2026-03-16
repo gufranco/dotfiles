@@ -63,7 +63,12 @@ jobs:
           errors=0
           check() {
             if [ -L "$2" ]; then
-              echo "OK: $1"
+              if [ -e "$2" ]; then
+                echo "OK: $1"
+              else
+                echo "FAIL: $1 ($2 is a dangling symlink)"
+                errors=$((errors + 1))
+              fi
             else
               echo "FAIL: $1 ($2 is not a symlink)"
               errors=$((errors + 1))
@@ -203,7 +208,12 @@ jobs:
           errors=0
           check() {
             if [ -L "$2" ]; then
-              echo "OK: $1"
+              if [ -e "$2" ]; then
+                echo "OK: $1"
+              else
+                echo "FAIL: $1 ($2 is a dangling symlink)"
+                errors=$((errors + 1))
+              fi
             else
               echo "FAIL: $1 ($2 is not a symlink)"
               errors=$((errors + 1))
@@ -311,3 +321,65 @@ jobs:
           }
           check_perm "$HOME/.gnupg" "700"
           check_perm "$HOME/.ssh" "700"
+
+  idempotency:
+    name: Idempotency
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: First install
+        run: bash install.sh
+
+      - name: Second install
+        run: bash install.sh
+
+      - name: Verify final state
+        run: |
+          set -euo pipefail
+          errors=0
+
+          # Symlinks exist and are not dangling
+          for link in \
+            "$HOME/.zshrc" \
+            "$HOME/.gitconfig" \
+            "$HOME/.vimrc" \
+            "$HOME/.vim" \
+            "$HOME/.tmux.conf" \
+            "$HOME/.tmux" \
+            "$HOME/.curlrc" \
+            "$HOME/.inputrc" \
+            "$HOME/.npmrc"; do
+            if [ -L "$link" ] && [ -e "$link" ]; then
+              echo "OK: $link"
+            else
+              echo "FAIL: $link (missing or dangling)"
+              errors=$((errors + 1))
+            fi
+          done
+
+          # Key commands available
+          for cmd in zsh git vim tmux fzf rg bat eza fd delta starship; do
+            if command -v "$cmd" >/dev/null 2>&1; then
+              echo "OK: $cmd"
+            else
+              echo "FAIL: $cmd not found"
+              errors=$((errors + 1))
+            fi
+          done
+
+          # Permissions intact
+          for dir in "$HOME/.gnupg" "$HOME/.ssh"; do
+            perm=$(stat -Lc %a "$dir" 2>/dev/null || echo "missing")
+            if [ "$perm" = "700" ]; then
+              echo "OK: $dir ($perm)"
+            else
+              echo "FAIL: $dir (expected 700, got $perm)"
+              errors=$((errors + 1))
+            fi
+          done
+
+          exit $errors

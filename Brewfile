@@ -345,6 +345,7 @@ cask 'maestral'
 ################################################################################
 cask 'flixtools'
 cask 'jdownloader'
+cask 'obs'
 cask 'spotify'
 cask 'steam'
 cask 'transmission'

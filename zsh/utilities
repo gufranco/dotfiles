@@ -541,8 +541,12 @@ function __setup_homebrew() {
   export HOMEBREW_SHELLENV_PREFIX="$prefix"
   __add_to_path "$prefix/bin"
   __add_to_path "$prefix/sbin"
-  [[ ":$MANPATH:" != *":$prefix/share/man:"* ]] && export MANPATH="$prefix/share/man${MANPATH+:$MANPATH}:"
-  [[ ":$INFOPATH:" != *":$prefix/share/info:"* ]] && export INFOPATH="$prefix/share/info:${INFOPATH:-}"
+  if [[ ":$MANPATH:" != *":$prefix/share/man:"* ]]; then
+    export MANPATH="$prefix/share/man${MANPATH+:$MANPATH}:"
+  fi
+  if [[ ":$INFOPATH:" != *":$prefix/share/info:"* ]]; then
+    export INFOPATH="$prefix/share/info:${INFOPATH:-}"
+  fi
 }
 
 ################################################################################

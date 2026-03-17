@@ -515,8 +515,13 @@ function __git_clone_or_update() {
 # Path management helpers
 ################################################################################
 function __add_to_path() {
-  # Only add if not already in PATH (prevents duplicates in subshells)
-  [[ ":$PATH:" != *":$1:"* ]] && export PATH="$1:$PATH"
+  # Remove from current position if present, then prepend.
+  # Ensures correct ordering even when PATH is inherited with entries in wrong position.
+  local p=":$PATH:"
+  p="${p//:$1:/:}"
+  p="${p#:}"
+  p="${p%:}"
+  export PATH="$1${p:+:$p}"
 }
 
 function __add_gnu_tool() {

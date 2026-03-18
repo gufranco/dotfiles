@@ -274,6 +274,7 @@ cask 'lm-studio' if architecture == 'arm64'
 ################################################################################
 # Casks - API & Database
 ################################################################################
+cask 'beekeeper-studio'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'insomnia'

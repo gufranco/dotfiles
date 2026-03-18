@@ -1,5 +1,12 @@
 ---
 name: Install
+run-name: >-
+  Install (${{
+    github.event_name == 'schedule' && 'scheduled' ||
+    github.event_name == 'workflow_dispatch' && 'manual' ||
+    github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) ||
+    format('push {0}', github.sha)
+  }})
 
 on:
   workflow_dispatch:

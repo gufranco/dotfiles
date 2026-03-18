@@ -113,6 +113,7 @@ brew 'lazygit'
 brew 'bandwhich'
 brew 'curl'
 brew 'gping'
+brew 'grpcurl'
 brew 'httpie'
 brew 'lynx'
 brew 'mtr'
@@ -151,6 +152,7 @@ brew 'DopplerHQ/cli/doppler'
 brew 'gitleaks'
 brew 'gnupg'
 brew 'pinentry-mac'
+brew 'radare2'
 brew 'snyk-cli'
 brew 'sops'
 brew 'trivy'
@@ -161,6 +163,7 @@ brew 'trivy'
 brew 'chruby'
 brew 'golang', link: true
 brew 'golangci-lint'
+brew 'mise'
 brew 'node', link: true
 brew 'nvm'
 brew 'openjdk@17'
@@ -184,6 +187,7 @@ brew 'cocoapods'
 brew 'entr'
 brew 'hyperfine'
 brew 'just'
+brew 'mkcert'
 brew 'shellcheck'
 brew 'tokei'
 brew 'watchman'
@@ -217,12 +221,18 @@ brew 'neomutt'
 brew 'urlview'
 
 ################################################################################
-# Media & Retro Gaming
+# Media
 ################################################################################
 brew 'asciinema'
 brew 'cmus'
 brew 'fatsort'
+brew 'ffmpeg'
 brew 'media-control'
+
+################################################################################
+# Retro Gaming & ROM Tools
+################################################################################
+brew 'mame'
 brew 'UltimateNova1203/maxcso/maxcso'
 brew 'ucon64'
 
@@ -299,6 +309,7 @@ cask 'google-chrome'
 cask 'granola'
 cask 'linear-linear'
 cask 'maccy'
+cask 'obsidian'
 cask 'shottr'
 
 ################################################################################
@@ -316,9 +327,11 @@ cask 'figma'
 # Casks - Security & VPN
 ################################################################################
 cask '1password'
+cask 'ghidra'
 cask 'lastpass'
 cask 'nordvpn'
 cask 'tunnelblick'
+cask 'wireshark'
 
 ################################################################################
 # Casks - System & Hardware
@@ -332,6 +345,7 @@ cask 'logi-options+'
 cask 'macs-fan-control' if has_fans
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
+cask 'stats'
 
 ################################################################################
 # Casks - File Management & Utilities
@@ -345,12 +359,35 @@ cask 'maestral'
 # Casks - Media & Entertainment
 ################################################################################
 cask 'flixtools'
+cask 'handbrake'
+cask 'iina'
 cask 'jdownloader'
 cask 'obs'
 cask 'spotify'
 cask 'steam'
 cask 'transmission'
 cask 'vlc'
+
+################################################################################
+# Casks - Emulators
+################################################################################
+cask 'ares-emulator'
+cask 'cemu'
+cask 'dolphin'
+cask 'dosbox-x'
+cask 'duckstation'
+cask 'flycast'
+cask 'melonds'
+cask 'mgba'
+cask 'openemu'
+cask 'pcsx2'
+cask 'ppsspp'
+cask 'retroarch'
+cask 'rpcs3'
+cask 'scummvm'
+cask 'snes9x'
+cask 'stella-app'
+cask 'xemu'
 
 ################################################################################
 # Casks - Virtualization

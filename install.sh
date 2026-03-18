@@ -416,6 +416,7 @@ case "$(uname)" in
 
       # Snap packages
       if cmd_exists snap; then
+        snap_installed beekeeper-studio || { log_info "Installing Beekeeper Studio..."; sudo snap install beekeeper-studio 2>/dev/null || true; }
         snap_installed postman || { log_info "Installing Postman..."; sudo snap install postman 2>/dev/null || true; }
         snap_installed slack || { log_info "Installing Slack..."; sudo snap install slack 2>/dev/null || true; }
         snap_installed discord || { log_info "Installing Discord..."; sudo snap install discord 2>/dev/null || true; }

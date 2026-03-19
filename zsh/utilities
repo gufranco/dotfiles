@@ -894,6 +894,10 @@ function __f5_update_macos() {
     fi
   fi
 
+  __log_info "Refreshing Spotlight index..."
+  mdimport /Applications ~/Applications 2>/dev/null
+  __log_success "Spotlight index refreshed"
+
   __log_success "macOS packages updated"
 }
 

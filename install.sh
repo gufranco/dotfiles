@@ -827,6 +827,10 @@ case "$(uname)" in
   "Darwin")
     brew cleanup -s 2>/dev/null || true
 
+    log_info "Refreshing Spotlight index..."
+    mdimport /Applications ~/Applications 2>/dev/null
+    log_success "Spotlight index refreshed"
+
     # TRIM
     if [ "$(system_profiler SPSerialATADataType 2>/dev/null | grep 'TRIM Support' | awk '{print $3}')" = "Yes" ]; then
       log_warning "TRIM is supported. To enable, run: sudo trimforce enable"

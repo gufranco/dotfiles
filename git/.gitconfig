@@ -111,9 +111,11 @@
   quiet = true
   instructionFormat = (%an) %s
   updateRefs = true
+  missingCommitsCheck = error
 
 [rerere]
   enabled = true
+  autoupdate = true
 
 [pull]
   rebase = true
@@ -122,6 +124,7 @@
   followTags = true
   default = current
   gpgSign = if-asked
+  autoSetupRemote = true
 
 ################################################################################
 # Network & Objects
@@ -197,6 +200,7 @@
 
 [log]
   date = iso
+  abbrevCommit = true
 
 ################################################################################
 # Delta (diff pager)
@@ -234,11 +238,11 @@
 
 [credential "https://github.com"]
   helper =
-  helper = !/opt/homebrew/bin/gh auth git-credential
+  helper = !gh auth git-credential
 
 [credential "https://gist.github.com"]
   helper =
-  helper = !/opt/homebrew/bin/gh auth git-credential
+  helper = !gh auth git-credential
 
 [help]
   autocorrect = never
@@ -289,7 +293,7 @@
   dfs = diff --staged
 
   # Stash
-  save = stash save
+  save = stash push
   pop = stash pop
 
   # Cleanup
@@ -306,9 +310,6 @@
   rank = shortlog -sn --no-merges
 
   # Track/Untrack
-  ignore = update-index --assume-unchanged
-  unignore = update-index --no-assume-unchanged
-  ignored = !git ls-files -v | grep '^[[:lower:]]'
   assume = update-index --assume-unchanged
   unassume = update-index --no-assume-unchanged
   assumed = !git ls-files -v | grep '^[[:lower:]]'
@@ -333,7 +334,7 @@
   upstream = rev-parse --abbrev-ref --symbolic-full-name @{u}
 
   # Stash Improved
-  stash-all = stash save --include-untracked
+  stash-all = stash push --include-untracked
   sl = stash list --pretty=format:'%C(yellow)%gd%C(reset) - %C(green)(%cr)%C(reset) %s'
 
   # Worktree

@@ -26,9 +26,21 @@ esac
 ################################################################################
 # Shell
 ################################################################################
-export HISTCONTROL=ignoredups
-export HISTIGNORE="cd:ls:[bf]g:clear:exit"
+setopt EXTENDED_HISTORY        # Record timestamp with each command
+setopt INC_APPEND_HISTORY      # Write to HISTFILE immediately, not on shell exit
+setopt HIST_IGNORE_DUPS        # Skip consecutive duplicate entries
+setopt HIST_IGNORE_SPACE       # Skip commands starting with a space
+setopt HIST_REDUCE_BLANKS      # Remove extra blanks from history entries
+setopt HIST_EXPIRE_DUPS_FIRST  # Expire duplicates first when trimming history
+setopt HIST_FIND_NO_DUPS       # No duplicates when searching history
+setopt HIST_VERIFY             # Show !! expansion before executing
+export HISTORY_IGNORE="(cd|ls|[bf]g|clear|exit)"
+export HISTSIZE=2147483647
+export SAVEHIST=2147483647
 export LANG=pt_BR.UTF-8
+
+# Auto-report execution time for commands taking longer than 1 second
+export REPORTTIME=1
 
 ################################################################################
 # Terminal
@@ -86,6 +98,7 @@ export plugins=(
   ssh-agent
 
   nvm
+  extract
 
   fzf
   fzf-tab

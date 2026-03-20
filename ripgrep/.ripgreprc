@@ -4,13 +4,14 @@
 --smart-case
 --follow
 --hidden
---threads=4
 
 ################################################################################
 # Output
 ################################################################################
 --line-number
 --column
+--max-columns=150
+--max-columns-preview
 --colors=line:fg:yellow
 --colors=line:style:bold
 --colors=path:fg:green

@@ -19,6 +19,7 @@
 ################################################################################
 --map-syntax="*.conf:INI"
 --map-syntax="*.env:Bash"
+--map-syntax="*.env.*:Bash"
 --map-syntax="*.zshrc:Bash"
 --map-syntax="*.bashrc:Bash"
 --map-syntax=".gitconfig:INI"
@@ -27,6 +28,15 @@
 --map-syntax="Brewfile:Ruby"
 --map-syntax="Dockerfile*:Dockerfile"
 --map-syntax="docker-compose*.yml:YAML"
+--map-syntax="*.ts:TypeScript"
+--map-syntax="*.tsx:TypeScript"
+--map-syntax="*.mts:TypeScript"
+--map-syntax="*.cts:TypeScript"
+--map-syntax="*.graphql:GraphQL"
+--map-syntax="*.gql:GraphQL"
+--map-syntax="*.mdx:Markdown"
+--map-syntax="tsconfig*.json:JSON"
+--map-syntax=".editorconfig:INI"
 
 ################################################################################
 # Behavior

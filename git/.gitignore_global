@@ -1,6 +1,8 @@
 ################################################################################
-# macOS
+# Operating Systems
 ################################################################################
+
+# macOS
 ._*
 .apdisk
 .AppleDB
@@ -19,20 +21,14 @@ Icon?
 Network Trash Folder
 Temporary Items
 
-################################################################################
 # Linux
-################################################################################
-*~
 .directory
 .fuse_hidden*
 .nfs*
 .Trash-*
 
-################################################################################
 # Windows
-################################################################################
 $RECYCLE.BIN/
-[Dd]esktop.ini
 *.cab
 *.lnk
 *.msi
@@ -40,78 +36,65 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 *.stackdump
-ehthumbs_vista.db
+[Dd]esktop.ini
 ehthumbs.db
+ehthumbs_vista.db
 Thumbs.db
 Thumbs.db:encryptable
 
 ################################################################################
-# Vim / Neovim
+# Editors & IDEs
 ################################################################################
+
+# Vim / Neovim
 [._]*.s[a-v][a-z]
 [._]*.sw[a-p]
+[._]*.un~
 [._]s[a-rt-v][a-z]
 [._]ss[a-gi-z]
 [._]sw[a-p]
-[._]*.un~
+*.vim.lck
+.lvimrc
 .netrwhist
+.nvimrc
 Session.vim
 Sessionx.vim
 tags
-*.vim.lck
-.lvimrc
-.nvimrc
 
-################################################################################
 # Emacs
-################################################################################
-*~
 \#*\#
 .#*
-*.elc
-auto-save-list
-tramp
 .\#*
-/.emacs.desktop
-/.emacs.desktop.lock
-.org-id-locations
 *_archive
 *_flymake.*
-flycheck_*.el
-.projectile
+*.elc
+auto-save-list
 .dir-locals.el
-.cache/
+/.emacs.desktop
+/.emacs.desktop.lock
+flycheck_*.el
+.org-id-locations
+.projectile
+tramp
 
-################################################################################
-# JetBrains IDEs (IntelliJ, WebStorm, PyCharm, etc.)
-################################################################################
+# JetBrains (IntelliJ, WebStorm, PyCharm, etc.)
 .idea/
+.idea_modules/
 *.iml
 *.ipr
 *.iws
-out/
-.idea_modules/
 atlassian-ide-plugin.xml
 cmake-build-*/
 
-################################################################################
-# Visual Studio Code / Cursor / Claude Code
-################################################################################
-.vscode/
-.cursor/
+# VS Code / Cursor / Claude Code
 .claude/
 *.code-workspace
+.cursor/
 .history/
 .ionide
+.vscode/
 
-################################################################################
 # Sublime Text
-################################################################################
-*.stTheme.cache
-*.sublime-project
-*.sublime-workspace
-*.tmlanguage.cache
-*.tmPreferences.cache
 bh_unicode_properties.cache
 GitHub.sublime-settings
 oscrypto-ca-bundle.crt
@@ -124,29 +107,34 @@ Package Control.merged-ca-bundle
 Package Control.system-ca-bundle
 Package Control.user-ca-bundle
 sftp-config*.json
+*.stTheme.cache
+*.sublime-project
+*.sublime-workspace
+*.tmlanguage.cache
+*.tmPreferences.cache
 
 ################################################################################
-# Secrets & Credentials (IMPORTANT!)
+# Secrets & Credentials
 ################################################################################
+.credentials
 .env
 .env.*
 !.env.example
 !.env.template
-*.pem
-*.key
-*.p12
-*.pfx
-*.crt
 *.cer
+*.crt
 !*.crt.example
 credentials.json
+*.key
+.netrc
+*.p12
+*.pem
+*.pfx
+.pypirc
+*.secret
+.secrets
 secrets.json
 service-account*.json
-.secrets
-.credentials
-*.secret
-.netrc
-.pypirc
 
 ################################################################################
 # Environment & Config
@@ -157,22 +145,23 @@ service-account*.json
 .local/
 
 ################################################################################
-# Logs & Debug
+# Logs
 ################################################################################
+debug.log
+lerna-debug.log*
 *.log
 *.log.*
 log/
 logs/
 npm-debug.log*
+pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-debug.log
 
 ################################################################################
-# Temporary & Backup Files
+# Temporary & Backup
 ################################################################################
+*~
 *.bak
 *.backup
 *.cache
@@ -180,66 +169,65 @@ debug.log
 *.dump
 *.orig
 *.patch
-*.swp
 *.swo
+*.swp
 *.temp
 *.tmp
-*~
-tmp/
 temp/
+tmp/
 
 ################################################################################
-# Coverage & Testing
+# Testing & Coverage
 ################################################################################
+*.cover
 coverage/
 .coverage
-.nyc_output/
-*.lcov
-htmlcov/
-.tox/
-.nox/
-.pytest_cache/
-.hypothesis/
-nosetests.xml
 coverage.xml
-*.cover
+htmlcov/
+.hypothesis/
+*.lcov
+.nox/
+nosetests.xml
+.nyc_output/
 *.py,cover
+.pytest_cache/
+.tox/
 
 ################################################################################
-# Build & Dependencies
+# Dependencies
 ################################################################################
-node_modules/
 bower_components/
-vendor/
 jspm_packages/
+node_modules/
 .pnp
 .pnp.js
-.yarn/cache
-.yarn/unplugged
+vendor/
 .yarn/build-state.yml
+.yarn/cache
 .yarn/install-state.gz
+.yarn/unplugged
 
 ################################################################################
-# Compiled & Output
+# Build & Compiled Output
 ################################################################################
+build/
 *.class
+dist/
 *.dll
 *.dylib
+*.egg-info/
 *.exe
 *.o
 *.obj
+out/
+__pycache__/
 *.pyc
 *.pyo
 *.so
-__pycache__/
-*.egg-info/
-dist/
-build/
-out/
 target/
 
 ################################################################################
-# Package Files
+# Archives
 ################################################################################
 *.7z
 *.bz2
@@ -259,44 +247,46 @@ target/
 *.zip
 
 ################################################################################
-# Infrastructure & DevOps
+# Infrastructure
 ################################################################################
+.ansible/tmp/
+*.box
+.kitchen/
 .terraform/
 *.tfstate
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
 .vagrant/
-*.box
-.kitchen/
-.ansible/tmp/
 
 ################################################################################
 # Databases
 ################################################################################
 *.db
+dump.sql
+*.rdb
 *.sqlite
 *.sqlite3
 *.sql.gz
-dump.sql
-*.rdb
 
 ################################################################################
-# Miscellaneous
+# Frameworks & Tooling
 ################################################################################
-.sass-cache/
-.grunt
+.cache/
+.dynamodb/
 .eslintcache
-.stylelintcache
-.parcel-cache
+.fusebox/
+.grunt
+.netlify
 .next/
 .nuxt/
 .output/
+.parcel-cache
+.sass-cache/
+.serverless/
+specs/
+.stylelintcache
+.tern-port
 .turbo/
 .vercel
-.netlify
-.serverless/
-.fusebox/
-.dynamodb/
-.tern-port
 .vuepress/dist

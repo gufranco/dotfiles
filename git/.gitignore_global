@@ -146,7 +146,6 @@ service-account*.json
 .credentials
 *.secret
 .netrc
-.npmrc
 .pypirc
 
 ################################################################################

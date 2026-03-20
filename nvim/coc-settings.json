@@ -6,5 +6,6 @@
   "prettier.requireConfig": true,
   "diagnostic.displayByAle": false,
   "suggest.noselect": true,
-  "suggest.enablePreselect": false
+  "suggest.enablePreselect": false,
+  "snippets.ultisnips.enable": false
 }

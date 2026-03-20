@@ -29,16 +29,31 @@
 "   Ctrl+n        Multi-cursor         Y      Yank to EOL
 "   < / >         Indent (stays visual)
 "   Alt+j/k       Move line up/down
+"   gS            Split one-liner      gJ     Join multi-line
 "   ci,           Change in comma sep  da,    Delete argument
 "   cinb          Change in next block 2i)    Second inner parens
+"
+" Case coercion (abolish)
+"   crs           snake_case           crc    camelCase
+"   crm           MixedCase            cru    UPPER_CASE
+"   crk           kebab-case           cr.    dot.case
 "
 " Bracket pairs (unimpaired)
 "   [q ]q         Prev/next quickfix   [b ]b  Prev/next buffer
 "   [e ]e         Exchange line up/dn  [<Sp>  Add blank line above
 "   [n ]n         Prev/next conflict
 "
-" Git (signify + fugitive)
+" Git (signify + fugitive + conflict-marker)
 "   :Git          Fugitive commands    [c ]c  Prev/next hunk
+"   [x ]x        Prev/next conflict marker
+"   ct            Choose theirs        co     Choose ours
+"   cb            Choose both          cd     Choose none
+"
+" Files (eunuch + fetch)
+"   :Rename       Rename file          :Delete  Delete file
+"   :Move         Move file            :Mkdir   Create directory
+"   :SudoWrite    Write with sudo
+"   nvim file:42  Open at line 42 (vim-fetch)
 "
 " Other
 "   ,s            Source vimrc         ,v     Edit vimrc
@@ -65,7 +80,7 @@ if empty(glob('~/.dotfiles/nvim/autoload/plug.vim'))
   augroup END
 endif
 
-call plug#begin()
+call plug#begin('~/.dotfiles/nvim/plugged')
 
 " Defaults
 Plug 'tpope/vim-sensible'
@@ -97,10 +112,13 @@ elseif isdirectory(expand('~/.fzf'))
   Plug '~/.fzf'
 endif
 Plug 'junegunn/fzf.vim'
+Plug 'kopischke/vim-fetch'
+Plug 'tpope/vim-eunuch'
 
 " Git
 Plug 'mhinz/vim-signify'
 Plug 'tpope/vim-fugitive'
+Plug 'rhysd/conflict-marker.vim'
 
 " Editing
 Plug 'sickill/vim-pasta'
@@ -108,7 +126,9 @@ Plug 'mg979/vim-visual-multi', { 'branch': 'master' }
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-unimpaired'
+Plug 'tpope/vim-abolish'
 Plug 'wellle/targets.vim'
+Plug 'AndrewRadev/splitjoin.vim'
 
 " Navigation
 Plug 'easymotion/vim-easymotion'
@@ -119,10 +139,20 @@ Plug 'tmux-plugins/vim-tmux', { 'for': 'tmux' }
 call plug#end()
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Built-in packages (Vim 9+)
+" Built-in packages
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-packadd comment
-packadd hlyank
+if has('nvim')
+  " Neovim 0.10+: commenting (gc/gcc) is built-in, no packadd needed.
+  " Highlight yanked text via the Lua API.
+  augroup nvim_hlyank
+    autocmd!
+    autocmd TextYankPost * silent! lua vim.highlight.on_yank({timeout=200})
+  augroup END
+else
+  " Vim 9.1+: built-in comment and highlight-yank packages
+  silent! packadd comment
+  silent! packadd hlyank
+endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Core
@@ -135,9 +165,18 @@ set shortmess+=c
 set nomodeline
 set signcolumn=yes
 set fileformats=unix,dos,mac
+set nojoinspaces
+set splitbelow
+set splitright
+set virtualedit=block
+
+if has('nvim')
+  set inccommand=split
+endif
 
 if executable('rg')
   set grepprg=rg\ --color=never
+  set grepformat=%f:%l:%c:%m
 endif
 
 if has('clipboard')
@@ -154,6 +193,12 @@ if !isdirectory($HOME . '/.vim/undodir')
   call mkdir($HOME . '/.vim/undodir', 'p', 0700)
 endif
 set undodir=~/.vim/undodir
+
+set swapfile
+if !isdirectory($HOME . '/.vim/swap')
+  call mkdir($HOME . '/.vim/swap', 'p', 0700)
+endif
+set directory=~/.vim/swap//
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Display
@@ -349,7 +394,7 @@ nnoremap <silent> gh :call <SID>show_documentation()<CR>
 
 augroup coc_cursorhold
   autocmd!
-  autocmd CursorHold * silent call CocActionAsync('highlight')
+  autocmd CursorHold * if exists('*CocActionAsync') | silent call CocActionAsync('highlight') | endif
 augroup END
 
 nnoremap <silent> <leader>co  :<C-u>CocList outline<cr>

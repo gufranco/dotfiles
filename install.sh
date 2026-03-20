@@ -120,6 +120,16 @@ case "$(uname)" in
     log_success "System updated"
 
     ############################################################################
+    # Third-party repositories (latest versions from maintainers)
+    ############################################################################
+    log_info "Adding third-party repositories..."
+    sudo add-apt-repository -y ppa:git-core/ppa >/dev/null 2>&1 || true
+    sudo add-apt-repository -y ppa:jonathonf/vim >/dev/null 2>&1 || true
+    sudo add-apt-repository -y ppa:neovim-ppa/stable >/dev/null 2>&1 || true
+    sudo apt update -qq
+    log_success "Repositories configured"
+
+    ############################################################################
     # Basic packages
     ############################################################################
     log_info "Installing basic packages..."
@@ -607,11 +617,12 @@ log_info "Setting up Git..."
 safe_link "$HOME/.dotfiles/git/.gitconfig" "$HOME/.gitconfig"
 
 ############################################################################
-# Vim
+# Vim & Neovim (shared config)
 ############################################################################
-log_info "Setting up Vim..."
-safe_link "$HOME/.dotfiles/vim" "$HOME/.vim"
-safe_link "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
+log_info "Setting up Vim & Neovim..."
+safe_link "$HOME/.dotfiles/nvim" "$HOME/.vim"
+safe_link "$HOME/.dotfiles/nvim/init.vim" "$HOME/.vimrc"
+safe_link "$HOME/.dotfiles/nvim" "$HOME/.config/nvim"
 
 ############################################################################
 # GPG

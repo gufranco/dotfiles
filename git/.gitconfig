@@ -340,6 +340,8 @@
   wt = worktree
   wtl = worktree list
   wta = worktree add
+  wtp = worktree prune
+  task = "!f() { root=$(git rev-parse --show-toplevel); repo=$(basename \"$root\"); safe=$(echo \"$2\" | sed 's/[^a-zA-Z0-9_-]/-/g'); git fetch origin \"$1\" && git worktree add \"${root}/../${repo}-${safe}\" -b \"$2\" \"origin/$1\"; }; f"
 
   # Diff Improved
   diff-stat = diff --stat

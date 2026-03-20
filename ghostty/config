@@ -12,7 +12,7 @@ window-padding-x = 4
 window-padding-y = 4
 
 # Scrollback
-scrollback-limit = 2000
+scrollback-limit = 10000
 
 # macOS
 macos-option-as-alt = true

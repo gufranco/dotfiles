@@ -549,3 +549,42 @@ function sync_games() {
   echo ""
   echo ""
 }
+
+################################################################################
+# Create directory and cd into it
+################################################################################
+function mkd() {
+  if [ -z "$1" ]; then
+    echo "Usage: mkd <directory>" >&2
+    return 1
+  fi
+
+  mkdir -p "$1" && cd "$1" || return 1
+}
+
+################################################################################
+# Jump to a parent directory by name
+################################################################################
+function bd() {
+  if [ -z "$1" ]; then
+    cd ..
+    return
+  fi
+
+  local target="$1"
+  local current="$PWD"
+
+  while [ "$current" != "/" ]; do
+    current="$(dirname "$current")"
+    local dir_name
+    dir_name="$(basename "$current")"
+
+    if [[ "$dir_name" == "$target"* ]]; then
+      cd "$current" || return 1
+      return
+    fi
+  done
+
+  echo "No parent directory matching '$target'" >&2
+  return 1
+}

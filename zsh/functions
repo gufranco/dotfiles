@@ -229,8 +229,105 @@ function zero_fill_verify() {
 # Sync games library
 ################################################################################
 function sync_games() {
-  # Region filters shared by Redump and No-Intro syncs
   local REGION_FILTERS=(
+    # Exclude: non-retail content (before region includes so these take priority)
+    --filter "- *\(Demo\)*"
+    --filter "- *\(Beta\)*"
+    --filter "- *\(Beta,*\)*"
+    --filter "- *\(Proto\)*"
+    --filter "- *\(Proto,*\)*"
+    --filter "- *\(Sample\)*"
+    --filter "- *\(Promo\)*"
+    --filter "- *\(Taikenban\)*"
+    --filter "- *\(Trial\)*"
+    --filter "- *\(Pirate\)*"
+    --filter "- *\(Pirate,*\)*"
+    --filter "- *Action Replay*"
+    --filter "- *GameShark*"
+    --filter "- *Code Breaker*"
+    --filter "- *Game Enhancer*"
+    --filter "- *Swap Magic*"
+    --filter "- *FreeLoader*"
+    --filter "- *Pro Action Replay*"
+    --filter "- *Advance Game Port*"
+    --filter "- *Cheat*"
+    --filter "- *Max Drive*"
+    --filter "- *Max Memory*"
+    --filter "- *Memory Manager*"
+    --filter "- *SharkPort*"
+    --filter "- *SharkByte*"
+    --filter "- *X-Port*"
+    --filter "- *Xploder*"
+    --filter "- *DVD Region*"
+    --filter "- *Import Enabler*"
+    --filter "- *Media Launcher*"
+    --filter "- *Kiosk*"
+    --filter "- *Demo Disc*"
+    --filter "- *Magazine*"
+    --filter "- *Sampler*"
+    --filter "- *Jampack*"
+    --filter "- *PlayStation Underground*"
+    --filter "- *Interactive Multi-Game*"
+    --filter "- *Net Yaroze*"
+    --filter "- *Disc Station*"
+    --filter "- *Dengeki*"
+    --filter "- *Famitsu*"
+    --filter "- *Hyper Catalog*"
+    --filter "- *Develo Magazine*"
+    --filter "- *Furoku*"
+    --filter "- *GamePro Action*"
+    --filter "- *Ultimate Codes*"
+    --filter "- *Max Play*"
+    --filter "- *Advance Connector*"
+    --filter "- *DC X-Terminator*"
+    --filter "- *Universal Adapter*"
+    --filter "- *Game Converter*"
+    --filter "- *MP3 DC*"
+    --filter "- *Duck Video Tools*"
+    --filter "- *Laser Clean*"
+    --filter "- *HDTV Player*"
+    --filter "- *Parental GameLock*"
+    --filter "- *QCast*"
+    --filter "- *Xtreme FM*"
+    --filter "- *Hot 100 Saves*"
+    --filter "- *Mega Memory*"
+    --filter "- *Fantasy Master*"
+    --filter "- *Compton*Interactive*"
+    --filter "- *Maxim*Instant Messenger*"
+    --filter "- *Max TV*"
+    --filter "- *Max Media*"
+    --filter "- *Xtreme Sports Master*"
+    --filter "- *Race Master*"
+    --filter "- *GTA Cheat*"
+    --filter "- *Electronic Gaming Monthly*"
+    --filter "- *PS-X-Change*"
+    --filter "- *Breaker Pro*"
+    --filter "- *Codebreaker*"
+    --filter "- *Football Midseason Update*"
+    --filter "- *RaceMaster*"
+    --filter "- *DSP Music Revelation*"
+    --filter "- *CodeBreaker*"
+    --filter "- *Mega Memory Card*"
+    --filter "- *Ninjapass*"
+    --filter "- *Max Media*"
+
+    # Include: save these regions before any exclude can fire
+    --filter "+ *\(World*\)*"
+    --filter "+ *, World*\)*"
+    --filter "+ *\(USA*\)*"
+    --filter "+ *, USA*\)*"
+    --filter "+ *\(Japan*\)*"
+    --filter "+ *, Japan*\)*"
+    --filter "+ *\(Brazil*\)*"
+    --filter "+ *, Brazil*\)*"
+    --filter "+ *\(Canada*\)*"
+    --filter "+ *, Canada*\)*"
+    --filter "+ *\(Unknown*\)*"
+    --filter "+ *, Unknown*\)*"
+    --filter "+ *\(Export*\)*"
+    --filter "+ *, Export*\)*"
+
+    # Exclude: Europe
     --filter "- *Europe\)*"
     --filter "- *Germany\)*"
     --filter "- *France\)*"
@@ -258,223 +355,306 @@ function sync_games() {
     --filter "- *Ireland\)*"
     --filter "- *Iceland\)*"
     --filter "- *UK\)*"
-    --filter "- *Australia\)*"
-    --filter "- *New Zealand\)*"
     --filter "- *Scandinavia\)*"
+
+    # Exclude: Asia
     --filter "- *Asia\)*"
     --filter "- *Korea\)*"
     --filter "- *China\)*"
     --filter "- *Taiwan\)*"
     --filter "- *Hong Kong\)*"
-    --filter "+ *World\)*"
-    --filter "+ *USA\)*"
-    --filter "+ *Japan\)*"
-    --filter "+ *Brazil\)*"
-    --filter "- *"
+    --filter "- *India\)*"
+
+    # Exclude: Middle East
+    --filter "- *Israel\)*"
+    --filter "- *Saudi Arabia\)*"
+    --filter "- *UAE\)*"
+    --filter "- *United Arab Emirates\)*"
+    --filter "- *Turkey\)*"
+
+    # Exclude: Oceania
+    --filter "- *Australia\)*"
+    --filter "- *New Zealand\)*"
+
+    # Exclude: Africa
+    --filter "- *South Africa\)*"
+  )
+
+  # Exclude Japan too
+  local NO_JAPAN_FILTERS=(
+    --filter "- *\(Japan*\)*"
+    --filter "- *, Japan*\)*"
   )
 
   __sync_redump() {
-  local group="Redump"
-  local folders=(
-    "NEC - PC Engine CD & TurboGrafx CD"
-    "Nintendo - GameCube - NKit RVZ [zstd-19-128k]"
-    "Sega - Dreamcast - GDI Files"
-    "Sega - Dreamcast"
-    "Sega - Mega CD & Sega CD"
-    "Sega - Saturn"
-    "SNK - Neo Geo CD"
-    "Sony - PlayStation"
-    "Sony - PlayStation Portable"
-    "Sony - PlayStation 2"
-    "Video CD"
-  )
+    local group="Redump"
+    local folders=(
+      "NEC - PC Engine CD & TurboGrafx CD"
+      "Sega - Saturn"
+      "SNK - Neo Geo CD"
+    )
+    local folders_no_japan=(
+      "Nintendo - GameCube - NKit RVZ [zstd-19-128k]"
+      "Sega - Dreamcast - GDI Files"
+      "Sega - Dreamcast"
+      "Sega - Mega CD & Sega CD"
+      "Sony - PlayStation"
+      "Sony - PlayStation Portable"
+      "Sony - PlayStation 2"
+    )
 
-  local total=${#folders[@]}
-  local current=0
+    local total=$(( ${#folders[@]} + ${#folders_no_japan[@]} ))
+    local current=0
 
-  echo ""
-  __log_info "==============================================================="
-  __log_info "Syncing $group ($total collections)"
-  __log_info "==============================================================="
-  echo ""
+    echo ""
+    __log_info "==============================================================="
+    __log_info "Syncing $group ($total collections)"
+    __log_info "==============================================================="
+    echo ""
 
-  for folder in "${folders[@]}"; do
-    ((current++))
-    mkdir -p "./$group/$folder/"
-    __log_info "[$current/$total] $folder"
+    for folder in "${folders[@]}"; do
+      ((current++))
+      mkdir -p "./$group/$folder/"
+      __log_info "[$current/$total] $folder"
 
-    rclone sync \
-      --progress \
-      --ignore-case \
-      --multi-thread-streams=0 \
-      --size-only \
-      --delete-excluded \
-      "${REGION_FILTERS[@]}" \
-      --http-url "https://myrient.erista.me/files/$group/" \
-      ":http:$folder/" \
-      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
-  done
+      rclone sync \
+        --progress \
+        --ignore-case \
+        --multi-thread-streams=0 \
+        --size-only \
+        --delete-excluded \
+        --retries 3 \
+        --retries-sleep 10s \
+        --low-level-retries 10 \
+        "${REGION_FILTERS[@]}" \
+        --http-url "https://myrient.erista.me/files/$group/" \
+        ":http:$folder/" \
+        "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
+    done
 
-  echo ""
-  __log_success "$group sync completed ($total collections)"
-  echo ""
+    for folder in "${folders_no_japan[@]}"; do
+      ((current++))
+      mkdir -p "./$group/$folder/"
+      __log_info "[$current/$total] $folder (no Japan)"
+
+      rclone sync \
+        --progress \
+        --ignore-case \
+        --multi-thread-streams=0 \
+        --size-only \
+        --delete-excluded \
+        --retries 3 \
+        --retries-sleep 10s \
+        --low-level-retries 10 \
+        "${NO_JAPAN_FILTERS[@]}" \
+        "${REGION_FILTERS[@]}" \
+        --http-url "https://myrient.erista.me/files/$group/" \
+        ":http:$folder/" \
+        "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
+    done
+
+    echo ""
+    __log_success "$group sync completed ($total collections)"
+    echo ""
   }
 
   __sync_internet_archive() {
-  local group="Internet Archive"
-  local folders=(
-    "desktop_20240424"
-    "htgdb-gamepacks"
-    "mdplus_collection_22_04_16"
-    "neo-geo-aes-romset"
-    "Neo-geoRomCollectionByGhostware"
-    "neogeoaesmvscomplete"
-    "RetroarchSystemFiles/Retroarch-System/"
-    "ric64s-neosd-rom-archive"
-    "rom_scene_collection"
-    "rom-hack-patch-archive"
-    "romhacking.net-20240801"
-  )
+    local group="Internet Archive"
+    local folders=(
+      "desktop_20240424"
+      "htgdb-gamepacks"
+      "mdplus_collection_22_04_16"
+      "neo-geo-aes-romset"
+      "Neo-geoRomCollectionByGhostware"
+      "neogeoaesmvscomplete"
+      "RetroarchSystemFiles/Retroarch-System/"
+      "ric64s-neosd-rom-archive"
+      "rom_scene_collection"
+      "rom-hack-patch-archive"
+      "romhacking.net-20240801"
+    )
 
-  local total=${#folders[@]}
-  local current=0
+    local total=${#folders[@]}
+    local current=0
 
-  echo ""
-  __log_info "==============================================================="
-  __log_info "Syncing $group ($total collections)"
-  __log_info "==============================================================="
-  echo ""
+    echo ""
+    __log_info "==============================================================="
+    __log_info "Syncing $group ($total collections)"
+    __log_info "==============================================================="
+    echo ""
 
-  for folder in "${folders[@]}"; do
-    ((current++))
-    mkdir -p "./$group/$folder/"
-    __log_info "[$current/$total] $folder"
+    for folder in "${folders[@]}"; do
+      ((current++))
+      mkdir -p "./$group/$folder/"
+      __log_info "[$current/$total] $folder"
 
-    rclone sync \
-      --progress \
-      --ignore-case \
-      --multi-thread-streams=0 \
-      --size-only \
-      --delete-excluded \
-      \
-      --exclude "*.{torrent,xml,sqlite,png,jpg,jpeg,gif,bmp,nfo,diz,txt,md,pdf,html,htm}" \
-      \
-      "archive.org:$folder/" \
-      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
-  done
+      rclone sync \
+        --progress \
+        --ignore-case \
+        --multi-thread-streams=0 \
+        --size-only \
+        --delete-excluded \
+        --retries 3 \
+        --retries-sleep 10s \
+        --low-level-retries 10 \
+        --exclude "*.{torrent,xml,sqlite,png,jpg,jpeg,gif,bmp,nfo,diz,txt,md,pdf,html,htm}" \
+        ":internetarchive:$folder/" \
+        "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
+    done
 
-  echo ""
-  __log_success "$group sync completed ($total collections)"
-  echo ""
+    echo ""
+    __log_success "$group sync completed ($total collections)"
+    echo ""
   }
 
   __sync_no_intro() {
-  local group="No-Intro"
-  local folders=(
-    "Bandai - WonderSwan"
-    "Bandai - WonderSwan Color"
-    "Bandai - WonderSwan Color (Aftermarket)"
-    "Microsoft - MSX"
-    "Microsoft - MSX (Aftermarket)"
-    "Microsoft - MSX2"
-    "Microsoft - MSX2 (Aftermarket)"
-    "NEC - PC Engine - TurboGrafx-16"
-    "NEC - PC Engine - TurboGrafx-16 (Aftermarket)"
-    "NEC - PC Engine - TurboGrafx-16 (Private)"
-    "NEC - PC Engine SuperGrafx"
-    "Nintendo - Family Computer Disk System (FDS)"
-    "Nintendo - Family Computer Disk System (FDS) (Aftermarket)"
-    "Nintendo - Family Computer Disk System (QD)"
-    "Nintendo - Game Boy"
-    "Nintendo - Game Boy (Aftermarket)"
-    "Nintendo - Game Boy (Private)"
-    "Nintendo - Game Boy Advance"
-    "Nintendo - Game Boy Advance (Aftermarket)"
-    "Nintendo - Game Boy Advance (Multiboot)"
-    "Nintendo - Game Boy Advance (Play-Yan)"
-    "Nintendo - Game Boy Advance (Private)"
-    "Nintendo - Game Boy Advance (Video)"
-    "Nintendo - Game Boy Advance (Video) (Aftermarket)"
-    "Nintendo - Game Boy Advance (Video) (Private)"
-    "Nintendo - Game Boy Advance (e-Reader)"
-    "Nintendo - Game Boy Advance (e-Reader) (Aftermarket)"
-    "Nintendo - Game Boy Color"
-    "Nintendo - Game Boy Color (Aftermarket)"
-    "Nintendo - Game Boy Color (Private)"
-    "Nintendo - New Nintendo 3DS (Decrypted)"
-    "Nintendo - Nintendo 3DS (Decrypted)"
-    "Nintendo - Nintendo 64 (BigEndian)"
-    "Nintendo - Nintendo 64 (BigEndian) (Aftermarket)"
-    "Nintendo - Nintendo 64 (BigEndian) (Private)"
-    "Nintendo - Nintendo 64DD"
-    "Nintendo - Nintendo DS (Decrypted)"
-    "Nintendo - Nintendo DS (Decrypted) (Aftermarket)"
-    "Nintendo - Nintendo DS (Decrypted) (Private)"
-    "Nintendo - Nintendo DSi (Decrypted)"
-    "Nintendo - Nintendo DSi (Digital)"
-    "Nintendo - Nintendo DSi (Digital) (CDN) (Decrypted)"
-    "Nintendo - Nintendo Entertainment System (Headered)"
-    "Nintendo - Nintendo Entertainment System (Headered) (Aftermarket)"
-    "Nintendo - Nintendo Entertainment System (Headered) (Private)"
-    "Nintendo - Nintendo Entertainment System (Headerless)"
-    "Nintendo - Nintendo Entertainment System (Headerless) (Aftermarket)"
-    "Nintendo - Nintendo Entertainment System (Headerless) (Private)"
-    "Nintendo - Satellaview"
-    "Nintendo - Satellaview (Aftermarket)"
-    "Nintendo - Sufami Turbo"
-    "Nintendo - Super Nintendo Entertainment System"
-    "Nintendo - Super Nintendo Entertainment System (Aftermarket)"
-    "Nintendo - Super Nintendo Entertainment System (Private)"
-    "Nintendo - Virtual Boy"
-    "Nintendo - Virtual Boy (Aftermarket)"
-    "Nintendo - Virtual Boy (Private)"
-    "Non-Redump - NEC - PC Engine CD + TurboGrafx CD"
-    "Non-Redump - NEC - PC Engine CD + TurboGrafx CD (Aftermarket)"
-    "Non-Redump - Nintendo - Nintendo GameCube"
-    "Non-Redump - Nintendo - Nintendo GameCube (Aftermarket)"
-    "Non-Redump - Nintendo - Nintendo GameCube (Private)"
-    "Non-Redump - Nintendo - Wii"
-    "Non-Redump - Panasonic - 3DO Interactive Multiplayer"
-    "Non-Redump - Sega - Dreamcast"
-    "Non-Redump - Sega - Dreamcast (Aftermarket)"
-    "Non-Redump - Sega - Dreamcast (Private)"
-    "Non-Redump - Sega - Sega Mega CD + Sega CD"
-    "Non-Redump - Sega - Sega Mega CD + Sega CD (Aftermarket)"
-    "Non-Redump - Sega - Sega Saturn"
-    "Non-Redump - Sony - PlayStation"
-    "Non-Redump - Sony - PlayStation 2"
-    "Non-Redump - Sony - PlayStation Portable"
-    "SNK - NeoGeo Pocket"
-    "SNK - NeoGeo Pocket Color"
-    "Sega - 32X"
-    "Sega - 32X (Aftermarket)"
-    "Sega - Dreamcast (Visual Memory Unit)"
-    "Sega - Game Gear"
-    "Sega - Game Gear (Aftermarket)"
-    "Sega - Master System - Mark III"
-    "Sega - Master System - Mark III (Aftermarket)"
-    "Sega - Master System - Mark III (Private)"
-    "Sega - Mega Drive - Genesis"
-    "Sega - Mega Drive - Genesis (Aftermarket)"
-    "Sega - Mega Drive - Genesis (Private)"
-    "Sega - SG-1000"
-    "Sega - SG-1000 (Aftermarket)"
-    "Seta - Aleck64 (BigEndian)"
-  )
+    local group="No-Intro"
 
-  local total=${#folders[@]}
-  local current=0
+    # Japan-centric platforms: keep Japan (removing it would gut these collections)
+    local folders=(
+      "Bandai - WonderSwan"
+      "Bandai - WonderSwan Color"
+      "Bandai - WonderSwan Color (Aftermarket)"
+      "Microsoft - MSX"
+      "Microsoft - MSX (Aftermarket)"
+      "Microsoft - MSX2"
+      "Microsoft - MSX2 (Aftermarket)"
+      "NEC - PC Engine - TurboGrafx-16"
+      "NEC - PC Engine - TurboGrafx-16 (Aftermarket)"
+      "NEC - PC Engine - TurboGrafx-16 (Private)"
+      "NEC - PC Engine SuperGrafx"
+      "Nintendo - Family Computer Disk System (FDS)"
+      "Nintendo - Family Computer Disk System (FDS) (Aftermarket)"
+      "Nintendo - Family Computer Disk System (QD)"
+      "Nintendo - Nintendo 64DD"
+      "Nintendo - Satellaview"
+      "Nintendo - Satellaview (Aftermarket)"
+      "Nintendo - Sufami Turbo"
+      "Nintendo - Virtual Boy"
+      "Nintendo - Virtual Boy (Aftermarket)"
+      "Nintendo - Virtual Boy (Private)"
+      "SNK - NeoGeo Pocket"
+      "SNK - NeoGeo Pocket Color"
+      "Sega - Dreamcast (Visual Memory Unit)"
+      "Sega - SG-1000"
+      "Sega - SG-1000 (Aftermarket)"
+      "Seta - Aleck64 (BigEndian)"
+    )
 
-  echo ""
-  __log_info "==============================================================="
-  __log_info "Syncing $group ($total collections)"
-  __log_info "==============================================================="
-  echo ""
+    # Global platforms: exclude Japan
+    local folders_no_japan=(
+      "Nintendo - Game Boy"
+      "Nintendo - Game Boy (Aftermarket)"
+      "Nintendo - Game Boy (Private)"
+      "Nintendo - Game Boy Advance"
+      "Nintendo - Game Boy Advance (Aftermarket)"
+      "Nintendo - Game Boy Advance (Multiboot)"
+      "Nintendo - Game Boy Advance (Play-Yan)"
+      "Nintendo - Game Boy Advance (Private)"
+      "Nintendo - Game Boy Advance (Video)"
+      "Nintendo - Game Boy Advance (Video) (Aftermarket)"
+      "Nintendo - Game Boy Advance (Video) (Private)"
+      "Nintendo - Game Boy Advance (e-Reader)"
+      "Nintendo - Game Boy Advance (e-Reader) (Aftermarket)"
+      "Nintendo - Game Boy Color"
+      "Nintendo - Game Boy Color (Aftermarket)"
+      "Nintendo - Game Boy Color (Private)"
+      "Nintendo - Nintendo 64 (BigEndian)"
+      "Nintendo - Nintendo 64 (BigEndian) (Aftermarket)"
+      "Nintendo - Nintendo 64 (BigEndian) (Private)"
+      "Nintendo - Nintendo DS (Decrypted)"
+      "Nintendo - Nintendo DS (Decrypted) (Aftermarket)"
+      "Nintendo - Nintendo DS (Decrypted) (Private)"
+      "Nintendo - Nintendo DSi (Decrypted)"
+      "Nintendo - Nintendo DSi (Digital)"
+      "Nintendo - Nintendo DSi (Digital) (CDN) (Decrypted)"
+      "Nintendo - Nintendo Entertainment System (Headered)"
+      "Nintendo - Nintendo Entertainment System (Headered) (Aftermarket)"
+      "Nintendo - Nintendo Entertainment System (Headered) (Private)"
+      "Nintendo - Nintendo Entertainment System (Headerless)"
+      "Nintendo - Nintendo Entertainment System (Headerless) (Aftermarket)"
+      "Nintendo - Nintendo Entertainment System (Headerless) (Private)"
+      "Nintendo - Super Nintendo Entertainment System"
+      "Nintendo - Super Nintendo Entertainment System (Aftermarket)"
+      "Nintendo - Super Nintendo Entertainment System (Private)"
+      "Sega - 32X"
+      "Sega - 32X (Aftermarket)"
+      "Sega - Game Gear"
+      "Sega - Game Gear (Aftermarket)"
+      "Sega - Master System - Mark III"
+      "Sega - Master System - Mark III (Aftermarket)"
+      "Sega - Master System - Mark III (Private)"
+      "Sega - Mega Drive - Genesis"
+      "Sega - Mega Drive - Genesis (Aftermarket)"
+      "Sega - Mega Drive - Genesis (Private)"
+    )
 
-  for folder in "${folders[@]}"; do
-    ((current++))
-    mkdir -p "./$group/$folder/"
-    __log_info "[$current/$total] $folder"
+    local total=$(( ${#folders[@]} + ${#folders_no_japan[@]} ))
+    local current=0
+
+    echo ""
+    __log_info "==============================================================="
+    __log_info "Syncing $group ($total collections)"
+    __log_info "==============================================================="
+    echo ""
+
+    for folder in "${folders[@]}"; do
+      ((current++))
+      mkdir -p "./$group/$folder/"
+      __log_info "[$current/$total] $folder"
+
+      rclone sync \
+        --progress \
+        --ignore-case \
+        --multi-thread-streams=0 \
+        --size-only \
+        --delete-excluded \
+        --retries 3 \
+        --retries-sleep 10s \
+        --low-level-retries 10 \
+        "${REGION_FILTERS[@]}" \
+        --http-url "https://myrient.erista.me/files/$group/" \
+        ":http:$folder/" \
+        "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
+    done
+
+    for folder in "${folders_no_japan[@]}"; do
+      ((current++))
+      mkdir -p "./$group/$folder/"
+      __log_info "[$current/$total] $folder (no Japan)"
+
+      rclone sync \
+        --progress \
+        --ignore-case \
+        --multi-thread-streams=0 \
+        --size-only \
+        --delete-excluded \
+        --retries 3 \
+        --retries-sleep 10s \
+        --low-level-retries 10 \
+        "${NO_JAPAN_FILTERS[@]}" \
+        "${REGION_FILTERS[@]}" \
+        --http-url "https://myrient.erista.me/files/$group/" \
+        ":http:$folder/" \
+        "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
+    done
+
+    echo ""
+    __log_success "$group sync completed ($total collections)"
+    echo ""
+  }
+
+  __sync_ossc() {
+    local folder="OSSC"
+
+    echo ""
+    __log_info "==============================================================="
+    __log_info "Syncing $folder (firmware)"
+    __log_info "==============================================================="
+    echo ""
+
+    mkdir -p "./$folder/"
+    __log_info "Downloading OSSC firmware..."
 
     rclone sync \
       --progress \
@@ -482,47 +662,17 @@ function sync_games() {
       --multi-thread-streams=0 \
       --size-only \
       --delete-excluded \
-      "${REGION_FILTERS[@]}" \
-      --http-url "https://myrient.erista.me/files/$group/" \
-      ":http:$folder/" \
-      "./$group/$folder/" && __log_success "Completed: $folder" || __log_warning "Failed: $folder"
-  done
+      --retries 3 \
+      --retries-sleep 10s \
+      --low-level-retries 10 \
+      --exclude "*.{jic,txt}" \
+      --http-url "http://www.infocult.com/m/ossc/fw/v1-series/" \
+      ":http:" \
+      "./$folder" && __log_success "OSSC firmware sync completed" || __log_warning "OSSC firmware sync failed"
 
-  echo ""
-  __log_success "$group sync completed ($total collections)"
-  echo ""
+    echo ""
   }
 
-  __sync_ossc() {
-  local folder="OSSC"
-
-  echo ""
-  __log_info "==============================================================="
-  __log_info "Syncing $folder (firmware)"
-  __log_info "==============================================================="
-  echo ""
-
-  mkdir -p "./$folder/"
-  __log_info "Downloading OSSC firmware..."
-
-  rclone sync \
-    --progress \
-    --ignore-case \
-    --multi-thread-streams=0 \
-    --size-only \
-    --delete-excluded \
-    --exclude "*.{jic,txt}" \
-    --http-url "http://www.infocult.com/m/ossc/fw/v1-series/" \
-    ":http:" \
-    "./$folder" && __log_success "OSSC firmware sync completed" || __log_warning "OSSC firmware sync failed"
-
-  echo ""
-  }
-
-  local START_TIME
-  START_TIME=$(date +%s)
-
-  echo ""
   echo ""
   __log_info "================================================================"
   __log_info "  GAME LIBRARY SYNC - Starting"
@@ -534,57 +684,9 @@ function sync_games() {
   __sync_no_intro
   __sync_ossc
 
-  local END_TIME
-  END_TIME=$(date +%s)
-  local TOTAL_TIME=$((END_TIME - START_TIME))
-  local MINUTES=$((TOTAL_TIME / 60))
-  local SECONDS=$((TOTAL_TIME % 60))
-
   echo ""
   __log_success "================================================================"
   __log_success "  GAME LIBRARY SYNC - Completed"
   __log_success "================================================================"
   echo ""
-  __log_info "Total execution time: ${MINUTES}m ${SECONDS}s"
-  echo ""
-  echo ""
-}
-
-################################################################################
-# Create directory and cd into it
-################################################################################
-function mkd() {
-  if [ -z "$1" ]; then
-    echo "Usage: mkd <directory>" >&2
-    return 1
-  fi
-
-  mkdir -p "$1" && cd "$1" || return 1
-}
-
-################################################################################
-# Jump to a parent directory by name
-################################################################################
-function bd() {
-  if [ -z "$1" ]; then
-    cd ..
-    return
-  fi
-
-  local target="$1"
-  local current="$PWD"
-
-  while [ "$current" != "/" ]; do
-    current="$(dirname "$current")"
-    local dir_name
-    dir_name="$(basename "$current")"
-
-    if [[ "$dir_name" == "$target"* ]]; then
-      cd "$current" || return 1
-      return
-    fi
-  done
-
-  echo "No parent directory matching '$target'" >&2
-  return 1
 }

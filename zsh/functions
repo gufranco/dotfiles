@@ -231,24 +231,52 @@ function zero_fill_verify() {
 function sync_games() {
   local REGION_FILTERS=(
     # Exclude: non-retail content (before region includes so these take priority)
+    # All patterns are case-insensitive via --ignore-case on the rclone command
+
+    # Development and pre-release builds
     --filter "- *\(Demo\)*"
     --filter "- *\(Beta\)*"
     --filter "- *\(Beta,*\)*"
+    --filter "- *\(Beta [0-9]*\)*"
     --filter "- *\(Proto\)*"
     --filter "- *\(Proto,*\)*"
+    --filter "- *\(Proto [0-9]*\)*"
     --filter "- *\(Sample\)*"
     --filter "- *\(Promo\)*"
     --filter "- *\(Taikenban\)*"
     --filter "- *\(Trial\)*"
     --filter "- *\(Pirate\)*"
     --filter "- *\(Pirate,*\)*"
+    --filter "- *\(Debug*\)*"
+    --filter "- *\(Alpha\)*"
+    --filter "- *\(Pre-Production\)*"
+    --filter "- *\(Tech Demo\)*"
+
+    # Utility, test, and development programs
+    --filter "- *\(Program\)*"
+    --filter "- *\(Program,*\)*"
+    --filter "- *\(Test Program\)*"
+    --filter "- *\(Enhancement Chip\)*"
+    --filter "- *\(SDK*\)*"
+    --filter "- *\[BIOS\]*"
+
+    # Re-releases for other platforms (duplicates of original ROMs)
+    --filter "- *Virtual Console*"
+    --filter "- *Switch Online*"
+
+    # Competition and promotional copies
+    --filter "- *\(Competition Cart*\)*"
+    --filter "- *Not for Resale*"
+    --filter "- *\(Hibaihin\)*"
+
+    # Cheat devices and game enhancers
     --filter "- *Action Replay*"
     --filter "- *GameShark*"
     --filter "- *Code Breaker*"
+    --filter "- *Codebreaker*"
     --filter "- *Game Enhancer*"
     --filter "- *Swap Magic*"
     --filter "- *FreeLoader*"
-    --filter "- *Pro Action Replay*"
     --filter "- *Advance Game Port*"
     --filter "- *Cheat*"
     --filter "- *Max Drive*"
@@ -258,11 +286,34 @@ function sync_games() {
     --filter "- *SharkByte*"
     --filter "- *X-Port*"
     --filter "- *Xploder*"
+    --filter "- *PS-X-Change*"
+    --filter "- *Breaker Pro*"
+    --filter "- *Ninjapass*"
+
+    # Region and import bypass devices
     --filter "- *DVD Region*"
     --filter "- *Import Enabler*"
-    --filter "- *Media Launcher*"
-    --filter "- *Kiosk*"
+    --filter "- *Universal Adapter*"
+    --filter "- *Game Converter*"
+
+    # Demo, preview, and promotional discs
     --filter "- *Demo Disc*"
+    --filter "- *Demo CD*"
+    --filter "- *Preview Disc*"
+    --filter "- *Sneak Preview*"
+    --filter "- *Game Preview*"
+    --filter "- *Greatest Hits Vol*"
+    --filter "- *Pizza Hut*"
+    --filter "- *Toys R Us*"
+
+    # Bonus and premium content
+    --filter "- *\(Bonus Disc\)*"
+    --filter "- *\(Bonus Disk\)*"
+    --filter "- *Premium Disc*"
+    --filter "- *Premium CD*"
+    --filter "- *Omake*"
+
+    # Magazine and compilation discs
     --filter "- *Magazine*"
     --filter "- *Sampler*"
     --filter "- *Jampack*"
@@ -275,13 +326,55 @@ function sync_games() {
     --filter "- *Hyper Catalog*"
     --filter "- *Develo Magazine*"
     --filter "- *Furoku*"
+    --filter "- *Electronic Gaming Monthly*"
+    --filter "- *Tech Saturn*"
+    --filter "- *Saturn Super*"
+    --filter "- *Mogitate*"
+    --filter "- *Game-Ware*"
+    --filter "- *Sega Flash*"
+    --filter "- *PC Engine Fan*"
+    --filter "- *Ultra Box*"
+    --filter "- *Generator Vol*"
+    --filter "- *ADK World*"
+    --filter "- *Neo-Geo CD Special*"
+    --filter "- *CG Selection*"
+    --filter "- *Prime Selection*"
+
+    # Test, service, and system media
+    --filter "- *Test Disc*"
+    --filter "- *Test Cartridge*"
+    --filter "- *Service Disc*"
+    --filter "- *Start-Up Disc*"
+    --filter "- *HDD Utility*"
+    --filter "- *Debugging Station*"
+    --filter "- *Cleaning Kit*"
+    --filter "- *Firmware*"
+
+    # Browser and system software
+    --filter "- *Web Browser*"
+    --filter "- *Internet Browser*"
+    --filter "- *Photo CD*"
+    --filter "- *Go!Explore*"
+
+    # Non-game media (karaoke, music, video)
+    --filter "- *Karaoke Studio*"
+    --filter "- *ROM^2 Karaoke*"
+    --filter "- *Playboy*Karaoke*"
+    --filter "- *Video Clip*"
+    --filter "- *Visual Collection*"
+    --filter "- *Voice Selection*"
+    --filter "- *Digital Dance Mix*"
+    --filter "- *Make My Video*"
+    --filter "- *Soundtrack Disc*"
+
+    # Specific utility and accessory software
+    --filter "- *Kiosk*"
+    --filter "- *Media Launcher*"
     --filter "- *GamePro Action*"
     --filter "- *Ultimate Codes*"
     --filter "- *Max Play*"
     --filter "- *Advance Connector*"
     --filter "- *DC X-Terminator*"
-    --filter "- *Universal Adapter*"
-    --filter "- *Game Converter*"
     --filter "- *MP3 DC*"
     --filter "- *Duck Video Tools*"
     --filter "- *Laser Clean*"
@@ -298,18 +391,16 @@ function sync_games() {
     --filter "- *Max Media*"
     --filter "- *Xtreme Sports Master*"
     --filter "- *Race Master*"
-    --filter "- *GTA Cheat*"
-    --filter "- *Electronic Gaming Monthly*"
-    --filter "- *PS-X-Change*"
-    --filter "- *Breaker Pro*"
-    --filter "- *Codebreaker*"
-    --filter "- *Football Midseason Update*"
     --filter "- *RaceMaster*"
+    --filter "- *Football Midseason Update*"
     --filter "- *DSP Music Revelation*"
-    --filter "- *CodeBreaker*"
-    --filter "- *Mega Memory Card*"
-    --filter "- *Ninjapass*"
-    --filter "- *Max Media*"
+    --filter "- *Debug Indie*"
+    --filter "- *Develo*Starter*"
+    --filter "- *PSY-Q*"
+    --filter "- *Pilot Disk*"
+    --filter "- *Pilot Disc*"
+    --filter "- *Taiken Soft*"
+    --filter "- *Yokoku*"
 
     # Include: save these regions before any exclude can fire
     --filter "+ *\(World*\)*"

@@ -320,8 +320,6 @@ function sync_games() {
     --filter "+ *, Japan*\)*"
     --filter "+ *\(Brazil*\)*"
     --filter "+ *, Brazil*\)*"
-    --filter "+ *\(Canada*\)*"
-    --filter "+ *, Canada*\)*"
     --filter "+ *\(Unknown*\)*"
     --filter "+ *, Unknown*\)*"
     --filter "+ *\(Export*\)*"
@@ -371,6 +369,9 @@ function sync_games() {
     --filter "- *UAE\)*"
     --filter "- *United Arab Emirates\)*"
     --filter "- *Turkey\)*"
+
+    # Exclude: Canada (standalone only; (USA, Canada) is saved by the USA include above)
+    --filter "- *Canada\)*"
 
     # Exclude: Oceania
     --filter "- *Australia\)*"

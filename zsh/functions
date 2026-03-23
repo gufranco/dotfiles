@@ -307,8 +307,8 @@ function sync_games() {
     --filter "- *Toys R Us*"
 
     # Bonus and premium content
-    --filter "- *\(Bonus Disc\)*"
-    --filter "- *\(Bonus Disk\)*"
+    # --filter "- *\(Bonus Disc\)*"
+    # --filter "- *\(Bonus Disk\)*"
     --filter "- *Premium Disc*"
     --filter "- *Premium CD*"
     --filter "- *Omake*"

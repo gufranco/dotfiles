@@ -838,9 +838,7 @@ case "$(uname)" in
   "Darwin")
     brew cleanup -s 2>/dev/null || true
 
-    log_info "Refreshing Spotlight index..."
-    mdimport /Applications ~/Applications 2>/dev/null
-    log_success "Spotlight index refreshed"
+    __macos_post_install_cleanup
 
     # TRIM
     if [ "$(system_profiler SPSerialATADataType 2>/dev/null | grep 'TRIM Support' | awk '{print $3}')" = "Yes" ]; then

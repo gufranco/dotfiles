@@ -99,6 +99,23 @@ function __git_sync() {
 }
 
 ################################################################################
+# macOS post-install cleanup (shared by install.sh and f5)
+################################################################################
+function __macos_post_install_cleanup() {
+  if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
+    __log_info "Cleaning Launchpad cache..."
+    if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
+      killall Dock || true
+      __log_success "Launchpad cache cleaned"
+    fi
+  fi
+
+  __log_info "Refreshing Spotlight index..."
+  mdimport /Applications ~/Applications 2>/dev/null
+  __log_success "Spotlight index refreshed"
+}
+
+################################################################################
 # VM / container internal helpers
 ################################################################################
 function __calculate_vm_cores() {
@@ -886,17 +903,7 @@ function __f5_update_macos() {
     mas upgrade && __log_success "Mac App Store apps updated"
   fi
 
-  if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
-    __log_info "Cleaning Launchpad cache..."
-    if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
-      killall Dock || true
-      __log_success "Launchpad cache cleaned"
-    fi
-  fi
-
-  __log_info "Refreshing Spotlight index..."
-  mdimport /Applications ~/Applications 2>/dev/null
-  __log_success "Spotlight index refreshed"
+  __macos_post_install_cleanup
 
   __log_success "macOS packages updated"
 }

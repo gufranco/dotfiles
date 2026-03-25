@@ -40,7 +40,7 @@ export SAVEHIST=2147483647
 export LANG=pt_BR.UTF-8
 
 # Auto-report execution time for commands taking longer than 1 second
-export REPORTTIME=1
+# export REPORTTIME=1
 
 ################################################################################
 # Terminal

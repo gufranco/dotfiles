@@ -17,7 +17,7 @@
 .TemporaryItems
 .Trashes
 .VolumeIcon.icns
-Icon?
+Icon[!a-zA-Z0-9]
 Network Trash Folder
 Temporary Items
 

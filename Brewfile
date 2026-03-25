@@ -190,6 +190,7 @@ brew 'entr'
 brew 'hyperfine'
 brew 'just'
 brew 'mkcert'
+brew 'opencode'
 brew 'shellcheck'
 brew 'tokei'
 brew 'watchman'
@@ -283,6 +284,7 @@ cask 'codex'
 cask 'codex-app' if architecture == 'arm64'
 cask 'jan' if architecture == 'arm64'
 cask 'lm-studio' if architecture == 'arm64'
+cask 'opencode-desktop'
 
 ################################################################################
 # Casks - API & Database
@@ -435,6 +437,6 @@ end
 # Macbook Retina 12 2017:   C02TW09THH29
 ################################################################################
 if ['C02J332HDV30', 'C02TW09THH29'].include?(serial)
-  cask 'aldente'
+  # cask 'aldente'
   cask 'opencore-patcher'
 end

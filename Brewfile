@@ -230,6 +230,7 @@ brew 'cmus'
 brew 'fatsort'
 brew 'ffmpeg'
 brew 'media-control'
+brew 'subliminal'
 
 ################################################################################
 # Retro Gaming & ROM Tools
@@ -359,7 +360,6 @@ cask 'maestral'
 ################################################################################
 # Casks - Media & Entertainment
 ################################################################################
-cask 'flixtools'
 cask 'handbrake-app'
 cask 'iina'
 cask 'jdownloader'

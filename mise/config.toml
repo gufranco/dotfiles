@@ -1,0 +1,10 @@
+[tools]
+node = "lts"
+python = "latest"
+ruby = "latest"
+
+[settings]
+ruby.compile = false
+
+[settings.node]
+gpg_verify = false

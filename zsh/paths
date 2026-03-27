@@ -23,12 +23,10 @@ case "$(uname)" in
     __add_gnu_tool "libpq"
     __add_gnu_tool "openssl"
 
-    # Ruby
+    # Ruby (keg-only fallback, mise shims take priority via settings)
     __add_gnu_tool "ruby"
-    # __add_to_path "$HOMEBREW_PREFIX/lib/ruby/gems/3.4.0/bin"
 
     # Development environments
-    export NVM_DIR="$HOME/.nvm"
     export PNPM_HOME="$HOME/Library/pnpm"
     __add_to_path "$PNPM_HOME"
 

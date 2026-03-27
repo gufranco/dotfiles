@@ -331,50 +331,6 @@ function __confirm_colima_config() {
 }
 
 ################################################################################
-# Lazy loading helpers
-################################################################################
-function __create_lazy_stub() {
-  local command_name="$1"
-  local loader_function="$2"
-
-  eval "${command_name}() { ${loader_function}; ${command_name} \"\$@\"; }"
-}
-
-function __create_lazy_stubs() {
-  local loader_function="$1"
-  shift
-  local commands=("$@")
-
-  for cmd in "${commands[@]}"; do
-    __create_lazy_stub "$cmd" "$loader_function"
-  done
-}
-
-################################################################################
-# NVM helpers
-################################################################################
-function __load_nvm() {
-  if [ ! -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ]; then
-    __log_skip "NVM not found, skipping initialization"
-    return
-  fi
-
-  # Remove stub functions if they exist
-  unset -f nvm 2>/dev/null
-  unset -f node 2>/dev/null
-  unset -f npm 2>/dev/null
-  unset -f npx 2>/dev/null
-  unset -f yarn 2>/dev/null
-  unset -f pnpm 2>/dev/null
-
-  # Load NVM
-  # shellcheck disable=SC1091
-  source "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
-  # shellcheck disable=SC1091
-  [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && source "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
-}
-
-################################################################################
 # Tokens helpers
 ################################################################################
 function __update_token() {
@@ -444,31 +400,6 @@ function __update_github_token() {
     "GITHUB_PAT" \
     "$HOME/.dotfiles/git/tokens/github.gpg" \
     "github_token"
-}
-
-################################################################################
-# Ruby / Chruby helpers
-################################################################################
-function __load_chruby() {
-  if [ ! -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh" ]; then
-    __log_skip "Chruby not found, skipping initialization"
-    return
-  fi
-
-  unset -f chruby 2>/dev/null
-  unset -f ruby 2>/dev/null
-  unset -f gem 2>/dev/null
-  unset -f bundle 2>/dev/null
-  unset -f rake 2>/dev/null
-  unset -f rails 2>/dev/null
-
-  # shellcheck disable=SC1091
-  source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh"
-  # shellcheck disable=SC1091
-  [ -s "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh" ] && source "$HOMEBREW_PREFIX/opt/chruby/share/chruby/auto.sh"
-
-  export __CHRUBY_LOADED=1
-  __log_success "Chruby loaded"
 }
 
 ################################################################################
@@ -856,21 +787,24 @@ function __f5_update_plugins() {
   fi
 }
 
-function __f5_update_nodejs() {
-  if ! __cmd_exists nvm && ! type __load_nvm >/dev/null 2>&1; then
-    __log_skip "NVM not installed"
+function __f5_update_mise() {
+  if ! __cmd_exists mise; then
+    __log_skip "mise not installed"
     return
   fi
 
-  __log_info "Updating Node.js LTS..."
-  type __load_nvm >/dev/null 2>&1 && __load_nvm
+  __log_info "Updating mise runtimes..."
 
-  if nvm install --lts && \
-     nvm use --lts && \
-     nvm alias default "lts/*"; then
-    __log_success "Node.js LTS updated to $(node --version 2>/dev/null || echo 'unknown')"
+  local upgrade_ok=true
+  local prune_ok=true
+
+  mise upgrade --yes >/dev/null 2>&1 || upgrade_ok=false
+  mise prune --yes >/dev/null 2>&1 || prune_ok=false
+
+  if $upgrade_ok && $prune_ok; then
+    __log_success "mise runtimes updated"
   else
-    __log_warning "Failed to update Node.js LTS"
+    __log_warning "mise runtimes updated with warnings"
   fi
 }
 

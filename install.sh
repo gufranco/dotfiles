@@ -371,6 +371,22 @@ case "$(uname)" in
     fi
 
     ############################################################################
+    # mise
+    ############################################################################
+    if ! cmd_exists mise; then
+      log_info "Installing mise..."
+      apt_add_key_and_repo \
+        "https://mise.jdx.dev/gpg-key.pub" \
+        "/etc/apt/keyrings/mise-archive-keyring.gpg" \
+        "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=$(dpkg --print-architecture)] https://mise.jdx.dev/deb stable main" \
+        "/etc/apt/sources.list.d/mise.list" \
+        "mise"
+      log_success "mise installed"
+    else
+      log_skip "mise already installed"
+    fi
+
+    ############################################################################
     # Desktop apps (skip in CI - no GUI available)
     ############################################################################
     if [[ -z "$CI" ]]; then
@@ -594,7 +610,21 @@ log_info "Setting up Node.js configs..."
 safe_link "$HOME/.dotfiles/nodejs/.npmrc" "$HOME/.npmrc"
 safe_link "$HOME/.dotfiles/nodejs/.yarnrc.yml" "$HOME/.yarnrc.yml"
 safe_link "$HOME/.dotfiles/nodejs/.pnpmrc" "$HOME/.pnpmrc"
-mkdir -p "$HOME/.nvm"
+
+############################################################################
+# mise
+############################################################################
+log_info "Setting up mise..."
+mkdir -p "$HOME/.config/mise"
+safe_link "$HOME/.dotfiles/mise/config.toml" "$HOME/.config/mise/config.toml"
+if cmd_exists mise; then
+  mise trust "$HOME/.dotfiles/mise/config.toml" >/dev/null 2>&1 || true
+  if mise install --yes 2>/dev/null; then
+    log_success "mise runtimes installed"
+  else
+    log_warning "mise install had warnings"
+  fi
+fi
 
 ############################################################################
 # Oh My Zsh

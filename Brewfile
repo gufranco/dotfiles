@@ -8,7 +8,6 @@ cpu = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
 storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824) + 255) / 256) * 256
-has_fans = !`ioreg -l 2>/dev/null | grep -im1 fan`.strip.empty?
 single_display = /\AApple M[12]\z/.match?(cpu) || /\AMacBook(8,1|9,1|10,1|Air[89],)/i.match?(model)
 
 ################################################################################
@@ -194,6 +193,14 @@ brew 'watchman'
 brew 'xcodes'
 
 ################################################################################
+# Load Testing & Reliability
+################################################################################
+brew 'k6'
+brew 'stress-ng'
+brew 'toxiproxy'
+brew 'vegeta'
+
+################################################################################
 # Database & SaaS CLIs
 ################################################################################
 brew 'libpq'
@@ -343,7 +350,6 @@ cask 'coconutbattery'
 cask 'displaylink' if single_display
 cask 'grandperspective'
 cask 'logi-options+'
-cask 'macs-fan-control' if has_fans
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
 cask 'stats'

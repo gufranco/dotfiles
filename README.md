@@ -63,7 +63,7 @@ Commits and tags are signed by default. GPG keys are imported automatically, SSH
 
 ### Fast Shell Startup
 
-NVM, Chruby, and heavy tooling are lazy-loaded via stub functions. They only initialize when you first call `node`, `ruby`, or `nvm`.
+Node.js, Python, and Ruby are managed by [mise](https://mise.jdx.dev). Versions are defined in `mise/config.toml` and activated automatically in interactive shells. Per-project overrides go in a `.mise.toml` file in the project root.
 
 </td>
 </tr>

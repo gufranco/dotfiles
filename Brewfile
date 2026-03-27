@@ -162,19 +162,16 @@ brew 'trivy'
 ################################################################################
 # Languages & Package Managers
 ################################################################################
-brew 'chruby'
 brew 'golang', link: true
 brew 'golangci-lint'
 brew 'mise'
 brew 'node', link: true
-brew 'nvm'
 brew 'openjdk@17'
 brew 'oven-sh/bun/bun', link: true
 brew 'pipx'
 brew 'pnpm'
 brew 'python', link: true
 brew 'ruby', link: true
-brew 'ruby-install'
 brew 'rust', link: true
 brew 'uv'
 brew 'yarn'

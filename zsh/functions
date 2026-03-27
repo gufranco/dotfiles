@@ -18,7 +18,7 @@ function f5() {
   __f5_update_claude
   __f5_update_vim
   __f5_update_plugins
-  __f5_update_nodejs
+  __f5_update_mise
 
   case "$(uname)" in
     "Linux") __f5_update_linux ;;

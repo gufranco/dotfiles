@@ -924,8 +924,8 @@ function fat_sort() {
       ".Trash-*"
     )
 
+    local count
     for pattern in "${patterns[@]}"; do
-      local count
       count=$(command find "$mount_point" -name "$pattern" 2>/dev/null | command wc -l | tr -d ' ')
 
       if [ "$count" -gt 0 ]; then
@@ -942,22 +942,56 @@ function fat_sort() {
     fi
   }
 
-  local device="$1"
+  __fat_sort_resolve_device() {
+    local input="$1"
 
-  if [ -z "$device" ]; then
+    # Already a device path
+    if [ -b "$input" ] || [ -c "$input" ]; then
+      echo "$input"
+      return 0
+    fi
+
+    # Resolve from mount point
+    if [ -d "$input" ]; then
+      local resolved
+      case "$(uname)" in
+        Darwin)
+          resolved=$(diskutil info "$input" 2>/dev/null | awk -F': +' '/Device Node/ {print $2}')
+          ;;
+        Linux)
+          resolved=$(command findmnt -n -o SOURCE "$input" 2>/dev/null)
+          ;;
+      esac
+
+      if [ -n "$resolved" ]; then
+        echo "$resolved"
+        return 0
+      fi
+
+      __log_error "No device found for mount point: $input"
+      return 1
+    fi
+
+    __log_error "Not a device or mount point: $input"
+    return 1
+  }
+
+  local input="$1"
+
+  if [ -z "$input" ]; then
     __log_error "No device specified"
     echo ""
-    __log_info "Usage: fat_sort <device>"
-    __log_info "       fat_sort /dev/disk4     (macOS, whole disk)"
-    __log_info "       fat_sort /dev/disk4s1   (macOS, partition)"
-    __log_info "       fat_sort /dev/sdb1      (Linux, partition)"
+    __log_info "Usage: fat_sort <device|mount_point>"
+    __log_info "       fat_sort /dev/disk4       (macOS, whole disk)"
+    __log_info "       fat_sort /dev/disk4s1     (macOS, partition)"
+    __log_info "       fat_sort /dev/sdb1        (Linux, partition)"
+    __log_info "       fat_sort /Volumes/EZFLASH (macOS, mount point)"
+    __log_info "       fat_sort /mnt/usb         (Linux, mount point)"
     return 1
   fi
 
-  if [ ! -b "$device" ] && [ ! -c "$device" ]; then
-    __log_error "Device not found: $device"
-    return 1
-  fi
+  local device
+  device=$(__fat_sort_resolve_device "$input") || return 1
 
   local partition
   partition=$(__fat_sort_find_partition "$device") || return 1
@@ -982,7 +1016,7 @@ function fat_sort() {
 
   # Sort: alphabetical, case insensitive, directories first
   __log_info "Sorting..."
-  if sudo fatsort -c -o d "$partition"; then
+  if sudo fatsort -c -o d "$partition" >/dev/null; then
     __log_success "Device sorted: $partition"
   else
     __log_error "Failed to sort: $partition"

@@ -423,7 +423,7 @@ unless ENV['CI']
   ############################################################################
   # App Store - Games
   ############################################################################
-  if architecture == 'arm64' && storage >= 512
+  if architecture == 'arm64' && storage >= 2048
     mas 'Cyberpunk 2077', id: 6_633_429_424
     mas 'Death Stranding', id: 6_449_748_961
     mas 'Resident Evil 2', id: 1_640_632_432

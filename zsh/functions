@@ -483,10 +483,12 @@ function sync_games() {
     local group="Redump"
     local folders=(
       "NEC - PC Engine CD & TurboGrafx CD"
+      "Panasonic - 3DO Interactive Multiplayer"
       "Sega - Saturn"
       "SNK - Neo Geo CD"
     )
     local folders_no_japan=(
+      "Microsoft - Xbox"
       "Nintendo - GameCube - NKit RVZ [zstd-19-128k]"
       "Sega - Dreamcast - GDI Files"
       "Sega - Dreamcast"
@@ -772,9 +774,9 @@ function sync_games() {
   __log_info "================================================================"
   echo ""
 
-  __sync_redump
+  # __sync_redump
   __sync_internet_archive
-  __sync_no_intro
+  # __sync_no_intro
   __sync_ossc
 
   echo ""

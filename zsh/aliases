@@ -97,10 +97,7 @@ case "$(uname)" in
     fi
 
     # Multiple Cursor profiles
-    __alias_if_exists cursor cursor-onyx "command cursor --user-data-dir=$HOME/.cursor-onyx --extensions-dir=$HOME/.cursor-onyx/extensions"
-
-    # Multiple Claude Code profiles
-    __alias_if_exists claude claude-onyx "CLAUDE_CONFIG_DIR=$HOME/.claude-onyx command claude"
+    # __alias_if_exists cursor cursor-onyx "command cursor --user-data-dir=$HOME/.cursor-onyx --extensions-dir=$HOME/.cursor-onyx/extensions"
 
     # macOS-specific tool replacements
     __alias_if_exists tokei stats "command tokei"

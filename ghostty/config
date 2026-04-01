@@ -11,6 +11,9 @@ font-size = 14
 window-padding-x = 4
 window-padding-y = 4
 
+# Cursor
+cursor-style = block
+
 # Scrollback
 scrollback-limit = 10000
 

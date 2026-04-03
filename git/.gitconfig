@@ -347,6 +347,7 @@
   # Diff Improved
   diff-stat = diff --stat
   diff-words = diff --word-diff
+  dft = difftool --tool=difftastic --no-prompt
 
   # Log Extras
   today = log --since=midnight --oneline
@@ -354,6 +355,12 @@
 
   # Recovery
   recover = !git fsck --unreachable | grep commit | cut -d' ' -f3 | xargs git log --merges --no-walk
+
+################################################################################
+# Difftastic (structural diff, complements delta)
+################################################################################
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
 
 ################################################################################
 # Conditional Includes

@@ -32,6 +32,16 @@ Host bitbucket.org
   User git
   ForwardAgent yes
 
+Host nas ds923
+  HostName 192.168.0.2
+  User gufranco
+  PreferredAuthentications publickey,password
+  PasswordAuthentication yes
+  KbdInteractiveAuthentication yes
+  PubkeyAuthentication yes
+  ControlMaster no
+  ForwardAgent no
+
 ################################################################################
 # Global settings
 ################################################################################

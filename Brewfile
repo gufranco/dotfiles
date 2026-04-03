@@ -8,7 +8,6 @@ cpu = `sysctl -n machdep.cpu.brand_string`.strip
 model = `sysctl -n hw.model`.strip
 serial = `system_profiler SPHardwareDataType | grep "Serial Number (system)" | awk '{print $NF}'`.strip
 storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824) + 255) / 256) * 256
-single_display = /\AApple M[12]\z/.match?(cpu) || /\AMacBook(8,1|9,1|10,1|Air[89],)/i.match?(model)
 
 ################################################################################
 # Homebrew taps
@@ -26,9 +25,10 @@ tap 'withgraphite/tap'
 ################################################################################
 # Shell & Terminal
 ################################################################################
-# brew 'starship'
+brew 'atuin'
 brew 'bash'
 brew 'direnv'
+brew 'starship'
 brew 'tmux'
 brew 'zsh'
 brew 'zsh-syntax-highlighting'
@@ -82,6 +82,7 @@ brew 'fzf'
 brew 'nnn'
 brew 'ripgrep'
 brew 'yazi'
+brew 'zoxide'
 
 ################################################################################
 # Text Editors & Viewers
@@ -102,6 +103,7 @@ brew 'yq'
 # Git & Version Control
 ################################################################################
 brew 'delta'
+brew 'difftastic'
 brew 'gh'
 brew 'git'
 brew 'glab'
@@ -171,6 +173,7 @@ brew 'openjdk@17'
 brew 'oven-sh/bun/bun', link: true
 brew 'pipx'
 brew 'pnpm'
+brew 'tmuxp'
 brew 'python', link: true
 brew 'ruby', link: true
 brew 'rust', link: true
@@ -187,6 +190,7 @@ brew 'cocoapods'
 brew 'entr'
 brew 'hyperfine'
 brew 'just'
+brew 'kanata'
 brew 'mkcert'
 brew 'opencode'
 brew 'shellcheck'
@@ -242,6 +246,8 @@ brew 'subliminal'
 ################################################################################
 # Retro Gaming & ROM Tools
 ################################################################################
+# torrentzip: installed via go install (see install.sh)
+brew 'internetarchive'
 brew 'mame'
 brew 'UltimateNova1203/maxcso/maxcso'
 brew 'ucon64'
@@ -346,10 +352,10 @@ cask 'wireshark-app'
 ################################################################################
 # Casks - System & Hardware
 ################################################################################
+# cask 'displaylink'
 # cask 'istat-menus'
 cask 'cleanmymac'
 cask 'coconutbattery'
-cask 'displaylink' if single_display
 cask 'grandperspective'
 cask 'logi-options+'
 cask 'monitorcontrol'
@@ -361,6 +367,7 @@ cask 'stats'
 ################################################################################
 cask 'balenaetcher'
 cask 'cyberduck'
+cask 'forklift'
 cask 'keka'
 cask 'maestral'
 

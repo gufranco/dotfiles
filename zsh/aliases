@@ -15,6 +15,31 @@ if command -v fzf > /dev/null && command -v bat > /dev/null; then
 fi
 
 ################################################################################
+# Yazi with CWD sync (exit yazi and land in the directory you navigated to)
+################################################################################
+if command -v yazi > /dev/null; then
+  function r() {
+    local tmp
+    tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+    command yazi "$@" --cwd-file="$tmp"
+    if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+      builtin cd -- "$cwd" || return
+    fi
+    rm -f -- "$tmp"
+  }
+fi
+
+################################################################################
+# Lazygit (Ctrl+g from shell)
+################################################################################
+if command -v lazygit > /dev/null; then
+  # shellcheck disable=SC2034
+  __lazygit_widget() { BUFFER="lazygit"; zle accept-line; }
+  zle -N __lazygit_widget
+  bindkey '^g' __lazygit_widget
+fi
+
+################################################################################
 # Modern tool replacements
 ################################################################################
 __alias_if_exists bat cat "command bat"

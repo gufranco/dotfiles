@@ -39,8 +39,8 @@ export HISTSIZE=2147483647
 export SAVEHIST=2147483647
 export LANG=pt_BR.UTF-8
 
-# Auto-report execution time for commands taking longer than 1 second
-# export REPORTTIME=1
+# Auto-report execution time for commands taking longer than 5 seconds
+export REPORTTIME=5
 
 ################################################################################
 # Terminal
@@ -59,6 +59,22 @@ command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 command -v mise >/dev/null 2>&1 && eval "$(mise activate zsh)"
 
 ################################################################################
+# zoxide (smart cd)
+################################################################################
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+
+################################################################################
+# atuin (shell history)
+################################################################################
+command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh --disable-up-arrow)"
+
+################################################################################
+# starship prompt (loads after oh-my-zsh spaceship if both present)
+################################################################################
+# Uncomment to switch from spaceship to starship:
+# command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
+
+################################################################################
 # eza
 ################################################################################
 export EZA_CONFIG_DIR="$HOME/.config/eza"
@@ -72,6 +88,13 @@ export FZF_DEFAULT_OPTS=" \
   --color=info:#7aa2f7,prompt:#7aa2f7,pointer:#7dcfff \
   --color=marker:#9ece6a,spinner:#9ece6a,header:#9ece6a \
   --color=border:#414868,label:#c0caf5,query:#c0caf5"
+
+# Use fd as fzf's file finder (respects .gitignore, faster than find)
+if command -v fd >/dev/null 2>&1; then
+  export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+fi
 
 ################################################################################
 # nnn (Tokyo Night palette indices)

@@ -118,167 +118,99 @@ function __macos_post_install_cleanup() {
 ################################################################################
 # VM / container internal helpers
 ################################################################################
+function __clamp_resource() {
+  local value="$1"
+  local minimum="$2"
+  local maximum="$3"
+  local total="$4"
+
+  if [ "$value" -gt "$maximum" ]; then
+    echo "$maximum"
+    return
+  fi
+
+  if [ "$value" -lt "$minimum" ]; then
+    if [ "$total" -ge "$minimum" ]; then
+      echo "$minimum"
+    else
+      echo "$total"
+    fi
+    return
+  fi
+
+  echo "$value"
+}
+
+function __round_to_power_of_2() {
+  local value="$1"
+  local rounded=1
+
+  while [ "$rounded" -lt "$value" ]; do
+    rounded=$(( rounded * 2 ))
+  done
+
+  echo "$rounded"
+}
+
 function __calculate_vm_cores() {
-  # Percentage of total CPU cores to allocate
   local percentage=50
-  # Minimum number of CPU cores to allocate
   local minimum=2
-  # Maximum number of CPU cores to allocate
   local maximum=4
-  # Total CPU cores
   local total
 
   case "$(uname -s)" in
-    Darwin)
-      total="$(sysctl -n hw.ncpu)"
-
-      ;;
-    Linux)
-      total="$(nproc)"
-
-      ;;
+    Darwin) total="$(sysctl -n hw.ncpu)" ;;
+    Linux)  total="$(nproc)" ;;
   esac
 
-  # Calculate percentage
-  local result
-  result=$(( total * percentage / 100 ))
+  local result=$(( total * percentage / 100 ))
 
   # Round up to next even number if odd and >= 2
   if [ "$result" -ge 2 ] && [ $(( result % 2 )) -ne 0 ]; then
     result=$(( result + 1 ))
   fi
 
-  # Apply maximum limit
-  if [ "$result" -gt "$maximum" ]; then
-    echo "$maximum"
-
-    return
-  fi
-
-  # Apply minimum limit, but never exceed total available cores
-  if [ "$result" -lt "$minimum" ]; then
-    if [ "$total" -ge "$minimum" ]; then
-      echo "$minimum"
-    else
-      # If total cores < minimum, use total (don't allocate more than available)
-      echo "$total"
-    fi
-
-    return
-  fi
-
-  echo "$result"
+  __clamp_resource "$result" "$minimum" "$maximum" "$total"
 }
 
 function __calculate_vm_memory() {
-  # Percentage of total memory to allocate
   local percentage=50
-  # Minimum memory to allocate (in GiB)
   local minimum=2
-  # Maximum memory to allocate (in GiB)
   local maximum=8
-  # Total memory (in GiB)
   local total
 
   case "$(uname -s)" in
-    Darwin)
-      total=$(( "$(sysctl -n hw.memsize)" / 1024 / 1024 / 1024 ))
-
-      ;;
-    Linux)
-      total=$(( "$(grep MemTotal /proc/meminfo | awk '{print $2}')" / 1024 / 1024 ))
-
-      ;;
+    Darwin) total=$(( "$(sysctl -n hw.memsize)" / 1024 / 1024 / 1024 )) ;;
+    Linux)  total=$(( "$(grep MemTotal /proc/meminfo | awk '{print $2}')" / 1024 / 1024 )) ;;
   esac
 
-  local result
+  local result=$(( total * percentage / 100 ))
+  result=$(__round_to_power_of_2 "$result")
 
-  result=$(( total * percentage / 100 ))
-
-  # Round up to nearest power of 2
-  local rounded=1
-  while [ "$rounded" -lt "$result" ]; do
-    rounded=$(( rounded * 2 ))
-  done
-
-  # Apply maximum limit
-  if [ "$rounded" -gt "$maximum" ]; then
-    echo "$maximum"
-
-    return
-  fi
-
-  # Apply minimum limit, but never exceed total available memory
-  if [ "$rounded" -lt "$minimum" ]; then
-    if [ "$total" -ge "$minimum" ]; then
-      echo "$minimum"
-    else
-      # If total memory < minimum, use total (don't allocate more than available)
-      echo "$total"
-    fi
-
-    return
-  fi
-
-  echo "$rounded"
+  __clamp_resource "$result" "$minimum" "$maximum" "$total"
 }
 
 function __calculate_vm_storage() {
-  # Percentage of total storage to allocate
   local percentage=25
-  # Minimum storage to allocate (in GiB)
   local minimum=8
-  # Maximum storage to allocate (in GiB)
   local maximum=64
-  # Total storage (in GiB)
   local total
 
   case "$(uname -s)" in
     Darwin)
       # Get disk size in bytes, convert to GiB, then round up to nearest 256 GiB
-      # Formula: ((bytes / 1073741824) + 255) / 256 * 256
-      # Example: 500 GB → 512 GB, 750 GB → 768 GB
-      # This ensures predictable, power-of-2-aligned sizes
       total=$(( (("$(diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}')" / 1073741824) + 255) / 256 * 256 ))
-
       ;;
     Linux)
       # Get disk size in bytes, convert to GiB, then round up to nearest 256 GiB
-      # Same rounding logic as Darwin for consistency
       total=$(( (("$(lsblk -bdno SIZE "/dev/$(lsblk -no pkname "$(df / --output=source | tail -n1)")")" / 1073741824) + 255) / 256 * 256 ))
-
       ;;
   esac
 
-  local result
-  result=$(( total * percentage / 100 ))
+  local result=$(( total * percentage / 100 ))
+  result=$(__round_to_power_of_2 "$result")
 
-  # Round up to nearest power of 2
-  local rounded=1
-  while [ "$rounded" -lt "$result" ]; do
-    rounded=$(( rounded * 2 ))
-  done
-
-  # Apply maximum limit
-  if [ "$rounded" -gt "$maximum" ]; then
-    echo "$maximum"
-
-    return
-  fi
-
-  # Apply minimum limit, but never exceed total available storage
-  if [ "$rounded" -lt "$minimum" ]; then
-    if [ "$total" -ge "$minimum" ]; then
-      echo "$minimum"
-    else
-      # If total storage < minimum, use total (don't allocate more than available)
-      echo "$total"
-    fi
-
-    return
-  fi
-
-  echo "$rounded"
+  __clamp_resource "$result" "$minimum" "$maximum" "$total"
 }
 
 function __ensure_docker_compose_plugin() {
@@ -302,11 +234,7 @@ function __confirm_colima_config() {
   local os_type="$5"
   local arch="$6"
 
-  echo ""
-  echo "================================================================================"
-  echo "  Colima VM - Configuration"
-  echo "================================================================================"
-  echo ""
+  __show_header "Colima VM" "Configuration"
   echo "Profile:          ${profile}"
   echo "Platform:         ${os_type} (${arch})"
   echo ""
@@ -316,18 +244,7 @@ function __confirm_colima_config() {
   echo "  Disk:           ${storage}GiB"
   echo ""
 
-  if [[ "${CI:-0}" = "1" ]]; then
-    return 0
-  fi
-
-  read -r "?Do you want to continue with these configurations? (y/N): "
-  echo ""
-
-  if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
-    return 1
-  fi
-
-  return 0
+  __confirm_operation "Do you want to continue with these configurations?"
 }
 
 ################################################################################
@@ -441,22 +358,6 @@ function __brew_install_if_missing() {
 function __brew_install_cask_if_missing() {
   local cask="$1"
   brew list --cask "$cask" >/dev/null 2>&1 || brew install --cask "$cask"
-}
-
-################################################################################
-# Git repository helpers
-################################################################################
-function __git_clone_or_update() {
-  local url="$1"
-  local target="$2"
-  local remote_name="${3:-origin}"
-
-  if [ -d "$target/.git" ]; then
-    git -C "$target" remote set-url "$remote_name" "$url" 2>/dev/null || true
-    git -C "$target" pull --no-edit 2>/dev/null || __log_warning "Failed to update: $(basename "$target")"
-  else
-    git clone --recursive "$url" "$target"
-  fi
 }
 
 ################################################################################
@@ -878,4 +779,144 @@ function __f5_show_summary() {
   echo ""
   __log_info "Total time: ${f5_mins}m ${f5_secs}s"
   echo ""
+}
+
+################################################################################
+# Disk helpers (used by disk_wipe and fat_sort)
+################################################################################
+function __disk_resolve_device() {
+  local input="$1"
+
+  if [ -b "$input" ] || [ -c "$input" ]; then
+    echo "$input"
+    return 0
+  fi
+
+  if [ -d "$input" ]; then
+    local resolved
+    case "$(uname)" in
+      Darwin)
+        resolved=$(diskutil info "$input" 2>/dev/null | awk -F': +' '/Device Node/ {print $2}')
+        ;;
+      Linux)
+        resolved=$(command findmnt -n -o SOURCE "$input" 2>/dev/null)
+        ;;
+    esac
+
+    if [ -n "$resolved" ]; then
+      echo "$resolved"
+      return 0
+    fi
+
+    __log_error "No device found for mount point: $input"
+    return 1
+  fi
+
+  __log_error "Not a device or mount point: $input"
+  return 1
+}
+
+function __disk_whole_device() {
+  local device="$1"
+
+  case "$(uname)" in
+    Darwin)
+      local whole
+      whole=$(diskutil info "$device" 2>/dev/null | awk -F': +' '/Part of Whole/ {print $2}')
+      if [ -n "$whole" ]; then
+        echo "/dev/$whole"
+      else
+        echo "$device"
+      fi
+      ;;
+    Linux)
+      local stripped
+      stripped=$(lsblk -no PKNAME "$device" 2>/dev/null | head -1)
+      if [ -n "$stripped" ]; then
+        echo "/dev/$stripped"
+      else
+        echo "$device"
+      fi
+      ;;
+  esac
+}
+
+function __disk_mount_point() {
+  local partition="$1"
+
+  case "$(uname)" in
+    Darwin)
+      diskutil info "$partition" 2>/dev/null | awk -F': +' '/Mount Point/ {print $2}'
+      ;;
+    Linux)
+      command findmnt -n -o TARGET "$partition" 2>/dev/null
+      ;;
+  esac
+}
+
+function __disk_get_size() {
+  local disk="$1"
+  local size
+
+  case "$(uname)" in
+    Darwin)
+      size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
+      ;;
+    Linux)
+      size=$(command blockdev --getsize64 "$disk" 2>/dev/null)
+      ;;
+  esac
+
+  if [ -z "$size" ] || [ "$size" -eq 0 ]; then
+    __log_error "Unable to determine disk size for $disk"
+    return 1
+  fi
+
+  echo "$size"
+}
+
+function __disk_unmount() {
+  local disk="$1"
+
+  __log_info "Unmounting $disk..."
+  case "$(uname)" in
+    Darwin)
+      if sudo diskutil unmountDisk "$disk" >/dev/null 2>&1; then
+        __log_success "Disk unmounted"
+      else
+        __log_warning "Failed to unmount disk (may not be mounted)"
+      fi
+      ;;
+    Linux)
+      if sudo umount "$disk" 2>/dev/null; then
+        __log_success "Disk unmounted"
+      else
+        __log_warning "Failed to unmount disk (may not be mounted)"
+      fi
+      ;;
+  esac
+}
+
+function __disk_eject() {
+  local disk="$1"
+
+  __log_info "Ejecting device..."
+  case "$(uname)" in
+    Darwin)
+      if sudo diskutil eject "$disk" >/dev/null 2>&1; then
+        __log_success "Device ejected successfully"
+      else
+        __log_error "Failed to eject device"
+        return 1
+      fi
+      ;;
+    Linux)
+      sync
+      if sudo eject "$disk" 2>/dev/null; then
+        __log_success "Device ejected successfully"
+      else
+        __log_warning "Failed to eject device (may not support eject)"
+      fi
+      ;;
+  esac
 }

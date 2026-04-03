@@ -1,0 +1,47 @@
+# Starship prompt - https://starship.rs
+# Symlinked to ~/.config/starship.toml
+# To activate, uncomment the starship init line in zsh/settings.
+
+format = """$username$hostname$directory$git_branch$git_status$cmd_duration$line_break$character"""
+
+[character]
+success_symbol = "[>](bold #9ece6a)"
+error_symbol = "[>](bold #f7768e)"
+
+[username]
+show_always = true
+style_user = "bold #bb9af7"
+format = "[$user]($style) "
+
+[hostname]
+ssh_only = true
+style = "bold #7dcfff"
+format = "@ [$hostname]($style) "
+
+[directory]
+style = "bold #7aa2f7"
+truncation_length = 3
+truncation_symbol = ".../"
+
+[git_branch]
+style = "bold #bb9af7"
+format = "on [$symbol$branch]($style) "
+
+[git_status]
+style = "#e0af68"
+format = '([$all_status$ahead_behind]($style) )'
+conflicted = "="
+ahead = "^${count}"
+behind = "v${count}"
+diverged = "^${ahead_count}v${behind_count}"
+untracked = "?${count}"
+stashed = "*${count}"
+modified = "!${count}"
+staged = "+${count}"
+renamed = "r${count}"
+deleted = "x${count}"
+
+[cmd_duration]
+min_time = 5_000
+style = "bold #565f89"
+format = "took [$duration]($style) "

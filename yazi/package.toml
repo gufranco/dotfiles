@@ -1,0 +1,8 @@
+# Yazi plugin dependencies
+# Install with: ya pack -i
+# Update with: ya pack -u
+
+[plugin]
+deps = [
+  { use = "yazi-rs/plugins:zoxide" },
+]

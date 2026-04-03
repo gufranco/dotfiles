@@ -1,0 +1,24 @@
+# Yazi keymap - https://yazi-rs.github.io
+# Symlinked to ~/.config/yazi/keymap.toml
+
+[manager]
+prepend_keymap = [
+  # Lazygit (Ctrl+g, consistent with shell and neovim)
+  { on = [ "<C-g>" ], run = 'shell "lazygit" --block', desc = "Open lazygit" },
+
+  # Zoxide directory jump (Ctrl+z)
+  { on = [ "<C-z>" ], run = "plugin zoxide", desc = "Jump via zoxide" },
+
+  # Directory shortcuts
+  { on = [ "g", "d" ], run = "cd ~/Downloads",  desc = "Go to Downloads" },
+  { on = [ "g", "w" ], run = "cd ~/Workspace",  desc = "Go to Workspace" },
+  { on = [ "g", "D" ], run = "cd ~/Docker",     desc = "Go to Docker volumes" },
+  { on = [ "g", "." ], run = "cd ~/.dotfiles",  desc = "Go to dotfiles" },
+  { on = [ "g", "c" ], run = "cd ~/.claude",    desc = "Go to Claude rules" },
+  { on = [ "g", "t" ], run = "cd ~/Desktop",    desc = "Go to Desktop" },
+
+  # Sort by modification time
+  { on = [ ",", "M" ], run = "sort modified --reverse", desc = "Sort by modified (newest first)" },
+  { on = [ ",", "S" ], run = "sort size --reverse",     desc = "Sort by size (largest first)" },
+  { on = [ ",", "N" ], run = "sort natural",            desc = "Sort by name (natural)" },
+]

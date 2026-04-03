@@ -30,6 +30,10 @@ case "$(uname)" in
     export PNPM_HOME="$HOME/Library/pnpm"
     __add_to_path "$PNPM_HOME"
 
+    # Go
+    export GOPATH="$HOME/go"
+    __add_to_path "$GOPATH/bin"
+
     # Rust
     __add_to_path "$HOME/.cargo/bin"
 

@@ -338,6 +338,28 @@ case "$(uname)" in
     fi
 
     ############################################################################
+    # Zoxide (smart cd)
+    ############################################################################
+    if ! cmd_exists zoxide; then
+      log_info "Installing zoxide..."
+      curl -sS --connect-timeout 10 --max-time 120 https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+      log_success "zoxide installed"
+    else
+      log_skip "zoxide already installed"
+    fi
+
+    ############################################################################
+    # Atuin (shell history)
+    ############################################################################
+    if ! cmd_exists atuin; then
+      log_info "Installing atuin..."
+      curl -sS --connect-timeout 10 --max-time 120 https://setup.atuin.sh | bash
+      log_success "atuin installed"
+    else
+      log_skip "atuin already installed"
+    fi
+
+    ############################################################################
     # Golang
     ############################################################################
     if ! cmd_exists go; then
@@ -570,6 +592,21 @@ case "$(uname)" in
     brew upgrade --greedy --force || log_warning "Brew upgrade had failures"
     brew cleanup -s || true
     log_success "Homebrew packages updated"
+
+    ############################################################################
+    # torrentzip (Go, not in Homebrew)
+    ############################################################################
+    if ! cmd_exists torrentzip; then
+      log_info "Installing torrentzip..."
+      if cmd_exists go; then
+        go install github.com/uwedeportivo/torrentzip/cmd/torrentzip@latest
+        log_success "torrentzip installed"
+      else
+        log_warning "Go not found, skipping torrentzip"
+      fi
+    else
+      log_skip "torrentzip already installed"
+    fi
 
     ############################################################################
     # Bash
@@ -850,6 +887,22 @@ fi
 ############################################################################
 log_info "Setting up Yazi..."
 safe_link "$HOME/.dotfiles/yazi" "$HOME/.config/yazi"
+if cmd_exists ya; then ya pack -i 2>/dev/null || true; fi
+
+############################################################################
+# Starship
+############################################################################
+if cmd_exists starship; then
+  log_info "Setting up Starship..."
+  safe_link "$HOME/.dotfiles/starship/starship.toml" "$HOME/.config/starship.toml"
+fi
+
+############################################################################
+# Kanata
+############################################################################
+log_info "Setting up Kanata..."
+mkdir -p "$HOME/.config/kanata"
+safe_link "$HOME/.dotfiles/kanata/kanata.kbd" "$HOME/.config/kanata/kanata.kbd"
 
 ############################################################################
 # Claude Code

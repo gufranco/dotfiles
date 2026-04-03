@@ -6,7 +6,8 @@
 "   Ctrl+p        Files (fzf)          ,gf    Git files (fzf)
 "   ,f            Ripgrep search       ,b     Buffers (fzf)
 "   ,h            File history (fzf)   ,t     Search TODOs/FIXMEs
-"   f             Jump to char (EasyMotion)
+"   s/S           Jump forward/backward (leap.nvim)
+"   Ctrl+g        Open lazygit
 "   Ctrl+h/j/k/l Window navigation    %      Jump to match (matchup)
 "   [%  ]%        Prev/next outer pair a% i%  Around/inside match
 "
@@ -131,7 +132,10 @@ Plug 'wellle/targets.vim'
 Plug 'AndrewRadev/splitjoin.vim'
 
 " Navigation
-Plug 'easymotion/vim-easymotion'
+Plug 'ggandor/leap.nvim'
+
+" Git TUI
+Plug 'kdheepak/lazygit.nvim'
 
 " Compatibility
 Plug 'tmux-plugins/vim-tmux', { 'for': 'tmux' }
@@ -421,11 +425,21 @@ nnoremap <silent> <leader>t :Rg TODO\|FIXME\|HACK\|XXX<CR>
 let g:fzf_layout = { 'window': { 'width': 0.9, 'height': 0.6 } }
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" EasyMotion
+" Leap (2-character jump to any visible location)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:EasyMotion_do_mapping = 0
-let g:EasyMotion_smartcase = 1
-nmap f <Plug>(easymotion-overwin-f)
+if has('nvim')
+  lua << EOF
+  local ok, leap = pcall(require, 'leap')
+  if ok then
+    leap.set_default_keymaps()
+  end
+EOF
+endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Lazygit (Ctrl+g opens lazygit in a floating terminal)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <silent> <C-g> :LazyGit<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " WinResizer

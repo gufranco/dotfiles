@@ -1,0 +1,34 @@
+;; Kanata keyboard remapping for macOS
+;; https://github.com/jtroo/kanata
+;;
+;; Features:
+;;   - CapsLock as Ctrl (tap = Escape, hold = Ctrl)
+;;   - Home-row mods (hold a/s/d/f and j/k/l/; for modifiers)
+;;
+;; Start:  kanata -c ~/.dotfiles/kanata/kanata.kbd
+;; Or use a LaunchAgent for auto-start.
+
+(defsrc
+  caps a s d f j k l ;
+)
+
+(defalias
+  ;; CapsLock: tap = Escape, hold = Left Control
+  cap (tap-hold 200 200 esc lctl)
+
+  ;; Home-row mods (left hand)
+  hma (tap-hold 200 200 a lmet)    ;; a = Super
+  hms (tap-hold 200 200 s lalt)    ;; s = Alt
+  hmd (tap-hold 200 200 d lsft)    ;; d = Shift
+  hmf (tap-hold 200 200 f lctl)    ;; f = Ctrl
+
+  ;; Home-row mods (right hand)
+  hmj (tap-hold 200 200 j rctl)    ;; j = Ctrl
+  hmk (tap-hold 200 200 k rsft)    ;; k = Shift
+  hml (tap-hold 200 200 l ralt)    ;; l = Alt
+  hm; (tap-hold 200 200 ; rmet)    ;; ; = Super
+)
+
+(deflayer default
+  @cap @hma @hms @hmd @hmf @hmj @hmk @hml @hm;
+)

@@ -1,0 +1,18 @@
+# tmuxp session: main workspace
+# Load with: tmuxp load ~/.dotfiles/tmuxp/main.yaml
+
+session_name: main
+start_directory: ~/Workspace
+
+windows:
+  - window_name: editor
+    panes:
+      - shell_command: nvim
+
+  - window_name: shell
+    panes:
+      - shell_command: ""
+
+  - window_name: git
+    panes:
+      - shell_command: lazygit

@@ -1,0 +1,18 @@
+# tmuxp session: dotfiles maintenance
+# Load with: tmuxp load ~/.dotfiles/tmuxp/dotfiles.yaml
+
+session_name: dotfiles
+start_directory: ~/.dotfiles
+
+windows:
+  - window_name: editor
+    panes:
+      - shell_command: nvim
+
+  - window_name: shell
+    panes:
+      - shell_command: ""
+
+  - window_name: git
+    panes:
+      - shell_command: lazygit

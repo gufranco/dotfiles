@@ -16,7 +16,7 @@
 
 ---
 
-**33** tool configs · **141** brew packages · **57** desktop apps · **72** Nerd Fonts · **19** Tokyo Night themed tools · **60** Git aliases · **6** Docker services · **18** Claude Code skills
+**37** tool configs · **19** Tokyo Night themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
 
 <table>
 <tr>
@@ -105,6 +105,8 @@ The installer detects your OS and architecture automatically. On macOS it instal
 | Fuzzy finder | fzf with bat preview and Tokyo Night colors |
 | Tab completion | fzf-tab for fuzzy tab completion |
 | Syntax highlighting | zsh-syntax-highlighting for fish-like coloring |
+| Smart cd | zoxide with frecency-based directory jumping |
+| Shell history | atuin for searchable, synced shell history |
 | Per-directory env | direnv with automatic `.envrc` loading |
 | History | Deduplication, ignore common commands |
 | GNU tools on macOS | coreutils, findutils, grep, sed, tar, make override BSD via PATH |
@@ -126,15 +128,18 @@ Aliases activate only when the modern tool is installed:
 
 ### Editor
 
-Vim with 24 plugins managed by vim-plug:
+Vim with 31 plugins managed by vim-plug:
 
 | Category | Plugins |
 |:---------|:--------|
 | Language support | coc.nvim (LSP), vim-polyglot, vim-matchup, rainbow_csv |
-| Navigation | fzf.vim, EasyMotion |
-| Git | vim-signify (hunks), vim-fugitive (commands) |
-| Editing | vim-surround, vim-visual-multi, vim-pasta, targets.vim, vim-unimpaired, vim-repeat |
+| Navigation | fzf.vim, leap.nvim (jump motions), lazygit.nvim, vim-fetch (open at line) |
+| Git | vim-signify (hunks), vim-fugitive (commands), conflict-marker.vim |
+| Editing | vim-surround, vim-visual-multi, vim-pasta, targets.vim, vim-unimpaired, vim-repeat, vim-abolish (case coercion), splitjoin.vim |
+| Files | vim-eunuch (Rename, Delete, Move, SudoWrite) |
 | UI | lightline, vim-devicons, undotree, vim-cool, vim-search-pulse, winresizer |
+| Defaults | vim-sensible, vim-opinion |
+| Integration | vim-tmux (tmux.conf syntax) |
 
 CoC extensions: TypeScript, ESLint, Prettier, CSS, JSON, Shell, snippets, import-cost.
 
@@ -232,13 +237,14 @@ All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-them
 
 Run `f5` in any terminal to update everything at once:
 
-1. Pulls latest dotfiles and submodules
-2. Updates Vim plugins and CoC extensions
-3. Updates Oh My Zsh, Zsh plugins, and Tmux plugins
-4. Updates Node.js LTS via NVM
-5. On macOS: runs `brew update`, `brew upgrade`, `brew bundle`, and Mac App Store updates
-6. On Linux: runs `apt update` and `apt dist-upgrade`
-7. Reloads Tmux and Zsh configs
+1. Pulls latest dotfiles, submodules, and Claude engineering rules
+2. Updates AWS configuration
+3. Updates Vim plugins and CoC extensions
+4. Updates Oh My Zsh, Zsh plugins, and Tmux plugins
+5. Upgrades mise-managed runtimes (Node.js, Python, Ruby)
+6. On macOS: runs `brew update`, `brew upgrade`, `brew bundle`, and Mac App Store updates
+7. On Linux: runs `apt update` and `apt dist-upgrade`
+8. Reloads Tmux and Zsh configs
 
 ## Symlink Map
 
@@ -251,15 +257,20 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 |:-------|:-------|
 | `zsh/.zshrc` | `~/.zshrc` |
 | `git/.gitconfig` | `~/.gitconfig` |
-| `vim` | `~/.vim` |
-| `vim/.vimrc` | `~/.vimrc` |
+| `nvim` | `~/.vim`, `~/.config/nvim` |
+| `nvim/init.vim` | `~/.vimrc` |
 | `tmux/.tmux.conf` | `~/.tmux.conf` |
 | `tmux` | `~/.tmux` |
 | `ghostty` | `~/.config/ghostty` |
 | `kitty/kitty.conf` | `~/.config/kitty/kitty.conf` |
+| `kitty/themes` | `~/.config/kitty/themes` |
 | `bat/config` | `~/.config/bat/config` |
+| `bat/themes` | `~/.config/bat/themes` |
 | `eza` | `~/.config/eza` |
 | `yazi` | `~/.config/yazi` |
+| `starship/starship.toml` | `~/.config/starship.toml` |
+| `kanata/kanata.kbd` | `~/.config/kanata/kanata.kbd` |
+| `mise/config.toml` | `~/.config/mise/config.toml` |
 | `bottom/bottom.toml` | `~/.config/bottom/bottom.toml` |
 | `lazygit/config.yml` | `~/.config/lazygit/config.yml` |
 | `lazydocker/config.yml` | `~/.config/lazydocker/config.yml` |
@@ -271,7 +282,6 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `glab/config.yml` | `~/.config/glab-cli/config.yml` |
 | `gnupg` | `~/.gnupg` |
 | `ssh` | `~/.ssh` |
-| `claude` | `~/.claude` |
 | `nodejs/.npmrc` | `~/.npmrc` |
 | `nodejs/.yarnrc.yml` | `~/.yarnrc.yml` |
 | `nodejs/.pnpmrc` | `~/.pnpmrc` |
@@ -285,6 +295,8 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `telnet/.telnetrc` | `~/.telnetrc` |
 | `cmus/rc` | `~/.config/cmus/rc` |
 
+Claude engineering rules are cloned as a separate repo to `~/.claude` via `github_repo_sync`.
+
 On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Library/Application Support/`.
 
 </details>
@@ -296,7 +308,6 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 .dotfiles/
 ├── bat/              # Bat config + Tokyo Night theme
 ├── bottom/           # Bottom system monitor, Tokyo Night styled
-├── claude/           # Claude Code: 17 rules, 18 skills, hooks, MCP
 ├── cmus/             # cmus music player, Tokyo Night themed
 ├── conky/            # Conky system monitor (Linux)
 ├── curl/             # Curl config
@@ -309,25 +320,30 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── gnupg/            # GPG config and public keys
 ├── htop/             # htop config
 ├── k9s/              # K9s Kubernetes dashboard + Tokyo Night skin
+├── kanata/           # Kanata keyboard remapper config
 ├── kitty/            # Kitty terminal + Tokyo Night theme
 ├── lazydocker/       # Lazydocker config, Tokyo Night
 ├── lazygit/          # Lazygit config, Tokyo Night
 ├── mailcap/          # Mailcap config
+├── mise/             # mise runtime manager (Node.js, Python, Ruby)
 ├── mutt/             # Neomutt email client + Tokyo Night theme
 ├── nodejs/           # npm, yarn, pnpm configs + GPG-encrypted tokens
+├── nvim/             # Neovim/Vim config + 31 plugins
+├── obsidian/         # Obsidian notes config
 ├── readline/         # Readline config
 ├── ripgrep/          # Ripgrep config
 ├── ssh/              # SSH config and public keys
+├── starship/         # Starship prompt config
 ├── tealdeer/         # Tealdeer (tldr) config, Tokyo Night
 ├── telnet/           # Telnet config
 ├── themes/           # Terminal themes (iTerm2)
 ├── tilix/            # Tilix terminal config
 ├── tmux/             # Tmux config + 7 plugins
-├── vim/              # Vim config + 24 plugins
+├── tmuxp/            # tmuxp session layouts
 ├── wget/             # Wget config
 ├── yazi/             # Yazi file manager + Tokyo Night theme
 ├── zsh/              # Zsh: aliases, functions, paths, settings, infrastructure
-├── Brewfile          # 141 packages, 57 apps, 72 fonts
+├── Brewfile          # Homebrew packages, apps, and fonts
 ├── install.sh        # Cross-platform installer
 └── LICENSE           # MIT
 ```

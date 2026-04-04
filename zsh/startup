@@ -4,9 +4,9 @@
 # Tmux Auto-Start
 ################################################################################
 # Automatically start tmux when opening a new terminal
-# Skip for VSCode and Vim integrated terminals
-if [ -z "$TMUX" ] && [ "$TERM_PROGRAM" != "vscode" ] && [ "$TERM_PROGRAM" != "vim" ] && command -v tmux >/dev/null 2>&1; then
-  tmux new-session
+# Skip for VSCode and Vim integrated terminals, and during f5 reloads
+if [ -z "$TMUX" ] && [ -z "$__F5_RELOADING" ] && [ "$TERM_PROGRAM" != "vscode" ] && [ "$TERM_PROGRAM" != "vim" ] && command -v tmux >/dev/null 2>&1; then
+  tmux new-session -A -s main
 fi
 
 ################################################################################

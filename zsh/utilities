@@ -756,12 +756,15 @@ function __f5_reload_configs() {
     __log_skip "Not in tmux session"
   fi
 
+  # Guard prevents tmux auto-start and token re-init during re-source
+  export __F5_RELOADING=1
   # shellcheck disable=SC1091
   if source "$HOME/.zshrc"; then
     __log_success "Zsh config reloaded"
   else
     __log_warning "Zsh reload failed"
   fi
+  unset __F5_RELOADING
 }
 
 function __f5_show_summary() {

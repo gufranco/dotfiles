@@ -12,12 +12,13 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 ################################################################################
 # Homebrew taps
 ################################################################################
+tap 'Arthur-Ficial/tap'
 tap 'aws/tap'
+tap 'DopplerHQ/cli'
 tap 'neomutt/neomutt'
 tap 'oven-sh/bun'
 tap 'stripe/stripe-cli'
 tap 'UltimateNova1203/maxcso'
-tap 'DopplerHQ/cli'
 tap 'ungive/media-control'
 tap 'universal-ctags/universal-ctags'
 tap 'withgraphite/tap'
@@ -28,9 +29,13 @@ tap 'withgraphite/tap'
 brew 'atuin'
 brew 'bash'
 brew 'direnv'
+brew 'gum'
 brew 'starship'
+brew 'tealdeer'
 brew 'tmux'
+brew 'tmuxp'
 brew 'zsh'
+brew 'zsh-autosuggestions'
 brew 'zsh-syntax-highlighting'
 
 ################################################################################
@@ -68,6 +73,7 @@ brew 'gettext'
 brew 'libtool'
 brew 'openssl'
 brew 'poppler'
+brew 'pygments'
 brew 'readline'
 brew 'shared-mime-info'
 brew 'zlib'
@@ -85,15 +91,11 @@ brew 'yazi'
 brew 'zoxide'
 
 ################################################################################
-# Text Editors & Viewers
+# Text Editors & Data Tools
 ################################################################################
 brew 'bat'
 brew 'glow'
-brew 'gum'
 brew 'jq'
-brew 'pygments'
-brew 'tealdeer'
-brew 'universal-ctags'
 brew 'neovim'
 brew 'vim'
 brew 'vint'
@@ -152,10 +154,10 @@ brew 'vercel-cli'
 ################################################################################
 brew 'age'
 brew 'DopplerHQ/cli/doppler'
+brew 'ghidra'
 brew 'gitleaks'
 brew 'gnupg'
 brew 'pinentry-mac'
-brew 'ghidra'
 brew 'radare2'
 brew 'semgrep'
 brew 'snyk-cli'
@@ -165,6 +167,7 @@ brew 'trivy'
 ################################################################################
 # Languages & Package Managers
 ################################################################################
+brew 'cocoapods'
 brew 'golang', link: true
 brew 'golangci-lint'
 brew 'mise'
@@ -173,7 +176,6 @@ brew 'openjdk@17'
 brew 'oven-sh/bun/bun', link: true
 brew 'pipx'
 brew 'pnpm'
-brew 'tmuxp'
 brew 'python', link: true
 brew 'ruby', link: true
 brew 'rust', link: true
@@ -186,15 +188,13 @@ brew 'yarn'
 brew 'act'
 brew 'actionlint'
 brew 'bats'
-brew 'cocoapods'
 brew 'entr'
 brew 'hyperfine'
 brew 'just'
-brew 'kanata'
 brew 'mkcert'
-brew 'opencode'
 brew 'shellcheck'
 brew 'tokei'
+brew 'universal-ctags'
 brew 'watchman'
 brew 'xcodes'
 
@@ -260,8 +260,17 @@ brew 'restic'
 brew 'rsync'
 
 ################################################################################
-# macOS
+# AI & Local Inference
 ################################################################################
+brew 'apfel' if architecture == 'arm64'
+brew 'llama.cpp' if architecture == 'arm64'
+brew 'ollama' if architecture == 'arm64'
+brew 'opencode'
+
+################################################################################
+# macOS System
+################################################################################
+brew 'kanata'
 brew 'mas'
 
 ################################################################################
@@ -281,12 +290,6 @@ cask 'sublime-text'
 cask 'textmate'
 cask 'visual-studio-code'
 cask 'windsurf'
-
-################################################################################
-# AI & Local Inference
-################################################################################
-brew 'llama.cpp' if architecture == 'arm64'
-brew 'ollama' if architecture == 'arm64'
 
 ################################################################################
 # Casks - AI Tools

@@ -9,11 +9,6 @@ __alias_if_exists tty-clock tty-clock "command tty-clock -Dcs"
 __alias_if_exists find findf "command find . -type f -name"
 __alias_if_exists find findd "command find . -type d -name"
 
-# FZF with bat preview (requires both commands)
-if command -v fzf > /dev/null && command -v bat > /dev/null; then
-  alias fzf="command fzf --preview 'command bat --color=never --style=numbers --line-range=:500 {}'"
-fi
-
 ################################################################################
 # Yazi with CWD sync (exit yazi and land in the directory you navigated to)
 ################################################################################
@@ -37,6 +32,30 @@ if command -v lazygit > /dev/null; then
   __lazygit_widget() { BUFFER="lazygit"; zle accept-line; }
   zle -N __lazygit_widget
   bindkey '^g' __lazygit_widget
+fi
+
+################################################################################
+# OpenCode with apfel auto-start
+################################################################################
+if command -v opencode > /dev/null && command -v apfel > /dev/null; then
+  function oc() {
+    local __oc_started_apfel=0
+    if ! curl -sf http://127.0.0.1:11434/health > /dev/null 2>&1; then
+      apfel --serve > /dev/null 2>&1 &
+      __oc_started_apfel=1
+      local apfel_pid=$!
+      disown
+      local i=0
+      while [ $i -lt 10 ] && ! curl -sf http://127.0.0.1:11434/health > /dev/null 2>&1; do
+        sleep 0.5
+        i=$((i + 1))
+      done
+    fi
+    command opencode "$@"
+    if [ $__oc_started_apfel -eq 1 ] && [ -n "$apfel_pid" ] && kill -0 "$apfel_pid" 2>/dev/null; then
+      kill "$apfel_pid" 2>/dev/null
+    fi
+  }
 fi
 
 ################################################################################

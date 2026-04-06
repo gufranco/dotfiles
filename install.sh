@@ -670,6 +670,7 @@ log_info "Setting up Oh My Zsh..."
 safe_link "$HOME/.dotfiles/zsh/.zshrc" "$HOME/.zshrc"
 
 github_repo_sync "https://github.com/robbyrussell/oh-my-zsh.git" "$HOME/.oh-my-zsh" "Oh My Zsh"
+github_repo_sync "https://github.com/zsh-users/zsh-autosuggestions.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" "zsh-autosuggestions"
 github_repo_sync "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" "zsh-syntax-highlighting"
 github_repo_sync "https://github.com/zsh-users/zsh-completions.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" "zsh-completions"
 github_repo_sync "https://github.com/Aloxaf/fzf-tab.git" "$HOME/.oh-my-zsh/custom/plugins/fzf-tab" "fzf-tab"
@@ -903,6 +904,12 @@ fi
 log_info "Setting up Kanata..."
 mkdir -p "$HOME/.config/kanata"
 safe_link "$HOME/.dotfiles/kanata/kanata.kbd" "$HOME/.config/kanata/kanata.kbd"
+
+############################################################################
+# OpenCode
+############################################################################
+log_info "Setting up OpenCode..."
+safe_link "$HOME/.dotfiles/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
 
 ############################################################################
 # Claude Code

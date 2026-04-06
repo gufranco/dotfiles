@@ -132,7 +132,7 @@ Plug 'wellle/targets.vim'
 Plug 'AndrewRadev/splitjoin.vim'
 
 " Navigation
-Plug 'ggandor/leap.nvim'
+Plug 'https://codeberg.org/andyg/leap.nvim'
 
 " Git TUI
 Plug 'kdheepak/lazygit.nvim'
@@ -431,7 +431,9 @@ if has('nvim')
   lua << EOF
   local ok, leap = pcall(require, 'leap')
   if ok then
-    leap.set_default_keymaps()
+    vim.keymap.set({'n', 'x', 'o'}, 's',  '<Plug>(leap-forward)')
+    vim.keymap.set({'n', 'x', 'o'}, 'S',  '<Plug>(leap-backward)')
+    vim.keymap.set({'n', 'x', 'o'}, 'gs', '<Plug>(leap-from-window)')
   end
 EOF
 endif

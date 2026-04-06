@@ -1,7 +1,5 @@
----
 # Lazygit - https://github.com/jesseduffield/lazygit
 # On macOS: symlink to ~/Library/Application Support/lazygit if not using XDG_CONFIG_HOME
-
 gui:
   scrollHeight: 2
   scrollPastBottom: true
@@ -33,5 +31,9 @@ gui:
       - '#f7768e'
     defaultFgColor:
       - default
-
+git:
+  pagers:
+    - pager: delta --paging=never
+  push:
+    force: false
 reporting: "off"

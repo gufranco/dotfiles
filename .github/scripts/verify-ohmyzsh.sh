@@ -4,6 +4,7 @@ set -euo pipefail
 errors=0
 for dir in \
   "$HOME/.oh-my-zsh" \
+  "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" \
   "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" \
   "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" \
   "$HOME/.oh-my-zsh/custom/plugins/fzf-tab" \

@@ -756,6 +756,9 @@ function __f5_reload_configs() {
     __log_skip "Not in tmux session"
   fi
 
+  # Clear eval cache so tools re-initialize with fresh output
+  command rm -rf "${__EVAL_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/zsh/eval-cache}" 2>/dev/null
+
   # Guard prevents tmux auto-start and token re-init during re-source
   export __F5_RELOADING=1
   # shellcheck disable=SC1091

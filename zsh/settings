@@ -43,30 +43,88 @@ export LANG=pt_BR.UTF-8
 export REPORTTIME=5
 
 ################################################################################
+# Completion tuning
+################################################################################
+# Case-insensitive tab completion (e.g., "doc" matches "Documents")
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+# Include hidden files in completion results
+setopt GLOB_DOTS
+
+################################################################################
+# File descriptor limit
+################################################################################
+# Increase open file limit for heavy test suites and watch-mode tools.
+# Guard: only raise if current limit is below the target.
+if [ "$(ulimit -n)" -lt 10240 ] 2>/dev/null; then
+  ulimit -n 10240 2>/dev/null || true
+fi
+
+################################################################################
 # Terminal
 ################################################################################
 # Enable True Color support (24-bit)
 export COLORTERM=truecolor
 
 ################################################################################
+# Cached eval: cache tool init output keyed by binary mtime.
+# Avoids spawning subprocesses on every shell open.
+# Cache is invalidated when the binary changes (upgrade, reinstall).
+# Run `eval-cache-clear` to force rebuild.
+################################################################################
+__EVAL_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/eval-cache"
+
+__cached_eval() {
+  local cmd="$1"
+  shift
+  local bin_path
+  bin_path="$(command -v "$cmd" 2>/dev/null)" || return 0
+
+  local mtime
+  mtime="$(command stat -c '%Y' "$bin_path" 2>/dev/null || command stat -f '%m' "$bin_path" 2>/dev/null)" || return 0
+  local cache_key="${cmd}--${mtime}"
+  local cache_file="${__EVAL_CACHE_DIR}/${cache_key}"
+
+  if [ -f "$cache_file" ]; then
+    # shellcheck disable=SC1090
+    source "$cache_file"
+  else
+    command mkdir -p "$__EVAL_CACHE_DIR"
+    # Remove stale caches for this tool
+    # NULL_GLOB: let the glob expand to nothing instead of raising a zsh error
+    setopt local_options NULL_GLOB
+    command rm -f "${__EVAL_CACHE_DIR}/${cmd}--"* 2>/dev/null
+    local init_output
+    init_output="$("$bin_path" "$@")" || { echo "cached_eval: $cmd init failed" >&2; return 0; }
+    printf '%s' "$init_output" > "$cache_file"
+    # shellcheck disable=SC1090
+    source "$cache_file"
+  fi
+}
+
+eval-cache-clear() {
+  command rm -rf "$__EVAL_CACHE_DIR"
+  echo "Eval cache cleared. Restart your shell to rebuild."
+}
+
+################################################################################
 # direnv
 ################################################################################
-command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
+__cached_eval direnv hook zsh
 
 ################################################################################
 # mise
 ################################################################################
-command -v mise >/dev/null 2>&1 && eval "$(mise activate zsh)"
+__cached_eval mise activate zsh
 
 ################################################################################
 # zoxide (smart cd)
 ################################################################################
-command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+__cached_eval zoxide init zsh
 
 ################################################################################
 # atuin (shell history)
 ################################################################################
-command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh --disable-up-arrow)"
+__cached_eval atuin init zsh --disable-up-arrow
 
 ################################################################################
 # starship prompt (loads after oh-my-zsh spaceship if both present)
@@ -87,7 +145,13 @@ export FZF_DEFAULT_OPTS=" \
   --color=fg+:#c0caf5,bg+:#283457,hl+:#7dcfff \
   --color=info:#7aa2f7,prompt:#7aa2f7,pointer:#7dcfff \
   --color=marker:#9ece6a,spinner:#9ece6a,header:#9ece6a \
-  --color=border:#414868,label:#c0caf5,query:#c0caf5"
+  --color=border:#414868,label:#c0caf5,query:#c0caf5 \
+  --layout=reverse --border=rounded \
+  --preview 'bat --color=always --style=numbers --line-range=:500 {} 2>/dev/null || cat {}' \
+  --bind 'ctrl-/:toggle-preview' \
+  --bind 'ctrl-d:preview-half-page-down' \
+  --bind 'ctrl-u:preview-half-page-up' \
+  --bind 'ctrl-o:execute(\${EDITOR:-vim} {})'"
 
 # Use fd as fzf's file finder (respects .gitignore, faster than find)
 if command -v fd >/dev/null 2>&1; then
@@ -126,8 +190,17 @@ export plugins=(
 
   fzf
   fzf-tab
+  zsh-autosuggestions
   zsh-syntax-highlighting
 )
+
+################################################################################
+# zsh-autosuggestions
+################################################################################
+# Search history first, fall back to completion engine
+export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+# Tokyo Night muted foreground for suggestions
+export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#565f89"
 
 ################################################################################
 # Spaceship

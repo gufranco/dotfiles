@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+#
+# Core shared helpers used across multiple files and by install.sh.
+# Only genuinely shared functions belong here. Domain-specific helpers
+# live next to their consumers (f5, disk, infrastructure, etc.).
+
+################################################################################
+# Logging
+################################################################################
+function __log_with_time() {
+  local prefix="$1"
+  shift
+
+  if [ -n "${SCRIPT_START_TIME:-}" ]; then
+    local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
+    local mins=$((elapsed / 60))
+    local secs=$((elapsed % 60))
+    echo -e "${prefix} [$(printf '%02d:%02d' "$mins" "$secs")] $*"
+  else
+    echo -e "${prefix} $*"
+  fi
+}
+
+function __log_info() {
+  __log_with_time "\033[0;34m[INFO]\033[0m" "$@"
+}
+
+function __log_success() {
+  __log_with_time "\033[0;32m[✓]\033[0m" "$@"
+}
+
+function __log_warning() {
+  __log_with_time "\033[0;33m[!]\033[0m" "$@"
+}
+
+function __log_error() {
+  __log_with_time "\033[0;31m[✗]\033[0m" "$@"
+}
+
+function __log_skip() {
+  __log_with_time "\033[0;90m[SKIP]\033[0m" "$@"
+}
+
+################################################################################
+# System checks
+################################################################################
+function __cmd_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+function __pkg_installed() {
+  dpkg -l "$1" 2>/dev/null | grep -q "^ii"
+}
+
+function __snap_installed() {
+  snap list "$1" >/dev/null 2>&1
+}
+
+################################################################################
+# File operations
+################################################################################
+function __safe_link() {
+  local src="$1"
+  local dst="$2"
+
+  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+    __log_skip "Link OK: $dst"
+    return 0
+  fi
+
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    rm -rf "$dst"
+  fi
+
+  mkdir -p "$(dirname "$dst")"
+  ln -s "$src" "$dst"
+  __log_success "Linked: $dst -> $(basename "$src")"
+}
+
+function __git_sync() {
+  local url="$1"
+  local path="$2"
+  local repo_name
+  repo_name=$(basename "$path")
+
+  if [ -d "$path/.git" ]; then
+    if git -C "$path" pull --quiet --no-edit >/dev/null 2>&1; then
+      __log_success "Updated: $repo_name"
+      return 0
+    else
+      __log_warning "Failed to update: $repo_name"
+      return 1
+    fi
+  else
+    rm -rf "$path"
+    if git clone --quiet "$url" "$path" >/dev/null 2>&1; then
+      __log_success "Cloned: $repo_name"
+      return 0
+    else
+      __log_error "Failed to clone: $repo_name"
+      return 1
+    fi
+  fi
+}
+
+################################################################################
+# Package management (used by install.sh)
+################################################################################
+function __apt_install_if_missing() {
+  local package="$1"
+  __pkg_installed "$package" || sudo apt install -y -qq "$package"
+}
+
+function __apt_add_key_and_repo() {
+  local key_url="$1"
+  local key_file="$2"
+  local repo_line="$3"
+  local repo_file="$4"
+  local package="${5:-}"
+
+  if [ ! -f "$key_file" ]; then
+    sudo mkdir -p "$(dirname "$key_file")" 2>/dev/null || true
+    if ! curl -fsSL --connect-timeout 10 --max-time 30 "$key_url" | sudo gpg --dearmor --yes -o "$key_file" 2>/dev/null; then
+      __log_warning "Failed to download GPG key: $key_url"
+      return 1
+    fi
+    echo "$repo_line" | sudo tee "$repo_file" >/dev/null
+    sudo apt update -qq
+
+    if [ -n "$package" ]; then
+      sudo apt install -y -qq "$package"
+    fi
+  fi
+}
+
+function __brew_install_if_missing() {
+  local package="$1"
+  brew list "$package" >/dev/null 2>&1 || brew install "$package"
+}
+
+function __brew_install_cask_if_missing() {
+  local cask="$1"
+  brew list --cask "$cask" >/dev/null 2>&1 || brew install --cask "$cask"
+}
+
+################################################################################
+# PATH management
+################################################################################
+function __add_to_path() {
+  local p=":$PATH:"
+  p="${p//:$1:/:}"
+  p="${p#:}"
+  p="${p%:}"
+  export PATH="$1${p:+:$p}"
+}
+
+function __add_gnu_tool() {
+  local tool="$1"
+  local subpath="${2:-bin}"
+  __add_to_path "$HOMEBREW_PREFIX/opt/$tool/$subpath"
+}
+
+function __setup_homebrew() {
+  local prefix="$1"
+
+  export HOMEBREW_PREFIX="$prefix"
+  export HOMEBREW_CELLAR="$prefix/Cellar"
+  export HOMEBREW_REPOSITORY="$prefix"
+  [ "$prefix" = "/opt/homebrew" ] && export HOMEBREW_REPOSITORY="/opt/homebrew"
+  [ "$prefix" = "/usr/local" ] && export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+  export HOMEBREW_SHELLENV_PREFIX="$prefix"
+  __add_to_path "$prefix/bin"
+  __add_to_path "$prefix/sbin"
+  if [[ ":$MANPATH:" != *":$prefix/share/man:"* ]]; then
+    export MANPATH="$prefix/share/man${MANPATH+:$MANPATH}:"
+  fi
+  if [[ ":$INFOPATH:" != *":$prefix/share/info:"* ]]; then
+    export INFOPATH="$prefix/share/info:${INFOPATH:-}"
+  fi
+}
+
+################################################################################
+# macOS post-install cleanup (used by install.sh and f5)
+################################################################################
+function __macos_post_install_cleanup() {
+  if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
+    __log_info "Cleaning Launchpad cache..."
+    if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
+      killall Dock || true
+      __log_success "Launchpad cache cleaned"
+    fi
+  fi
+
+  __log_info "Refreshing Spotlight index..."
+  mdimport /Applications ~/Applications 2>/dev/null
+  __log_success "Spotlight index refreshed"
+}
+
+################################################################################
+# Alias helper
+################################################################################
+function __alias_if_exists() {
+  local cmd="$1"
+  local alias_name="$2"
+  local alias_value="$3"
+
+  # shellcheck disable=SC2139
+  command -v "$cmd" > /dev/null && alias "$alias_name"="$alias_value"
+}

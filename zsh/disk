@@ -1,0 +1,623 @@
+#!/usr/bin/env bash
+#
+# Disk operations: wipe, sort, and shared helpers.
+# All disk-related helpers live here next to the functions that use them.
+
+################################################################################
+# Shared disk helpers (used by disk_wipe and fat_sort)
+################################################################################
+function __disk_resolve_device() {
+  local input="$1"
+
+  if [ -b "$input" ] || [ -c "$input" ]; then
+    echo "$input"
+    return 0
+  fi
+
+  if [ -d "$input" ]; then
+    local resolved
+    case "$(uname)" in
+      Darwin)
+        resolved=$(diskutil info "$input" 2>/dev/null | awk -F': +' '/Device Node/ {print $2}')
+        ;;
+      Linux)
+        resolved=$(command findmnt -n -o SOURCE "$input" 2>/dev/null)
+        ;;
+    esac
+
+    if [ -n "$resolved" ]; then
+      echo "$resolved"
+      return 0
+    fi
+
+    __log_error "No device found for mount point: $input"
+    return 1
+  fi
+
+  __log_error "Not a device or mount point: $input"
+  return 1
+}
+
+function __disk_whole_device() {
+  local device="$1"
+
+  case "$(uname)" in
+    Darwin)
+      local whole
+      whole=$(diskutil info "$device" 2>/dev/null | awk -F': +' '/Part of Whole/ {print $2}')
+      if [ -n "$whole" ]; then
+        echo "/dev/$whole"
+      else
+        echo "$device"
+      fi
+      ;;
+    Linux)
+      local stripped
+      stripped=$(lsblk -no PKNAME "$device" 2>/dev/null | head -1)
+      if [ -n "$stripped" ]; then
+        echo "/dev/$stripped"
+      else
+        echo "$device"
+      fi
+      ;;
+  esac
+}
+
+function __disk_mount_point() {
+  local partition="$1"
+
+  case "$(uname)" in
+    Darwin)
+      diskutil info "$partition" 2>/dev/null | awk -F': +' '/Mount Point/ {print $2}'
+      ;;
+    Linux)
+      command findmnt -n -o TARGET "$partition" 2>/dev/null
+      ;;
+  esac
+}
+
+function __disk_get_size() {
+  local disk="$1"
+  local size
+
+  case "$(uname)" in
+    Darwin)
+      size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
+      ;;
+    Linux)
+      size=$(command blockdev --getsize64 "$disk" 2>/dev/null)
+      ;;
+  esac
+
+  if [ -z "$size" ] || [ "$size" -eq 0 ]; then
+    __log_error "Unable to determine disk size for $disk"
+    return 1
+  fi
+
+  echo "$size"
+}
+
+function __disk_unmount() {
+  local disk="$1"
+
+  __log_info "Unmounting $disk..."
+  case "$(uname)" in
+    Darwin)
+      if sudo diskutil unmountDisk "$disk" >/dev/null 2>&1; then
+        __log_success "Disk unmounted"
+      else
+        __log_warning "Failed to unmount disk (may not be mounted)"
+      fi
+      ;;
+    Linux)
+      if sudo umount "$disk" 2>/dev/null; then
+        __log_success "Disk unmounted"
+      else
+        __log_warning "Failed to unmount disk (may not be mounted)"
+      fi
+      ;;
+  esac
+}
+
+function __disk_eject() {
+  local disk="$1"
+
+  __log_info "Ejecting device..."
+  case "$(uname)" in
+    Darwin)
+      if sudo diskutil eject "$disk" >/dev/null 2>&1; then
+        __log_success "Device ejected successfully"
+      else
+        __log_error "Failed to eject device"
+        return 1
+      fi
+      ;;
+    Linux)
+      sync
+      if sudo eject "$disk" 2>/dev/null; then
+        __log_success "Device ejected successfully"
+      else
+        __log_warning "Failed to eject device (may not support eject)"
+      fi
+      ;;
+  esac
+}
+
+################################################################################
+# Wipe a storage device with write+verify passes
+################################################################################
+function disk_wipe() {
+  __zfv_validate_params() {
+    local disk="$1"
+    local passes="$2"
+
+    if ! [[ "$passes" =~ ^[0-9]+$ ]] || [ "$passes" -lt 1 ]; then
+      __log_error "Invalid PASSES value: $passes (must be a positive integer)"
+      return 1
+    fi
+
+    if [ -z "$disk" ]; then
+      __log_error "No device specified"
+      __log_info "Usage: disk_wipe <device|mount_point>"
+      __log_info "       disk_wipe /dev/disk4"
+      __log_info "       disk_wipe /Volumes/USB"
+      __log_info "       PASSES=N disk_wipe <device|mount_point>"
+      __log_info "       CREATE=y disk_wipe <device|mount_point>"
+      return 1
+    fi
+
+    if [ ! -b "$disk" ] && [ ! -c "$disk" ]; then
+      __log_error "Device not found or invalid: $disk"
+      return 1
+    fi
+
+    return 0
+  }
+
+  __zfv_confirm() {
+    local disk="$1"
+    local confirm
+
+    printf "This will ERASE all data on %s. Continue? (y/N): " "$disk"
+    IFS= read -r confirm
+
+    if [ "$confirm" != "y" ]; then
+      __log_warning "Operation cancelled"
+      return 1
+    fi
+
+    return 0
+  }
+
+  __zfv_generate_pattern() {
+    local size="$1"
+    local pattern="$2"
+
+    if [ "$pattern" = "0xFF" ]; then
+      head -c "$size" /dev/zero | tr '\000' '\377'
+    else
+      head -c "$size" /dev/zero
+    fi
+  }
+
+  __zfv_write_pattern() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local pattern="$4"
+
+    __log_info "Writing $pattern..."
+
+    if ! __zfv_generate_pattern "$size" "$pattern" | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
+      __log_error "Failed to write $pattern"
+      return 1
+    fi
+
+    __log_success "Write $pattern completed"
+    return 0
+  }
+
+  __zfv_verify_pattern() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local pattern="$4"
+
+    __log_info "Verifying $pattern..."
+
+    if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
+      cmp -s - <(__zfv_generate_pattern "$size" "$pattern"); then
+      __log_error "Failed to verify $pattern"
+      return 1
+    fi
+
+    __log_success "Verify $pattern completed"
+    return 0
+  }
+
+  __zfv_execute_pass() {
+    local disk="$1"
+    local size="$2"
+    local block_size="$3"
+    local index="$4"
+    local passes="$5"
+
+    __log_info "Pass $index of $passes"
+
+    __zfv_write_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
+    __zfv_verify_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
+    __zfv_write_pattern "$disk" "$size" "$block_size" "0x00" || return 1
+    __zfv_verify_pattern "$disk" "$size" "$block_size" "0x00" || return 1
+
+    __log_success "Pass $index/$passes completed"
+    return 0
+  }
+
+  __zfv_detect_media() {
+    local disk="$1"
+    local size="$2"
+
+    local size_mb=$((size / 1024 / 1024))
+
+    if [ "$size_mb" -le 3 ]; then
+      echo "floppy"
+      return 0
+    fi
+
+    if [ "$size_mb" -le 260 ]; then
+      echo "zip"
+      return 0
+    fi
+
+    local two_gb=$((2 * 1024))
+    if [ "$size_mb" -le "$two_gb" ]; then
+      echo "small"
+      return 0
+    fi
+
+    local thirty_two_gb=$((32 * 1024))
+    if [ "$size_mb" -le "$thirty_two_gb" ]; then
+      echo "medium"
+      return 0
+    fi
+
+    echo "large"
+  }
+
+  __zfv_create_partition() {
+    local disk="$1"
+    local size="$2"
+    local media
+
+    media=$(__zfv_detect_media "$disk" "$size")
+
+    local fs_type label
+    label="NO NAME"
+
+    case "$media" in
+      floppy)
+        fs_type="FAT12"
+        label="FLOPPY"
+        ;;
+      zip)
+        fs_type="FAT16"
+        label="ZIP"
+        ;;
+      small)
+        fs_type="FAT16"
+        ;;
+      medium)
+        fs_type="FAT32"
+        ;;
+      large)
+        fs_type="ExFAT"
+        ;;
+    esac
+
+    __log_info "Detected media: $media"
+    __log_info "Creating filesystem ($fs_type)..."
+
+    if [ "$media" = "floppy" ]; then
+      case "$(uname)" in
+        Darwin)
+          if sudo newfs_msdos -F 12 -v "$label" "$disk" >/dev/null 2>&1; then
+            __log_success "Formatted as $fs_type (superfloppy)"
+          else
+            __log_error "Failed to format floppy"
+            return 1
+          fi
+          ;;
+        Linux)
+          if sudo mkfs.fat -F 12 -n "$label" "$disk" >/dev/null 2>&1; then
+            __log_success "Formatted as $fs_type (superfloppy)"
+          else
+            __log_error "Failed to format floppy"
+            return 1
+          fi
+          ;;
+      esac
+      return 0
+    fi
+
+    case "$(uname)" in
+      Darwin)
+        local darwin_fs
+        if [ "$fs_type" = "ExFAT" ]; then
+          darwin_fs="ExFAT"
+        else
+          darwin_fs="MS-DOS $fs_type"
+        fi
+        if sudo diskutil eraseDisk "$darwin_fs" "$label" MBRFormat "$disk" >/dev/null 2>&1; then
+          __log_success "Partition created ($fs_type)"
+        else
+          __log_error "Failed to create partition"
+          return 1
+        fi
+        ;;
+      Linux)
+        if ! echo ",,0c;" | sudo sfdisk "$disk" >/dev/null 2>&1; then
+          __log_error "Failed to create partition table"
+          return 1
+        fi
+
+        sleep 1
+        sudo partprobe "$disk" 2>/dev/null
+
+        local partition
+        if [[ "$disk" =~ [0-9]$ ]]; then
+          partition="${disk}p1"
+        else
+          partition="${disk}1"
+        fi
+
+        local format_ok=false
+        case "$media" in
+          zip|small)
+            sudo mkfs.fat -F 16 -n "$label" "$partition" >/dev/null 2>&1 && format_ok=true
+            ;;
+          medium)
+            sudo mkfs.fat -F 32 -n "$label" "$partition" >/dev/null 2>&1 && format_ok=true
+            ;;
+          large)
+            sudo mkfs.exfat -n "$label" "$partition" >/dev/null 2>&1 && format_ok=true
+            ;;
+        esac
+
+        if [ "$format_ok" = true ]; then
+          __log_success "Partition created ($fs_type)"
+        else
+          __log_error "Failed to format partition"
+          return 1
+        fi
+        ;;
+    esac
+
+    return 0
+  }
+
+  local input="$1"
+  local passes="${PASSES:-1}"
+  local block_size=$((1024 * 1024))
+
+  if [ -z "$input" ]; then
+    __log_error "No device specified"
+    __log_info "Usage: disk_wipe <device|mount_point>"
+    __log_info "       disk_wipe /dev/disk4       (macOS, whole disk)"
+    __log_info "       disk_wipe /dev/sdb         (Linux, whole disk)"
+    __log_info "       disk_wipe /Volumes/USB     (macOS, mount point)"
+    __log_info "       disk_wipe /mnt/usb         (Linux, mount point)"
+    __log_info "       PASSES=N disk_wipe <device|mount_point>"
+    __log_info "       CREATE=y disk_wipe <device|mount_point>"
+    return 1
+  fi
+
+  local disk
+  disk=$(__disk_resolve_device "$input") || return 1
+  disk=$(__disk_whole_device "$disk")
+  __log_info "Device: $disk"
+
+  __zfv_validate_params "$disk" "$passes" || return 1
+
+  local size
+  size=$(__disk_get_size "$disk") || return 1
+
+  __zfv_confirm "$disk" || return 1
+  __disk_unmount "$disk"
+
+  __log_info "Cleaning $disk..."
+  for ((index=1; index <= passes; index++)); do
+    __zfv_execute_pass "$disk" "$size" "$block_size" "$index" "$passes" || return 1
+  done
+
+  [ "${CREATE}" = "y" ] && __zfv_create_partition "$disk" "$size"
+
+  __disk_eject "$disk"
+}
+
+################################################################################
+# Clean and sort a FAT device
+################################################################################
+function fat_sort() {
+  if ! __cmd_exists fatsort; then
+    __log_error "fatsort is not installed."
+    return 1
+  fi
+
+  __fat_sort_find_partition() {
+    local device="$1"
+
+    case "$(uname)" in
+      Darwin)
+        if [[ "$device" =~ s[0-9]+$ ]]; then
+          echo "$device"
+          return 0
+        fi
+
+        local partition
+        partition=$(diskutil list "$device" 2>/dev/null | grep -iE "DOS_FAT|Windows_FAT|Microsoft Basic Data" | awk '{print $NF}' | head -1)
+
+        if [ -n "$partition" ]; then
+          echo "/dev/$partition"
+          return 0
+        fi
+
+        __log_error "No FAT partition found on $device"
+        return 1
+        ;;
+      Linux)
+        if [[ "$device" =~ [0-9]$ ]]; then
+          echo "$device"
+          return 0
+        fi
+
+        echo "${device}1"
+        return 0
+        ;;
+    esac
+  }
+
+  __fat_sort_ensure_mounted() {
+    local partition="$1"
+    local mount_point
+
+    mount_point=$(__disk_mount_point "$partition")
+    if [ -n "$mount_point" ]; then
+      echo "$mount_point"
+      return 0
+    fi
+
+    __log_info "Mounting $partition..."
+
+    case "$(uname)" in
+      Darwin)
+        if diskutil mount "$partition" >/dev/null 2>&1; then
+          mount_point=$(__disk_mount_point "$partition")
+          if [ -n "$mount_point" ]; then
+            echo "$mount_point"
+            return 0
+          fi
+        fi
+        ;;
+      Linux)
+        mount_point="/tmp/fatsort_$$"
+        mkdir -p "$mount_point"
+        if sudo mount "$partition" "$mount_point" 2>/dev/null; then
+          echo "$mount_point"
+          return 0
+        fi
+        rmdir "$mount_point" 2>/dev/null
+        ;;
+    esac
+
+    return 1
+  }
+
+  __fat_sort_unmount() {
+    local partition="$1"
+
+    case "$(uname)" in
+      Darwin)
+        diskutil unmount "$partition" >/dev/null 2>&1
+        ;;
+      Linux)
+        sudo umount "$partition" 2>/dev/null
+        local mount_point="/tmp/fatsort_$$"
+        [ -d "$mount_point" ] && rmdir "$mount_point" 2>/dev/null
+        ;;
+    esac
+  }
+
+  __fat_sort_clean() {
+    local mount_point="$1"
+    local total=0
+
+    __log_info "Cleaning temporary files..."
+
+    local patterns=(
+      # macOS
+      ".DS_Store"
+      ".AppleDB"
+      ".AppleDesktop"
+      ".AppleDouble"
+      ".apdisk"
+      ".com.apple.timemachine.donotpresent"
+      ".fseventsd"
+      ".Spotlight-V100"
+      ".TemporaryItems"
+      ".Trashes"
+      "._*"
+      # Windows
+      '$RECYCLE.BIN'
+      "Desktop.ini"
+      "ehthumbs.db"
+      "ehthumbs_vista.db"
+      "RECYCLER"
+      "System Volume Information"
+      "Thumbs.db"
+      # Linux
+      ".directory"
+      ".Trash-*"
+    )
+
+    local count
+    for pattern in "${patterns[@]}"; do
+      count=$(command find "$mount_point" -name "$pattern" 2>/dev/null | command wc -l | tr -d ' ')
+
+      if [ "$count" -gt 0 ]; then
+        command find "$mount_point" -name "$pattern" -exec rm -rf {} + 2>/dev/null
+        total=$((total + count))
+        __log_info "  Removed: $pattern ($count)"
+      fi
+    done
+
+    if [ "$total" -gt 0 ]; then
+      __log_success "Cleaned $total items"
+    else
+      __log_info "No junk files found"
+    fi
+  }
+
+  local input="$1"
+
+  if [ -z "$input" ]; then
+    __log_error "No device specified"
+    echo ""
+    __log_info "Usage: fat_sort <device|mount_point>"
+    __log_info "       fat_sort /dev/disk4       (macOS, whole disk)"
+    __log_info "       fat_sort /dev/disk4s1     (macOS, partition)"
+    __log_info "       fat_sort /dev/sdb1        (Linux, partition)"
+    __log_info "       fat_sort /Volumes/EZFLASH (macOS, mount point)"
+    __log_info "       fat_sort /mnt/usb         (Linux, mount point)"
+    return 1
+  fi
+
+  local device
+  device=$(__disk_resolve_device "$input") || return 1
+
+  local partition
+  partition=$(__fat_sort_find_partition "$device") || return 1
+  __log_info "Partition: $partition"
+
+  local mount_point
+  mount_point=$(__fat_sort_ensure_mounted "$partition")
+  if [ -z "$mount_point" ]; then
+    __log_error "Failed to mount $partition"
+    return 1
+  fi
+
+  __log_info "Mounted at: $mount_point"
+  __fat_sort_clean "$mount_point"
+
+  sync
+  __log_info "Unmounting..."
+  __fat_sort_unmount "$partition"
+  sleep 1
+
+  __log_info "Sorting..."
+  if sudo fatsort -c -o d "$partition" >/dev/null; then
+    __log_success "Device sorted: $partition"
+  else
+    __log_error "Failed to sort: $partition"
+    return 1
+  fi
+}

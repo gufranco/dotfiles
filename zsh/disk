@@ -534,26 +534,69 @@ function fat_sort() {
     __log_info "Cleaning temporary files..."
 
     local patterns=(
-      # macOS
+      # macOS (current)
       ".DS_Store"
       ".AppleDB"
       ".AppleDesktop"
       ".AppleDouble"
       ".apdisk"
       ".com.apple.timemachine.donotpresent"
+      ".com.apple.timemachine.supported"
+      ".DocumentRevisions-V100"
       ".fseventsd"
+      ".MobileBackups"
       ".Spotlight-V100"
       ".TemporaryItems"
       ".Trashes"
+      ".VolumeIcon.icns"
+      ".metadata_never_index"
       "._*"
-      # Windows
+      "__MACOSX"
+      # macOS fsck recovery
+      "FSCK*.REC"
+      # macOS HFS+ wrapper artifacts
+      ".hotfiles.btree"
+      ".journal"
+      ".journal_info_block"
+      # Mac OS 9 / Classic
+      "Icon?"
+      "Network Trash Folder"
+      "Temporary Items"
+      "TheFindByContentFolder"
+      "TheVolumeSettingsFolder"
+      # Windows (Vista+)
       '$RECYCLE.BIN'
       "Desktop.ini"
+      "Thumbs.db"
       "ehthumbs.db"
       "ehthumbs_vista.db"
+      # Windows (2000/XP)
       "RECYCLER"
+      # Windows (95/98/ME)
+      "RECYCLED"
+      # Windows shared
       "System Volume Information"
-      "Thumbs.db"
+      "autorun.inf"
+      # Windows Search / sync markers
+      "IndexerVolumeGuid"
+      "WPSettings.dat"
+      # Windows dump logs
+      "DumpStack.log"
+      "DumpStack.log.tmp"
+      # CHKDSK recovered fragments
+      "FOUND.*"
+      # Office lock/temp files
+      '~$*'
+      ".~lock.*"
+      # Synology NAS
+      "@eaDir"
+      "#recycle"
+      # QNAP NAS
+      "@Recycle"
+      ".@__thumb"
+      # Dropbox
+      ".dropbox"
+      ".dropbox.attr"
       # Linux
       ".directory"
       ".Trash-*"
@@ -561,10 +604,10 @@ function fat_sort() {
 
     local count
     for pattern in "${patterns[@]}"; do
-      count=$(command find "$mount_point" -name "$pattern" 2>/dev/null | command wc -l | tr -d ' ')
+      count=$(command find "$mount_point" -iname "$pattern" 2>/dev/null | command wc -l | tr -d ' ')
 
       if [ "$count" -gt 0 ]; then
-        command find "$mount_point" -name "$pattern" -exec rm -rf {} + 2>/dev/null
+        command find "$mount_point" -iname "$pattern" -exec rm -rf {} + 2>/dev/null
         total=$((total + count))
         __log_info "  Removed: $pattern ($count)"
       fi

@@ -109,8 +109,6 @@ jobs:
         include:
           - runner: macos-15-intel
             name: macOS Sequoia (x64)
-          - runner: macos-26-intel
-            name: macOS Tahoe (x64)
           - runner: macos-latest
             name: macOS latest (arm64)
     runs-on: ${{ matrix.runner }}
@@ -119,6 +117,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
+
+      - name: Free disk space
+        run: |
+          # Remove pre-installed tools that compete for disk on GitHub runners
+          sudo rm -rf /usr/local/lib/android 2>/dev/null || true
+          sudo rm -rf /usr/share/dotnet 2>/dev/null || true
+          sudo rm -rf /opt/hostedtoolcache 2>/dev/null || true
+          sudo rm -rf /usr/local/share/powershell 2>/dev/null || true
+          df -h /
 
       - name: Run install.sh
         run: bash install.sh

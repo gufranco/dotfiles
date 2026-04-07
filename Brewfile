@@ -262,7 +262,7 @@ brew 'rsync'
 ################################################################################
 # AI & Local Inference
 ################################################################################
-brew 'apfel' if architecture == 'arm64'
+brew 'arthur-ficial/tap/apfel' if architecture == 'arm64'
 brew 'llama.cpp' if architecture == 'arm64'
 brew 'ollama' if architecture == 'arm64'
 brew 'opencode'

@@ -120,11 +120,20 @@ jobs:
 
       - name: Free disk space
         run: |
-          # Remove pre-installed tools that compete for disk on GitHub runners
+          # Linux paths
           sudo rm -rf /usr/local/lib/android 2>/dev/null || true
           sudo rm -rf /usr/share/dotnet 2>/dev/null || true
           sudo rm -rf /opt/hostedtoolcache 2>/dev/null || true
           sudo rm -rf /usr/local/share/powershell 2>/dev/null || true
+          # macOS: iOS/watchOS/tvOS/visionOS simulators and Xcode extras
+          sudo rm -rf /Library/Developer/CoreSimulator/Volumes/* 2>/dev/null || true
+          sudo rm -rf /Library/Developer/CoreSimulator/Cryptex/* 2>/dev/null || true
+          xcrun simctl delete all 2>/dev/null || true
+          # macOS: pre-installed Homebrew packages (install.sh reinstalls what it needs)
+          if command -v brew >/dev/null 2>&1; then
+            brew list --formula | xargs brew remove --force --ignore-dependencies 2>/dev/null || true
+            brew cleanup --prune=all -s 2>/dev/null || true
+          fi
           df -h /
 
       - name: Run install.sh

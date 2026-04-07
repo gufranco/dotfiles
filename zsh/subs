@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+#
+# subs - Download pt-BR subtitles for video files using subliminal.
+
+function subs() {
+  if ! __cmd_exists subliminal; then
+    __log_error "subliminal is not installed. Install with: pip install subliminal"
+    return 1
+  fi
+
+  __subs_ensure_utf8() {
+    local srt_file="$1"
+    local detected
+    detected="$(command file --mime-encoding "$srt_file" 2>/dev/null | awk -F': ' '{print $2}')"
+
+    if [ -z "$detected" ]; then
+      __log_warning "Could not detect encoding: $(basename "$srt_file")"
+      return 1
+    fi
+
+    # Already UTF-8: strip BOM if present and move on
+    if [ "$detected" = "utf-8" ] || [ "$detected" = "us-ascii" ]; then
+      sed -i '' $'1s/^\xEF\xBB\xBF//' "$srt_file" 2>/dev/null
+      return 0
+    fi
+
+    __log_info "Converting $(basename "$srt_file") from $detected to utf-8"
+
+    local tmp_file="${srt_file}.tmp"
+    if iconv -f "$detected" -t utf-8 "$srt_file" > "$tmp_file" 2>/dev/null; then
+      sed -i '' $'1s/^\xEF\xBB\xBF//' "$tmp_file" 2>/dev/null
+      mv "$tmp_file" "$srt_file"
+      __log_success "Converted: $(basename "$srt_file")"
+    else
+      rm -f "$tmp_file"
+      __log_warning "Conversion failed: $(basename "$srt_file"). Trying windows-1252 fallback"
+
+      if iconv -f windows-1252 -t utf-8 "$srt_file" > "$tmp_file" 2>/dev/null; then
+        sed -i '' $'1s/^\xEF\xBB\xBF//' "$tmp_file" 2>/dev/null
+        mv "$tmp_file" "$srt_file"
+        __log_success "Converted (windows-1252 fallback): $(basename "$srt_file")"
+      else
+        rm -f "$tmp_file"
+        __log_error "All conversion attempts failed: $(basename "$srt_file")"
+        return 1
+      fi
+    fi
+  }
+
+  __subs_download_for_file() {
+    local video_file="$1"
+    local basename
+    basename="$(basename "$video_file")"
+
+    __log_info "Downloading subtitle: $basename"
+
+    if subliminal download \
+      -l pt-BR \
+      -HI \
+      --force \
+      -e utf-8 \
+      "$video_file" 2>&1 | grep -v "^$"; then
+
+      local video_name="${video_file%.*}"
+
+      local srt_found=0
+      for srt in "${video_name}"*.srt; do
+        if [ -f "$srt" ]; then
+          __subs_ensure_utf8 "$srt"
+          srt_found=1
+        fi
+      done
+
+      if [ "$srt_found" -eq 0 ]; then
+        __log_warning "No subtitle found: $basename"
+        return 1
+      fi
+    else
+      __log_warning "subliminal failed: $basename"
+      return 1
+    fi
+  }
+
+  local target="${1:-}"
+  local success=0
+  local failed=0
+
+  # Single file mode
+  if [ -n "$target" ]; then
+    if [ ! -f "$target" ]; then
+      __log_error "File not found: $target"
+      return 1
+    fi
+
+    __subs_download_for_file "$target"
+    return $?
+  fi
+
+  # Directory mode: process all video files in the current directory
+  local video_extensions=("mkv" "MKV" "mp4" "MP4" "avi" "AVI" "m4v" "M4V")
+  local videos=()
+
+  for ext in "${video_extensions[@]}"; do
+    for f in ./*."$ext"; do
+      [ -f "$f" ] && videos+=("$f")
+    done
+  done
+
+  if [ ${#videos[@]} -eq 0 ]; then
+    __log_warning "No video files found in the current directory"
+    return 1
+  fi
+
+  __log_info "Found ${#videos[@]} video files"
+  echo ""
+
+  for video in "${videos[@]}"; do
+    __subs_download_for_file "$video"
+    local result=$?
+
+    if [ "$result" -eq 0 ]; then
+      ((success++))
+    else
+      ((failed++))
+    fi
+
+    echo ""
+  done
+
+  # Also convert any pre-existing subtitle files
+  for srt in ./*.srt; do
+    if [ -f "$srt" ]; then
+      __subs_ensure_utf8 "$srt"
+    fi
+  done
+
+  echo ""
+  __log_info "==============================================================="
+  __log_success "Subtitles: $success downloaded, $failed failed (${#videos[@]} total)"
+  __log_info "==============================================================="
+  echo ""
+}

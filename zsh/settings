@@ -211,36 +211,64 @@ export SPACESHIP_CHAR_SYMBOL="❯"
 export SPACESHIP_CHAR_SUFFIX=" "
 
 ################################################################################
-# NPM Token
+# Token management (GPG-decrypted secrets with file cache)
 ################################################################################
-if [ -z "$NPM_TOKEN" ]; then
-  if __update_npm_token; then
-    # Verify token was loaded successfully (double-check)
-    if [ -z "${NPM_TOKEN:-}" ]; then
-      # Token loading failed silently, ensure it's unset
-      unset NPM_TOKEN
-    fi
-  else
-    # Function returned error, ensure NPM_TOKEN is unset
-    unset NPM_TOKEN 2>/dev/null || true
-  fi
-fi
+function __update_token() {
+  local force="${1:-false}"
+  local env_var_name="$2"
+  local gpg_file="$3"
+  local cache_file_name="$4"
 
-################################################################################
-# GitHub Token
-################################################################################
-if [ -z "$GITHUB_PAT" ]; then
-  if __update_github_token; then
-    # Verify token was loaded successfully (double-check)
-    if [ -z "${GITHUB_PAT:-}" ]; then
-      # Token loading failed silently, ensure it's unset
-      unset GITHUB_PAT
-    fi
-  else
-    # Function returned error, ensure GITHUB_PAT is unset
-    unset GITHUB_PAT 2>/dev/null || true
+  if [ -z "$env_var_name" ] || [ -z "$gpg_file" ] || [ -z "$cache_file_name" ]; then
+    return 1
   fi
-fi
+
+  local cache_dir="$HOME/.cache/dotfiles-tokens"
+  mkdir -p "$cache_dir" && chmod 700 "$cache_dir" 2>/dev/null
+  local cache_file="${cache_dir}/${cache_file_name}.cache"
+  local token_content
+
+  # Try cache first (unless force refresh)
+  if [ "$force" != "true" ] && [ -f "$cache_file" ]; then
+    token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
+    if [ -n "$token_content" ]; then
+      export "${env_var_name}"="$token_content"
+      return 0
+    else
+      rm -f "$cache_file" 2>/dev/null
+    fi
+  fi
+
+  command -v gpg >/dev/null 2>&1 || return 1
+  [ -f "$gpg_file" ] || return 1
+
+  # Decrypt and cache
+  if ! (umask 077 && gpg --quiet --batch --yes -d "$gpg_file" 2>/dev/null | tr -d '\n' > "$cache_file"); then
+    rm -f "$cache_file" 2>/dev/null
+    return 1
+  fi
+
+  token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
+  if [ -z "$token_content" ]; then
+    rm -f "$cache_file" 2>/dev/null
+    return 1
+  fi
+
+  export "${env_var_name}"="$token_content"
+  return 0
+}
+
+function __update_npm_token() {
+  __update_token "${1:-false}" "NPM_TOKEN" "$HOME/.dotfiles/nodejs/tokens/npm.gpg" "npm_token"
+}
+
+function __update_github_token() {
+  __update_token "${1:-false}" "GITHUB_PAT" "$HOME/.dotfiles/git/tokens/github.gpg" "github_token"
+}
+
+# Load tokens (only if not already set)
+[ -z "$NPM_TOKEN" ] && __update_npm_token 2>/dev/null || true
+[ -z "$GITHUB_PAT" ] && __update_github_token 2>/dev/null || true
 
 ################################################################################
 # Workspace folder

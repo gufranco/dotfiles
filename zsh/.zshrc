@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# Utilities (must load first - provides helper functions)
+# Core (must load first - provides shared helpers)
 ################################################################################
-source "$HOME/.dotfiles/zsh/utilities"
+source "$HOME/.dotfiles/zsh/core"
 
 ################################################################################
 # Paths
@@ -31,12 +31,10 @@ source "$ZSH/oh-my-zsh.sh"
 source "$HOME/.dotfiles/zsh/aliases"
 
 ################################################################################
-# Functions
+# Domain modules
 ################################################################################
-source "$HOME/.dotfiles/zsh/functions"
-
-################################################################################
-# Infrastructure (VMs & Containers)
-################################################################################
+source "$HOME/.dotfiles/zsh/f5"
+source "$HOME/.dotfiles/zsh/disk"
+source "$HOME/.dotfiles/zsh/sync-games"
+source "$HOME/.dotfiles/zsh/subs"
 source "$HOME/.dotfiles/zsh/infrastructure"
-

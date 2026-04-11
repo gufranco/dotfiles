@@ -103,7 +103,7 @@ function __disk_unmount() {
   __log_info "Unmounting $disk..."
   case "$(uname)" in
     Darwin)
-      if sudo diskutil unmountDisk "$disk" >/dev/null 2>&1; then
+      if sudo diskutil unmountDisk force "$disk"; then
         __log_success "Disk unmounted"
       else
         __log_warning "Failed to unmount disk (may not be mounted)"
@@ -147,7 +147,7 @@ function __disk_eject() {
 # Wipe a storage device with write+verify passes
 ################################################################################
 function disk_wipe() {
-  __zfv_validate_params() {
+  __dw_validate_params() {
     local disk="$1"
     local passes="$2"
 
@@ -174,7 +174,7 @@ function disk_wipe() {
     return 0
   }
 
-  __zfv_confirm() {
+  __dw_confirm() {
     local disk="$1"
     local confirm
 
@@ -189,7 +189,7 @@ function disk_wipe() {
     return 0
   }
 
-  __zfv_generate_pattern() {
+  __dw_generate_pattern() {
     local size="$1"
     local pattern="$2"
 
@@ -200,7 +200,7 @@ function disk_wipe() {
     fi
   }
 
-  __zfv_write_pattern() {
+  __dw_write_pattern() {
     local disk="$1"
     local size="$2"
     local block_size="$3"
@@ -208,7 +208,7 @@ function disk_wipe() {
 
     __log_info "Writing $pattern..."
 
-    if ! __zfv_generate_pattern "$size" "$pattern" | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
+    if ! __dw_generate_pattern "$size" "$pattern" | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
       __log_error "Failed to write $pattern"
       return 1
     fi
@@ -217,7 +217,7 @@ function disk_wipe() {
     return 0
   }
 
-  __zfv_verify_pattern() {
+  __dw_verify_pattern() {
     local disk="$1"
     local size="$2"
     local block_size="$3"
@@ -226,7 +226,7 @@ function disk_wipe() {
     __log_info "Verifying $pattern..."
 
     if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
-      cmp -s - <(__zfv_generate_pattern "$size" "$pattern"); then
+      cmp -s - <(__dw_generate_pattern "$size" "$pattern"); then
       __log_error "Failed to verify $pattern"
       return 1
     fi
@@ -235,7 +235,7 @@ function disk_wipe() {
     return 0
   }
 
-  __zfv_execute_pass() {
+  __dw_execute_pass() {
     local disk="$1"
     local size="$2"
     local block_size="$3"
@@ -244,16 +244,16 @@ function disk_wipe() {
 
     __log_info "Pass $index of $passes"
 
-    __zfv_write_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
-    __zfv_verify_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
-    __zfv_write_pattern "$disk" "$size" "$block_size" "0x00" || return 1
-    __zfv_verify_pattern "$disk" "$size" "$block_size" "0x00" || return 1
+    __dw_write_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
+    __dw_verify_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
+    __dw_write_pattern "$disk" "$size" "$block_size" "0x00" || return 1
+    __dw_verify_pattern "$disk" "$size" "$block_size" "0x00" || return 1
 
     __log_success "Pass $index/$passes completed"
     return 0
   }
 
-  __zfv_detect_media() {
+  __dw_detect_media() {
     local disk="$1"
     local size="$2"
 
@@ -284,12 +284,12 @@ function disk_wipe() {
     echo "large"
   }
 
-  __zfv_create_partition() {
+  __dw_create_partition() {
     local disk="$1"
     local size="$2"
     local media
 
-    media=$(__zfv_detect_media "$disk" "$size")
+    media=$(__dw_detect_media "$disk" "$size")
 
     local fs_type label
     label="NO NAME"
@@ -416,20 +416,20 @@ function disk_wipe() {
   disk=$(__disk_whole_device "$disk")
   __log_info "Device: $disk"
 
-  __zfv_validate_params "$disk" "$passes" || return 1
+  __dw_validate_params "$disk" "$passes" || return 1
 
   local size
   size=$(__disk_get_size "$disk") || return 1
 
-  __zfv_confirm "$disk" || return 1
+  __dw_confirm "$disk" || return 1
   __disk_unmount "$disk"
 
   __log_info "Cleaning $disk..."
   for ((index=1; index <= passes; index++)); do
-    __zfv_execute_pass "$disk" "$size" "$block_size" "$index" "$passes" || return 1
+    __dw_execute_pass "$disk" "$size" "$block_size" "$index" "$passes" || return 1
   done
 
-  [ "${CREATE}" = "y" ] && __zfv_create_partition "$disk" "$size"
+  [ "${CREATE}" = "y" ] && __dw_create_partition "$disk" "$size"
 
   __disk_eject "$disk"
 }

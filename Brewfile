@@ -172,7 +172,7 @@ brew 'golang', link: true
 brew 'golangci-lint'
 brew 'mise'
 brew 'node', link: true
-brew 'openjdk@17'
+brew 'openjdk@21'
 brew 'oven-sh/bun/bun', link: true
 brew 'pipx'
 brew 'pnpm'
@@ -266,6 +266,7 @@ brew 'arthur-ficial/tap/apfel' if architecture == 'arm64'
 brew 'llama.cpp' if architecture == 'arm64'
 brew 'ollama' if architecture == 'arm64'
 brew 'opencode'
+brew 'rtk'
 
 ################################################################################
 # macOS System

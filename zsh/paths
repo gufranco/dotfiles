@@ -38,7 +38,7 @@ case "$(uname)" in
     __add_to_path "$HOME/.cargo/bin"
 
     # Java
-    export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@17"
+    export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@21"
     __add_to_path "$JAVA_HOME/bin"
 
     # Android

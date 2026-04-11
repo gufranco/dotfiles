@@ -189,6 +189,51 @@ Docker development via Colima with auto-configured VM sizing:
 
 Each service has `-init`, `-start`, `-stop`, `-purge`, and `-terminal` functions. Colima VM uses Apple's Virtualization.framework on macOS with Rosetta 2 for x86_64 container support on Apple Silicon.
 
+### Linux Gaming (x86_64 only)
+
+Full Steam + Proton gaming setup for NVIDIA hybrid GPU laptops. Installed automatically on `amd64` Ubuntu systems.
+
+| Component | What it does |
+|:----------|:-------------|
+| NVIDIA auto-detect | Installs the best proprietary driver for the GPU |
+| NVIDIA Prime | Hybrid GPU switching: iGPU for desktop, dGPU for games |
+| Mesa bleeding edge | Latest Vulkan (RADV) for AMD iGPU via oibaf PPA |
+| Vulkan 64-bit + 32-bit | Full Vulkan stack for both GPUs |
+| Steam | Native .deb from Valve's official repository |
+| GE-Proton | Custom Proton with extra game patches, auto-downloaded |
+| ProtonUp-Qt | GUI manager for GE-Proton versions (Flatpak) |
+| GameMode | CPU governor + I/O priority optimization while gaming |
+| MangoHud | FPS, CPU/GPU temps, frame time overlay |
+| Gamescope | Valve's micro-compositor with FSR upscaling |
+| Protontricks | Per-game Wine component installer |
+| Kernel tuning | SteamOS-aligned sysctl: memory maps, swappiness, split-lock, compaction |
+| Controller udev | steam-devices rules for PS4, PS5, Switch, Steam Controller |
+| NVIDIA power mgmt | dGPU powers down when idle to save battery |
+
+**After install, reboot and run:**
+
+```bash
+gaming-check    # verifies all components
+```
+
+**Per-game Steam launch options** (right-click game, Properties, Launch Options):
+
+```bash
+gaming-launch-options    # prints all recommended options
+```
+
+The standard option for most games:
+
+```
+prime-run gamemoderun mangohud %command%
+```
+
+**One-time Steam setup:** Settings, Compatibility, enable "Enable Steam Play for all other titles", select "Proton Experimental" or a GE-Proton version.
+
+**GE-Proton stays updated automatically** via `f5`. Check [protondb.com](https://www.protondb.com/) for per-game compatibility reports and recommended settings.
+
+**If a game does not work:** switch to GE-Proton in the game's Compatibility settings, check ProtonDB, or use `protontricks <appid> --gui` to install missing Windows components.
+
 ### Claude Code
 
 18 custom skills for AI-assisted development:

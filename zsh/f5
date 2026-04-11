@@ -127,6 +127,37 @@ function __f5_update_mise() {
   fi
 }
 
+function __f5_update_proton_ge() {
+  local proton_dir="$HOME/.steam/steam/compatibilitytools.d"
+  if [ ! -d "$proton_dir" ]; then
+    __log_skip "GE-Proton not set up"
+    return
+  fi
+
+  __log_info "Updating GE-Proton..."
+
+  local latest
+  latest=$(curl -sL --connect-timeout 10 --max-time 30 \
+    https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest \
+    | grep tag_name | cut -d '"' -f 4)
+
+  if [ -z "$latest" ]; then
+    __log_warning "Could not check GE-Proton version"
+    return
+  fi
+
+  if [ -d "$proton_dir/$latest" ]; then
+    __log_success "GE-Proton ${latest} (up to date)"
+    return
+  fi
+
+  curl -#fLo "/tmp/${latest}.tar.gz" --connect-timeout 10 --max-time 300 \
+    "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${latest}/${latest}.tar.gz"
+  tar -xzf "/tmp/${latest}.tar.gz" -C "$proton_dir"
+  rm -f "/tmp/${latest}.tar.gz"
+  __log_success "GE-Proton updated to ${latest}"
+}
+
 function __f5_update_linux() {
   __log_info "Updating Linux packages..."
 
@@ -226,7 +257,10 @@ function f5() {
   __f5_update_mise
 
   case "$(uname)" in
-    "Linux") __f5_update_linux ;;
+    "Linux")
+      __f5_update_linux
+      __f5_update_proton_ge
+      ;;
     "Darwin") __f5_update_macos ;;
   esac
 

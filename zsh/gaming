@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+#
+# gaming - Linux gaming helper functions.
+# Verification, launch option helpers, and GPU management.
+
+# Guard: only load on Linux x86_64
+if [[ "$(uname)" != "Linux" ]] || [[ "$(dpkg --print-architecture 2>/dev/null)" != "amd64" ]]; then
+  # shellcheck disable=SC2317
+  return 0 2>/dev/null || true
+fi
+
+################################################################################
+# gaming-check - Verify all gaming components are working
+################################################################################
+function gaming-check() {
+  local errors=0
+
+  echo ""
+  __log_info "==============================================================="
+  __log_info "Gaming Setup Verification"
+  __log_info "==============================================================="
+  echo ""
+
+  # NVIDIA driver
+  if __cmd_exists nvidia-smi; then
+    local driver_version
+    driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)
+    if [ -n "$driver_version" ]; then
+      __log_success "NVIDIA driver: ${driver_version}"
+    else
+      __log_warning "NVIDIA driver: loaded but no GPU detected"
+    fi
+  else
+    __log_error "NVIDIA driver: not installed"
+    ((errors++))
+  fi
+
+  # NVIDIA Prime mode
+  if __cmd_exists prime-select; then
+    local prime_mode
+    prime_mode=$(prime-select query 2>/dev/null)
+    __log_success "NVIDIA Prime: ${prime_mode}"
+  else
+    __log_warning "NVIDIA Prime: not installed"
+    ((errors++))
+  fi
+
+  # Vulkan drivers
+  if __cmd_exists vulkaninfo; then
+    local vulkan_gpus
+    vulkan_gpus=$(vulkaninfo --summary 2>/dev/null | grep "deviceName" | sed 's/.*= //')
+    if [ -n "$vulkan_gpus" ]; then
+      while IFS= read -r gpu; do
+        __log_success "Vulkan GPU: ${gpu}"
+      done <<< "$vulkan_gpus"
+    else
+      __log_warning "Vulkan: no GPUs found"
+      ((errors++))
+    fi
+  else
+    __log_error "Vulkan: vulkaninfo not installed"
+    ((errors++))
+  fi
+
+  # GameMode
+  if __cmd_exists gamemoded; then
+    if gamemoded -t 2>/dev/null | grep -q "gamemode request succeeded"; then
+      __log_success "GameMode: functional"
+    else
+      __log_warning "GameMode: installed but test failed (check group membership)"
+    fi
+  else
+    __log_error "GameMode: not installed"
+    ((errors++))
+  fi
+
+  # MangoHud
+  if __cmd_exists mangohud; then
+    __log_success "MangoHud: installed"
+  else
+    __log_error "MangoHud: not installed"
+    ((errors++))
+  fi
+
+  # Gamescope
+  if __cmd_exists gamescope; then
+    __log_success "Gamescope: installed"
+  else
+    __log_error "Gamescope: not installed"
+    ((errors++))
+  fi
+
+  # Kernel parameters
+  local max_map
+  max_map=$(command sysctl -n vm.max_map_count 2>/dev/null)
+  if [ "$max_map" -ge 2147483642 ] 2>/dev/null; then
+    __log_success "vm.max_map_count: ${max_map}"
+  else
+    __log_warning "vm.max_map_count: ${max_map:-unknown} (expected 2147483642)"
+    ((errors++))
+  fi
+
+  local split_lock
+  split_lock=$(command sysctl -n kernel.split_lock_mitigate 2>/dev/null)
+  if [ "$split_lock" = "0" ]; then
+    __log_success "kernel.split_lock_mitigate: disabled"
+  else
+    __log_warning "kernel.split_lock_mitigate: ${split_lock:-unknown} (expected 0)"
+  fi
+
+  # GE-Proton
+  local proton_dir="$HOME/.steam/steam/compatibilitytools.d"
+  if [ -d "$proton_dir" ] && [ -n "$(command ls -A "$proton_dir" 2>/dev/null)" ]; then
+    local latest_ge
+    latest_ge=$(command ls -1 "$proton_dir" | sort -V | tail -1)
+    __log_success "GE-Proton: ${latest_ge}"
+  else
+    __log_warning "GE-Proton: not installed"
+    ((errors++))
+  fi
+
+  # Steam
+  if __cmd_exists steam || dpkg -l steam-launcher 2>/dev/null | grep -q "^ii"; then
+    __log_success "Steam: installed"
+  else
+    __log_error "Steam: not installed"
+    ((errors++))
+  fi
+
+  # Summary
+  echo ""
+  if [ "$errors" -eq 0 ]; then
+    __log_success "All gaming components verified"
+  else
+    __log_warning "${errors} component(s) need attention"
+  fi
+  echo ""
+}
+
+################################################################################
+# gaming-launch-options - Print recommended Steam launch options
+################################################################################
+function gaming-launch-options() {
+  echo ""
+  __log_info "Steam Launch Options (copy into game Properties > Launch Options)"
+  echo ""
+  echo "  Standard (most games):"
+  echo "    prime-run gamemoderun mangohud %command%"
+  echo ""
+  echo "  With DLSS/NVAPI (games with DLSS support):"
+  echo "    prime-run PROTON_ENABLE_NVAPI=1 DXVK_ENABLE_NVAPI=1 gamemoderun mangohud %command%"
+  echo ""
+  echo "  With FSR upscaling (render at lower res, upscale):"
+  echo "    prime-run WINE_FULLSCREEN_FSR=1 gamemoderun mangohud %command%"
+  echo ""
+  echo "  With async shaders (GE-Proton only, reduces stutter):"
+  echo "    prime-run DXVK_ASYNC=1 gamemoderun mangohud %command%"
+  echo ""
+  echo "  Debug mode (write logs to /tmp):"
+  echo "    prime-run PROTON_LOG=1 gamemoderun %command%"
+  echo ""
+}

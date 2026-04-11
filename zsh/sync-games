@@ -19,7 +19,7 @@ __sync_collection() {
   if rclone sync \
     --progress \
     --ignore-case \
-    --multi-thread-streams=0 \
+    --multi-thread-streams=4 \
     --size-only \
     --delete-excluded \
     --retries 3 \
@@ -345,6 +345,7 @@ function sync_games() {
 
   __sync_internet_archive() {
     local group="Internet Archive"
+
     local folders=(
       "desktop_20240424"
       "htgdb-gamepacks"
@@ -352,11 +353,185 @@ function sync_games() {
       "neo-geo-aes-romset"
       "Neo-geoRomCollectionByGhostware"
       "neogeoaesmvscomplete"
+      # "NKitFullyLoaded2020429"
       "RetroarchSystemFiles/Retroarch-System/"
       "ric64s-neosd-rom-archive"
       "rom_scene_collection"
       "rom-hack-patch-archive"
       "romhacking.net-20240801"
+
+      # BIOS collections
+      "2019_11_25_redump_bios"
+      "Atari7800Mergedbios"
+      "batov39"
+      "bios_batocera"
+      "bios-files"
+      "verifiedbiosfiles"
+
+      # FPS game data
+      "2020_03_22_DOOM"
+      "Descent_1994_Interplay_"
+      "Duke3DAE"
+      "HERETIC_201905"
+      "Hexen.wad"
+      "quake_pak_202306"
+      "wad-collection-the-ultimate-doom-doom-ii-final-doom-heretic-hexen-hexen-deathkin"
+      "wolfenstein-3d"
+
+      # 1G1R collections (one game, one ROM, curated best versions)
+      "2024-nec-pc-engine-cd-turbografx-cd-hearto-1g1r-collection"
+      "2024-nintendo-ds-hearto-1g1r-collection"
+      "2024-sega-mega-cd-sega-cd-hearto-1g1r-collection"
+      "2024-sega-saturn-hearto-1g1r-collection"
+      "2024-sony-playstation-eur-hearto-1g1r-collection"
+      "2024-sony-playstation-jap-hearto-1g1r-collection"
+      "2024-sony-playstation-usa-hearto-1g1r-collection"
+      "hearto-1g1r-collection"
+      "proper1g1r-collection"
+      "retroachievements-1g1r"
+      "stirlitz-1g1r-perfect-collection"
+
+      # r-roms megathread: MAME and arcade
+      "mame-merged"
+      "mame-sl"
+      "mame-support"
+      "hbmame_0244_roms"
+      "2020_01_06_fbn"
+      "fbnarcade-fullnonmerged"
+      "fbneo"
+      "snk_neo_geo"
+      "konami_e-amusement"
+      "konami_firebeat"
+      "konami_m2"
+      "konami_system_573"
+      "konami_system_gv"
+      "namco_sega_nintendo_triforce"
+      "namco_system_246"
+      "sega_chihiro"
+      "sega_lindbergh"
+      "sega_naomi"
+      "sega_naomi_2"
+      "sega_ringedge"
+      "sega_ringedge_2"
+      "segamodel3"
+
+      # r-roms megathread: Nintendo
+      "3ds-main-encrypted"
+      "3ds-main-encrypted-p2"
+      "MarioCubeLite"
+      "NCubeJ"
+      "AsiaGamecubeCollectionByGhostware"
+      "sfc-speedhacks"
+      "super-famicom-enhanced-colors"
+      "pkmn_collection"
+      "super-mario-world-hacks"
+
+      # r-roms megathread: Sega
+      "sega_dreamcast"
+      "DreamcastCollectionByGhostwareMulti-region"
+      "almstcmpltdrmcst"
+      "sega_saturn"
+      "sega_mega-cd_sega-cd"
+      "atari_jaguar-cd"
+      "tosecdcus20190822"
+
+      # r-roms megathread: Sony PlayStation
+      "sony_playstation_part1"
+      "sony_playstation_part2"
+      "sony_playstation_part3"
+      "sony_playstation_part4"
+      "sony_playstation_part5"
+      "sony_playstation2_a"
+      "sony_playstation2_b"
+      "sony_playstation2_c"
+      "sony_playstation2_d_part1"
+      "sony_playstation2_d_part2"
+      "sony_playstation2_e"
+      "sony_playstation2_f"
+      "sony_playstation2_g"
+      "sony_playstation2_h"
+      "sony_playstation2_i"
+      "sony_playstation2_j"
+      "sony_playstation2_k"
+      "sony_playstation2_l"
+      "sony_playstation2_m_part1"
+      "sony_playstation2_m_part2"
+      "sony_playstation2_n"
+      "sony_playstation2_numberssymbols"
+      "sony_playstation2_o_part1"
+      "sony_playstation2_o_part2"
+      "sony_playstation2_p"
+      "sony_playstation2_q"
+      "sony_playstation2_r"
+      "sony_playstation2_s_part1"
+      "sony_playstation2_s_part2"
+      "sony_playstation2_s_part3"
+      "sony_playstation2_s_part4"
+      "sony_playstation2_t"
+      "sony_playstation2_u"
+      "sony_playstation2_v"
+      "sony_playstation2_w"
+      "sony_playstation2_x"
+      "sony_playstation2_y"
+      "sony_playstation2_z"
+
+      # r-roms megathread: Microsoft Xbox
+      # "microsoft_xbox_numberssymbols"
+      # "microsoft_xbox_a"
+      # "microsoft_xbox_b"
+      # "microsoft_xbox_c_part1"
+      # "microsoft_xbox_c_part2"
+      # "microsoft_xbox_d_part1"
+      # "microsoft_xbox_d_part2"
+      # "microsoft_xbox_e"
+      # "microsoft_xbox_f"
+      # "microsoft_xbox_g"
+      # "microsoft_xbox_h"
+      # "microsoft_xbox_i"
+      # "microsoft_xbox_j"
+      # "microsoft_xbox_k"
+      # "microsoft_xbox_l"
+      # "microsoft_xbox_m_part1"
+      # "microsoft_xbox_m_part2"
+      # "microsoft_xbox_n_part1"
+      # "microsoft_xbox_n_part2"
+      # "microsoft_xbox_o_part1"
+      # "microsoft_xbox_o_part2"
+      # "microsoft_xbox_p"
+      # "microsoft_xbox_q"
+      # "microsoft_xbox_r"
+      # "microsoft_xbox_s_part1"
+      # "microsoft_xbox_s_part2"
+      # "microsoft_xbox_t_part1"
+      # "microsoft_xbox_t_part2"
+      # "microsoft_xbox_u"
+      # "microsoft_xbox_v"
+      # "microsoft_xbox_w"
+      # "microsoft_xbox_x"
+      # "microsoft_xbox_y"
+      # "microsoft_xbox_z"
+
+      # Myrient preservation mirrors
+      # "ProjectPhoenix"
+      # "Artefacts-from-Myrient"
+      # "gb-myrient-mirror-2026"
+      # "ndsdecryptednointromyrientbackup"
+      # "myrient-backup-misc-1"
+      # "myrient-cross-system-preservation"
+      # "myrient-gamecube-preservation"
+      # "myrient-nds-preservation"
+      # "myrient-n64-preservation"
+      # "myrient-gba-preservation"
+      # "myrient-snes-preservation"
+      # "myrient-ps1-preservation"
+      # "myrient-ps2-preservation"
+      # "myrient-psp-preservation"
+      # "myrient-3ds-preservation"
+      # "myrient-wiiu-dev-hdd"
+      # "myrient-xbox360-redump-backup"
+      # "redump-microsoft-xbox-360-games-myrient-unique-files"
+      # "NINRMX360M"
+      # "PlayStation-Redump-Myrient-2026-02-27"
     )
 
     local total=${#folders[@]}
@@ -538,10 +713,10 @@ function sync_games() {
   __log_info "================================================================"
   echo ""
 
-  # __sync_redump
-  __sync_internet_archive
   # __sync_no_intro
+  # __sync_redump
   __sync_ossc
+  __sync_internet_archive
 
   echo ""
   __log_success "================================================================"

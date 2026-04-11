@@ -469,7 +469,6 @@ case "$(uname)" in
         snap_installed discord || { log_info "Installing Discord..."; sudo snap install discord 2>/dev/null || true; }
         snap_installed sublime-text || { log_info "Installing Sublime Text..."; sudo snap install sublime-text --classic 2>/dev/null || true; }
         snap_installed insomnia || { log_info "Installing Insomnia..."; sudo snap install insomnia 2>/dev/null || true; }
-        snap_installed steam || { log_info "Installing Steam..."; sudo snap install steam 2>/dev/null || true; }
       fi
     else
       log_skip "Desktop apps (CI environment)"
@@ -514,36 +513,185 @@ case "$(uname)" in
     safe_link "$HOME/.dotfiles/tilix/tokyonight-night-tilix.json" "$HOME/.config/tilix/schemes/tokyonight-night.json"
 
     ############################################################################
-    # GPU drivers (x86_64 only)
+    # GPU drivers and gaming (x86_64 only)
     ############################################################################
     if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-      log_info "Installing NVIDIA drivers..."
-      NVIDIA_VERSION=550
+      # Enable 32-bit architecture (required for Steam, Proton, and 32-bit drivers)
       sudo dpkg --add-architecture i386
       sudo apt update -qq
       sudo apt -y upgrade -qq
 
-      if ! pkg_installed "nvidia-driver-$NVIDIA_VERSION"; then
-        sudo apt install -y "nvidia-driver-${NVIDIA_VERSION}" "libnvidia-gl-${NVIDIA_VERSION}:i386"
-        log_success "NVIDIA drivers installed"
+      # NVIDIA drivers (auto-detect best driver for installed GPU)
+      log_info "Installing NVIDIA drivers..."
+      apt_install_if_missing ubuntu-drivers-common
+      sudo ubuntu-drivers autoinstall 2>/dev/null || log_warning "NVIDIA auto-install had warnings"
+      log_success "NVIDIA drivers configured"
+
+      # NVIDIA Prime (hybrid GPU switching for laptops with iGPU + dGPU)
+      apt_install_if_missing nvidia-prime
+
+      # Blacklist Nouveau to prevent conflicts with proprietary NVIDIA driver
+      NOUVEAU_BLACKLIST="/etc/modprobe.d/blacklist-nouveau.conf"
+      if [ ! -f "$NOUVEAU_BLACKLIST" ]; then
+        log_info "Blacklisting Nouveau..."
+        printf 'blacklist nouveau\noptions nouveau modeset=0\n' | sudo tee "$NOUVEAU_BLACKLIST" >/dev/null
+        log_success "Nouveau blacklisted"
       else
-        log_skip "NVIDIA drivers already installed"
+        log_skip "Nouveau already blacklisted"
       fi
 
-      # Mesa drivers (point release)
-      log_info "Installing Mesa drivers (point release)..."
-      sudo add-apt-repository -y ppa:kisak/kisak-mesa >/dev/null 2>&1 || true
-      sudo apt update -qq
-      sudo apt -y upgrade -qq
+      # NVIDIA DRM modesetting (required for Wayland, PRIME sync, suspend/resume)
+      GRUB_FILE="/etc/default/grub"
+      if [ -f "$GRUB_FILE" ] && ! grep -q "nvidia-drm.modeset=1" "$GRUB_FILE"; then
+        log_info "Enabling NVIDIA DRM modesetting..."
+        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 nvidia-drm.modeset=1"/' "$GRUB_FILE"
+        sudo update-grub 2>/dev/null || log_warning "update-grub had warnings"
+        log_success "NVIDIA DRM modesetting enabled"
+      else
+        log_skip "NVIDIA DRM modesetting already configured"
+      fi
 
-      # Mesa drivers (bleeding edge)
-      log_info "Installing Mesa drivers (bleeding edge)..."
+      # NVIDIA dynamic power management (dGPU powers down when idle, saves battery)
+      NVIDIA_POWER="/etc/modprobe.d/nvidia-power.conf"
+      if [ ! -f "$NVIDIA_POWER" ]; then
+        log_info "Configuring NVIDIA power management..."
+        echo 'options nvidia NVreg_DynamicPowerManagement=0x02' | sudo tee "$NVIDIA_POWER" >/dev/null
+        log_success "NVIDIA power management configured"
+      else
+        log_skip "NVIDIA power management already configured"
+      fi
+
+      # Mesa drivers (bleeding edge, includes RADV for AMD iGPU Vulkan)
+      log_info "Installing Mesa drivers..."
       sudo add-apt-repository -y ppa:oibaf/graphics-drivers >/dev/null 2>&1 || true
       sudo apt update -qq
       sudo apt -y upgrade -qq
-      log_success "GPU drivers configured"
+      log_success "Mesa drivers configured"
+
+      # Vulkan support (64-bit + 32-bit for both NVIDIA and AMD GPUs)
+      log_info "Installing Vulkan support..."
+      VULKAN_PKGS=(
+        vulkan-tools
+        libvulkan1
+        "libvulkan1:i386"
+        mesa-vulkan-drivers
+        "mesa-vulkan-drivers:i386"
+        "libgl1-mesa-dri:i386"
+      )
+      for pkg in "${VULKAN_PKGS[@]}"; do
+        apt_install_if_missing "$pkg"
+      done
+      log_success "Vulkan support installed"
+
+      # Kernel parameters for gaming (SteamOS-aligned values)
+      GAMING_SYSCTL="/etc/sysctl.d/99-gaming.conf"
+      if [ ! -f "$GAMING_SYSCTL" ]; then
+        log_info "Configuring gaming kernel parameters..."
+        sudo tee "$GAMING_SYSCTL" >/dev/null <<'SYSCTL'
+# Memory map limit for large games (Unity, Unreal Engine)
+vm.max_map_count=2147483642
+
+# Prefer keeping game data in RAM (default 60, lower = less swap)
+vm.swappiness=10
+
+# Disable proactive memory compaction (reduces random latency spikes)
+vm.compaction_proactiveness=0
+
+# Reduce dirty page ratios to prevent I/O stuttering during gameplay
+vm.dirty_ratio=5
+vm.dirty_background_ratio=5
+
+# Disable split-lock mitigation (causes severe perf loss in some Proton games)
+kernel.split_lock_mitigate=0
+SYSCTL
+        sudo sysctl --system >/dev/null 2>&1
+        log_success "Gaming kernel parameters configured"
+      else
+        log_skip "Gaming kernel parameters already configured"
+      fi
+
+      # Raise file descriptor limits (Wine/Proton can exceed default 1024)
+      GAMING_LIMITS="/etc/security/limits.d/99-gaming.conf"
+      if [ ! -f "$GAMING_LIMITS" ]; then
+        log_info "Configuring file descriptor limits..."
+        printf '* soft nofile 1048576\n* hard nofile 1048576\n' | sudo tee "$GAMING_LIMITS" >/dev/null
+        log_success "File descriptor limits configured"
+      else
+        log_skip "File descriptor limits already configured"
+      fi
+
+      # Controller support (udev rules for PS4, PS5, Switch, Steam Controller)
+      apt_install_if_missing steam-devices
+
+      # Add user to input group for controller access
+      if ! groups "$USER" | grep -qw input; then
+        sudo usermod -a -G input "$USER"
+        log_success "User added to input group"
+      fi
+
+      # Desktop-only gaming packages (skip in CI)
+      if [[ -z "$CI" ]]; then
+        # Gaming performance tools
+        log_info "Installing gaming tools..."
+        apt_install_if_missing gamemode
+        apt_install_if_missing "libgamemodeauto0:i386"
+        apt_install_if_missing mangohud
+        apt_install_if_missing gamescope
+        apt_install_if_missing protontricks
+        log_success "Gaming tools installed"
+
+        # Steam (from Valve's official repository)
+        if ! pkg_installed steam-launcher; then
+          log_info "Installing Steam..."
+          echo "steam steam/question select I AGREE" | sudo debconf-set-selections
+          echo "steam steam/license note ''" | sudo debconf-set-selections
+          apt_add_key_and_repo \
+            "https://repo.steampowered.com/steam/archive/stable/steam.gpg" \
+            "/etc/apt/keyrings/steam.gpg" \
+            "deb [arch=amd64,i386 signed-by=/etc/apt/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam" \
+            "/etc/apt/sources.list.d/steam-stable.list" \
+            "steam-launcher"
+          log_success "Steam installed"
+        else
+          log_skip "Steam already installed"
+        fi
+
+        # ProtonUp-Qt (manages GE-Proton custom builds for better game compatibility)
+        apt_install_if_missing flatpak
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+        if ! flatpak list 2>/dev/null | grep -q "net.davidotek.pupgui2"; then
+          log_info "Installing ProtonUp-Qt..."
+          flatpak install -y --noninteractive flathub net.davidotek.pupgui2 2>/dev/null || log_warning "ProtonUp-Qt install had warnings"
+          log_success "ProtonUp-Qt installed"
+        else
+          log_skip "ProtonUp-Qt already installed"
+        fi
+
+        # GE-Proton (custom Proton with extra game patches, auto-download latest)
+        PROTON_GE_DIR="$HOME/.steam/steam/compatibilitytools.d"
+        mkdir -p "$PROTON_GE_DIR"
+        if [ -z "$(command ls -A "$PROTON_GE_DIR" 2>/dev/null)" ]; then
+          log_info "Installing latest GE-Proton..."
+          GE_LATEST=$(curl -sL --connect-timeout 10 --max-time 30 \
+            https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest \
+            | grep tag_name | cut -d '"' -f 4)
+          if [ -n "$GE_LATEST" ]; then
+            curl -#fLo "/tmp/${GE_LATEST}.tar.gz" --connect-timeout 10 --max-time 300 \
+              "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${GE_LATEST}/${GE_LATEST}.tar.gz"
+            tar -xzf "/tmp/${GE_LATEST}.tar.gz" -C "$PROTON_GE_DIR"
+            rm -f "/tmp/${GE_LATEST}.tar.gz"
+            log_success "GE-Proton ${GE_LATEST} installed"
+          else
+            log_warning "Could not determine latest GE-Proton version"
+          fi
+        else
+          log_skip "GE-Proton already installed"
+        fi
+      else
+        log_skip "Gaming tools and Steam (CI environment)"
+      fi
     else
-      log_skip "GPU drivers (not supported on $(dpkg --print-architecture))"
+      log_skip "GPU drivers and gaming (not supported on $(dpkg --print-architecture))"
     fi
 
     ;;
@@ -953,4 +1101,7 @@ echo ""
 log_info "Total execution time: ${TOTAL_MINS}m ${TOTAL_SECS}s"
 echo ""
 log_warning "Some changes may require a reboot to take effect"
+if [ "$(uname)" = "Linux" ] && [ "$(dpkg --print-architecture 2>/dev/null)" = "amd64" ]; then
+  log_warning "GPU and gaming changes require a reboot. Run 'gaming-check' after reboot to verify."
+fi
 echo ""

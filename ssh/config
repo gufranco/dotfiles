@@ -39,6 +39,8 @@ Host nas ds923
   PasswordAuthentication yes
   KbdInteractiveAuthentication yes
   PubkeyAuthentication yes
+  IdentityFile ~/.ssh/id_ed25519_personal
+  IdentitiesOnly yes
   ControlMaster no
   ForwardAgent no
 

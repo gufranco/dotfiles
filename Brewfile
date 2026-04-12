@@ -116,6 +116,7 @@ brew 'lazygit'
 # Networking & HTTP
 ################################################################################
 brew 'bandwhich'
+brew 'sshpass'
 brew 'curl'
 brew 'gping'
 brew 'grpcurl'

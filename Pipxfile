@@ -1,0 +1,25 @@
+# Pipxfile — CLI tools managed by pipx
+# Format: one package per line. Comments (#) and blank lines are ignored.
+# Managed by f5 and install.sh — mirrors the Brewfile pattern.
+#
+# Install all:   pipx install <package>
+# Upgrade all:   pipx upgrade-all
+# Cleanup extra: handled automatically by f5
+
+# Penetration testing — web fuzzing and parameter discovery
+arjun
+
+# Penetration testing — WAF detection
+wafw00f
+
+# HTTP client — CLI for direct HTTP requests with HTTP/2 support
+httpx[http2]
+
+# Packet crafting and network analysis
+scapy
+
+# Windows/AD protocol suite: SMB, Kerberos, NTLM, LDAP
+impacket
+
+# Knowledge graph generation from any input
+graphifyy

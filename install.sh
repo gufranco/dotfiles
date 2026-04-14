@@ -756,6 +756,36 @@ SYSCTL
     fi
 
     ############################################################################
+    # pipx CLI tools (Pipxfile)
+    ############################################################################
+    if cmd_exists pipx && [ -f "$HOME/.dotfiles/Pipxfile" ]; then
+      log_info "Installing pipx tools..."
+      local pipx_ok=0
+      local pipx_skip=0
+      local pipx_fail=0
+      while IFS= read -r pkg || [ -n "$pkg" ]; do
+        [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+        if pipx list --short 2>/dev/null | awk '{print $1}' | grep -qx "$pkg"; then
+          ((pipx_skip++))
+        else
+          if pipx install "$pkg" --quiet 2>/dev/null; then
+            ((pipx_ok++))
+          else
+            log_warning "Failed to install pipx package: $pkg"
+            ((pipx_fail++))
+          fi
+        fi
+      done < "$HOME/.dotfiles/Pipxfile"
+      if [ "$pipx_fail" -eq 0 ]; then
+        log_success "pipx tools installed (new: $pipx_ok, already present: $pipx_skip)"
+      else
+        log_warning "pipx tools installed with $pipx_fail failure(s)"
+      fi
+    else
+      log_skip "pipx not found or Pipxfile missing, skipping pipx tools"
+    fi
+
+    ############################################################################
     # Bash
     ############################################################################
     if ! grep -q "$HOMEBREW_PREFIX/bin/bash" /etc/shells 2>/dev/null; then

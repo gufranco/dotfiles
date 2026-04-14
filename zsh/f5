@@ -192,6 +192,60 @@ function __f5_update_macos() {
   __log_success "macOS packages updated"
 }
 
+function __f5_update_python() {
+  local pipxfile="$HOME/.dotfiles/Pipxfile"
+
+  ############################################################################
+  # pipx CLI tools
+  ############################################################################
+  if ! __cmd_exists pipx; then
+    __log_skip "pipx not installed, skipping CLI tools"
+    return
+  fi
+
+  if [ ! -f "$pipxfile" ]; then
+    __log_skip "Pipxfile not found"
+    return
+  fi
+
+  __log_info "Updating pipx tools..."
+
+  # Install any package listed in Pipxfile that is not yet installed
+  local installed_count=0
+  local skip_count=0
+  while IFS= read -r pkg || [ -n "$pkg" ]; do
+    [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+    if pipx list --short 2>/dev/null | awk '{print $1}' | grep -qx "$pkg"; then
+      ((skip_count++))
+    else
+      pipx install "$pkg" --quiet 2>/dev/null && ((installed_count++)) || \
+        __log_warning "Failed to install pipx package: $pkg"
+    fi
+  done < "$pipxfile"
+
+  # Upgrade all installed tools
+  pipx upgrade-all --quiet 2>/dev/null || __log_warning "pipx upgrade-all had failures"
+
+  # Remove tools installed via pipx that are no longer in Pipxfile
+  local removed_count=0
+  while IFS= read -r installed_pkg; do
+    [[ -z "$installed_pkg" ]] && continue
+    if ! grep -qxE "^[^#].*" "$pipxfile" | grep -qx "$installed_pkg" 2>/dev/null; then
+      # Check if it's actually in the file (accounting for comments/blanks)
+      local found=false
+      while IFS= read -r line || [ -n "$line" ]; do
+        [[ -z "$line" || "$line" == \#* ]] && continue
+        [[ "$line" == "$installed_pkg" ]] && found=true && break
+      done < "$pipxfile"
+      if ! $found; then
+        pipx uninstall "$installed_pkg" --quiet 2>/dev/null && ((removed_count++))
+      fi
+    fi
+  done < <(pipx list --short 2>/dev/null | awk '{print $1}')
+
+  __log_success "pipx tools updated (installed: $installed_count, removed: $removed_count, up-to-date: $skip_count)"
+}
+
 function __f5_reload_configs() {
   __log_info "Reloading configurations..."
 
@@ -263,6 +317,8 @@ function f5() {
       ;;
     "Darwin") __f5_update_macos ;;
   esac
+
+  __f5_update_python
 
   __f5_reload_configs
   __f5_show_summary

@@ -309,9 +309,14 @@ cask 'windsurf'
 ################################################################################
 # Casks - AI Tools
 ################################################################################
+cask 'auto-claude'
 cask 'claude-code'
-cask 'codex'
+cask 'claude-devtools'
+cask 'claude-island'
+cask 'claude'
+cask 'claudebar'
 cask 'codex-app' if architecture == 'arm64'
+cask 'codex'
 cask 'jan' if architecture == 'arm64'
 cask 'lm-studio' if architecture == 'arm64'
 cask 'opencode-desktop'

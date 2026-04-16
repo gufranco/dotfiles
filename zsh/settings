@@ -18,7 +18,7 @@ case "$(uname)" in
     export HOMEBREW_QUIET=true
 
     # Docker
-    # export DOCKER_DEFAULT_PLATFORM="linux/amd64"
+    export DOCKER_DEFAULT_PLATFORM="linux/amd64"
 
     ;;
 esac
@@ -58,6 +58,12 @@ setopt GLOB_DOTS
 if [ "$(ulimit -n)" -lt 10240 ] 2>/dev/null; then
   ulimit -n 10240 2>/dev/null || true
 fi
+
+################################################################################
+# Claude Code
+################################################################################
+export CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
+export CLAUDE_CODE_EFFORT_LEVEL=auto
 
 ################################################################################
 # Terminal

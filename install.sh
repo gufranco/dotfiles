@@ -760,9 +760,9 @@ SYSCTL
     ############################################################################
     if cmd_exists pipx && [ -f "$HOME/.dotfiles/Pipxfile" ]; then
       log_info "Installing pipx tools..."
-      local pipx_ok=0
-      local pipx_skip=0
-      local pipx_fail=0
+      pipx_ok=0
+      pipx_skip=0
+      pipx_fail=0
       while IFS= read -r pkg || [ -n "$pkg" ]; do
         [[ -z "$pkg" || "$pkg" == \#* ]] && continue
         if pipx list --short 2>/dev/null | awk '{print $1}' | grep -qx "$pkg"; then

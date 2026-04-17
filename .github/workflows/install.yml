@@ -109,8 +109,10 @@ jobs:
         include:
           - runner: macos-15-intel
             name: macOS Sequoia (x64)
-          - runner: macos-latest
-            name: macOS latest (arm64)
+          - runner: macos-26-intel
+            name: macOS Tahoe (x64)
+          - runner: macos-26
+            name: macOS Tahoe (arm64)
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     steps:

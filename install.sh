@@ -415,7 +415,7 @@ case "$(uname)" in
       if ! pkg_installed spotify-client; then
         log_info "Installing Spotify..."
         sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/spotify.gpg 2>/dev/null || true
+        curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc | sudo gpg --dearmor --yes -o /etc/apt/keyrings/spotify.gpg 2>/dev/null || true
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
         sudo apt update -qq
         sudo apt install -y -qq spotify-client

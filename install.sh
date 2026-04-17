@@ -766,13 +766,13 @@ SYSCTL
       while IFS= read -r pkg || [ -n "$pkg" ]; do
         [[ -z "$pkg" || "$pkg" == \#* ]] && continue
         if pipx list --short 2>/dev/null | awk '{print $1}' | grep -qx "$pkg"; then
-          ((pipx_skip++))
+          ((pipx_skip++)) || true
         else
           if pipx install "$pkg" --quiet 2>/dev/null; then
-            ((pipx_ok++))
+            ((pipx_ok++)) || true
           else
             log_warning "Failed to install pipx package: $pkg"
-            ((pipx_fail++))
+            ((pipx_fail++)) || true
           fi
         fi
       done < "$HOME/.dotfiles/Pipxfile"

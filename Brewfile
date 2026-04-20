@@ -145,6 +145,7 @@ brew 'lima-additional-guestagents'
 ################################################################################
 # Cloud & Infrastructure
 ################################################################################
+brew 'ansible'
 brew 'awscli'
 brew 'flyctl'
 brew 'opentofu'
@@ -268,7 +269,7 @@ brew 'rsync'
 ################################################################################
 # AI & Local Inference
 ################################################################################
-brew 'arthur-ficial/tap/apfel' if architecture == 'arm64' # Apple Silicon AI benchmark
+brew 'arthur-ficial/tap/apfel' if architecture == 'arm64'
 brew 'llama.cpp' if architecture == 'arm64'
 brew 'ollama' if architecture == 'arm64'
 brew 'opencode'
@@ -310,12 +311,8 @@ cask 'windsurf'
 ################################################################################
 # Casks - AI Tools
 ################################################################################
-cask 'auto-claude'
 cask 'claude'
 cask 'claude-code'
-cask 'claude-devtools'
-cask 'claude-island'
-cask 'claudebar'
 cask 'codex'
 cask 'codex-app' if architecture == 'arm64'
 cask 'jan' if architecture == 'arm64'

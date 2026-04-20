@@ -2,7 +2,7 @@
 
 <br>
 
-<strong>One-command development environment for macOS and Linux. 33 tool configs, consistent Tokyo Night theme, modern CLI replacements, and ready-to-go Docker services.</strong>
+<strong>One-command development environment for macOS and Linux. 50+ tool configs, consistent Tokyo Night theme, modern CLI replacements, and ready-to-go Docker services.</strong>
 
 <br>
 <br>
@@ -16,7 +16,7 @@
 
 ---
 
-**37** tool configs · **19** Tokyo Night themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
+**50+** tool configs · **19** Tokyo Night themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
 
 <table>
 <tr>
@@ -234,24 +234,6 @@ prime-run gamemoderun mangohud %command%
 
 **If a game does not work:** switch to GE-Proton in the game's Compatibility settings, check ProtonDB, or use `protontricks <appid> --gui` to install missing Windows components.
 
-### Claude Code
-
-18 custom skills for AI-assisted development:
-
-| Skill | What it does |
-|:------|:-------------|
-| `/commit` | Semantic commits with optional `--pipeline` CI monitoring |
-| `/pr` | PR creation with self-review and pipeline monitoring |
-| `/review` | Code review following project conventions |
-| `/readme` | Marketing-grade README generation |
-| `/assessment` | Architecture completeness audit |
-| `/test` | Test runner with coverage and linting |
-| `/checks` | CI/CD status monitoring |
-| `/terraform` | Terraform workflows with safety gates |
-| `/docker` | Container management with Colima awareness |
-
-Plus 17 rule files covering code style, resilience, caching, API design, testing, security, database patterns, distributed systems, observability, debugging, git workflow, verification, LLM documentation references, infrastructure, pre-flight checks, and borrow-restore patterns.
-
 ## Tokyo Night Theme
 
 All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) "Night" variant:
@@ -282,7 +264,7 @@ All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-them
 
 Run `f5` in any terminal to update everything at once:
 
-1. Pulls latest dotfiles, submodules, and Claude engineering rules
+1. Pulls latest dotfiles and submodules
 2. Updates AWS configuration
 3. Updates Vim plugins and CoC extensions
 4. Updates Oh My Zsh, Zsh plugins, and Tmux plugins
@@ -339,8 +321,23 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `fd/.fdrc` | `~/.fdrc` |
 | `telnet/.telnetrc` | `~/.telnetrc` |
 | `cmus/rc` | `~/.config/cmus/rc` |
-
-Claude engineering rules are cloned as a separate repo to `~/.claude` via `github_repo_sync`.
+| `atuin/config.toml` | `~/.config/atuin/config.toml` |
+| `direnv/direnv.toml` | `~/.config/direnv/direnv.toml` |
+| `direnv/direnvrc` | `~/.config/direnv/direnvrc` |
+| `thefuck/settings.py` | `~/.config/thefuck/settings.py` |
+| `tig/config` | `~/.config/tig/config` |
+| `broot/conf.toml` | `~/.config/broot/conf.toml` |
+| `ranger/rc.conf` | `~/.config/ranger/rc.conf` |
+| `ranger/rifle.conf` | `~/.config/ranger/rifle.conf` |
+| `ranger/scope.sh` | `~/.config/ranger/scope.sh` |
+| `newsboat/config` | `~/.config/newsboat/config` |
+| `newsboat/urls` | `~/.config/newsboat/urls` |
+| `navi/config.yaml` | `~/.config/navi/config.yaml` |
+| `glances/glances.conf` | `~/.config/glances/glances.conf` |
+| `asciinema/config` | `~/.config/asciinema/config` |
+| `goaccess/goaccess.conf` | `~/.config/goaccess/goaccess.conf` |
+| `taskwarrior/taskrc` | `~/.config/task/taskrc` |
+| `opencode/opencode.json` | `~/.config/opencode/opencode.json` |
 
 On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Library/Application Support/`.
 
@@ -351,18 +348,24 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 
 ```
 .dotfiles/
+├── asciinema/        # Asciinema terminal recorder config
+├── atuin/            # Atuin shell history config
 ├── bat/              # Bat config + Tokyo Night theme
 ├── bottom/           # Bottom system monitor, Tokyo Night styled
+├── broot/            # Broot file manager, Tokyo Night themed
 ├── cmus/             # cmus music player, Tokyo Night themed
 ├── conky/            # Conky system monitor (Linux)
 ├── curl/             # Curl config
+├── direnv/           # direnv per-directory env config
 ├── eza/              # eza (ls replacement) config + Tokyo Night theme
 ├── fd/               # fd (find replacement) config
 ├── gh/               # GitHub CLI config
 ├── ghostty/          # Ghostty terminal + Tokyo Night theme
 ├── git/              # Git config, hooks, message template, 60 aliases
 ├── glab/             # GitLab CLI config
+├── glances/          # Glances system monitor config
 ├── gnupg/            # GPG config and public keys
+├── goaccess/         # GoAccess web log analyzer config
 ├── htop/             # htop config
 ├── k9s/              # K9s Kubernetes dashboard + Tokyo Night skin
 ├── kanata/           # Kanata keyboard remapper config
@@ -383,6 +386,13 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── telnet/           # Telnet config
 ├── themes/           # Terminal themes (iTerm2)
 ├── tilix/            # Tilix terminal config
+├── navi/             # Navi cheatsheet manager + custom cheats
+├── newsboat/         # Newsboat RSS reader config
+├── opencode/         # OpenCode AI config
+├── ranger/           # Ranger file manager config
+├── taskwarrior/      # Taskwarrior task manager, Tokyo Night themed
+├── thefuck/          # TheFuck command corrector config
+├── tig/              # Tig git TUI, Tokyo Night themed
 ├── tmux/             # Tmux config + 7 plugins
 ├── tmuxp/            # tmuxp session layouts
 ├── wget/             # Wget config

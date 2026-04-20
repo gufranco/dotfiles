@@ -3,6 +3,20 @@
 [options]
 update_time_ms = 1000
 temperature_type = "c"
+default_time_value = "60s"
+time_delta = 15000
+group_processes = true
+case_sensitive = false
+whole_word = false
+regex = true
+show_table_scroll_position = true
+process_memory_as_value = false
+tree = false
+enable_gpu = true
+enable_cache_memory = true
+unnormalized_cpu = false
+expanded = false
+retention = "10m"
 
 ################################################################################
 # Tokyo Night theme

@@ -1,10 +1,23 @@
----
 # Lazygit - https://github.com/jesseduffield/lazygit
 # On macOS: symlink to ~/Library/Application Support/lazygit if not using XDG_CONFIG_HOME
 gui:
   scrollHeight: 2
   scrollPastBottom: true
   showCommandLog: true
+  showIcons: true
+  nerdFontsVersion: "3"
+  showFileTree: true
+  showListFooter: false
+  showRandomTip: false
+  showBranchCommitHash: true
+  showDivergenceFromBaseBranch: arrowAndNumber
+  commandLogSize: 8
+  splitDiff: auto
+  skipRewordInEditorWarning: true
+  border: rounded
+  animateExplosion: false
+  authorColors:
+    "*": "#bb9af7"
   theme:
     activeBorderColor:
       - '#7aa2f7'
@@ -35,6 +48,23 @@ gui:
 git:
   pagers:
     - pager: delta --paging=never
+  commit:
+    autoWrapCommitMessage: true
+    autoWrapWidth: 72
   push:
     force: false
+  autoFetch: true
+  autoRefresh: true
+  branchLogCmd: "git log --graph --color=always --abbrev-commit --decorate --date=short --pretty=medium {{branchName}} --"
+  overrideGpg: false
+  log:
+    order: topo-order
+    showGraph: always
+    showWholeGraph: false
+  allBranchesLogCmds:
+    - git log --graph --all --color=always --abbrev-commit --decorate --date=short --pretty=medium
+os:
+  editPreset: vim
+promptToReturnFromSubprocess: false
+notARepository: skip
 reporting: "off"

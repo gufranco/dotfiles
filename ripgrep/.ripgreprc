@@ -12,12 +12,14 @@
 --column
 --max-columns=150
 --max-columns-preview
---colors=line:fg:yellow
+# Tokyo Night palette
+--colors=line:fg:0xe0:0xaf:0x68
 --colors=line:style:bold
---colors=path:fg:green
+--colors=path:fg:0x7a:0xa2:0xf7
 --colors=path:style:bold
---colors=match:fg:red
+--colors=match:fg:0xf7:0x76:0x8e
 --colors=match:style:bold
+--colors=column:fg:0x56:0x5f:0x89
 
 ################################################################################
 # Version Control

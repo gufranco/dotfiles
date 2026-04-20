@@ -4,8 +4,34 @@
 
 ui:
   skin: tokyo-night
+  enableMouse: false
+  headless: false
+  logoless: false
+  crumbsless: false
+  reactive: false
+  noIcons: false
 liveViewAutoRefresh: false
 refreshRate: 2
+maxConnRetry: 5
 apiServerTimeout: 120
 readOnly: false
 noExitOnCtrlC: false
+shellPod:
+  image: busybox:1.36
+  namespace: default
+  limits:
+    cpu: 100m
+    memory: 100Mi
+logger:
+  tail: 100
+  buffer: 5000
+  sinceSeconds: -1
+  textWrap: false
+  showTime: false
+thresholds:
+  cpu:
+    critical: 90
+    warn: 70
+  memory:
+    critical: 90
+    warn: 70

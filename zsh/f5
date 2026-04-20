@@ -171,6 +171,43 @@ function __f5_update_linux() {
   fi
 }
 
+function __f5_update_standalone_tools() {
+  __log_info "Updating standalone tools..."
+
+  local updated=0
+  local failed=0
+
+  if __cmd_exists starship; then
+    if curl -sS --connect-timeout 10 --max-time 120 https://starship.rs/install.sh | sh -s -- --yes >/dev/null 2>&1; then
+      updated=$((updated + 1))
+    else
+      failed=$((failed + 1))
+    fi
+  fi
+
+  if __cmd_exists zoxide; then
+    if curl -sS --connect-timeout 10 --max-time 120 https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash >/dev/null 2>&1; then
+      updated=$((updated + 1))
+    else
+      failed=$((failed + 1))
+    fi
+  fi
+
+  if __cmd_exists atuin; then
+    if curl -sS --connect-timeout 10 --max-time 120 https://setup.atuin.sh | bash -s -- --non-interactive >/dev/null 2>&1; then
+      updated=$((updated + 1))
+    else
+      failed=$((failed + 1))
+    fi
+  fi
+
+  if [ "$failed" -eq 0 ]; then
+    __log_success "Standalone tools updated ($updated tools)"
+  else
+    __log_warning "Standalone tools updated ($updated ok, $failed failed)"
+  fi
+}
+
 function __f5_update_macos() {
   __log_info "Updating macOS packages..."
 
@@ -313,6 +350,7 @@ function f5() {
   case "$(uname)" in
     "Linux")
       __f5_update_linux
+      __f5_update_standalone_tools
       __f5_update_proton_ge
       ;;
     "Darwin") __f5_update_macos ;;

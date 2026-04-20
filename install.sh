@@ -352,7 +352,7 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists atuin; then
       log_info "Installing atuin..."
-      curl -sS --connect-timeout 10 --max-time 120 https://setup.atuin.sh | bash
+      curl -sS --connect-timeout 10 --max-time 120 https://setup.atuin.sh | bash -s -- --non-interactive
       log_success "atuin installed"
     else
       log_skip "atuin already installed"
@@ -1087,6 +1087,95 @@ safe_link "$HOME/.dotfiles/kanata/kanata.kbd" "$HOME/.config/kanata/kanata.kbd"
 ############################################################################
 log_info "Setting up OpenCode..."
 safe_link "$HOME/.dotfiles/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
+
+############################################################################
+# Atuin
+############################################################################
+log_info "Setting up Atuin..."
+mkdir -p "$HOME/.config/atuin"
+safe_link "$HOME/.dotfiles/atuin/config.toml" "$HOME/.config/atuin/config.toml"
+
+############################################################################
+# direnv
+############################################################################
+log_info "Setting up direnv..."
+mkdir -p "$HOME/.config/direnv"
+safe_link "$HOME/.dotfiles/direnv/direnvrc" "$HOME/.config/direnv/direnvrc"
+safe_link "$HOME/.dotfiles/direnv/direnv.toml" "$HOME/.config/direnv/direnv.toml"
+
+############################################################################
+# thefuck
+############################################################################
+log_info "Setting up thefuck..."
+mkdir -p "$HOME/.config/thefuck"
+safe_link "$HOME/.dotfiles/thefuck/settings.py" "$HOME/.config/thefuck/settings.py"
+
+############################################################################
+# tig
+############################################################################
+log_info "Setting up tig..."
+mkdir -p "$HOME/.config/tig"
+safe_link "$HOME/.dotfiles/tig/config" "$HOME/.config/tig/config"
+
+############################################################################
+# Broot
+############################################################################
+log_info "Setting up Broot..."
+mkdir -p "$HOME/.config/broot"
+safe_link "$HOME/.dotfiles/broot/conf.toml" "$HOME/.config/broot/conf.toml"
+
+############################################################################
+# Ranger
+############################################################################
+log_info "Setting up Ranger..."
+mkdir -p "$HOME/.config/ranger"
+safe_link "$HOME/.dotfiles/ranger/rc.conf" "$HOME/.config/ranger/rc.conf"
+safe_link "$HOME/.dotfiles/ranger/rifle.conf" "$HOME/.config/ranger/rifle.conf"
+safe_link "$HOME/.dotfiles/ranger/scope.sh" "$HOME/.config/ranger/scope.sh"
+
+############################################################################
+# Newsboat
+############################################################################
+log_info "Setting up Newsboat..."
+mkdir -p "$HOME/.config/newsboat"
+safe_link "$HOME/.dotfiles/newsboat/config" "$HOME/.config/newsboat/config"
+safe_link "$HOME/.dotfiles/newsboat/urls" "$HOME/.config/newsboat/urls"
+
+############################################################################
+# Navi
+############################################################################
+log_info "Setting up Navi..."
+mkdir -p "$HOME/.config/navi"
+safe_link "$HOME/.dotfiles/navi/config.yaml" "$HOME/.config/navi/config.yaml"
+safe_link "$HOME/.dotfiles/navi/cheats" "$HOME/.config/navi/cheats"
+
+############################################################################
+# Glances
+############################################################################
+log_info "Setting up Glances..."
+mkdir -p "$HOME/.config/glances"
+safe_link "$HOME/.dotfiles/glances/glances.conf" "$HOME/.config/glances/glances.conf"
+
+############################################################################
+# asciinema
+############################################################################
+log_info "Setting up asciinema..."
+mkdir -p "$HOME/.config/asciinema"
+safe_link "$HOME/.dotfiles/asciinema/config.toml" "$HOME/.config/asciinema/config.toml"
+
+############################################################################
+# GoAccess
+############################################################################
+log_info "Setting up GoAccess..."
+mkdir -p "$HOME/.config/goaccess"
+safe_link "$HOME/.dotfiles/goaccess/goaccess.conf" "$HOME/.config/goaccess/goaccess.conf"
+
+############################################################################
+# Taskwarrior
+############################################################################
+log_info "Setting up Taskwarrior..."
+mkdir -p "$HOME/.local/share/task"
+safe_link "$HOME/.dotfiles/taskwarrior/taskrc" "$HOME/.taskrc"
 
 ############################################################################
 # Claude Code

@@ -1,0 +1,119 @@
+# Taskwarrior - https://taskwarrior.org/docs
+# Symlinked to ~/.taskrc
+
+################################################################################
+# Data location
+################################################################################
+data.location=~/.local/share/task
+
+################################################################################
+# General
+################################################################################
+default.command=next limit:20
+weekstart=monday
+search.case.sensitive=no
+recurrence.confirmation=no
+bulk=3
+
+################################################################################
+# Date format
+################################################################################
+dateformat=Y-M-D
+dateformat.report=Y-M-D
+dateformat.annotation=Y-M-D H:N
+
+################################################################################
+# Urgency coefficients
+################################################################################
+urgency.user.tag.next.coefficient=15.0
+urgency.due.coefficient=12.0
+urgency.blocking.coefficient=8.0
+urgency.blocked.coefficient=-5.0
+urgency.active.coefficient=4.0
+urgency.scheduled.coefficient=4.0
+urgency.age.coefficient=2.0
+urgency.annotations.coefficient=1.0
+urgency.tags.coefficient=1.0
+urgency.project.coefficient=1.0
+
+################################################################################
+# Report: next
+################################################################################
+report.next.columns=id,start.age,depends,priority,project,tags,recur,scheduled.countdown,due.relative,until.remaining,description.count,urgency
+report.next.labels=ID,Active,Deps,P,Project,Tag,Recur,S,Due,Until,Description,Urg
+report.next.sort=urgency-
+
+################################################################################
+# Context
+################################################################################
+news.version=3.0
+
+################################################################################
+# Tokyo Night colors
+################################################################################
+# General
+color.header=bold color75
+color.footnote=color103
+color.warning=color173
+color.error=color204
+color.debug=color103
+
+# Task states
+color.completed=color103
+color.deleted=color60
+color.active=bold color114
+color.recurring=color141
+color.scheduled=color173
+
+# Tags
+color.tagged=color195
+color.tag.next=bold color75
+color.tag.none=
+
+# Priority
+color.uda.priority.H=bold color204
+color.uda.priority.M=color173
+color.uda.priority.L=color103
+
+# Due dates
+color.due=color173
+color.due.today=bold color204
+color.overdue=bold color204
+
+# Project
+color.project.none=
+
+# Burndown
+color.burndown.pending=color75
+color.burndown.started=color141
+color.burndown.done=color114
+
+# Undo
+color.undo.before=color204
+color.undo.after=color114
+
+# Sync
+color.sync.added=color114
+color.sync.changed=color173
+color.sync.rejected=color204
+
+# Calendar
+color.calendar.today=bold color195 on color60
+color.calendar.due=color195 on color204
+color.calendar.due.today=bold color195 on color204
+color.calendar.overdue=bold color195 on color204
+color.calendar.weekend=color103
+color.calendar.holiday=color114
+color.calendar.weeknumber=color60
+
+# Alternate row
+color.alternate=on color234
+
+# History
+color.history.add=color114
+color.history.done=color75
+color.history.delete=color204
+
+# Summary
+color.summary.bar=on color75
+color.summary.background=on color234

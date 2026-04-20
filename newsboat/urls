@@ -1,0 +1,8 @@
+# Newsboat feed list
+# Symlinked to ~/.config/newsboat/urls
+# Format: URL "~Title" tag1 tag2
+#
+# Add your feeds below. Examples:
+# https://hnrss.org/frontpage "~Hacker News" tech news
+# https://feeds.feedburner.com/TheHackersNews "~The Hacker News" security
+# https://blog.rust-lang.org/feed.xml "~Rust Blog" dev rust

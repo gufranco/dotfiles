@@ -25,6 +25,24 @@ if command -v yazi > /dev/null; then
 fi
 
 ################################################################################
+# Broot with CWD sync
+################################################################################
+if command -v broot > /dev/null; then
+  function b() {
+    local outcmd
+    outcmd=$(mktemp "${TMPDIR:-/tmp}/broot-out.XXXXXX")
+    if command broot --outcmd "$outcmd" "$@"; then
+      local cmd
+      cmd=$(<"$outcmd")
+      rm -f "$outcmd"
+      [ -n "$cmd" ] && eval "$cmd"
+    else
+      rm -f "$outcmd"
+    fi
+  }
+fi
+
+################################################################################
 # Lazygit (Ctrl+g from shell)
 ################################################################################
 if command -v lazygit > /dev/null; then
@@ -35,26 +53,14 @@ if command -v lazygit > /dev/null; then
 fi
 
 ################################################################################
-# OpenCode with apfel auto-start
+# OpenCode with LM Studio auto-start
 ################################################################################
-if command -v opencode > /dev/null && command -v apfel > /dev/null; then
+if command -v opencode > /dev/null && command -v lms > /dev/null; then
   function oc() {
-    local __oc_started_apfel=0
-    if ! curl -sf http://127.0.0.1:11434/health > /dev/null 2>&1; then
-      apfel --serve > /dev/null 2>&1 &
-      __oc_started_apfel=1
-      local apfel_pid=$!
-      disown
-      local i=0
-      while [ $i -lt 10 ] && ! curl -sf http://127.0.0.1:11434/health > /dev/null 2>&1; do
-        sleep 0.5
-        i=$((i + 1))
-      done
+    if ! curl -sf http://127.0.0.1:1234/v1/models > /dev/null 2>&1; then
+      lms server start > /dev/null 2>&1
     fi
     command opencode "$@"
-    if [ $__oc_started_apfel -eq 1 ] && [ -n "$apfel_pid" ] && kill -0 "$apfel_pid" 2>/dev/null; then
-      kill "$apfel_pid" 2>/dev/null
-    fi
   }
 fi
 
@@ -68,6 +74,25 @@ __alias_if_exists procs ps "command procs"
 __alias_if_exists btm top "command btm"
 __alias_if_exists nvim vim "command nvim"
 __alias_if_exists nvim vi "command nvim"
+
+################################################################################
+# Tool shortcuts
+################################################################################
+__alias_if_exists task t "command task"
+__alias_if_exists broot br "command broot"
+__alias_if_exists ranger ra "command ranger"
+__alias_if_exists newsboat news "command newsboat"
+__alias_if_exists glances mon "command glances"
+__alias_if_exists tig tg "command tig"
+__alias_if_exists navi nv "command navi"
+__alias_if_exists goaccess goa "command goaccess"
+if command -v asciinema > /dev/null; then
+  function rec() {
+    local file="${1:-"${HOME}/Documents/asciinema/$(date +%Y%m%d-%H%M%S).cast"}"
+    mkdir -p "$(dirname "$file")"
+    command asciinema record "$file"
+  }
+fi
 
 ################################################################################
 # eza / ls

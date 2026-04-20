@@ -1,0 +1,58 @@
+# Atuin - https://docs.atuin.sh
+# Symlinked to ~/.config/atuin/config.toml
+
+################################################################################
+# Search
+################################################################################
+# Search by prefix first, then substring, then fuzzy match
+search_mode = "fuzzy"
+
+# Show results with most recent at the top
+filter_mode = "global"
+
+# Filter out sequential duplicates in search results
+filter_mode_shell_up_key_binding = "session"
+
+# Inline style keeps the prompt at the current line
+style = "auto"
+
+# Show preview of selected command
+show_preview = true
+
+# Limit preview height
+max_preview_height = 4
+
+# Case-insensitive unless uppercase letters are used
+smart_search = true
+
+################################################################################
+# History
+################################################################################
+# Store history from all sessions
+store_failed = true
+
+# Record command exit status
+exit_mode = "return-original"
+
+# Ignore commands shorter than this
+min_cmd_length = 2
+
+################################################################################
+# Sync (disabled, local only)
+################################################################################
+auto_sync = false
+
+################################################################################
+# Statistics
+################################################################################
+# Show execution time in search results
+show_help = false
+
+# Display command timing
+inline_height = 0
+
+################################################################################
+# Keys
+################################################################################
+# Enter executes the command
+enter_accept = true

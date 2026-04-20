@@ -1,0 +1,79 @@
+% dotfiles, system
+
+# Update everything (f5)
+f5
+
+# Edit zsh config
+$EDITOR ~/.dotfiles/zsh/settings
+
+# Edit aliases
+$EDITOR ~/.dotfiles/zsh/aliases
+
+# Reload shell config
+source ~/.zshrc
+
+# Edit Brewfile
+$EDITOR ~/.dotfiles/Brewfile
+
+# Run dotfiles install
+~/.dotfiles/install.sh
+
+% docker, containers
+
+# Start Colima (Docker runtime)
+colima start --cpu 4 --memory 8 --disk 60
+
+# Stop Colima
+colima stop
+
+# List running containers
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# Remove all stopped containers
+docker container prune -f
+
+# Remove dangling images
+docker image prune -f
+
+# View container logs
+docker logs -f <container>
+
+% git, version-control
+
+# Interactive rebase last N commits
+git rebase -i HEAD~<n>
+
+# Find commits that changed a file
+git log --follow -p -- <file>
+
+# Show who last modified each line
+git blame <file>
+
+# Stash with message
+git stash push -m "<message>"
+
+# Cherry-pick a commit
+git cherry-pick <commit>
+
+# Find large files in history
+git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | sed -n 's/^blob //p' | sort -rnk2 | head -20
+
+% kubernetes, k8s
+
+# Switch context
+kubectl config use-context <context>
+
+# Get pods in namespace
+kubectl get pods -n <namespace>
+
+# Describe pod
+kubectl describe pod <pod> -n <namespace>
+
+# View pod logs
+kubectl logs -f <pod> -n <namespace>
+
+# Port forward
+kubectl port-forward svc/<service> <local_port>:<remote_port> -n <namespace>
+
+# Scale deployment
+kubectl scale deployment <deployment> --replicas=<count> -n <namespace>

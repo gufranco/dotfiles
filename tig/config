@@ -1,0 +1,122 @@
+# Tig - https://jonas.github.io/tig/doc/tigrc.5.html
+# Symlinked to ~/.config/tig/config
+
+################################################################################
+# General
+################################################################################
+set main-view-date = custom
+set main-view-date-format = "%Y-%m-%d %H:%M"
+set main-view-author = abbreviated
+set main-view-id = yes
+set blame-view-date = custom
+set blame-view-date-format = "%Y-%m-%d %H:%M"
+set tab-size = 2
+set ignore-case = smart-case
+set mouse = true
+set refresh-mode = auto
+set line-graphics = utf-8
+set truncation-delimiter = utf-8
+set diff-highlight = true
+
+################################################################################
+# Pager (use delta for diffs)
+################################################################################
+set pager-view = line-number:yes,interval=1 text
+
+################################################################################
+# Key bindings
+################################################################################
+# Reload config
+bind generic R :source ~/.config/tig/config
+
+# Copy commit hash to clipboard
+bind main Y !@sh -c "echo -n %(commit) | pbcopy"
+bind diff Y !@sh -c "echo -n %(commit) | pbcopy"
+
+# Interactive rebase from selected commit
+bind main B !git rebase -i %(commit)
+
+# Cherry-pick
+bind main C !git cherry-pick %(commit)
+
+# Create a fixup commit for the selected commit
+bind main F !git commit --fixup %(commit)
+
+# Open commit in GitHub
+bind main G @sh -c "open $(git remote get-url origin | sed 's/\\.git$//' | sed 's/git@github.com:/https:\\/\\/github.com\\//g')/commit/%(commit)"
+
+################################################################################
+# Tokyo Night color scheme
+################################################################################
+# General UI
+color default              195 default
+color cursor               195 60      bold
+color title-focus          75  default  bold
+color title-blur           103 default
+color status               195 default
+color id                   173 default
+color date                 103 default
+color author               141 default  bold
+color mode                 195 default
+color overflow             204 default
+color header               75  default  bold
+color section              141 default
+
+# Main view
+color main-tracked         75  default  bold
+color main-tag             173 default  bold
+color main-local-tag       173 default
+color main-remote          114 default
+color main-replace         173 default
+color main-ref             114 default  bold
+color main-head            141 default  bold
+color graph-commit         173 default  bold
+
+# Status view
+color stat-staged          114 default
+color stat-unstaged        173 default
+color stat-untracked       204 default
+color stat-none            103 default
+
+# Diff colors
+color diff-header          173 default  bold
+color diff-index           75  default
+color diff-oldmode         173 default
+color diff-newmode         114 default
+color "--- "               204 default
+color "+++ "               114 default
+color "@@"                 141 default
+color diff-stat            75  default
+color diff-add             114 default
+color diff-del             204 default
+color "Merge: "            75  default
+color "Refs: "             75  default
+color "commit "            173 default
+color "Author: "           141 default
+color "AuthorDate: "       103 default
+color "Commit: "           114 default
+color "CommitDate: "       103 default
+color "Date: "             103 default
+color pp-hierarchyhdr      75  default  bold
+
+# Commit message
+color "Signed-off-by:"    114 default
+color "Acked-by:"         114 default
+color "Reviewed-by:"      114 default
+color "Helped-by:"        114 default
+
+# Tree view
+color tree.header          195 default  bold
+color tree.directory       75  default  bold
+color tree.file            195 default
+
+# Grep view
+color grep.file            75  default  bold
+color grep.line-number     103 default
+color grep.delimiter       103 default
+color delimiter            103 default
+
+# Help view
+color help.header          75  default  bold
+color help.section         141 default  bold
+color help.action          114 default

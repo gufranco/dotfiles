@@ -1,0 +1,159 @@
+# Broot - https://dystroy.org/broot
+# Symlinked to ~/.config/broot/conf.toml
+
+################################################################################
+# General
+################################################################################
+default_flags = "ghp"
+date_time_format = "%Y-%m-%d %H:%M"
+show_selection_mark = true
+true_colors = true
+icon_theme = "nerdfont"
+modal = false
+
+################################################################################
+# Terminal title
+################################################################################
+terminal_title = "{file}"
+
+################################################################################
+# Preview
+################################################################################
+[content_search]
+max_file_size = "10MB"
+
+################################################################################
+# Quit on last cancel (Esc once to quit if nothing to cancel)
+################################################################################
+quit_on_last_cancel = true
+
+################################################################################
+# Special paths
+################################################################################
+[special-paths]
+"~/.dotfiles" = "enter"
+"~/Workspace" = "enter"
+"/dev" = "hide"
+"/proc" = "hide"
+"/sys" = "hide"
+"node_modules" = "hide"
+".git" = "hide"
+"target" = "hide"
+".next" = "hide"
+"dist" = "hide"
+"build" = "hide"
+"coverage" = "hide"
+
+################################################################################
+# Verbs
+################################################################################
+[[verbs]]
+key = "ctrl-c"
+execution = ":quit"
+
+[[verbs]]
+invocation = "edit"
+shortcut = "e"
+key = "ctrl-e"
+apply_to = "text_file"
+execution = "$EDITOR {file}"
+
+[[verbs]]
+invocation = "view"
+shortcut = "v"
+apply_to = "text_file"
+execution = "bat --paging=always {file}"
+
+[[verbs]]
+invocation = "create {subpath}"
+shortcut = "cr"
+execution = "$EDITOR {directory}/{subpath}"
+
+[[verbs]]
+key = "ctrl-r"
+execution = ":toggle_hidden"
+
+[[verbs]]
+key = "ctrl-f"
+internal = ":input_go"
+set_working_dir = true
+
+[[verbs]]
+invocation = "terminal"
+key = "ctrl-t"
+execution = "$SHELL"
+set_working_dir = true
+leave_broot = false
+
+################################################################################
+# Tokyo Night skin
+################################################################################
+[skin]
+default = "rgb(192,202,245) rgb(26,27,38) / rgb(86,95,137) rgb(26,27,38)"
+tree = "rgb(65,72,104) none"
+file = "none none"
+directory = "rgb(122,162,247) none bold"
+exe = "rgb(158,206,106) none"
+link = "rgb(125,207,255) none"
+pruning = "rgb(86,95,137) none italic"
+perm__ = "rgb(65,72,104) none"
+perm_r = "rgb(158,206,106) none"
+perm_w = "rgb(224,175,104) none"
+perm_x = "rgb(247,118,142) none"
+owner = "rgb(187,154,247) none"
+group = "rgb(187,154,247) none"
+count = "rgb(125,207,255) none"
+dates = "rgb(86,95,137) none"
+sparse = "rgb(224,175,104) none"
+content_extract = "rgb(169,177,214) none"
+content_match = "rgb(224,175,104) none bold"
+git_branch = "rgb(187,154,247) none bold"
+git_insertions = "rgb(158,206,106) none"
+git_deletions = "rgb(247,118,142) none"
+git_status_current = "rgb(158,206,106) none"
+git_status_modified = "rgb(224,175,104) none"
+git_status_new = "rgb(158,206,106) none bold"
+git_status_ignored = "rgb(86,95,137) none"
+git_status_conflicted = "rgb(247,118,142) none"
+git_status_other = "rgb(247,118,142) none"
+selected_line = "none rgb(40,52,87)"
+char_match = "rgb(224,175,104) none bold"
+file_error = "rgb(247,118,142) none"
+flag_label = "rgb(86,95,137) none"
+flag_value = "rgb(187,154,247) none bold"
+input = "rgb(192,202,245) none"
+status_normal = "none rgb(22,22,30)"
+status_italic = "rgb(187,154,247) rgb(22,22,30)"
+status_bold = "rgb(122,162,247) rgb(22,22,30) bold"
+status_ellipsis = "rgb(86,95,137) rgb(22,22,30)"
+status_error = "rgb(247,118,142) rgb(22,22,30)"
+status_job = "rgb(224,175,104) rgb(22,22,30) bold"
+scrollbar_track = "rgb(40,52,87) none"
+scrollbar_thumb = "rgb(65,72,104) none"
+help_paragraph = "rgb(169,177,214) none"
+help_bold = "rgb(122,162,247) none bold"
+help_italic = "rgb(187,154,247) none italic"
+help_code = "rgb(125,207,255) rgb(22,22,30)"
+help_headers = "rgb(122,162,247) none bold"
+help_table_border = "rgb(65,72,104) none"
+preview_title = "rgb(122,162,247) rgb(22,22,30) bold"
+preview = "rgb(192,202,245) rgb(22,22,30)"
+preview_line_number = "rgb(86,95,137) rgb(22,22,30)"
+preview_match = "rgb(224,175,104) rgb(22,22,30) bold"
+hex_null = "rgb(86,95,137) none"
+hex_ascii_graphic = "rgb(192,202,245) none"
+hex_ascii_whitespace = "rgb(224,175,104) none"
+hex_ascii_other = "rgb(255,158,100) none"
+hex_non_ascii = "rgb(247,118,142) none"
+staging_area_title = "rgb(122,162,247) none bold"
+mode_command_mark = "rgb(158,206,106) rgb(22,22,30) bold"
+good_to_bad_0 = "rgb(158,206,106) none"
+good_to_bad_1 = "rgb(115,218,202) none"
+good_to_bad_2 = "rgb(125,207,255) none"
+good_to_bad_3 = "rgb(122,162,247) none"
+good_to_bad_4 = "rgb(187,154,247) none"
+good_to_bad_5 = "rgb(224,175,104) none"
+good_to_bad_6 = "rgb(255,158,100) none"
+good_to_bad_7 = "rgb(247,118,142) none"
+good_to_bad_8 = "rgb(219,75,75) none"
+good_to_bad_9 = "rgb(219,75,75) none bold"

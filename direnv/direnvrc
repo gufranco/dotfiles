@@ -1,0 +1,66 @@
+# direnv global config - https://direnv.net
+# Symlinked to ~/.config/direnv/direnvrc
+#
+# Provides reusable layout functions for project .envrc files.
+# Usage in a project: echo 'layout node' > .envrc && direnv allow
+
+################################################################################
+# Node.js layout
+################################################################################
+# Adds node_modules/.bin to PATH and loads .nvmrc/.node-version if present.
+layout_node() {
+  PATH_add node_modules/.bin
+
+  if [ -f .nvmrc ] || [ -f .node-version ]; then
+    if has mise; then
+      eval "$(mise activate bash --shims)"
+    fi
+  fi
+}
+
+################################################################################
+# Python layout (venv)
+################################################################################
+# Creates or activates a .venv in the project directory.
+layout_python() {
+  local python="${1:-python3}"
+
+  if [ ! -d .venv ]; then
+    "$python" -m venv .venv
+  fi
+
+  source .venv/bin/activate
+}
+
+################################################################################
+# Go layout
+################################################################################
+# Sets GOPATH to a project-local directory.
+layout_go() {
+  export GOPATH="$PWD/.go"
+  PATH_add "$GOPATH/bin"
+}
+
+################################################################################
+# Ruby layout
+################################################################################
+# Adds local gem bin to PATH.
+layout_ruby() {
+  PATH_add .bundle/bin
+}
+
+################################################################################
+# .env file loader
+################################################################################
+# Loads a .env file into the environment.
+# Usage: dotenv .env.local
+dotenv() {
+  local envfile="${1:-.env}"
+
+  if [ -f "$envfile" ]; then
+    set -a
+    # shellcheck source=/dev/null
+    source "$envfile"
+    set +a
+  fi
+}

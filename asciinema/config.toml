@@ -1,0 +1,22 @@
+# asciinema 3.x - https://docs.asciinema.org
+# Symlinked to ~/.config/asciinema/config.toml
+
+[session]
+# Cap pauses at 0.125s for professional-looking cadence
+idle_time_limit = 0.125
+
+# Shell to record
+command = "/bin/zsh -l"
+
+# Do not record keypresses (privacy)
+capture_input = false
+
+# Environment variables to embed in recording metadata
+capture_env = "SHELL,TERM"
+
+[playback]
+# Also cap idle time on playback
+idle_time_limit = 0.125
+
+# Normal playback speed
+speed = 1.0

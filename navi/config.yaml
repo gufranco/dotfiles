@@ -1,0 +1,22 @@
+# Navi - https://github.com/denisidoro/navi
+# Symlinked to ~/.config/navi/config.yaml
+
+style:
+  tag:
+    color: blue
+    width_percentage: 26
+  comment:
+    color: magenta
+    width_percentage: 42
+  snippet:
+    color: white
+
+finder:
+  command: fzf
+
+cheats:
+  paths:
+    - ~/.config/navi/cheats
+
+shell:
+  command: bash

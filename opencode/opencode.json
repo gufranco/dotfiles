@@ -17,23 +17,6 @@
           }
         }
       }
-    },
-    "apfel": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Apple Intelligence (apfel)",
-      "options": {
-        "baseURL": "http://127.0.0.1:11434/v1"
-      },
-      "models": {
-        "apple-foundationmodel": {
-          "name": "Apple Intelligence",
-          "tool_call": false,
-          "limit": {
-            "context": 4096,
-            "output": 2048
-          }
-        }
-      }
     }
   },
   "model": "lmstudio/google/gemma-4-e4b",

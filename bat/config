@@ -37,9 +37,18 @@
 --map-syntax="*.mdx:Markdown"
 --map-syntax="tsconfig*.json:JSON"
 --map-syntax=".editorconfig:INI"
+--map-syntax="*.toml:TOML"
+--map-syntax="*.hcl:HCL"
+--map-syntax="*.prisma:GraphQL"
+--map-syntax="Justfile:Makefile"
+--map-syntax="Taskfile.yml:YAML"
+--map-syntax="*.jsonc:JSON"
+--map-syntax="*.tfvars:HCL"
 
 ################################################################################
 # Behavior
 ################################################################################
 --wrap=auto
 --tabs=2
+--color=auto
+--decorations=auto

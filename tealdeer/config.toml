@@ -1,5 +1,9 @@
 # Tealdeer (tldr) - https://dbrgn.github.io/tealdeer/config.html
 
+[display]
+use_pager = false
+compact = false
+
 [updates]
 auto_update = true
 auto_update_interval_hours = 168
@@ -20,3 +24,6 @@ foreground = { r = 125, g = 207, b = 255 }
 [style.example_variable]
 foreground = { r = 187, g = 154, b = 247 }
 underline = true
+
+[style.description]
+foreground = { r = 169, g = 177, b = 214 }

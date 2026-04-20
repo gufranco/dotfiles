@@ -5,9 +5,68 @@
 show_hidden = true
 sort_by = "natural"
 sort_dir_first = true
+sort_sensitive = false
+sort_reverse = false
+sort_translit = false
 linemode = "size"
+show_symlink = true
+scrolloff = 5
+mouse_events = ["click", "scroll"]
+title_format = "Yazi: {cwd}"
+
+[preview]
+max_width = 1200
+max_height = 900
+cache_dir = ""
+image_delay = 30
+image_filter = "triangle"
+image_quality = 75
+sixel_fraction = 15
+ueberzug_scale = 1
+ueberzug_offset = [0, 0, 0, 0]
 
 [opener]
 edit = [
   { run = 'vim "$@"', block = true, for = "unix" },
+]
+open = [
+  { run = 'open "$@"', desc = "Open", for = "macos" },
+  { run = 'xdg-open "$@"', desc = "Open", for = "linux" },
+]
+reveal = [
+  { run = 'open -R "$@"', desc = "Reveal in Finder", for = "macos" },
+]
+play = [
+  { run = 'iina "$@"', orphan = true, for = "macos" },
+  { run = 'mpv "$@"', orphan = true, for = "linux" },
+]
+
+[open]
+rules = [
+  { name = "*/", use = ["edit", "open", "reveal"] },
+  { mime = "text/*", use = ["edit", "reveal"] },
+  { mime = "image/*", use = ["open", "reveal"] },
+  { mime = "video/*", use = ["play", "open", "reveal"] },
+  { mime = "audio/*", use = ["play", "open", "reveal"] },
+  { mime = "inode/x-empty", use = ["edit", "reveal"] },
+  { mime = "application/json", use = ["edit", "reveal"] },
+  { mime = "*/javascript", use = ["edit", "reveal"] },
+  { mime = "application/zip", use = ["open", "reveal"] },
+  { mime = "application/gzip", use = ["open", "reveal"] },
+  { mime = "application/x-tar", use = ["open", "reveal"] },
+  { mime = "application/x-bzip*", use = ["open", "reveal"] },
+  { mime = "application/x-7z-compressed", use = ["open", "reveal"] },
+  { mime = "application/pdf", use = ["open", "reveal"] },
+  { name = "*", use = ["open", "reveal"] },
+]
+
+[tasks]
+micro_workers = 10
+macro_workers = 25
+bizarre_retry = 5
+
+[plugin]
+prepend_fetchers = [
+  { id = "git", name = "*", run = "git" },
+  { id = "git", name = "*/", run = "git" },
 ]

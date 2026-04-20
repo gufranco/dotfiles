@@ -1,12 +1,14 @@
 # Starship prompt - https://starship.rs
 # Symlinked to ~/.config/starship.toml
-# To activate, uncomment the starship init line in zsh/settings.
 
-format = """$username$hostname$directory$git_branch$git_status$cmd_duration$line_break$character"""
+format = """$username$hostname$directory$git_branch$git_status$docker_context$kubernetes$terraform$nodejs$python$rust$golang$java$ruby$lua$package$cmd_duration$jobs$line_break$character"""
+
+add_newline = true
 
 [character]
 success_symbol = "[>](bold #9ece6a)"
 error_symbol = "[>](bold #f7768e)"
+vimcmd_symbol = "[<](bold #7aa2f7)"
 
 [username]
 show_always = true
@@ -22,10 +24,14 @@ format = "@ [$hostname]($style) "
 style = "bold #7aa2f7"
 truncation_length = 3
 truncation_symbol = ".../"
+read_only = " ro"
+read_only_style = "bold #f7768e"
 
 [git_branch]
 style = "bold #bb9af7"
-format = "on [$symbol$branch]($style) "
+format = "on [$symbol$branch(:$remote_branch)]($style) "
+symbol = ""
+truncation_length = 40
 
 [git_status]
 style = "#e0af68"
@@ -42,6 +48,71 @@ renamed = "r${count}"
 deleted = "x${count}"
 
 [cmd_duration]
-min_time = 5_000
+min_time = 3_000
 style = "bold #565f89"
 format = "took [$duration]($style) "
+show_notifications = false
+
+[jobs]
+threshold = 1
+symbol = "+"
+style = "bold #7dcfff"
+
+[docker_context]
+symbol = "docker "
+style = "bold #7dcfff"
+format = "via [$symbol$context]($style) "
+only_with_files = true
+
+[kubernetes]
+disabled = false
+symbol = "k8s "
+style = "bold #7aa2f7"
+format = '[$symbol$context( \($namespace\))]($style) '
+
+[terraform]
+symbol = "tf "
+style = "bold #bb9af7"
+format = "via [$symbol$workspace]($style) "
+
+[nodejs]
+symbol = "node "
+style = "bold #9ece6a"
+format = "via [$symbol($version)]($style) "
+detect_extensions = []
+
+[python]
+symbol = "py "
+style = "bold #e0af68"
+format = 'via [$symbol($version)( \($virtualenv\))]($style) '
+
+[rust]
+symbol = "rs "
+style = "bold #f7768e"
+format = "via [$symbol($version)]($style) "
+
+[golang]
+symbol = "go "
+style = "bold #7dcfff"
+format = "via [$symbol($version)]($style) "
+
+[java]
+symbol = "java "
+style = "bold #f7768e"
+format = "via [$symbol($version)]($style) "
+
+[ruby]
+symbol = "rb "
+style = "bold #f7768e"
+format = "via [$symbol($version)]($style) "
+
+[lua]
+symbol = "lua "
+style = "bold #7aa2f7"
+format = "via [$symbol($version)]($style) "
+
+[package]
+symbol = "pkg "
+style = "bold #e0af68"
+format = "is [$symbol$version]($style) "
+display_private = false

@@ -1,10 +1,7 @@
-# EditorConfig - Maintain consistent coding styles across different editors
-# https://editorconfig.org
-
-# Top-most EditorConfig file
+# EditorConfig - https://editorconfig.org
 root = true
 
-# Default settings for all files
+# Default: 2-space indent, UTF-8, LF, trim trailing whitespace
 [*]
 charset = utf-8
 end_of_line = lf
@@ -13,144 +10,30 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-# Shell scripts
-[*.{sh,bash,zsh,fish}]
-indent_size = 2
-indent_style = space
-
-# Shell configs (files without extension)
-[{.zshrc,.bashrc,.bash_profile,.profile}]
-indent_size = 2
-indent_style = space
-
-# Zsh configuration files
-[zsh/{aliases,functions,utilities,infrastructure,paths,settings,startup}]
-indent_size = 2
-indent_style = space
-
-# Vim
-[*.vim]
-indent_size = 2
-indent_style = space
-
-[.vimrc]
-indent_size = 2
-indent_style = space
-
-# Python
+# Python: 4-space indent, 88-char line (Black)
 [*.py]
 indent_size = 4
-indent_style = space
 max_line_length = 88
 
-# Ruby
-[*.rb]
-indent_size = 2
-indent_style = space
-
-[{Brewfile,Gemfile,Rakefile}]
-indent_size = 2
-indent_style = space
-
-# YAML
-[*.{yml,yaml}]
-indent_size = 2
-indent_style = space
-
-# JSON
-[*.json]
-indent_size = 2
-indent_style = space
-
-# TOML
-[*.toml]
-indent_size = 2
-indent_style = space
-
-# Markdown
-[*.{md,markdown}]
-trim_trailing_whitespace = false
-indent_size = 2
-max_line_length = 120
-
-# Git
-[{.gitconfig,.gitignore,.gitattributes}]
-indent_size = 2
-indent_style = space
-
-[git/{.gitconfig,.gitignore_global,.gitmessage}]
-indent_size = 2
-indent_style = space
-
-# Make
-[{Makefile,*.mk}]
-indent_style = tab
-indent_size = 4
-
-# Go
+# Go and Make: tabs
 [*.go]
 indent_style = tab
 indent_size = 4
 
-# Configuration files
-[*.{conf,config,cfg,ini}]
-indent_size = 2
-indent_style = space
+[{Makefile,*.mk}]
+indent_style = tab
+indent_size = 4
 
-[{.tmux.conf,.curlrc,.wgetrc,.ripgreprc,.fdrc,.inputrc}]
-indent_size = 2
-indent_style = space
+# Markdown: preserve trailing whitespace (line breaks)
+[*.{md,markdown}]
+trim_trailing_whitespace = false
+max_line_length = 120
 
-[kitty/kitty.conf]
-indent_size = 2
-indent_style = space
-
-# SSH config
-[ssh/config]
-indent_size = 2
-indent_style = space
-
-# GPG config
-[gnupg/{gpg.conf,gpg-agent*.conf}]
-indent_size = 2
-indent_style = space
-
-# Mutt
-[{.muttrc,.mailcap}]
-indent_size = 2
-indent_style = space
-
-[mutt/**/*.muttrc]
-indent_size = 2
-indent_style = space
-
-# NPM/Yarn/PNPM
-[{.npmrc,.yarnrc,.yarnrc.yml,.pnpmrc,package.json}]
-indent_size = 2
-indent_style = space
-
-# Batch files (Windows)
+# Windows batch files: CRLF
 [*.{bat,cmd}]
 end_of_line = crlf
-indent_size = 2
-indent_style = space
 
-# Binary files - no formatting
-[*.{gpg,asc,pgp,p12,pfx,cer,der}]
-insert_final_newline = false
-trim_trailing_whitespace = false
-
-# Images - no formatting
-[*.{png,jpg,jpeg,gif,ico,webp,svg}]
-insert_final_newline = false
-trim_trailing_whitespace = false
-
-# Archives - no formatting
-[*.{zip,tar,gz,tgz,bz2,7z,rar}]
-insert_final_newline = false
-trim_trailing_whitespace = false
-
-# Fonts - no formatting
-[*.{ttf,otf,woff,woff2,eot}]
+# Binary files: no text transformations
+[*.{gpg,asc,pgp,p12,pfx,cer,der,png,jpg,jpeg,gif,ico,webp,svg,zip,tar,gz,tgz,bz2,7z,rar,ttf,otf,woff,woff2,eot}]
 insert_final_newline = false
 trim_trailing_whitespace = false

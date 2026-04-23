@@ -124,7 +124,6 @@ case "$(uname)" in
     ############################################################################
     log_info "Adding third-party repositories..."
     sudo add-apt-repository -y ppa:git-core/ppa >/dev/null 2>&1 || true
-    sudo add-apt-repository -y ppa:neovim-ppa/stable >/dev/null 2>&1 || true
     sudo apt update -qq
     log_success "Repositories configured"
 

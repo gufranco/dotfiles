@@ -39,29 +39,31 @@ env:
   GIT_TERMINAL_PROMPT: "0"
 
 jobs:
-  ubuntu-arm-version-drift:
-    name: Ubuntu ARM version drift
+  resolve-ubuntu-lts:
+    name: Resolve Ubuntu LTS
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      version: ${{ steps.lts.outputs.version }}
     steps:
-      - name: Detect version drift
+      - name: Query latest LTS
+        id: lts
         run: |
-          latest=$(lsb_release -rs)
-          pinned="24.04"
-          if [ "$latest" != "$pinned" ]; then
-            echo "::error::ubuntu-latest moved to ${latest} but ARM runner is still pinned to ${pinned}. Update to ubuntu-${latest}-arm in the workflow."
-            exit 1
-          fi
+          version=$(curl -fsSL https://changelogs.ubuntu.com/meta-release-lts \
+            | grep -oP '^Version: \K[\d.]+' | tail -1)
+          echo "Latest Ubuntu LTS: ${version:-failed to resolve}"
+          echo "version=${version:-24.04}" >> "$GITHUB_OUTPUT"
 
   linux:
     name: ${{ matrix.name }}
+    needs: [resolve-ubuntu-lts]
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-latest
+          - runner: ubuntu-${{ needs.resolve-ubuntu-lts.outputs.version }}
             name: Ubuntu LTS (x64)
-          - runner: ubuntu-24.04-arm
+          - runner: ubuntu-${{ needs.resolve-ubuntu-lts.outputs.version }}-arm
             name: Ubuntu LTS (arm64)
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60

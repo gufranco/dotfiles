@@ -1,0 +1,398 @@
+#!/usr/bin/env bash
+#
+# nds-trim - Trim padding from Nintendo DS ROM files.
+#
+# Implements the GodMode9/Nemris trim algorithm:
+# - NTR ROMs (unitcode 0x00): trim to NTR ROM size + RSA certificate if present
+# - DSi-enhanced ROMs (unitcode 0x02/0x03): trim to TWL ROM size
+# - Header integrity validated via CRC-16/ARC (logo + header checksums)
+#
+# Cross-platform: Linux, macOS BSD, macOS with GNU coreutils.
+
+################################################################################
+# Constants
+################################################################################
+__NDS_RSA_SIZE=136           # 0x88 bytes
+__NDS_RSA_MAGIC="6163"      # bytes 0x61 0x63 ("ac") at RSA boundary
+__NDS_LOGO_CRC_EXPECT=53078 # 0xCF56
+
+################################################################################
+# Helper: get file size portably (GNU stat, then BSD stat)
+################################################################################
+__nds_trim_file_size() {
+  command stat -c%s "$1" 2>/dev/null || command stat -f%z "$1" 2>/dev/null
+}
+
+################################################################################
+# Helper: read a little-endian u32 from file at a given offset
+################################################################################
+__nds_trim_read_u32le() {
+  local hex
+  hex=$(xxd -s "$2" -l 4 -p "$1")
+  printf '%d' "$(( 16#${hex:6:2}${hex:4:2}${hex:2:2}${hex:0:2} ))"
+}
+
+################################################################################
+# Helper: read a little-endian u16 from file at a given offset
+################################################################################
+__nds_trim_read_u16le() {
+  local hex
+  hex=$(xxd -s "$2" -l 2 -p "$1")
+  printf '%d' "$(( 16#${hex:2:2}${hex:0:2} ))"
+}
+
+################################################################################
+# Helper: read N raw bytes as hex from file at a given offset
+################################################################################
+__nds_trim_read_hex() {
+  xxd -s "$2" -l "$3" -p "$1"
+}
+
+################################################################################
+# Helper: read ASCII string from file (strips null bytes)
+################################################################################
+__nds_trim_read_ascii() {
+  xxd -s "$2" -l "$3" -p "$1" | sed 's/00//g' | xxd -r -p 2>/dev/null
+}
+
+################################################################################
+# CRC-16/ARC: polynomial 0xA001 (reflected), init 0xFFFF
+# Portable across BSD awk and GNU awk (no bitwise function dependency).
+################################################################################
+__nds_trim_crc16() {
+  local file="$1" offset="$2" length="$3"
+  od -A n -v -t u1 -j "$offset" -N "$length" "$file" \
+    | awk '
+      function xor16(a, b,    result, bit) {
+        result = 0; bit = 1
+        for (p = 0; p < 16; p++) {
+          if ((int(a / bit) % 2) != (int(b / bit) % 2)) result += bit
+          bit *= 2
+        }
+        return result
+      }
+      BEGIN { crc = 65535; poly = 40961 }
+      {
+        for (i = 1; i <= NF; i++) {
+          crc = xor16(crc, int($i))
+          for (b = 0; b < 8; b++) {
+            carry = crc % 2
+            crc = int(crc / 2)
+            if (carry) crc = xor16(crc, poly)
+          }
+        }
+      }
+      END { printf "%d\n", crc }'
+}
+
+################################################################################
+# Helper: format byte count as human-readable size
+################################################################################
+__nds_trim_format_size() {
+  local bytes=$1
+
+  if (( bytes >= 1073741824 )); then
+    awk "BEGIN { printf \"%.1f GB\", $bytes / 1073741824 }"
+  elif (( bytes >= 1048576 )); then
+    awk "BEGIN { printf \"%.1f MB\", $bytes / 1048576 }"
+  elif (( bytes >= 1024 )); then
+    awk "BEGIN { printf \"%.1f KB\", $bytes / 1024 }"
+  else
+    printf "%d B" "$bytes"
+  fi
+}
+
+################################################################################
+# Helper: describe unitcode
+################################################################################
+__nds_trim_unitcode_label() {
+  case "$1" in
+    0)  echo "NTR" ;;
+    2)  echo "NTR+TWL (DSi Enhanced)" ;;
+    3)  echo "TWL (DSi Only)" ;;
+    *)  echo "Unknown ($1)" ;;
+  esac
+}
+
+################################################################################
+# nds-trim - Trim NDS/DSi ROM files by removing padding
+################################################################################
+function nds-trim() {
+  # Parse flags
+  local dry_run=false
+  local verify=false
+  local backup=false
+  local info_mode=false
+  local recursive=false
+  local files=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dry-run)   dry_run=true; shift ;;
+      --verify)    verify=true; shift ;;
+      --backup)    backup=true; shift ;;
+      --info)      info_mode=true; shift ;;
+      -r|--recursive)
+        recursive=true; shift
+        ;;
+      --help|-h)
+        echo "Usage: nds-trim [flags] <file.nds> [file2.nds ...]"
+        echo ""
+        echo "Flags:"
+        echo "  --dry-run     Show what would happen without modifying files"
+        echo "  --info        Display ROM header details without trimming"
+        echo "  --verify      Extra safety: scan padding bytes before trimming"
+        echo "  --backup      Create .bak copy before trimming"
+        echo "  -r, --recursive  Find .nds files recursively in directories"
+        echo ""
+        echo "Algorithm: GodMode9/Nemris (unitcode-aware, RSA certificate preservation)"
+        return 0
+        ;;
+      *)
+        files+=("$1"); shift
+        ;;
+    esac
+  done
+
+  # Expand recursive directories
+  if $recursive; then
+    local expanded=()
+    for item in "${files[@]}"; do
+      if [[ -d "$item" ]]; then
+        while IFS= read -r -d '' f; do
+          expanded+=("$f")
+        done < <(find "$item" -type f -name '*.nds' -print0 2>/dev/null)
+      else
+        expanded+=("$item")
+      fi
+    done
+    files=("${expanded[@]}")
+  fi
+
+  if [[ ${#files[@]} -eq 0 ]]; then
+    __log_error "No files specified. Use --help for usage."
+    return 1
+  fi
+
+  local total=${#files[@]}
+  local current=0
+  local trimmed=0 skipped=0 warned=0 total_saved=0
+  local rsa_count=0 dsi_count=0
+
+  # Per-file variables (declared once, reused in loop)
+  local file="" fname=""
+  local actual_size=0 unitcode=0 ntr_size=0 twl_size=0 trim_size=0
+  local padding_size=0 has_rsa=false
+  local logo_crc_computed=0 header_crc_computed=0 header_crc_stored=0
+  local rsa_magic="" saved_human="" before_human="" after_human=""
+
+  for file in "${files[@]}"; do
+    ((current++))
+
+    if [[ ! -f "$file" ]]; then
+      __log_error "[$current/$total] Not found: $file"
+      ((skipped++))
+      continue
+    fi
+
+    fname=$(basename "$file")
+    actual_size=$(__nds_trim_file_size "$file")
+
+    # Need at least 0x214 bytes (end of TWL ROM size field) for header parsing
+    if (( actual_size < 532 )); then
+      __log_warning "[$current/$total] File too small for NDS header: $fname"
+      ((skipped++))
+      continue
+    fi
+
+    # ---- Header validation ----
+
+    # Logo CRC: CRC-16 over bytes 0x0C0..0x15B (156 bytes)
+    logo_crc_computed=$(__nds_trim_crc16 "$file" 192 156)
+    if (( logo_crc_computed != __NDS_LOGO_CRC_EXPECT )); then
+      __log_warning "[$current/$total] Bad logo CRC (not a valid NDS ROM): $fname"
+      ((skipped++))
+      continue
+    fi
+
+    # Header CRC: CRC-16 over bytes 0x000..0x15D (350 bytes)
+    header_crc_stored=$(__nds_trim_read_u16le "$file" 0x15E)
+    header_crc_computed=$(__nds_trim_crc16 "$file" 0 350)
+    if (( header_crc_computed != header_crc_stored )); then
+      __log_warning "[$current/$total] Bad header CRC (corrupted header): $fname"
+      ((skipped++))
+      continue
+    fi
+
+    # ---- Parse header fields ----
+
+    unitcode=$(( 16#$(__nds_trim_read_hex "$file" 0x12 1) ))
+    ntr_size=$(__nds_trim_read_u32le "$file" 0x80)
+
+    if (( ntr_size == 0 )); then
+      __log_error "[$current/$total] Invalid header (NTR ROM size is 0): $fname"
+      ((skipped++))
+      continue
+    fi
+
+    # ---- Compute trim size (GodMode9 algorithm) ----
+
+    has_rsa=false
+    twl_size=0
+
+    if (( unitcode != 0 )); then
+      # DSi-enhanced or DSi-only: use TWL ROM size
+      twl_size=$(__nds_trim_read_u32le "$file" 0x210)
+      if (( twl_size == 0 )); then
+        __log_error "[$current/$total] Invalid header (TWL ROM size is 0): $fname"
+        ((skipped++))
+        continue
+      fi
+      trim_size=$twl_size
+    else
+      # NTR-only: check for RSA certificate at the NTR boundary
+      trim_size=$ntr_size
+      if (( ntr_size < actual_size )); then
+        rsa_magic=$(__nds_trim_read_hex "$file" "$ntr_size" 2)
+        if [[ "$rsa_magic" == "$__NDS_RSA_MAGIC" ]]; then
+          has_rsa=true
+          trim_size=$(( ntr_size + __NDS_RSA_SIZE ))
+        fi
+      fi
+    fi
+
+    # ---- Info mode ----
+
+    if $info_mode; then
+      local title="" gamecode="" uc_label=""
+      title=$(__nds_trim_read_ascii "$file" 0x00 12)
+      gamecode=$(__nds_trim_read_ascii "$file" 0x0C 4)
+      uc_label=$(__nds_trim_unitcode_label "$unitcode")
+
+      echo "File:       $fname ($(__nds_trim_format_size "$actual_size"))"
+      echo "Title:      $title"
+      echo "Game Code:  $gamecode"
+      echo "Unit Code:  0x$(printf '%02x' "$unitcode") ($uc_label)"
+      echo "NTR Size:   $(__nds_trim_format_size "$ntr_size")"
+      if (( unitcode != 0 )); then
+        echo "TWL Size:   $(__nds_trim_format_size "$twl_size")"
+      fi
+      if $has_rsa; then
+        echo "RSA Cert:   Yes (Download Play)"
+      else
+        echo "RSA Cert:   No"
+      fi
+      echo "Trim Size:  $(__nds_trim_format_size "$trim_size")"
+      if (( actual_size > trim_size )); then
+        padding_size=$(( actual_size - trim_size ))
+        local pct
+        pct=$(awk "BEGIN { printf \"%.1f\", ($padding_size / $actual_size) * 100 }")
+        echo "Padding:    $(__nds_trim_format_size "$padding_size") ($pct%)"
+      else
+        echo "Padding:    None (already trimmed)"
+      fi
+      echo ""
+      continue
+    fi
+
+    # ---- Sanity checks ----
+
+    if (( trim_size > actual_size )); then
+      __log_error "[$current/$total] Trim size ($trim_size) exceeds file size ($actual_size): $fname"
+      ((skipped++))
+      continue
+    fi
+
+    if (( trim_size == actual_size )); then
+      __log_skip "[$current/$total] Already trimmed ($(__nds_trim_format_size "$actual_size")): $fname"
+      ((skipped++))
+      continue
+    fi
+
+    padding_size=$(( actual_size - trim_size ))
+
+    # ---- Optional padding verification ----
+
+    if $verify; then
+      local non_padding_offset=""
+      non_padding_offset=$(od -A d -t x1 -j "$trim_size" "$file" \
+        | awk '{
+            for (i = 2; i <= NF; i++) {
+              if ($i != "00" && $i != "ff") {
+                print $1 + (i - 2)
+                exit
+              }
+            }
+          }')
+
+      if [[ -n "$non_padding_offset" ]]; then
+        __log_warning "[$current/$total] Non-padding data at offset $non_padding_offset (--verify failed): $fname"
+        ((warned++))
+        continue
+      fi
+    fi
+
+    # ---- Build detail tag ----
+
+    local detail=""
+    if (( unitcode != 0 )); then
+      detail=" [DSi]"
+      ((dsi_count++))
+    elif $has_rsa; then
+      detail=" [RSA preserved]"
+      ((rsa_count++))
+    fi
+
+    # ---- Format sizes ----
+
+    saved_human=$(__nds_trim_format_size "$padding_size")
+    before_human=$(__nds_trim_format_size "$actual_size")
+    after_human=$(__nds_trim_format_size "$trim_size")
+
+    # ---- Execute ----
+
+    if $dry_run; then
+      __log_info "[$current/$total] Would trim${detail}: $fname ($before_human -> $after_human, saves $saved_human)"
+    else
+      if $backup; then
+        if [[ -f "${file}.bak" ]]; then
+          __log_warning "[$current/$total] Backup already exists, skipping: ${fname}.bak"
+          ((skipped++))
+          continue
+        fi
+        cp "$file" "${file}.bak"
+      fi
+      truncate -s "$trim_size" "$file"
+      __log_success "[$current/$total] Trimmed${detail}: $fname ($before_human -> $after_human, saved $saved_human)"
+      ((trimmed++))
+      total_saved=$(( total_saved + padding_size ))
+    fi
+  done
+
+  # ---- Summary ----
+
+  echo ""
+  if $info_mode; then
+    return 0
+  fi
+
+  local total_saved_human=""
+  total_saved_human=$(__nds_trim_format_size "$total_saved")
+  local action="trimmed"
+  $dry_run && action="would trim"
+
+  local details=""
+  if (( dsi_count > 0 || rsa_count > 0 )); then
+    local parts=()
+    (( dsi_count > 0 )) && parts+=("$dsi_count DSi")
+    (( rsa_count > 0 )) && parts+=("$rsa_count RSA")
+    details=" ($(IFS=', '; echo "${parts[*]}"))"
+  fi
+
+  if $dry_run; then
+    local would_trim=$(( total - skipped - warned ))
+    __log_info "Dry run: $would_trim $action${details}, $warned verify-failed, $skipped skipped"
+  else
+    __log_info "Done: $trimmed $action${details}, $warned verify-failed, $skipped skipped, $total_saved_human saved"
+  fi
+}

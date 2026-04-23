@@ -517,7 +517,16 @@ function fat_sort() {
 
     case "$(uname)" in
       Darwin)
-        diskutil unmount "$partition" >/dev/null 2>&1
+        diskutil unmount force "$partition" >/dev/null 2>&1
+        local attempts=0
+        while [ -n "$(__disk_mount_point "$partition")" ] && [ "$attempts" -lt 10 ]; do
+          sleep 1
+          attempts=$((attempts + 1))
+        done
+        if [ -n "$(__disk_mount_point "$partition")" ]; then
+          __log_error "Failed to unmount $partition after ${attempts}s"
+          return 1
+        fi
         ;;
       Linux)
         sudo umount "$partition" 2>/dev/null
@@ -653,8 +662,9 @@ function fat_sort() {
 
   sync
   __log_info "Unmounting..."
-  __fat_sort_unmount "$partition"
-  sleep 1
+  if ! __fat_sort_unmount "$partition"; then
+    return 1
+  fi
 
   __log_info "Sorting..."
   if sudo fatsort -c -o d "$partition" >/dev/null; then

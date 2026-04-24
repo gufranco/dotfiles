@@ -226,25 +226,6 @@ case "$(uname)" in
     fi
 
     ############################################################################
-    # Python (latest from deadsnakes)
-    ############################################################################
-    log_info "Setting up Python..."
-    sudo add-apt-repository -y ppa:deadsnakes/ppa >/dev/null 2>&1 || true
-    sudo apt update -qq
-    PYTHON_LATEST=$(apt-cache pkgnames python3. 2>/dev/null | grep -E '^python3\.[0-9]+$' | sort -t. -k2 -n | tail -1)
-    if [ -n "$PYTHON_LATEST" ]; then
-      if ! cmd_exists "$PYTHON_LATEST"; then
-        log_info "Installing ${PYTHON_LATEST}..."
-        sudo apt install -y -qq "$PYTHON_LATEST"
-        log_success "${PYTHON_LATEST} installed"
-      else
-        log_skip "${PYTHON_LATEST} already installed"
-      fi
-    else
-      log_warning "Could not determine latest Python version from deadsnakes"
-    fi
-
-    ############################################################################
     # Applications
     ############################################################################
     APPS=(

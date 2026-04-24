@@ -275,7 +275,7 @@ case "$(uname)" in
       openjdk-21-jdk libpq-dev
 
       # Git & Version Control
-      glab difftastic
+      glab
 
       # Cloud & Infrastructure
       ansible
@@ -452,6 +452,24 @@ case "$(uname)" in
       fi
     else
       log_skip "Rust already installed"
+    fi
+
+    ############################################################################
+    # Difftastic (Rust-based structural diff, not in Ubuntu repos)
+    ############################################################################
+    if ! cmd_exists difft; then
+      if cmd_exists cargo; then
+        log_info "Installing difftastic..."
+        if cargo install --locked difftastic 2>/dev/null; then
+          log_success "difftastic installed"
+        else
+          log_warning "difftastic install failed"
+        fi
+      else
+        log_skip "difftastic (cargo not available)"
+      fi
+    else
+      log_skip "difftastic already installed"
     fi
 
     ############################################################################
@@ -681,9 +699,6 @@ SYSCTL
       else
         log_skip "File descriptor limits already configured"
       fi
-
-      # Controller support (udev rules for PS4, PS5, Switch, Steam Controller)
-      apt_install_if_missing steam-devices
 
       # Add user to input group for controller access
       if ! groups "$USER" | grep -qw input; then

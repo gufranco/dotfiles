@@ -47,9 +47,6 @@ check_file /etc/sysctl.d/99-gaming.conf "Gaming sysctl config"
 # Gaming file descriptor limits
 check_file /etc/security/limits.d/99-gaming.conf "Gaming limits config"
 
-# Controller support
-check_pkg steam-devices
-
 # Gaming performance tools
 check_pkg gamemode
 check_pkg "libgamemodeauto0:i386"

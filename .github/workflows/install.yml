@@ -126,70 +126,63 @@ jobs:
       - name: Verify gaming setup
         run: bash .github/scripts/verify-gaming.sh
 
-  # macos:
-  #   name: ${{ matrix.name }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       include:
-  #         - runner: macos-15-intel
-  #           name: macOS Sequoia (x64)
-  #         - runner: macos-26-intel
-  #           name: macOS Tahoe (x64)
-  #         - runner: macos-26
-  #           name: macOS Tahoe (arm64)
-  #   runs-on: ${{ matrix.runner }}
-  #   timeout-minutes: 90
-  #   steps:
-  #     - uses: actions/checkout@v6
-  #       with:
-  #         submodules: recursive
-  #
-  #     - name: Free disk space
-  #       run: |
-  #         # Linux paths
-  #         sudo rm -rf /usr/local/lib/android 2>/dev/null || true
-  #         sudo rm -rf /usr/share/dotnet 2>/dev/null || true
-  #         sudo rm -rf /opt/hostedtoolcache 2>/dev/null || true
-  #         sudo rm -rf /usr/local/share/powershell 2>/dev/null || true
-  #         # macOS: iOS/watchOS/tvOS/visionOS simulators and Xcode extras
-  #         sudo rm -rf /Library/Developer/CoreSimulator/Volumes/* 2>/dev/null || true
-  #         sudo rm -rf /Library/Developer/CoreSimulator/Cryptex/* 2>/dev/null || true
-  #         xcrun simctl delete all 2>/dev/null || true
-  #         # macOS arm64: pre-installed Homebrew packages fill the smaller disk
-  #         # x64 runners have enough space, skip to avoid reinstall overhead
-  #         if [ "$(uname -m)" = "arm64" ] && command -v brew >/dev/null 2>&1; then
-  #           brew list --formula | xargs brew remove --force --ignore-dependencies 2>/dev/null || true
-  #           brew cleanup --prune=all -s 2>/dev/null || true
-  #         fi
-  #         df -h /
-  #
-  #     - name: Run install.sh
-  #       run: bash install.sh
-  #
-  #     - name: Re-run install.sh (idempotency)
-  #       run: bash install.sh
-  #
-  #     - name: Verify symlinks
-  #       run: bash .github/scripts/verify-symlinks.sh
-  #
-  #     - name: Verify Homebrew packages
-  #       run: |
-  #         set -euo pipefail
-  #         eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
-  #         errors=0
-  #         for cmd in bat eza fzf fd rg delta git zsh tmux vim gh node bun pnpm; do
-  #           if command -v "$cmd" >/dev/null 2>&1; then
-  #             echo "OK: $cmd ($(command -v "$cmd"))"
-  #           else
-  #             echo "FAIL: $cmd not found"
-  #             errors=$((errors + 1))
-  #           fi
-  #         done
-  #         exit $errors
-  #
-  #     - name: Verify Oh My Zsh
-  #       run: bash .github/scripts/verify-ohmyzsh.sh
-  #
-  #     - name: Verify permissions
-  #       run: bash .github/scripts/verify-permissions.sh
+  macos:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-26-intel
+            name: macOS Tahoe (x64)
+          - runner: macos-26
+            name: macOS Tahoe (arm64)
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Free disk space
+        run: |
+          # macOS: iOS/watchOS/tvOS/visionOS simulators and Xcode extras
+          sudo rm -rf /Library/Developer/CoreSimulator/Volumes/* 2>/dev/null || true
+          sudo rm -rf /Library/Developer/CoreSimulator/Cryptex/* 2>/dev/null || true
+          xcrun simctl delete all 2>/dev/null || true
+          # macOS arm64: pre-installed Homebrew packages fill the smaller disk
+          # x64 runners have enough space, skip to avoid reinstall overhead
+          if [ "$(uname -m)" = "arm64" ] && command -v brew >/dev/null 2>&1; then
+            brew list --formula | xargs brew remove --force --ignore-dependencies 2>/dev/null || true
+            brew cleanup --prune=all -s 2>/dev/null || true
+          fi
+          df -h /
+
+      - name: Run install.sh
+        run: bash install.sh
+
+      - name: Re-run install.sh (idempotency)
+        run: bash install.sh
+
+      - name: Verify symlinks
+        run: bash .github/scripts/verify-symlinks.sh
+
+      - name: Verify Homebrew packages
+        run: |
+          set -euo pipefail
+          eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
+          errors=0
+          for cmd in bat eza fzf fd rg delta git zsh tmux vim gh node bun pnpm; do
+            if command -v "$cmd" >/dev/null 2>&1; then
+              echo "OK: $cmd ($(command -v "$cmd"))"
+            else
+              echo "FAIL: $cmd not found"
+              errors=$((errors + 1))
+            fi
+          done
+          exit $errors
+
+      - name: Verify Oh My Zsh
+        run: bash .github/scripts/verify-ohmyzsh.sh
+
+      - name: Verify permissions
+        run: bash .github/scripts/verify-permissions.sh

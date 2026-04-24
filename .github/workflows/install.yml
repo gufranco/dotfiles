@@ -117,6 +117,25 @@ jobs:
             exit 1
           fi
 
+      - name: Verify desktop apps
+        run: |
+          set -euo pipefail
+          errors=0
+          pkgs="spotify-client google-chrome-stable dbeaver-ce code beekeeper-studio sublime-text"
+          # amd64-only packages
+          if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+            pkgs="$pkgs slack-desktop insomnia"
+          fi
+          for pkg in $pkgs; do
+            if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+              echo "OK: $pkg (dpkg)"
+            else
+              echo "FAIL: $pkg not installed"
+              errors=$((errors + 1))
+            fi
+          done
+          exit $errors
+
       - name: Verify Oh My Zsh
         run: bash .github/scripts/verify-ohmyzsh.sh
 

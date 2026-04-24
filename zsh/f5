@@ -172,42 +172,17 @@ function __f5_update_linux() {
 }
 
 function __f5_update_standalone_tools() {
+  # Difftastic (not in Ubuntu repos, installed via cargo)
+  if ! __cmd_exists cargo; then
+    return
+  fi
+
   __log_info "Updating standalone tools..."
 
-  local updated=0
-  local failed=0
-
-  # Starship (curl installer)
-  if __cmd_exists starship; then
-    if curl -sS --connect-timeout 10 --max-time 120 https://starship.rs/install.sh | sh -s -- --yes >/dev/null 2>&1; then
-      updated=$((updated + 1))
-    else
-      failed=$((failed + 1))
-    fi
-  fi
-
-  # Atuin (curl installer)
-  if __cmd_exists atuin; then
-    if curl -sS --connect-timeout 10 --max-time 120 https://setup.atuin.sh | bash -s -- --non-interactive >/dev/null 2>&1; then
-      updated=$((updated + 1))
-    else
-      failed=$((failed + 1))
-    fi
-  fi
-
-  # Difftastic (cargo)
-  if __cmd_exists cargo; then
-    if cargo install --locked difftastic >/dev/null 2>&1; then
-      updated=$((updated + 1))
-    else
-      failed=$((failed + 1))
-    fi
-  fi
-
-  if [ "$failed" -eq 0 ]; then
-    __log_success "Standalone tools updated ($updated tools)"
+  if cargo install --locked difftastic >/dev/null 2>&1; then
+    __log_success "Standalone tools updated (difftastic)"
   else
-    __log_warning "Standalone tools updated ($updated ok, $failed failed)"
+    __log_warning "Failed to update difftastic"
   fi
 }
 

@@ -95,6 +95,8 @@ jobs:
           for cmd in $cmds; do
             if command -v "$cmd" >/dev/null 2>&1; then
               echo "OK: $cmd ($(command -v "$cmd"))"
+            elif [ -x "/usr/games/$cmd" ]; then
+              echo "OK: $cmd (/usr/games/$cmd)"
             elif dpkg -l "$cmd" 2>/dev/null | grep -q "^ii"; then
               echo "OK: $cmd (dpkg)"
             else

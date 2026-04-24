@@ -177,6 +177,7 @@ function __f5_update_standalone_tools() {
   local updated=0
   local failed=0
 
+  # Starship (curl installer)
   if __cmd_exists starship; then
     if curl -sS --connect-timeout 10 --max-time 120 https://starship.rs/install.sh | sh -s -- --yes >/dev/null 2>&1; then
       updated=$((updated + 1))
@@ -185,16 +186,18 @@ function __f5_update_standalone_tools() {
     fi
   fi
 
-  if __cmd_exists zoxide; then
-    if curl -sS --connect-timeout 10 --max-time 120 https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash >/dev/null 2>&1; then
+  # Atuin (curl installer)
+  if __cmd_exists atuin; then
+    if curl -sS --connect-timeout 10 --max-time 120 https://setup.atuin.sh | bash -s -- --non-interactive >/dev/null 2>&1; then
       updated=$((updated + 1))
     else
       failed=$((failed + 1))
     fi
   fi
 
-  if __cmd_exists atuin; then
-    if curl -sS --connect-timeout 10 --max-time 120 https://setup.atuin.sh | bash -s -- --non-interactive >/dev/null 2>&1; then
+  # Difftastic (cargo)
+  if __cmd_exists cargo; then
+    if cargo install --locked difftastic >/dev/null 2>&1; then
       updated=$((updated + 1))
     else
       failed=$((failed + 1))
@@ -205,6 +208,58 @@ function __f5_update_standalone_tools() {
     __log_success "Standalone tools updated ($updated tools)"
   else
     __log_warning "Standalone tools updated ($updated ok, $failed failed)"
+  fi
+}
+
+function __f5_update_nerd_fonts() {
+  local fonts_dir="$HOME/.local/share/fonts/NerdFonts"
+  if [ ! -d "$fonts_dir" ]; then
+    __log_skip "Nerd Fonts not set up"
+    return
+  fi
+
+  __log_info "Updating Nerd Fonts..."
+
+  local fonts=(FiraCode FiraMono Hack JetBrainsMono UbuntuMono Ubuntu UbuntuSans)
+  local updated=0
+  local failed=0
+
+  for font in "${fonts[@]}"; do
+    if curl -fsSL --connect-timeout 10 --max-time 120 \
+      "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz" \
+      | tar -xJf - -C "$fonts_dir" 2>/dev/null; then
+      updated=$((updated + 1))
+    else
+      failed=$((failed + 1))
+    fi
+  done
+
+  if __cmd_exists fc-cache; then
+    fc-cache -f "$fonts_dir" 2>/dev/null || true
+  fi
+
+  if [ "$failed" -eq 0 ]; then
+    __log_success "Nerd Fonts updated ($updated fonts)"
+  else
+    __log_warning "Nerd Fonts updated ($updated ok, $failed failed)"
+  fi
+}
+
+function __f5_update_flatpak() {
+  if ! __cmd_exists flatpak; then
+    return
+  fi
+
+  if ! flatpak list 2>/dev/null | grep -q .; then
+    return
+  fi
+
+  __log_info "Updating Flatpak apps..."
+
+  if flatpak update -y --noninteractive >/dev/null 2>&1; then
+    __log_success "Flatpak apps updated"
+  else
+    __log_warning "Flatpak update had warnings"
   fi
 }
 
@@ -351,6 +406,8 @@ function f5() {
     "Linux")
       __f5_update_linux
       __f5_update_standalone_tools
+      __f5_update_nerd_fonts
+      __f5_update_flatpak
       __f5_update_proton_ge
       ;;
     "Darwin") __f5_update_macos ;;

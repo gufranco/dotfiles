@@ -430,16 +430,11 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists rustc; then
       log_info "Installing Rust..."
-      # Try snap first (works on full Ubuntu installs with systemd)
-      if snap list 2>/dev/null | grep -q snapd; then
-        if snap_installed rustup; then
-          log_skip "rustup snap already installed"
-        else
-          sudo snap install rustup --classic 2>/dev/null || true
-        fi
-      fi
-      # Fallback: use rustup installer (for containers and systems without snapd)
-      if ! cmd_exists rustup; then
+      # rustup is in Ubuntu 24.04+ repos; fall back to the shell installer
+      # for environments where the package is unavailable
+      if pkg_installed rustup || sudo apt install -y -qq rustup 2>/dev/null; then
+        true
+      elif ! cmd_exists rustup; then
         curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 120 https://sh.rustup.rs | sh -s -- -y 2>/dev/null || true
         # shellcheck source=/dev/null
         [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
@@ -493,11 +488,13 @@ case "$(uname)" in
     ############################################################################
 
     # Spotify
+    # Uses trusted=yes instead of GPG key verification because Spotify
+    # frequently rotates their signing key (the fingerprint is embedded in
+    # the key URL), which breaks automated installs. The trade-off is that
+    # apt skips signature verification for this repo.
     if ! pkg_installed spotify-client; then
       log_info "Installing Spotify..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc | sudo gpg --dearmor --yes -o /etc/apt/keyrings/spotify.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
+      echo "deb [arch=$(dpkg --print-architecture) trusted=yes] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
       sudo apt update -qq
       sudo apt install -y -qq spotify-client
       log_success "Spotify installed"
@@ -542,14 +539,67 @@ case "$(uname)" in
       log_skip "VS Code already installed"
     fi
 
+    # Beekeeper Studio
+    if ! pkg_installed beekeeper-studio; then
+      log_info "Installing Beekeeper Studio..."
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL --connect-timeout 10 --max-time 30 https://deb.beekeeperstudio.io/beekeeper.key | sudo gpg --dearmor --yes -o /etc/apt/keyrings/beekeeper-studio.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/beekeeper-studio.gpg] https://deb.beekeeperstudio.io stable main" | sudo tee /etc/apt/sources.list.d/beekeeper-studio.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq beekeeper-studio
+      log_success "Beekeeper Studio installed"
+    else
+      log_skip "Beekeeper Studio already installed"
+    fi
+
+    # Slack (amd64 only)
+    if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+      if ! pkg_installed slack-desktop; then
+        log_info "Installing Slack..."
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL --connect-timeout 10 --max-time 30 https://packagecloud.io/slacktechnologies/slack/gpgkey | sudo gpg --dearmor --yes -o /etc/apt/keyrings/slack.gpg 2>/dev/null || true
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/slack.gpg] https://packagecloud.io/slacktechnologies/slack/debian/ jessie main" | sudo tee /etc/apt/sources.list.d/slack.list >/dev/null
+        sudo apt update -qq
+        sudo apt install -y -qq slack-desktop
+        log_success "Slack installed"
+      else
+        log_skip "Slack already installed"
+      fi
+    fi
+
+    # Sublime Text
+    if ! pkg_installed sublime-text; then
+      log_info "Installing Sublime Text..."
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL --connect-timeout 10 --max-time 30 https://download.sublimetext.com/sublimehq-pub.gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/sublimetext.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/sublimetext.gpg] https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublimetext.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq sublime-text
+      log_success "Sublime Text installed"
+    else
+      log_skip "Sublime Text already installed"
+    fi
+
+    # Insomnia (amd64 only)
+    # Uses trusted=yes because Kong does not provide a stable GPG key for
+    # their apt repo.
+    if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+      if ! pkg_installed insomnia; then
+        log_info "Installing Insomnia..."
+        echo "deb [arch=amd64 trusted=yes] https://download.konghq.com/insomnia-apt/ default all" | sudo tee /etc/apt/sources.list.d/insomnia.list >/dev/null
+        sudo apt update -qq
+        sudo apt install -y -qq insomnia
+        log_success "Insomnia installed"
+      else
+        log_skip "Insomnia already installed"
+      fi
+    fi
+
     # Snap packages (require systemd, skip in CI/containers)
+    # Postman and Discord have no official apt repos
     if [[ -z "$CI" ]] && cmd_exists snap; then
-      snap_installed beekeeper-studio || { log_info "Installing Beekeeper Studio..."; sudo snap install beekeeper-studio 2>/dev/null || true; }
       snap_installed postman || { log_info "Installing Postman..."; sudo snap install postman 2>/dev/null || true; }
-      snap_installed slack || { log_info "Installing Slack..."; sudo snap install slack 2>/dev/null || true; }
       snap_installed discord || { log_info "Installing Discord..."; sudo snap install discord 2>/dev/null || true; }
-      snap_installed sublime-text || { log_info "Installing Sublime Text..."; sudo snap install sublime-text --classic 2>/dev/null || true; }
-      snap_installed insomnia || { log_info "Installing Insomnia..."; sudo snap install insomnia 2>/dev/null || true; }
     else
       log_skip "Snap packages (CI environment or snapd unavailable)"
     fi

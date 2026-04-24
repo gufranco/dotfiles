@@ -382,35 +382,17 @@ case "$(uname)" in
     ############################################################################
     # Starship prompt
     ############################################################################
-    if ! cmd_exists starship; then
-      log_info "Installing Starship..."
-      curl -sS --connect-timeout 10 --max-time 120 https://starship.rs/install.sh | sh -s -- --yes
-      log_success "Starship installed"
-    else
-      log_skip "Starship already installed"
-    fi
+    apt_install_if_missing starship
 
     ############################################################################
     # Zoxide (smart cd)
     ############################################################################
-    if ! cmd_exists zoxide; then
-      log_info "Installing zoxide..."
-      sudo apt install -y -qq zoxide
-      log_success "zoxide installed"
-    else
-      log_skip "zoxide already installed"
-    fi
+    apt_install_if_missing zoxide
 
     ############################################################################
     # Atuin (shell history)
     ############################################################################
-    if ! cmd_exists atuin; then
-      log_info "Installing atuin..."
-      curl -sS --connect-timeout 10 --max-time 120 https://setup.atuin.sh | bash -s -- --non-interactive
-      log_success "atuin installed"
-    else
-      log_skip "atuin already installed"
-    fi
+    apt_install_if_missing atuin
 
     ############################################################################
     # Golang

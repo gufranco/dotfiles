@@ -580,16 +580,25 @@ case "$(uname)" in
       log_skip "Sublime Text already installed"
     fi
 
-    # Insomnia (amd64 only)
-    # Uses trusted=yes because Kong does not provide a stable GPG key for
-    # their apt repo.
+    # Insomnia (amd64 only, direct .deb download)
+    # Kong's apt repo has a broken Release signature that causes apt update to
+    # fail even with trusted=yes. Download the .deb directly instead.
     if [ "$(dpkg --print-architecture)" = "amd64" ]; then
       if ! pkg_installed insomnia; then
         log_info "Installing Insomnia..."
-        echo "deb [arch=amd64 trusted=yes] https://download.konghq.com/insomnia-apt/ default all" | sudo tee /etc/apt/sources.list.d/insomnia.list >/dev/null
-        sudo apt update -qq
-        sudo apt install -y -qq insomnia
-        log_success "Insomnia installed"
+        insomnia_deb="/tmp/insomnia.deb"
+        if curl -fsSL --connect-timeout 10 --max-time 120 -o "$insomnia_deb" "https://updates.insomnia.rest/downloads/ubuntu/latest?&app=com.insomnia.app&channel=stable" 2>/dev/null; then
+          sudo dpkg -i "$insomnia_deb" 2>/dev/null || true
+          sudo apt install -y -qq --fix-broken 2>/dev/null || true
+          rm -f "$insomnia_deb"
+          if pkg_installed insomnia; then
+            log_success "Insomnia installed"
+          else
+            log_warning "Insomnia installation failed"
+          fi
+        else
+          log_warning "Failed to download Insomnia"
+        fi
       else
         log_skip "Insomnia already installed"
       fi

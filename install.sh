@@ -110,6 +110,10 @@ case "$(uname)" in
     export DEBIAN_FRONTEND=noninteractive
     export GIT_TERMINAL_PROMPT=0
 
+    # Force non-interactive dpkg conffile handling (keep existing config files)
+    sudo mkdir -p /etc/apt/apt.conf.d
+    echo 'Dpkg::Options { "--force-confold"; "--force-confdef"; }' | sudo tee /etc/apt/apt.conf.d/99force-conf >/dev/null
+
     # Ensure USER is set (not set in bare Docker containers)
     : "${USER:=$(whoami)}"
     export USER
@@ -265,7 +269,10 @@ case "$(uname)" in
       vlc cmus asciinema
 
       # Desktop
-      conky-all kitty fonts-hack-ttf transmission caffeine flameshot
+      conky-all kitty transmission caffeine flameshot
+
+      # Fonts (base families, Nerd Font variants installed separately below)
+      fonts-hack fonts-firacode fonts-jetbrains-mono fonts-ubuntu
 
       # Dev tools
       hyperfine tokei tty-clock
@@ -277,6 +284,41 @@ case "$(uname)" in
         sudo apt install -y -qq "$app" 2>/dev/null || log_warning "Failed: $app"
       fi
     done
+
+    ############################################################################
+    # Nerd Fonts (patched fonts with icons for terminal/editor use)
+    ############################################################################
+    NERD_FONTS=(
+      FiraCode
+      FiraMono
+      Hack
+      JetBrainsMono
+      UbuntuMono
+      Ubuntu
+      UbuntuSans
+    )
+
+    NERD_FONTS_DIR="$HOME/.local/share/fonts/NerdFonts"
+    mkdir -p "$NERD_FONTS_DIR"
+
+    for font in "${NERD_FONTS[@]}"; do
+      if [ -z "$(find "$NERD_FONTS_DIR" -maxdepth 1 -name "${font}*" -print -quit 2>/dev/null)" ]; then
+        log_info "Installing $font Nerd Font..."
+        NERD_FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz"
+        if curl -fsSL --connect-timeout 10 --max-time 120 "$NERD_FONT_URL" | tar -xJf - -C "$NERD_FONTS_DIR" 2>/dev/null; then
+          log_success "$font Nerd Font installed"
+        else
+          log_warning "Failed to install $font Nerd Font"
+        fi
+      else
+        log_skip "$font Nerd Font already installed"
+      fi
+    done
+
+    # Rebuild font cache
+    if cmd_exists fc-cache; then
+      fc-cache -f "$NERD_FONTS_DIR" 2>/dev/null || true
+    fi
 
     ############################################################################
     # GitHub CLI

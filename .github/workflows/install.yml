@@ -124,7 +124,7 @@ jobs:
           pkgs="spotify-client google-chrome-stable dbeaver-ce code beekeeper-studio sublime-text"
           # amd64-only packages
           if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-            pkgs="$pkgs slack-desktop insomnia"
+            pkgs="$pkgs slack-desktop"
           fi
           for pkg in $pkgs; do
             if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then

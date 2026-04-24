@@ -375,16 +375,24 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists rustc; then
       log_info "Installing Rust..."
-      if snap_installed rustup; then
-        log_skip "rustup snap already installed"
-      else
-        sudo snap install rustup --classic 2>/dev/null || true
+      # Try snap first (works on full Ubuntu installs with systemd)
+      if snap list 2>/dev/null | grep -q snapd; then
+        if snap_installed rustup; then
+          log_skip "rustup snap already installed"
+        else
+          sudo snap install rustup --classic 2>/dev/null || true
+        fi
+      fi
+      # Fallback: use rustup installer (for containers and systems without snapd)
+      if ! cmd_exists rustup; then
+        curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 120 https://sh.rustup.rs | sh -s -- -y 2>/dev/null || true
+        [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
       fi
       if cmd_exists rustup; then
         rustup default stable >/dev/null 2>&1
         log_success "Rust installed"
       else
-        log_warning "Rust not available via snap"
+        log_warning "Rust installation failed"
       fi
     else
       log_skip "Rust already installed"
@@ -407,70 +415,69 @@ case "$(uname)" in
     fi
 
     ############################################################################
-    # Desktop apps (skip in CI - no GUI available)
+    # Desktop apps (apt-based, installed headlessly in CI)
     ############################################################################
-    if [[ -z "$CI" ]]; then
-      # Spotify
-      if ! pkg_installed spotify-client; then
-        log_info "Installing Spotify..."
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc | sudo gpg --dearmor --yes -o /etc/apt/keyrings/spotify.gpg 2>/dev/null || true
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
-        sudo apt update -qq
-        sudo apt install -y -qq spotify-client
-        log_success "Spotify installed"
-      else
-        log_skip "Spotify already installed"
-      fi
 
-      # Google Chrome
-      if ! pkg_installed google-chrome-stable; then
-        log_info "Installing Google Chrome..."
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL --connect-timeout 10 --max-time 30 https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/keyrings/google-chrome.gpg 2>/dev/null || true
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
-        sudo apt update -qq
-        sudo apt install -y -qq google-chrome-stable
-        log_success "Chrome installed"
-      else
-        log_skip "Chrome already installed"
-      fi
-
-      # DBeaver
-      if ! pkg_installed dbeaver-ce; then
-        log_info "Installing DBeaver..."
-        sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce >/dev/null 2>&1 || true
-        sudo apt update -qq
-        sudo apt install -y -qq dbeaver-ce
-        log_success "DBeaver installed"
-      else
-        log_skip "DBeaver already installed"
-      fi
-
-      # Visual Studio Code
-      if ! pkg_installed code; then
-        log_info "Installing VS Code..."
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL --connect-timeout 10 --max-time 30 https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg 2>/dev/null || true
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
-        sudo apt update -qq
-        sudo apt install -y -qq code
-        log_success "VS Code installed"
-      else
-        log_skip "VS Code already installed"
-      fi
-
-      # Snap packages
-      if cmd_exists snap; then
-        snap_installed beekeeper-studio || { log_info "Installing Beekeeper Studio..."; sudo snap install beekeeper-studio 2>/dev/null || true; }
-        snap_installed postman || { log_info "Installing Postman..."; sudo snap install postman 2>/dev/null || true; }
-        snap_installed slack || { log_info "Installing Slack..."; sudo snap install slack 2>/dev/null || true; }
-        snap_installed discord || { log_info "Installing Discord..."; sudo snap install discord 2>/dev/null || true; }
-        snap_installed sublime-text || { log_info "Installing Sublime Text..."; sudo snap install sublime-text --classic 2>/dev/null || true; }
-        snap_installed insomnia || { log_info "Installing Insomnia..."; sudo snap install insomnia 2>/dev/null || true; }
-      fi
+    # Spotify
+    if ! pkg_installed spotify-client; then
+      log_info "Installing Spotify..."
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL --connect-timeout 10 --max-time 30 https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc | sudo gpg --dearmor --yes -o /etc/apt/keyrings/spotify.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/spotify.gpg] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq spotify-client
+      log_success "Spotify installed"
     else
-      log_skip "Desktop apps (CI environment)"
+      log_skip "Spotify already installed"
+    fi
+
+    # Google Chrome
+    if ! pkg_installed google-chrome-stable; then
+      log_info "Installing Google Chrome..."
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL --connect-timeout 10 --max-time 30 https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/keyrings/google-chrome.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq google-chrome-stable
+      log_success "Chrome installed"
+    else
+      log_skip "Chrome already installed"
+    fi
+
+    # DBeaver
+    if ! pkg_installed dbeaver-ce; then
+      log_info "Installing DBeaver..."
+      sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce >/dev/null 2>&1 || true
+      sudo apt update -qq
+      sudo apt install -y -qq dbeaver-ce
+      log_success "DBeaver installed"
+    else
+      log_skip "DBeaver already installed"
+    fi
+
+    # Visual Studio Code
+    if ! pkg_installed code; then
+      log_info "Installing VS Code..."
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL --connect-timeout 10 --max-time 30 https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg 2>/dev/null || true
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
+      sudo apt update -qq
+      sudo apt install -y -qq code
+      log_success "VS Code installed"
+    else
+      log_skip "VS Code already installed"
+    fi
+
+    # Snap packages (require systemd, skip in CI/containers)
+    if [[ -z "$CI" ]] && cmd_exists snap; then
+      snap_installed beekeeper-studio || { log_info "Installing Beekeeper Studio..."; sudo snap install beekeeper-studio 2>/dev/null || true; }
+      snap_installed postman || { log_info "Installing Postman..."; sudo snap install postman 2>/dev/null || true; }
+      snap_installed slack || { log_info "Installing Slack..."; sudo snap install slack 2>/dev/null || true; }
+      snap_installed discord || { log_info "Installing Discord..."; sudo snap install discord 2>/dev/null || true; }
+      snap_installed sublime-text || { log_info "Installing Sublime Text..."; sudo snap install sublime-text --classic 2>/dev/null || true; }
+      snap_installed insomnia || { log_info "Installing Insomnia..."; sudo snap install insomnia 2>/dev/null || true; }
+    else
+      log_skip "Snap packages (CI environment or snapd unavailable)"
     fi
 
     ############################################################################
@@ -628,66 +635,62 @@ SYSCTL
         log_success "User added to input group"
       fi
 
-      # Desktop-only gaming packages (skip in CI)
-      if [[ -z "$CI" ]]; then
-        # Gaming performance tools
-        log_info "Installing gaming tools..."
-        apt_install_if_missing gamemode
-        apt_install_if_missing "libgamemodeauto0:i386"
-        apt_install_if_missing mangohud
-        apt_install_if_missing gamescope
-        apt_install_if_missing protontricks
-        log_success "Gaming tools installed"
+      # Gaming performance tools
+      log_info "Installing gaming tools..."
+      apt_install_if_missing gamemode
+      apt_install_if_missing "libgamemodeauto0:i386"
+      apt_install_if_missing mangohud
+      apt_install_if_missing gamescope
+      apt_install_if_missing protontricks
+      log_success "Gaming tools installed"
 
-        # Steam (from Valve's official repository)
-        if ! pkg_installed steam-launcher; then
-          log_info "Installing Steam..."
-          echo "steam steam/question select I AGREE" | sudo debconf-set-selections
-          echo "steam steam/license note ''" | sudo debconf-set-selections
-          apt_add_key_and_repo \
-            "https://repo.steampowered.com/steam/archive/stable/steam.gpg" \
-            "/etc/apt/keyrings/steam.gpg" \
-            "deb [arch=amd64,i386 signed-by=/etc/apt/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam" \
-            "/etc/apt/sources.list.d/steam-stable.list" \
-            "steam-launcher"
-          log_success "Steam installed"
-        else
-          log_skip "Steam already installed"
-        fi
+      # Steam (from Valve's official repository)
+      if ! pkg_installed steam-launcher; then
+        log_info "Installing Steam..."
+        echo "steam steam/question select I AGREE" | sudo debconf-set-selections
+        echo "steam steam/license note ''" | sudo debconf-set-selections
+        echo "steam steam/purge note ''" | sudo debconf-set-selections
+        apt_add_key_and_repo \
+          "https://repo.steampowered.com/steam/archive/stable/steam.gpg" \
+          "/etc/apt/keyrings/steam.gpg" \
+          "deb [arch=amd64,i386 signed-by=/etc/apt/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam" \
+          "/etc/apt/sources.list.d/steam-stable.list" \
+          "steam-launcher"
+        log_success "Steam installed"
+      else
+        log_skip "Steam already installed"
+      fi
 
-        # ProtonUp-Qt (manages GE-Proton custom builds for better game compatibility)
-        apt_install_if_missing flatpak
-        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-        if ! flatpak list 2>/dev/null | grep -q "net.davidotek.pupgui2"; then
-          log_info "Installing ProtonUp-Qt..."
-          flatpak install -y --noninteractive flathub net.davidotek.pupgui2 2>/dev/null || log_warning "ProtonUp-Qt install had warnings"
-          log_success "ProtonUp-Qt installed"
-        else
-          log_skip "ProtonUp-Qt already installed"
-        fi
+      # ProtonUp-Qt (manages GE-Proton custom builds for better game compatibility)
+      apt_install_if_missing flatpak
+      flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+      if ! flatpak list 2>/dev/null | grep -q "net.davidotek.pupgui2"; then
+        log_info "Installing ProtonUp-Qt..."
+        flatpak install -y --noninteractive flathub net.davidotek.pupgui2 2>/dev/null || log_warning "ProtonUp-Qt install had warnings"
+        log_success "ProtonUp-Qt installed"
+      else
+        log_skip "ProtonUp-Qt already installed"
+      fi
 
-        # GE-Proton (custom Proton with extra game patches, auto-download latest)
-        PROTON_GE_DIR="$HOME/.steam/steam/compatibilitytools.d"
-        mkdir -p "$PROTON_GE_DIR"
-        if [ -z "$(command ls -A "$PROTON_GE_DIR" 2>/dev/null)" ]; then
-          log_info "Installing latest GE-Proton..."
-          GE_LATEST=$(curl -sL --connect-timeout 10 --max-time 30 \
-            https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest \
-            | grep tag_name | cut -d '"' -f 4)
-          if [ -n "$GE_LATEST" ]; then
-            curl -#fLo "/tmp/${GE_LATEST}.tar.gz" --connect-timeout 10 --max-time 300 \
-              "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${GE_LATEST}/${GE_LATEST}.tar.gz"
-            tar -xzf "/tmp/${GE_LATEST}.tar.gz" -C "$PROTON_GE_DIR"
-            rm -f "/tmp/${GE_LATEST}.tar.gz"
-            log_success "GE-Proton ${GE_LATEST} installed"
-          else
-            log_warning "Could not determine latest GE-Proton version"
-          fi
+      # GE-Proton (custom Proton with extra game patches, auto-download latest)
+      PROTON_GE_DIR="$HOME/.steam/steam/compatibilitytools.d"
+      mkdir -p "$PROTON_GE_DIR"
+      if [ -z "$(command ls -A "$PROTON_GE_DIR" 2>/dev/null)" ]; then
+        log_info "Installing latest GE-Proton..."
+        GE_LATEST=$(curl -sL --connect-timeout 10 --max-time 30 \
+          https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest \
+          | grep tag_name | cut -d '"' -f 4)
+        if [ -n "$GE_LATEST" ]; then
+          curl -#fLo "/tmp/${GE_LATEST}.tar.gz" --connect-timeout 10 --max-time 300 \
+            "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${GE_LATEST}/${GE_LATEST}.tar.gz"
+          tar -xzf "/tmp/${GE_LATEST}.tar.gz" -C "$PROTON_GE_DIR"
+          rm -f "/tmp/${GE_LATEST}.tar.gz"
+          log_success "GE-Proton ${GE_LATEST} installed"
         else
-          log_skip "GE-Proton already installed"
+          log_warning "Could not determine latest GE-Proton version"
         fi
       else
-        log_skip "Gaming tools and Steam (CI environment)"
+        log_skip "GE-Proton already installed"
       fi
     else
       log_skip "GPU drivers and gaming (not supported on $(dpkg --print-architecture))"

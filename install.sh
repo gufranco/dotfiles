@@ -110,6 +110,10 @@ case "$(uname)" in
     export DEBIAN_FRONTEND=noninteractive
     export GIT_TERMINAL_PROMPT=0
 
+    # Ensure USER is set (not set in bare Docker containers)
+    : "${USER:=$(whoami)}"
+    export USER
+
     ############################################################################
     # System update
     ############################################################################

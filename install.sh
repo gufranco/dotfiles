@@ -156,7 +156,7 @@ case "$(uname)" in
       vim neovim ripgrep fd-find jq moreutils patchutils urlview
 
       # Network
-      wget rsync rclone nmap mtr telnet httpie
+      wget rsync rclone nmap mtr telnet httpie sshpass
 
       # System monitoring
       htop
@@ -238,16 +238,22 @@ case "$(uname)" in
     ############################################################################
     APPS=(
       # File managers & Cloud
-      nautilus-dropbox
+      nautilus-dropbox nnn
 
       # Search & Navigation
       fzf universal-ctags
 
+      # Shell & Terminal
+      direnv tealdeer tmuxp
+
+      # Text & Data tools
+      glow yq
+
       # Email & Web
-      neomutt lynx
+      neomutt lynx mailutils
 
       # Media
-      vlc cmus asciinema
+      vlc cmus asciinema ffmpeg fatsort
 
       # Desktop
       conky-all kitty transmission caffeine flameshot
@@ -255,8 +261,30 @@ case "$(uname)" in
       # Fonts (base families, Nerd Font variants installed separately below)
       fonts-hack fonts-firacode fonts-jetbrains-mono fonts-ubuntu
 
+      # Backup
+      restic
+
+      # System monitoring
+      duf du-dust fastfetch cpufetch procs
+
+      # Security & Encryption
+      age
+
       # Dev tools
-      hyperfine tokei tty-clock
+      hyperfine tokei tty-clock bear entr bats pipx stress-ng
+      openjdk-21-jdk libpq-dev
+
+      # Git & Version Control
+      glab difftastic
+
+      # Cloud & Infrastructure
+      ansible
+
+      # Penetration Testing
+      hashcat hydra john nikto sqlmap radare2
+
+      # Retro Gaming & ROM Tools
+      mame
     )
 
     for app in "${APPS[@]}"; do

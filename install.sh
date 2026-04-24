@@ -413,6 +413,7 @@ case "$(uname)" in
       # Fallback: use rustup installer (for containers and systems without snapd)
       if ! cmd_exists rustup; then
         curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 120 https://sh.rustup.rs | sh -s -- -y 2>/dev/null || true
+        # shellcheck source=/dev/null
         [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
       fi
       if cmd_exists rustup; then

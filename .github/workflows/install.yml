@@ -90,7 +90,7 @@ jobs:
         run: |
           set -euo pipefail
           errors=0
-          cmds="zsh git vim tmux curl wget fzf rg bat eza fdfind delta gh node go starship docker tokei google-chrome-stable gamemoderun mangohud gamescope protontricks"
+          cmds="zsh git vim tmux curl wget fzf rg bat eza fdfind delta gh node go starship docker tokei google-chrome-stable gamemoderun mangohud gamescope protontricks zoxide atuin rustc mise"
 
           for cmd in $cmds; do
             if command -v "$cmd" >/dev/null 2>&1; then

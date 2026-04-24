@@ -283,7 +283,7 @@ case "$(uname)" in
     mkdir -p "$NERD_FONTS_DIR"
 
     for font in "${NERD_FONTS[@]}"; do
-      if [ -z "$(find "$NERD_FONTS_DIR" -maxdepth 1 -name "${font}*" -print -quit 2>/dev/null)" ]; then
+      if [ -z "$(find "$NERD_FONTS_DIR" -maxdepth 1 -name "${font}NerdFont*" -print -quit 2>/dev/null)" ]; then
         log_info "Installing $font Nerd Font..."
         NERD_FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz"
         if curl -fsSL --connect-timeout 10 --max-time 120 "$NERD_FONT_URL" | tar -xJf - -C "$NERD_FONTS_DIR" 2>/dev/null; then
@@ -367,7 +367,7 @@ case "$(uname)" in
     ############################################################################
     if ! cmd_exists zoxide; then
       log_info "Installing zoxide..."
-      curl -sS --connect-timeout 10 --max-time 120 https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+      sudo apt install -y -qq zoxide
       log_success "zoxide installed"
     else
       log_skip "zoxide already installed"

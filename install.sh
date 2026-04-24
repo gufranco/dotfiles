@@ -250,7 +250,7 @@ case "$(uname)" in
       glow yq
 
       # Email & Web
-      neomutt lynx mailutils
+      neomutt lynx
 
       # Media
       vlc cmus asciinema ffmpeg fatsort

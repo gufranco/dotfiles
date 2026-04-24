@@ -156,7 +156,7 @@ jobs:
           - runner: macos-26
             name: macOS Tahoe (arm64)
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v6
         with:

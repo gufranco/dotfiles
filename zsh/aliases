@@ -69,14 +69,23 @@ fi
 ################################################################################
 if command -v claude > /dev/null; then
   function claude() {
+    setopt LOCAL_OPTIONS NO_MONITOR
+    local monitor_pid=""
     if [[ -n "${TMUX_PANE:-}" ]]; then
       local script="$HOME/.claude/scripts/auto-continue.sh"
       if [[ -x "$script" ]]; then
-        "$script" "$TMUX_PANE" &
-        disown
+        "$script" "$TMUX_PANE" &>/dev/null &
+        monitor_pid=$!
+        disown "$monitor_pid" 2>/dev/null
+        __log_success "Auto-continue monitor started (PID $monitor_pid)"
       fi
     fi
     command claude "$@"
+    if [[ -n "$monitor_pid" ]] && kill -0 "$monitor_pid" 2>/dev/null; then
+      kill "$monitor_pid" 2>/dev/null
+      wait "$monitor_pid" 2>/dev/null
+      __log_info "Auto-continue monitor stopped"
+    fi
   }
 fi
 

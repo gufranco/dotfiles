@@ -109,10 +109,22 @@ case "$(uname)" in
     log_info "System: Linux (Ubuntu/Debian)"
     export DEBIAN_FRONTEND=noninteractive
     export GIT_TERMINAL_PROMPT=0
+    export NEEDRESTART_MODE=a
+
+    # Preserve non-interactive env vars through sudo so dpkg/debconf never
+    # falls back to the dialog frontend on machines with a TTY
+    sudo mkdir -p /etc/sudoers.d
+    echo 'Defaults env_keep += "DEBIAN_FRONTEND NEEDRESTART_MODE"' | sudo tee /etc/sudoers.d/keep-noninteractive >/dev/null
+    sudo chmod 440 /etc/sudoers.d/keep-noninteractive
 
     # Force non-interactive dpkg conffile handling (keep existing config files)
     sudo mkdir -p /etc/apt/apt.conf.d
     echo 'Dpkg::Options { "--force-confold"; "--force-confdef"; }' | sudo tee /etc/apt/apt.conf.d/99force-conf >/dev/null
+
+    # Suppress needrestart interactive prompts (Ubuntu 22.04+)
+    if [ -f /etc/needrestart/needrestart.conf ]; then
+      sudo sed -i "s/#\$nrconf{restart} = 'i';/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+    fi
 
     # Ensure USER is set (not set in bare Docker containers)
     : "${USER:=$(whoami)}"

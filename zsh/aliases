@@ -65,6 +65,22 @@ if command -v opencode > /dev/null && command -v lms > /dev/null; then
 fi
 
 ################################################################################
+# Claude Code with auto-continue monitor
+################################################################################
+if command -v claude > /dev/null; then
+  function claude() {
+    if [[ -n "${TMUX_PANE:-}" ]]; then
+      local script="$HOME/.claude/scripts/auto-continue.sh"
+      if [[ -x "$script" ]]; then
+        "$script" "$TMUX_PANE" &
+        disown
+      fi
+    fi
+    command claude "$@"
+  }
+fi
+
+################################################################################
 # Modern tool replacements
 ################################################################################
 __alias_if_exists bat cat "command bat"

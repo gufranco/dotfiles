@@ -370,3 +370,15 @@
 
 [includeIf "gitdir/i:**/onyx odds/"]
   path = ~/.dotfiles/git/.gitconfig-onyx
+
+[includeIf "hasconfig:remote.*.url:git@github.com:tsos-tech/**"]
+  path = ~/.dotfiles/git/.gitconfig-onyx
+
+[includeIf "hasconfig:remote.*.url:git@github-onyx:tsos-tech/**"]
+  path = ~/.dotfiles/git/.gitconfig-onyx
+
+[includeIf "hasconfig:remote.*.url:https://github.com/tsos-tech/**"]
+  path = ~/.dotfiles/git/.gitconfig-onyx
+
+[includeIf "hasconfig:remote.*.url:ssh://git@github.com/tsos-tech/**"]
+  path = ~/.dotfiles/git/.gitconfig-onyx

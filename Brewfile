@@ -184,6 +184,7 @@ brew 'sqlmap'
 ################################################################################
 # Languages & Package Managers
 ################################################################################
+brew 'clojure'
 brew 'cocoapods'
 brew 'golang', link: true
 brew 'golangci-lint'

@@ -542,6 +542,10 @@ function fat_sort() {
 
     __log_info "Cleaning temporary files..."
 
+    if [ "$(uname)" = "Darwin" ]; then
+      sudo mdutil -X "$mount_point" >/dev/null 2>&1
+    fi
+
     local patterns=(
       # macOS (current)
       ".DS_Store"

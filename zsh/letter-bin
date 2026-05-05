@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+#
+# letter-bin - Group files into per-letter folders.
+#
+# For each top-level regular file in <dir>, take the first character of the
+# basename and move the file into a subfolder named after that character:
+#   - Letters go into the matching uppercase folder (A, B, ..., Z).
+#   - Digits, symbols, and non-ASCII characters go into '#'.
+# Subdirectories and hidden files are skipped. Existing destinations are
+# never overwritten.
+
+################################################################################
+# Helper: compute bucket name for a basename
+################################################################################
+__letter_bin_bucket() {
+  local first="${1:0:1}"
+  case "$first" in
+    [A-Za-z]) printf '%s' "$first" | tr '[:lower:]' '[:upper:]' ;;
+    *)        printf '#' ;;
+  esac
+}
+
+################################################################################
+# letter-bin - Group files into per-letter folders
+################################################################################
+function letter-bin() {
+  local dry_run=false
+  local target=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dry-run)
+        dry_run=true; shift
+        ;;
+      -h|--help)
+        echo "Usage: letter-bin [--dry-run] [<dir>]"
+        echo ""
+        echo "Group top-level files of <dir> into per-letter subfolders."
+        echo "<dir> defaults to the current directory."
+        echo ""
+        echo "Bucket rule:"
+        echo "  - First char [A-Za-z]: uppercase letter folder (A..Z)"
+        echo "  - Anything else:       '#' folder"
+        echo ""
+        echo "Skipped:"
+        echo "  - Subdirectories (including existing bucket folders)"
+        echo "  - Hidden entries (basename starts with '.')"
+        echo "  - Files whose destination path already exists"
+        echo ""
+        echo "Symlinks are treated as regular files and moved."
+        echo ""
+        echo "Flags:"
+        echo "  --dry-run    Show planned moves, change nothing"
+        echo "  -h, --help   Show this help"
+        return 0
+        ;;
+      --)
+        shift
+        if [[ $# -gt 0 ]]; then target="$1"; shift; fi
+        break
+        ;;
+      -*)
+        __log_error "Unknown flag: $1"
+        return 1
+        ;;
+      *)
+        if [[ -n "$target" ]]; then
+          __log_error "Multiple directories given; only one is supported."
+          return 1
+        fi
+        target="$1"; shift
+        ;;
+    esac
+  done
+
+  [[ -z "$target" ]] && target="."
+
+  if [[ ! -e "$target" ]]; then
+    __log_error "Not found: $target"
+    return 1
+  fi
+  if [[ ! -d "$target" ]]; then
+    __log_error "Not a directory: $target"
+    return 1
+  fi
+
+  local abs_target
+  abs_target=$(cd "$target" && pwd) || {
+    __log_error "Cannot enter directory: $target"
+    return 1
+  }
+
+  __log_info "Binning files in: $abs_target"
+
+  local moved=0 skipped=0 failed=0
+
+  local file fname bucket dest_dir dest_path
+  while IFS= read -r -d '' file; do
+    fname=$(basename "$file")
+
+    if [[ "$fname" == .* ]]; then
+      ((skipped++))
+      continue
+    fi
+
+    bucket=$(__letter_bin_bucket "$fname")
+    dest_dir="$abs_target/$bucket"
+    dest_path="$dest_dir/$fname"
+
+    if [[ -e "$dest_dir" && ! -d "$dest_dir" ]]; then
+      __log_warning "Bucket name '$bucket' is occupied by a non-directory; skipping: $fname"
+      ((failed++))
+      continue
+    fi
+
+    if [[ -e "$dest_path" ]]; then
+      __log_warning "Destination exists, skipping: $fname -> $bucket/"
+      ((skipped++))
+      continue
+    fi
+
+    if $dry_run; then
+      __log_info "Would move: $fname -> $bucket/"
+      ((moved++))
+      continue
+    fi
+
+    if [[ ! -d "$dest_dir" ]]; then
+      if ! mkdir "$dest_dir" 2>/dev/null; then
+        __log_error "Failed to create bucket: $bucket/"
+        ((failed++))
+        continue
+      fi
+    fi
+
+    if mv -- "$file" "$dest_path" 2>/dev/null; then
+      ((moved++))
+    else
+      __log_error "Move failed: $fname -> $bucket/"
+      ((failed++))
+    fi
+  done < <(find "$abs_target" -maxdepth 1 -type f -print0 2>/dev/null)
+
+  local action="moved"
+  $dry_run && action="would move"
+  __log_success "Done: $moved $action, $skipped skipped, $failed failed"
+}

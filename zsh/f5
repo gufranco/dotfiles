@@ -4,15 +4,6 @@
 # All update helpers live here next to the function that calls them.
 
 ################################################################################
-# Git repo updater (shared by multiple update functions below)
-################################################################################
-function __f5_update_git_repo() {
-  local repo_dir="$1"
-  git -C "$repo_dir" pull --quiet >/dev/null 2>&1 && \
-  git -C "$repo_dir" fetch --prune --quiet >/dev/null 2>&1
-}
-
-################################################################################
 # Individual update steps
 ################################################################################
 function __f5_update_dotfiles() {
@@ -23,7 +14,8 @@ function __f5_update_dotfiles() {
     return
   fi
 
-  if __f5_update_git_repo "$HOME/.dotfiles"; then
+  if git -C "$HOME/.dotfiles" pull --quiet >/dev/null 2>&1 && \
+     git -C "$HOME/.dotfiles" fetch --prune --quiet >/dev/null 2>&1; then
     if git -C "$HOME/.dotfiles" submodule update --init --recursive --quiet; then
       __log_success "Dotfiles and submodules updated"
     else
@@ -42,7 +34,8 @@ function __f5_update_aws() {
 
   __log_info "Updating AWS configuration..."
 
-  if __f5_update_git_repo "$HOME/.aws"; then
+  if git -C "$HOME/.aws" pull --quiet >/dev/null 2>&1 && \
+     git -C "$HOME/.aws" fetch --prune --quiet >/dev/null 2>&1; then
     __log_success "AWS configuration updated"
   else
     __log_warning "Failed to update AWS configuration"
@@ -57,7 +50,8 @@ function __f5_update_claude() {
 
   __log_info "Updating Claude engineering rules..."
 
-  if __f5_update_git_repo "$HOME/.claude"; then
+  if git -C "$HOME/.claude" pull --quiet >/dev/null 2>&1 && \
+     git -C "$HOME/.claude" fetch --prune --quiet >/dev/null 2>&1; then
     __log_success "Claude engineering rules updated"
   else
     __log_warning "Failed to update Claude engineering rules"
@@ -92,7 +86,8 @@ function __f5_update_plugins() {
     [ ! -d "$dir/.git" ] && continue
     [[ "$dir" == "$HOME/.tmux/plugins/tpm/" ]] && continue
 
-    if __f5_update_git_repo "$dir"; then
+    if git -C "$dir" pull --quiet >/dev/null 2>&1 && \
+       git -C "$dir" fetch --prune --quiet >/dev/null 2>&1; then
       ((plugin_count++))
     else
       ((plugin_errors++))

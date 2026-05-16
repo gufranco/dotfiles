@@ -10,7 +10,7 @@ function __f5_update_dotfiles() {
   __log_info "Updating dotfiles..."
 
   if [ ! -d "$HOME/.dotfiles/.git" ]; then
-    __log_skip "Dotfiles not a git repository"
+    __log_info "Dotfiles not a git repository"
     return
   fi
 
@@ -60,7 +60,7 @@ function __f5_update_claude() {
 
 function __f5_update_vim() {
   if ! __cmd_exists vim; then
-    __log_skip "Vim not installed"
+    __log_info "Vim not installed"
     return
   fi
 
@@ -103,7 +103,7 @@ function __f5_update_plugins() {
 
 function __f5_update_mise() {
   if ! __cmd_exists mise; then
-    __log_skip "mise not installed"
+    __log_info "mise not installed"
     return
   fi
 
@@ -125,7 +125,7 @@ function __f5_update_mise() {
 function __f5_update_proton_ge() {
   local proton_dir="$HOME/.steam/steam/compatibilitytools.d"
   if [ ! -d "$proton_dir" ]; then
-    __log_skip "GE-Proton not set up"
+    __log_info "GE-Proton not set up"
     return
   fi
 
@@ -184,7 +184,7 @@ function __f5_update_standalone_tools() {
 function __f5_update_nerd_fonts() {
   local fonts_dir="$HOME/.local/share/fonts/NerdFonts"
   if [ ! -d "$fonts_dir" ]; then
-    __log_skip "Nerd Fonts not set up"
+    __log_info "Nerd Fonts not set up"
     return
   fi
 
@@ -261,12 +261,12 @@ function __f5_update_python() {
   # pipx CLI tools
   ############################################################################
   if ! __cmd_exists pipx; then
-    __log_skip "pipx not installed, skipping CLI tools"
+    __log_info "pipx not installed, skipping CLI tools"
     return
   fi
 
   if [ ! -f "$pipxfile" ]; then
-    __log_skip "Pipxfile not found"
+    __log_info "Pipxfile not found"
     return
   fi
 
@@ -318,7 +318,7 @@ function __f5_reload_configs() {
       __log_warning "Tmux reload failed"
     fi
   else
-    __log_skip "Not in tmux session"
+    __log_info "Not in tmux session"
   fi
 
   # Clear eval cache so tools re-initialize with fresh output

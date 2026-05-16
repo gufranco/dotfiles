@@ -103,7 +103,7 @@ function __calculate_vm_storage() {
 ################################################################################
 function __ensure_docker_compose_plugin() {
   if ! __cmd_exists docker-compose; then
-    __log_skip "docker-compose not found, skipping plugin setup"
+    __log_info "docker-compose not found, skipping plugin setup"
     return
   fi
 

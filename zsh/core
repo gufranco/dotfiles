@@ -37,10 +37,6 @@ function __log_error() {
   __log_with_time "\033[0;31m[✗]\033[0m" "$@"
 }
 
-function __log_skip() {
-  __log_with_time "\033[0;90m[SKIP]\033[0m" "$@"
-}
-
 ################################################################################
 # System checks
 ################################################################################
@@ -64,7 +60,7 @@ function __safe_link() {
   local dst="$2"
 
   if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
-    __log_skip "Link OK: $dst"
+    __log_info "Link OK: $dst"
     return 0
   fi
 

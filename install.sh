@@ -41,7 +41,7 @@ log_info() { __log_info "$@"; }
 log_success() { __log_success "$@"; }
 log_warning() { __log_warning "$@"; }
 log_error() { __log_error "$@"; }
-log_skip() { __log_skip "$@"; }
+log_skip() { __log_info "$@"; }
 cmd_exists() { __cmd_exists "$@"; }
 pkg_installed() { __pkg_installed "$@"; }
 snap_installed() { __snap_installed "$@"; }

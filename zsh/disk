@@ -1,147 +1,8 @@
 #!/usr/bin/env bash
 #
-# Disk operations: wipe, sort, and shared helpers.
-# All disk-related helpers live here next to the functions that use them.
-
-################################################################################
-# Shared disk helpers (used by disk_wipe and fat_sort)
-################################################################################
-function __disk_resolve_device() {
-  local input="$1"
-
-  if [ -b "$input" ] || [ -c "$input" ]; then
-    echo "$input"
-    return 0
-  fi
-
-  if [ -d "$input" ]; then
-    local resolved
-    case "$(uname)" in
-      Darwin)
-        resolved=$(diskutil info "$input" 2>/dev/null | awk -F': +' '/Device Node/ {print $2}')
-        ;;
-      Linux)
-        resolved=$(command findmnt -n -o SOURCE "$input" 2>/dev/null)
-        ;;
-    esac
-
-    if [ -n "$resolved" ]; then
-      echo "$resolved"
-      return 0
-    fi
-
-    __log_error "No device found for mount point: $input"
-    return 1
-  fi
-
-  __log_error "Not a device or mount point: $input"
-  return 1
-}
-
-function __disk_whole_device() {
-  local device="$1"
-
-  case "$(uname)" in
-    Darwin)
-      local whole
-      whole=$(diskutil info "$device" 2>/dev/null | awk -F': +' '/Part of Whole/ {print $2}')
-      if [ -n "$whole" ]; then
-        echo "/dev/$whole"
-      else
-        echo "$device"
-      fi
-      ;;
-    Linux)
-      local stripped
-      stripped=$(lsblk -no PKNAME "$device" 2>/dev/null | head -1)
-      if [ -n "$stripped" ]; then
-        echo "/dev/$stripped"
-      else
-        echo "$device"
-      fi
-      ;;
-  esac
-}
-
-function __disk_mount_point() {
-  local partition="$1"
-
-  case "$(uname)" in
-    Darwin)
-      diskutil info "$partition" 2>/dev/null | awk -F': +' '/Mount Point/ {print $2}'
-      ;;
-    Linux)
-      command findmnt -n -o TARGET "$partition" 2>/dev/null
-      ;;
-  esac
-}
-
-function __disk_get_size() {
-  local disk="$1"
-  local size
-
-  case "$(uname)" in
-    Darwin)
-      size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p')
-      ;;
-    Linux)
-      size=$(command blockdev --getsize64 "$disk" 2>/dev/null)
-      ;;
-  esac
-
-  if [ -z "$size" ] || [ "$size" -eq 0 ]; then
-    __log_error "Unable to determine disk size for $disk"
-    return 1
-  fi
-
-  echo "$size"
-}
-
-function __disk_unmount() {
-  local disk="$1"
-
-  __log_info "Unmounting $disk..."
-  case "$(uname)" in
-    Darwin)
-      if sudo diskutil unmountDisk force "$disk"; then
-        __log_success "Disk unmounted"
-      else
-        __log_warning "Failed to unmount disk (may not be mounted)"
-      fi
-      ;;
-    Linux)
-      if sudo umount "$disk" 2>/dev/null; then
-        __log_success "Disk unmounted"
-      else
-        __log_warning "Failed to unmount disk (may not be mounted)"
-      fi
-      ;;
-  esac
-}
-
-function __disk_eject() {
-  local disk="$1"
-
-  __log_info "Ejecting device..."
-  case "$(uname)" in
-    Darwin)
-      if sudo diskutil eject "$disk" >/dev/null 2>&1; then
-        __log_success "Device ejected successfully"
-      else
-        __log_error "Failed to eject device"
-        return 1
-      fi
-      ;;
-    Linux)
-      sync
-      if sudo eject "$disk" 2>/dev/null; then
-        __log_success "Device ejected successfully"
-      else
-        __log_warning "Failed to eject device (may not support eject)"
-      fi
-      ;;
-  esac
-}
+# Disk operations: wipe and sort. Each function is self-contained; the
+# only shared piece is the resolve-device-or-mount-point preamble, which
+# is short enough to keep inlined in both callers.
 
 ################################################################################
 # Wipe a storage device with write+verify passes
@@ -412,17 +273,68 @@ function disk_wipe() {
   fi
 
   local disk
-  disk=$(__disk_resolve_device "$input") || return 1
-  disk=$(__disk_whole_device "$disk")
+  if [ -b "$input" ] || [ -c "$input" ]; then
+    disk="$input"
+  elif [ -d "$input" ]; then
+    case "$(uname)" in
+      Darwin) disk=$(diskutil info "$input" 2>/dev/null | awk -F': +' '/Device Node/ {print $2}') ;;
+      Linux)  disk=$(command findmnt -n -o SOURCE "$input" 2>/dev/null) ;;
+    esac
+    if [ -z "$disk" ]; then
+      __log_error "No device found for mount point: $input"
+      return 1
+    fi
+  else
+    __log_error "Not a device or mount point: $input"
+    return 1
+  fi
+
+  # Walk up to the whole device (e.g., /dev/disk4s1 -> /dev/disk4)
+  case "$(uname)" in
+    Darwin)
+      local whole
+      whole=$(diskutil info "$disk" 2>/dev/null | awk -F': +' '/Part of Whole/ {print $2}')
+      [ -n "$whole" ] && disk="/dev/$whole"
+      ;;
+    Linux)
+      local stripped
+      stripped=$(lsblk -no PKNAME "$disk" 2>/dev/null | head -1)
+      [ -n "$stripped" ] && disk="/dev/$stripped"
+      ;;
+  esac
   __log_info "Device: $disk"
 
   __dw_validate_params "$disk" "$passes" || return 1
 
   local size
-  size=$(__disk_get_size "$disk") || return 1
+  case "$(uname)" in
+    Darwin) size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p') ;;
+    Linux)  size=$(command blockdev --getsize64 "$disk" 2>/dev/null) ;;
+  esac
+  if [ -z "$size" ] || [ "$size" -eq 0 ]; then
+    __log_error "Unable to determine disk size for $disk"
+    return 1
+  fi
 
   __dw_confirm "$disk" || return 1
-  __disk_unmount "$disk"
+
+  __log_info "Unmounting $disk..."
+  case "$(uname)" in
+    Darwin)
+      if sudo diskutil unmountDisk force "$disk"; then
+        __log_success "Disk unmounted"
+      else
+        __log_warning "Failed to unmount disk (may not be mounted)"
+      fi
+      ;;
+    Linux)
+      if sudo umount "$disk" 2>/dev/null; then
+        __log_success "Disk unmounted"
+      else
+        __log_warning "Failed to unmount disk (may not be mounted)"
+      fi
+      ;;
+  esac
 
   __log_info "Cleaning $disk..."
   for ((index=1; index <= passes; index++)); do
@@ -431,7 +343,25 @@ function disk_wipe() {
 
   [ "${CREATE}" = "y" ] && __dw_create_partition "$disk" "$size"
 
-  __disk_eject "$disk"
+  __log_info "Ejecting device..."
+  case "$(uname)" in
+    Darwin)
+      if sudo diskutil eject "$disk" >/dev/null 2>&1; then
+        __log_success "Device ejected successfully"
+      else
+        __log_error "Failed to eject device"
+        return 1
+      fi
+      ;;
+    Linux)
+      sync
+      if sudo eject "$disk" 2>/dev/null; then
+        __log_success "Device ejected successfully"
+      else
+        __log_warning "Failed to eject device (may not support eject)"
+      fi
+      ;;
+  esac
 }
 
 ################################################################################
@@ -442,6 +372,19 @@ function fat_sort() {
     __log_error "fatsort is not installed."
     return 1
   fi
+
+  __fat_sort_mount_point() {
+    local partition="$1"
+
+    case "$(uname)" in
+      Darwin)
+        diskutil info "$partition" 2>/dev/null | awk -F': +' '/Mount Point/ {print $2}'
+        ;;
+      Linux)
+        command findmnt -n -o TARGET "$partition" 2>/dev/null
+        ;;
+    esac
+  }
 
   __fat_sort_find_partition() {
     local device="$1"
@@ -480,7 +423,7 @@ function fat_sort() {
     local partition="$1"
     local mount_point
 
-    mount_point=$(__disk_mount_point "$partition")
+    mount_point=$(__fat_sort_mount_point "$partition")
     if [ -n "$mount_point" ]; then
       echo "$mount_point"
       return 0
@@ -491,7 +434,7 @@ function fat_sort() {
     case "$(uname)" in
       Darwin)
         if diskutil mount "$partition" >/dev/null 2>&1; then
-          mount_point=$(__disk_mount_point "$partition")
+          mount_point=$(__fat_sort_mount_point "$partition")
           if [ -n "$mount_point" ]; then
             echo "$mount_point"
             return 0
@@ -519,11 +462,11 @@ function fat_sort() {
       Darwin)
         diskutil unmount force "$partition" >/dev/null 2>&1
         local attempts=0
-        while [ -n "$(__disk_mount_point "$partition")" ] && [ "$attempts" -lt 10 ]; do
+        while [ -n "$(__fat_sort_mount_point "$partition")" ] && [ "$attempts" -lt 10 ]; do
           sleep 1
           attempts=$((attempts + 1))
         done
-        if [ -n "$(__disk_mount_point "$partition")" ]; then
+        if [ -n "$(__fat_sort_mount_point "$partition")" ]; then
           __log_error "Failed to unmount $partition after ${attempts}s"
           return 1
         fi
@@ -648,7 +591,21 @@ function fat_sort() {
   fi
 
   local device
-  device=$(__disk_resolve_device "$input") || return 1
+  if [ -b "$input" ] || [ -c "$input" ]; then
+    device="$input"
+  elif [ -d "$input" ]; then
+    case "$(uname)" in
+      Darwin) device=$(diskutil info "$input" 2>/dev/null | awk -F': +' '/Device Node/ {print $2}') ;;
+      Linux)  device=$(command findmnt -n -o SOURCE "$input" 2>/dev/null) ;;
+    esac
+    if [ -z "$device" ]; then
+      __log_error "No device found for mount point: $input"
+      return 1
+    fi
+  else
+    __log_error "Not a device or mount point: $input"
+    return 1
+  fi
 
   local partition
   partition=$(__fat_sort_find_partition "$device") || return 1

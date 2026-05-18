@@ -1,18 +1,9 @@
 #!/usr/bin/env bash
-#
-# letter-bin - Group files into per-letter folders.
-#
-# For each top-level regular file in <dir>, take the first character of the
-# basename and move the file into a subfolder named after that character:
-#   - Letters go into the matching uppercase folder (A, B, ..., Z).
-#   - Digits, symbols, and non-ASCII characters go into '#'.
-# Subdirectories and hidden files are skipped. Existing destinations are
-# never overwritten.
 
 ################################################################################
 # Helper: compute bucket name for a basename
 ################################################################################
-__letter_bin_bucket() {
+__alphabetize_bucket() {
   local first="${1:0:1}"
   case "$first" in
     [A-Za-z]) printf '%s' "$first" | tr '[:lower:]' '[:upper:]' ;;
@@ -21,9 +12,9 @@ __letter_bin_bucket() {
 }
 
 ################################################################################
-# letter-bin - Group files into per-letter folders
+# alphabetize - Group files into per-letter folders
 ################################################################################
-function letter-bin() {
+function alphabetize() {
   local dry_run=false
   local target=""
 
@@ -33,7 +24,7 @@ function letter-bin() {
         dry_run=true; shift
         ;;
       -h|--help)
-        echo "Usage: letter-bin [--dry-run] [<dir>]"
+        echo "Usage: alphabetize [--dry-run] [<dir>]"
         echo ""
         echo "Group top-level files of <dir> into per-letter subfolders."
         echo "<dir> defaults to the current directory."
@@ -103,7 +94,7 @@ function letter-bin() {
       continue
     fi
 
-    bucket=$(__letter_bin_bucket "$fname")
+    bucket=$(__alphabetize_bucket "$fname")
     dest_dir="$abs_target/$bucket"
     dest_path="$dest_dir/$fname"
 

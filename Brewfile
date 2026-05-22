@@ -260,6 +260,8 @@ brew 'fatsort'
 brew 'ffmpeg'
 brew 'media-control'
 brew 'subliminal'
+brew 'whisper-cpp'
+brew 'yt-dlp'
 
 ################################################################################
 # Backup & Sync

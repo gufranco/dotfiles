@@ -14,6 +14,7 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 ################################################################################
 tap 'Arthur-Ficial/tap'
 tap 'aws/tap'
+tap 'clojure/tools'
 tap 'DopplerHQ/cli'
 tap 'neomutt/neomutt'
 tap 'oven-sh/bun'
@@ -184,7 +185,7 @@ brew 'sqlmap'
 ################################################################################
 # Languages & Package Managers
 ################################################################################
-brew 'clojure'
+brew 'clojure/tools/clojure'
 brew 'cocoapods'
 brew 'golang', link: true
 brew 'golangci-lint'

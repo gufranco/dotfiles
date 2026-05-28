@@ -294,6 +294,7 @@ brew 'internetarchive'
 brew 'mame'
 brew 'UltimateNova1203/maxcso/maxcso'
 brew 'ucon64'
+brew 'xorriso'
 
 ################################################################################
 # Casks - Terminals

@@ -350,7 +350,7 @@ cask 'google-chrome'
 ################################################################################
 cask 'clickup'
 cask 'granola'
-cask 'linear-linear'
+cask 'linear'
 cask 'maccy'
 cask 'obsidian'
 cask 'shottr'

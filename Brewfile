@@ -318,7 +318,7 @@ cask 'visual-studio-code'
 # Casks - AI Tools
 ################################################################################
 cask 'claude'
-cask 'claude-code'
+cask 'claude-code@latest'
 cask 'codex'
 cask 'coderabbit'
 cask 'codex-app' if architecture == 'arm64'

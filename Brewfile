@@ -309,10 +309,10 @@ cask 'kitty'
 cask 'android-studio'
 cask 'cursor'
 cask 'cursor-cli'
+cask 'devin-desktop'
 cask 'sublime-text'
 cask 'textmate'
 cask 'visual-studio-code'
-cask 'windsurf'
 
 ################################################################################
 # Casks - AI Tools

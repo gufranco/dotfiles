@@ -13,7 +13,7 @@ arjun
 wafw00f
 
 # HTTP client — CLI for direct HTTP requests with HTTP/2 support
-httpx[http2]
+httpx[cli,http2]
 
 # Packet crafting and network analysis
 scapy

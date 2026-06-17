@@ -269,12 +269,15 @@ function __f5_update_python() {
 
   __log_info "Updating pipx tools..."
 
-  # Install any package listed in Pipxfile that is not yet installed
+  # Install any package listed in Pipxfile that is not yet installed.
+  # pipx list reports bare names, while Pipxfile entries may carry [extras]
+  # (e.g. httpx[cli,http2]). Compare on the bare name, install the full spec.
   local installed_count=0
   local skip_count=0
   while IFS= read -r pkg || [ -n "$pkg" ]; do
     [[ -z "$pkg" || "$pkg" == \#* ]] && continue
-    if pipx list --short 2>/dev/null | awk '{print $1}' | grep -qx "$pkg"; then
+    local pkg_name="${pkg%%\[*}"
+    if pipx list --short 2>/dev/null | awk '{print $1}' | grep -Fqx "$pkg_name"; then
       ((skip_count++))
     else
       pipx install "$pkg" --quiet 2>/dev/null && ((installed_count++)) || \
@@ -285,20 +288,18 @@ function __f5_update_python() {
   # Upgrade all installed tools
   pipx upgrade-all --quiet 2>/dev/null || __log_warning "pipx upgrade-all had failures"
 
-  # Remove tools installed via pipx that are no longer in Pipxfile
+  # Remove tools installed via pipx that are no longer in Pipxfile.
+  # Match on bare names since the file may pin [extras].
   local removed_count=0
   while IFS= read -r installed_pkg; do
     [[ -z "$installed_pkg" ]] && continue
-    if ! grep -qxE "^[^#].*" "$pipxfile" | grep -qx "$installed_pkg" 2>/dev/null; then
-      # Check if it's actually in the file (accounting for comments/blanks)
-      local found=false
-      while IFS= read -r line || [ -n "$line" ]; do
-        [[ -z "$line" || "$line" == \#* ]] && continue
-        [[ "$line" == "$installed_pkg" ]] && found=true && break
-      done < "$pipxfile"
-      if ! $found; then
-        pipx uninstall "$installed_pkg" --quiet 2>/dev/null && ((removed_count++))
-      fi
+    local found=false
+    while IFS= read -r line || [ -n "$line" ]; do
+      [[ -z "$line" || "$line" == \#* ]] && continue
+      [[ "${line%%\[*}" == "$installed_pkg" ]] && found=true && break
+    done < "$pipxfile"
+    if ! $found; then
+      pipx uninstall "$installed_pkg" --quiet 2>/dev/null && ((removed_count++))
     fi
   done < <(pipx list --short 2>/dev/null | awk '{print $1}')
 

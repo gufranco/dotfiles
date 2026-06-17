@@ -867,7 +867,8 @@ SYSCTL
       pipx_fail=0
       while IFS= read -r pkg || [ -n "$pkg" ]; do
         [[ -z "$pkg" || "$pkg" == \#* ]] && continue
-        if pipx list --short 2>/dev/null | awk '{print $1}' | grep -qx "$pkg"; then
+        pkg_name="${pkg%%\[*}"
+        if pipx list --short 2>/dev/null | awk '{print $1}' | grep -Fqx "$pkg_name"; then
           ((pipx_skip++)) || true
         else
           if pipx install "$pkg" --quiet 2>/dev/null; then

@@ -1,3 +1,39 @@
 [submodule "tmux/plugins/tpm"]
 	path = tmux/tpm
 	url = https://github.com/tmux-plugins/tpm
+[submodule "kitty/catppuccin"]
+	path = kitty/catppuccin
+	url = https://github.com/catppuccin/kitty
+	branch = main
+[submodule "themes/catppuccin-iterm"]
+	path = themes/catppuccin-iterm
+	url = https://github.com/catppuccin/iterm
+	branch = main
+[submodule "tilix/catppuccin"]
+	path = tilix/catppuccin
+	url = https://github.com/catppuccin/tilix
+	branch = main
+[submodule "bat/catppuccin"]
+	path = bat/catppuccin
+	url = https://github.com/catppuccin/bat
+	branch = main
+[submodule "git/catppuccin-delta"]
+	path = git/catppuccin-delta
+	url = https://github.com/catppuccin/delta
+	branch = main
+[submodule "k9s/catppuccin"]
+	path = k9s/catppuccin
+	url = https://github.com/catppuccin/k9s
+	branch = main
+[submodule "yazi/catppuccin"]
+	path = yazi/catppuccin
+	url = https://github.com/catppuccin/yazi
+	branch = main
+[submodule "eza/catppuccin"]
+	path = eza/catppuccin
+	url = https://github.com/catppuccin/eza
+	branch = main
+[submodule "mutt/catppuccin"]
+	path = mutt/catppuccin
+	url = https://github.com/catppuccin/neomutt
+	branch = main

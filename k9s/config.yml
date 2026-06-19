@@ -3,7 +3,7 @@
 # On macOS: ~/Library/Application Support/k9s (or set K9S_CONFIG_DIR)
 
 ui:
-  skin: tokyo-night
+  skin: catppuccin-mocha
   enableMouse: false
   headless: false
   logoless: false

@@ -619,7 +619,7 @@ case "$(uname)" in
     ############################################################################
     # Tilix
     ############################################################################
-    safe_link "$HOME/.dotfiles/tilix/tokyonight-night-tilix.json" "$HOME/.config/tilix/schemes/tokyonight-night.json"
+    safe_link "$HOME/.dotfiles/tilix/catppuccin/themes/catppuccin-mocha.json" "$HOME/.config/tilix/schemes/catppuccin-mocha.json"
 
     ############################################################################
     # GPU drivers and gaming (x86_64 only)
@@ -1066,7 +1066,7 @@ safe_link "$HOME/.dotfiles/telnet/.telnetrc" "$HOME/.telnetrc"
 ############################################################################
 log_info "Setting up Kitty..."
 safe_link "$HOME/.dotfiles/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
-safe_link "$HOME/.dotfiles/kitty/themes" "$HOME/.config/kitty/themes"
+safe_link "$HOME/.dotfiles/kitty/catppuccin/themes" "$HOME/.config/kitty/themes"
 
 ############################################################################
 # Ghostty

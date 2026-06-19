@@ -147,6 +147,11 @@ __cached_eval zoxide init zsh
 __cached_eval atuin init zsh --disable-up-arrow
 
 ################################################################################
+# ngrok
+################################################################################
+__cached_eval ngrok completion
+
+################################################################################
 # starship prompt (loads after oh-my-zsh spaceship if both present)
 ################################################################################
 # Uncomment to switch from spaceship to starship:

@@ -145,14 +145,14 @@ __cached_eval atuin init zsh --disable-up-arrow
 export EZA_CONFIG_DIR="$HOME/.config/eza"
 
 ################################################################################
-# fzf (Tokyo Night)
+# fzf (Catppuccin Mocha)
 ################################################################################
 export FZF_DEFAULT_OPTS=" \
-  --color=fg:#c0caf5,bg:#1a1b26,hl:#bb9af7 \
-  --color=fg+:#c0caf5,bg+:#283457,hl+:#7dcfff \
-  --color=info:#7aa2f7,prompt:#7aa2f7,pointer:#7dcfff \
-  --color=marker:#9ece6a,spinner:#9ece6a,header:#9ece6a \
-  --color=border:#414868,label:#c0caf5,query:#c0caf5 \
+  --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+  --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+  --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
+  --color=selected-bg:#45475a \
+  --color=border:#6c7086,label:#cdd6f4,query:#cdd6f4 \
   --layout=reverse --border=rounded \
   --preview 'bat --color=always --style=numbers --line-range=:500 {} 2>/dev/null || cat {}' \
   --bind 'ctrl-/:toggle-preview' \
@@ -168,10 +168,12 @@ if command -v fd >/dev/null 2>&1; then
 fi
 
 ################################################################################
-# nnn (Tokyo Night palette indices)
+# nnn (Catppuccin Mocha via terminal palette)
 ################################################################################
-# BLK CHR DIR EXE REG HARDLINK SYMLINK MISSING ORPHAN FIFO SOCK OTHER
-export NNN_FCOLORS='0B0B04060000060606000906'
+# Context colors; true Catppuccin colors when the terminal uses Catppuccin
+export NNN_COLORS="#04020301;4231"
+# BLK CHR DIR EXE REG HARDLINK SYMLINK MISSING ORPHAN FIFO SOCK UNKNOWN
+export NNN_FCOLORS='030304020705050801060301'
 
 ################################################################################
 # Oh-my-zsh

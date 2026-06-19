@@ -22,7 +22,7 @@
 <tr>
 <td width="50%" valign="top">
 
-### Tokyo Night Everywhere
+### Catppuccin Mocha Everywhere
 
 One color palette across 19 tools: terminals, editors, file managers, email, music, git diffs, monitoring dashboards, and fuzzy finders.
 
@@ -159,7 +159,7 @@ Tmux with 7 plugins and vim-style keybindings:
 
 ### Git
 
-60 aliases, performance-tuned config, and Tokyo Night colors for diffs, status, branches, and blame:
+60 aliases, performance-tuned config, and Catppuccin Mocha colors for diffs, status, branches, and blame:
 
 | Alias | Command | What it does |
 |:------|:--------|:-------------|
@@ -356,31 +356,31 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 .dotfiles/
 ├── asciinema/        # Asciinema terminal recorder config
 ├── atuin/            # Atuin shell history config
-├── bat/              # Bat config + Tokyo Night theme
-├── bottom/           # Bottom system monitor, Tokyo Night styled
-├── broot/            # Broot file manager, Tokyo Night themed
-├── cmus/             # cmus music player, Tokyo Night themed
+├── bat/              # Bat config + Catppuccin Mocha theme
+├── bottom/           # Bottom system monitor, Catppuccin Mocha styled
+├── broot/            # Broot file manager, Catppuccin Mocha themed
+├── cmus/             # cmus music player, Catppuccin Mocha themed
 ├── conky/            # Conky system monitor (Linux)
 ├── curl/             # Curl config
 ├── direnv/           # direnv per-directory env config
-├── eza/              # eza (ls replacement) config + Tokyo Night theme
+├── eza/              # eza (ls replacement) config + Catppuccin Mocha theme
 ├── fd/               # fd (find replacement) config
 ├── gh/               # GitHub CLI config
-├── ghostty/          # Ghostty terminal + Tokyo Night theme
+├── ghostty/          # Ghostty terminal + Catppuccin Mocha theme
 ├── git/              # Git config, hooks, message template, 60 aliases
 ├── glab/             # GitLab CLI config
 ├── glances/          # Glances system monitor config
 ├── gnupg/            # GPG config and public keys
 ├── goaccess/         # GoAccess web log analyzer config
 ├── htop/             # htop config
-├── k9s/              # K9s Kubernetes dashboard + Tokyo Night skin
+├── k9s/              # K9s Kubernetes dashboard + Catppuccin Mocha skin
 ├── kanata/           # Kanata keyboard remapper config
-├── kitty/            # Kitty terminal + Tokyo Night theme
-├── lazydocker/       # Lazydocker config, Tokyo Night
-├── lazygit/          # Lazygit config, Tokyo Night
+├── kitty/            # Kitty terminal + Catppuccin Mocha theme
+├── lazydocker/       # Lazydocker config, Catppuccin Mocha
+├── lazygit/          # Lazygit config, Catppuccin Mocha
 ├── mailcap/          # Mailcap config
 ├── mise/             # mise runtime manager (Node.js, Python, Ruby)
-├── mutt/             # Neomutt email client + Tokyo Night theme
+├── mutt/             # Neomutt email client + Catppuccin Mocha theme
 ├── nodejs/           # npm, yarn, pnpm configs + GPG-encrypted tokens
 ├── nvim/             # Neovim/Vim config + 31 plugins
 ├── obsidian/         # Obsidian notes config
@@ -388,7 +388,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── ripgrep/          # Ripgrep config
 ├── ssh/              # SSH config and public keys
 ├── starship/         # Starship prompt config
-├── tealdeer/         # Tealdeer (tldr) config, Tokyo Night
+├── tealdeer/         # Tealdeer (tldr) config, Catppuccin Mocha
 ├── telnet/           # Telnet config
 ├── themes/           # Terminal themes (iTerm2)
 ├── tilix/            # Tilix terminal config
@@ -396,13 +396,13 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── newsboat/         # Newsboat RSS reader config
 ├── opencode/         # OpenCode AI config
 ├── ranger/           # Ranger file manager config
-├── taskwarrior/      # Taskwarrior task manager, Tokyo Night themed
+├── taskwarrior/      # Taskwarrior task manager, Catppuccin Mocha themed
 ├── thefuck/          # TheFuck command corrector config
-├── tig/              # Tig git TUI, Tokyo Night themed
+├── tig/              # Tig git TUI, Catppuccin Mocha themed
 ├── tmux/             # Tmux config + 7 plugins
 ├── tmuxp/            # tmuxp session layouts
 ├── wget/             # Wget config
-├── yazi/             # Yazi file manager + Tokyo Night theme
+├── yazi/             # Yazi file manager + Catppuccin Mocha theme
 ├── zsh/              # Zsh: aliases, functions, paths, settings, infrastructure
 ├── Brewfile          # Homebrew packages, apps, and fonts
 ├── install.sh        # Cross-platform installer

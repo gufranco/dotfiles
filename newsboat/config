@@ -76,21 +76,21 @@ macro o open-in-browser
 macro c set browser "echo -n %u | pbcopy" ; open-in-browser ; set browser "open %u"
 
 ################################################################################
-# Tokyo Night colors
+# Catppuccin Mocha colors
 ################################################################################
-color background          color195 default
-color listnormal          color195 default
-color listnormal_unread   color75  default bold
-color listfocus           color195 color60 bold
-color listfocus_unread    color75  color60 bold
-color info                color75  color236 bold
-color article             color195 default
-color title               color141 default bold
-color hint-key            color114 default bold
-color hint-keys-delimiter color103 default
-color hint-separator      color103 default
-color hint-description    color195 default
+color background          color189 default
+color listnormal          color189 default
+color listnormal_unread   color111  default bold
+color listfocus           color189 color239 bold
+color listfocus_unread    color111  color239 bold
+color info                color111  color235 bold
+color article             color189 default
+color title               color183 default bold
+color hint-key            color150 default bold
+color hint-keys-delimiter color102 default
+color hint-separator      color102 default
+color hint-description    color189 default
 
-highlight article "^(Feed|Title|Author|Link|Date):.*" color141 default bold
-highlight article "https?://[^ ]+" color75 default underline
-highlight article "\\[image\\ [0-9]+\\]" color173 default bold
+highlight article "^(Feed|Title|Author|Link|Date):.*" color183 default bold
+highlight article "https?://[^ ]+" color111 default underline
+highlight article "\\[image\\ [0-9]+\\]" color216 default bold

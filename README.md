@@ -2,7 +2,7 @@
 
 <br>
 
-<strong>One-command development environment for macOS and Linux. 50+ tool configs, consistent Tokyo Night theme, modern CLI replacements, and ready-to-go Docker services.</strong>
+<strong>One-command development environment for macOS and Linux. 50+ tool configs, consistent Catppuccin Mocha theme, modern CLI replacements, and ready-to-go Docker services.</strong>
 
 <br>
 <br>
@@ -16,7 +16,7 @@
 
 ---
 
-**50+** tool configs · **19** Tokyo Night themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
+**50+** tool configs · **19** Catppuccin Mocha themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
 
 <table>
 <tr>
@@ -102,7 +102,7 @@ The installer detects your OS and architecture automatically. On macOS it instal
 | Feature | Implementation |
 |:--------|:---------------|
 | Shell | Zsh with Oh My Zsh and Spaceship prompt |
-| Fuzzy finder | fzf with bat preview and Tokyo Night colors |
+| Fuzzy finder | fzf with bat preview and Catppuccin Mocha colors |
 | Tab completion | fzf-tab for fuzzy tab completion |
 | Syntax highlighting | zsh-syntax-highlighting for fish-like coloring |
 | Smart cd | zoxide with frecency-based directory jumping |
@@ -172,7 +172,7 @@ Tmux with 7 plugins and vim-style keybindings:
 | `today` | `log --since=midnight` | Today's commits |
 | `sw` | `switch` | Modern branch switching |
 
-Delta as the diff pager with line numbers, hyperlinks, and Tokyo Night syntax theme. Histogram diff algorithm, zdiff3 merge conflicts, and automatic rebase on pull.
+Delta as the diff pager with line numbers, hyperlinks, and Catppuccin Mocha syntax theme. Histogram diff algorithm, zdiff3 merge conflicts, and automatic rebase on pull.
 
 ### Infrastructure
 
@@ -234,31 +234,33 @@ prime-run gamemoderun mangohud %command%
 
 **If a game does not work:** switch to GE-Proton in the game's Compatibility settings, check ProtonDB, or use `protontricks <appid> --gui` to install missing Windows components.
 
-## Tokyo Night Theme
+## Catppuccin Mocha Theme
 
-All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) "Night" variant, except tmux, which uses Catppuccin (Mocha):
+Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the mauve accent, vendored as git submodules from the official ports where the tool can load a theme from a path, and inlined from the official port or palette otherwise:
 
 | Tool | Method |
 |:-----|:-------|
-| Ghostty | Custom theme file |
-| Kitty | Custom theme file |
-| iTerm2 | `.itermcolors` theme file |
-| Tilix | Exported color scheme |
-| Bat | Theme in `bat/themes/` |
-| Vim | `tokyonight-vim` plugin |
-| Tmux | Catppuccin (Mocha) plugin |
-| Bottom | `[styles]` in `bottom.toml` |
-| K9s | Skin file in `k9s/skins/` |
-| Lazygit | `gui.theme` in config |
-| Lazydocker | Theme colors in config |
-| Tealdeer | RGB values in `config.toml` |
-| Yazi | Full theme in `theme.toml` |
-| eza | Full theme in `theme.yml` |
-| Mutt | Custom theme in `mutt/themes/` |
-| cmus | Color scheme in `rc` |
-| fzf | `FZF_DEFAULT_OPTS --color` |
-| nnn | `NNN_FCOLORS` palette |
-| Git | `[color]` sections in `.gitconfig` |
+| Ghostty | Built-in `catppuccin-mocha` theme |
+| Kitty | `catppuccin/kitty` submodule (`themes/mocha.conf`) |
+| iTerm2 | `catppuccin/iterm` submodule preset (manual import) |
+| Tilix | `catppuccin/tilix` submodule scheme |
+| Bat | `catppuccin/bat` submodule tmTheme |
+| Delta | `catppuccin/delta` submodule feature |
+| Neovim/Vim | `catppuccin/nvim` plugin + lightline |
+| Starship | Official `catppuccin_mocha` palette |
+| Tmux | `catppuccin/tmux` plugin |
+| Bottom | Official Mocha `[styles]` |
+| K9s | `catppuccin/k9s` submodule skin |
+| Lazygit | Official Mocha mauve `gui.theme` |
+| Lazydocker | Official Mocha mauve theme |
+| Yazi | `catppuccin/yazi` submodule flavor |
+| eza | `catppuccin/eza` submodule theme |
+| Mutt | `catppuccin/neomutt` submodule |
+| fzf | Official Mocha `--color` |
+| nnn | Catppuccin `NNN_COLORS` / `NNN_FCOLORS` |
+| tig | Mocha hex built from the palette |
+
+Theme submodules track upstream `main`; `f5` updates them with `git submodule update --remote`. Still on Tokyo Night (no Catppuccin port yet): Tealdeer, cmus, and Git's native `[color]` sections. GoAccess uses its built-in HTML report theme.
 
 ## System Update
 
@@ -290,9 +292,9 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `tmux` | `~/.tmux` |
 | `ghostty` | `~/.config/ghostty` |
 | `kitty/kitty.conf` | `~/.config/kitty/kitty.conf` |
-| `kitty/themes` | `~/.config/kitty/themes` |
+| `kitty/catppuccin/themes` | `~/.config/kitty/themes` |
 | `bat/config` | `~/.config/bat/config` |
-| `bat/themes` | `~/.config/bat/themes` |
+| `bat/catppuccin/themes` | `~/.config/bat/themes` |
 | `eza` | `~/.config/eza` |
 | `yazi` | `~/.config/yazi` |
 | `starship/starship.toml` | `~/.config/starship.toml` |
@@ -302,7 +304,7 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `lazygit/config.yml` | `~/.config/lazygit/config.yml` |
 | `lazydocker/config.yml` | `~/.config/lazydocker/config.yml` |
 | `k9s/config.yml` | `~/.config/k9s/config.yml` |
-| `k9s/skins` | `~/.config/k9s/skins` |
+| `k9s/catppuccin/dist` | `~/.config/k9s/skins` |
 | `tealdeer/config.toml` | `~/.config/tealdeer/config.toml` |
 | `htop/htoprc` | `~/.config/htop/htoprc` |
 | `gh/config.yml` | `~/.config/gh/config.yml` |

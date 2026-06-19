@@ -208,8 +208,8 @@ export plugins=(
 ################################################################################
 # Search history first, fall back to completion engine
 export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-# Tokyo Night muted foreground for suggestions
-export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#565f89"
+# Catppuccin Mocha muted foreground for suggestions
+export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#6c7086"
 
 ################################################################################
 # Spaceship

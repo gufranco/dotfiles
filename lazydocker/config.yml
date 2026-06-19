@@ -15,14 +15,14 @@ gui:
   theme:
     lightTheme: false
     activeBorderColor:
-      - '#7aa2f7'
+      - '#cba6f7'
       - bold
     inactiveBorderColor:
-      - '#414868'
+      - '#a6adc8'
     selectedLineBgColor:
-      - '#283457'
+      - '#313244'
     optionsTextColor:
-      - '#7aa2f7'
+      - '#89b4fa'
 
 logs:
   timestamps: true

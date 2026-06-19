@@ -5,36 +5,66 @@ format = """$username$hostname$directory$git_branch$git_status$docker_context$ku
 
 add_newline = true
 
+palette = "catppuccin_mocha"
+
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+mauve = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"
+
 [character]
-success_symbol = "[>](bold #9ece6a)"
-error_symbol = "[>](bold #f7768e)"
-vimcmd_symbol = "[<](bold #7aa2f7)"
+success_symbol = "[>](bold green)"
+error_symbol = "[>](bold red)"
+vimcmd_symbol = "[<](bold blue)"
 
 [username]
 show_always = true
-style_user = "bold #bb9af7"
+style_user = "bold mauve"
 format = "[$user]($style) "
 
 [hostname]
 ssh_only = true
-style = "bold #7dcfff"
+style = "bold sky"
 format = "@ [$hostname]($style) "
 
 [directory]
-style = "bold #7aa2f7"
+style = "bold blue"
 truncation_length = 3
 truncation_symbol = ".../"
 read_only = " ro"
-read_only_style = "bold #f7768e"
+read_only_style = "bold red"
 
 [git_branch]
-style = "bold #bb9af7"
+style = "bold mauve"
 format = "on [$symbol$branch(:$remote_branch)]($style) "
 symbol = ""
 truncation_length = 40
 
 [git_status]
-style = "#e0af68"
+style = "yellow"
 format = '([$all_status$ahead_behind]($style) )'
 conflicted = "="
 ahead = "^${count}"
@@ -49,70 +79,70 @@ deleted = "x${count}"
 
 [cmd_duration]
 min_time = 3_000
-style = "bold #565f89"
+style = "bold overlay0"
 format = "took [$duration]($style) "
 show_notifications = false
 
 [jobs]
 threshold = 1
 symbol = "+"
-style = "bold #7dcfff"
+style = "bold sky"
 
 [docker_context]
 symbol = "docker "
-style = "bold #7dcfff"
+style = "bold sky"
 format = "via [$symbol$context]($style) "
 only_with_files = true
 
 [kubernetes]
 disabled = false
 symbol = "k8s "
-style = "bold #7aa2f7"
+style = "bold blue"
 format = '[$symbol$context( \($namespace\))]($style) '
 
 [terraform]
 symbol = "tf "
-style = "bold #bb9af7"
+style = "bold mauve"
 format = "via [$symbol$workspace]($style) "
 
 [nodejs]
 symbol = "node "
-style = "bold #9ece6a"
+style = "bold green"
 format = "via [$symbol($version)]($style) "
 detect_extensions = []
 
 [python]
 symbol = "py "
-style = "bold #e0af68"
+style = "bold yellow"
 format = 'via [$symbol($version)( \($virtualenv\))]($style) '
 
 [rust]
 symbol = "rs "
-style = "bold #f7768e"
+style = "bold red"
 format = "via [$symbol($version)]($style) "
 
 [golang]
 symbol = "go "
-style = "bold #7dcfff"
+style = "bold sky"
 format = "via [$symbol($version)]($style) "
 
 [java]
 symbol = "java "
-style = "bold #f7768e"
+style = "bold red"
 format = "via [$symbol($version)]($style) "
 
 [ruby]
 symbol = "rb "
-style = "bold #f7768e"
+style = "bold red"
 format = "via [$symbol($version)]($style) "
 
 [lua]
 symbol = "lua "
-style = "bold #7aa2f7"
+style = "bold blue"
 format = "via [$symbol($version)]($style) "
 
 [package]
 symbol = "pkg "
-style = "bold #e0af68"
+style = "bold yellow"
 format = "is [$symbol$version]($style) "
 display_private = false

@@ -1083,7 +1083,7 @@ fi
 ############################################################################
 log_info "Setting up Bat..."
 safe_link "$HOME/.dotfiles/bat/config" "$HOME/.config/bat/config"
-safe_link "$HOME/.dotfiles/bat/themes" "$HOME/.config/bat/themes"
+safe_link "$HOME/.dotfiles/bat/catppuccin/themes" "$HOME/.config/bat/themes"
 
 if cmd_exists bat; then bat cache --build >/dev/null 2>&1 || true; fi
 

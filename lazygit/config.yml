@@ -17,34 +17,33 @@ gui:
   border: rounded
   animateExplosion: false
   authorColors:
-    "*": "#bb9af7"
+    "*": "#b4befe"
   theme:
     activeBorderColor:
-      - '#7aa2f7'
+      - '#cba6f7'
       - bold
     inactiveBorderColor:
-      - '#414868'
+      - '#a6adc8'
     searchingActiveBorderColor:
-      - '#7dcfff'
-      - bold
+      - '#f9e2af'
     optionsTextColor:
-      - '#7aa2f7'
+      - '#89b4fa'
     selectedLineBgColor:
-      - '#283457'
+      - '#313244'
     inactiveViewSelectedLineBgColor:
-      - bold
+      - '#6c7086'
     cherryPickedCommitFgColor:
-      - '#7aa2f7'
+      - '#cba6f7'
     cherryPickedCommitBgColor:
-      - '#bb9af7'
+      - '#45475a'
     markedBaseCommitFgColor:
-      - '#7aa2f7'
+      - '#89b4fa'
     markedBaseCommitBgColor:
-      - '#e0af68'
+      - '#f9e2af'
     unstagedChangesColor:
-      - '#f7768e'
+      - '#f38ba8'
     defaultFgColor:
-      - default
+      - '#cdd6f4'
 git:
   pagers:
     - pager: delta --paging=never

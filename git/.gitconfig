@@ -208,21 +208,16 @@
 [interactive]
   diffFilter = delta --color-only
 
+[include]
+  path = ~/.dotfiles/git/catppuccin-delta/catppuccin.gitconfig
+
 [delta]
+  features = catppuccin-mocha
   navigate = true
   line-numbers = true
   side-by-side = false
-  syntax-theme = tokyonight_night
   dark = true
   hyperlinks = true
-  file-style = bold yellow ul
-  file-decoration-style = yellow ul
-  hunk-header-style = file line-number syntax
-  hunk-header-decoration-style = blue box
-  minus-style = syntax "#3a273a"
-  minus-emph-style = syntax "#6b2e43"
-  plus-style = syntax "#273849"
-  plus-emph-style = syntax "#305f6f"
 
 ################################################################################
 # Submodules

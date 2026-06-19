@@ -1,26 +1,26 @@
 ################################################################################
-# Tokyo Night Theme
+# Catppuccin Mocha Theme
 ################################################################################
 set color_win_bg=default
-set color_win_fg=253
+set color_win_fg=189
 set color_cmdline_bg=default
-set color_cmdline_fg=253
+set color_cmdline_fg=189
 set color_statusline_bg=237
-set color_statusline_fg=253
+set color_statusline_fg=189
 set color_win_title_bg=default
-set color_win_title_fg=110
-set color_win_cur=110
+set color_win_title_fg=111
+set color_win_cur=111
 set color_win_cur_sel_bg=237
-set color_win_cur_sel_fg=110
+set color_win_cur_sel_fg=111
 set color_win_sel_bg=237
-set color_win_sel_fg=253
-set color_win_dir=110
+set color_win_sel_fg=189
+set color_win_dir=111
 set color_win_inactive_cur_sel_bg=default
-set color_win_inactive_cur_sel_fg=110
+set color_win_inactive_cur_sel_fg=111
 set color_win_inactive_sel_bg=default
-set color_win_inactive_sel_fg=253
-set color_error=203
-set color_info=110
+set color_win_inactive_sel_fg=189
+set color_error=211
+set color_info=111
 set color_separator=237
 
 ################################################################################

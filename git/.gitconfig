@@ -43,60 +43,60 @@
   ui = auto
 
 [color "status"]
-  added = "#9ece6a"
-  changed = "#e0af68"
-  untracked = "#f7768e"
-  branch = "#bb9af7" bold
-  nobranch = "#f7768e" bold
-  unmerged = "#ff9e64"
+  added = "#a6e3a1"
+  changed = "#f9e2af"
+  untracked = "#f38ba8"
+  branch = "#cba6f7" bold
+  nobranch = "#f38ba8" bold
+  unmerged = "#fab387"
 
 [color "branch"]
-  current = "#bb9af7" bold
-  local = "#7dcfff"
-  remote = "#9ece6a"
-  upstream = "#2ac3de"
-  plain = "#a9b1d6"
+  current = "#cba6f7" bold
+  local = "#89dceb"
+  remote = "#a6e3a1"
+  upstream = "#74c7ec"
+  plain = "#bac2de"
 
 [color "diff"]
-  meta = "#e0af68" bold
-  frag = "#bb9af7" bold
-  func = "#2ac3de"
-  context = "#565f89"
-  old = "#f7768e"
-  new = "#9ece6a"
-  oldMoved = "#ff9e64" italic
-  newMoved = "#73daca" italic
-  commit = "#e0af68" bold
-  whitespace = "#f7768e" reverse
+  meta = "#f9e2af" bold
+  frag = "#cba6f7" bold
+  func = "#74c7ec"
+  context = "#6c7086"
+  old = "#f38ba8"
+  new = "#a6e3a1"
+  oldMoved = "#fab387" italic
+  newMoved = "#94e2d5" italic
+  commit = "#f9e2af" bold
+  whitespace = "#f38ba8" reverse
 
 [color "decorate"]
-  HEAD = "#bb9af7" bold
-  branch = "#9ece6a" bold
-  remoteBranch = "#f7768e"
-  tag = "#e0af68" bold
-  stash = "#7aa2f7"
-  grafted = "#ff9e64" bold italic
+  HEAD = "#cba6f7" bold
+  branch = "#a6e3a1" bold
+  remoteBranch = "#f38ba8"
+  tag = "#f9e2af" bold
+  stash = "#89b4fa"
+  grafted = "#fab387" bold italic
 
 [color "interactive"]
-  prompt = "#7dcfff" bold
-  header = "#bb9af7"
-  help = "#565f89"
-  error = "#f7768e" bold
+  prompt = "#89dceb" bold
+  header = "#cba6f7"
+  help = "#6c7086"
+  error = "#f38ba8" bold
 
 [color "remote"]
-  hint = "#565f89"
-  warning = "#e0af68"
-  success = "#9ece6a"
-  error = "#f7768e"
+  hint = "#6c7086"
+  warning = "#f9e2af"
+  success = "#a6e3a1"
+  error = "#f38ba8"
 
 [color "grep"]
-  context = "#a9b1d6"
-  filename = "#7dcfff" bold
-  function = "#bb9af7"
-  linenumber = "#565f89"
-  column = "#565f89"
-  match = "#e0af68" bold
-  selected = "#9ece6a"
+  context = "#bac2de"
+  filename = "#89dceb" bold
+  function = "#cba6f7"
+  linenumber = "#6c7086"
+  column = "#6c7086"
+  match = "#f9e2af" bold
+  selected = "#a6e3a1"
   separator = "#3b4261"
 
 ################################################################################

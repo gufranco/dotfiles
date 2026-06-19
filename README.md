@@ -16,7 +16,7 @@
 
 ---
 
-**50+** tool configs · **19** Catppuccin Mocha themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
+**50+** tool configs · **23** Catppuccin Mocha themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
 
 <table>
 <tr>
@@ -259,8 +259,12 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 | fzf | Official Mocha `--color` |
 | nnn | Catppuccin `NNN_COLORS` / `NNN_FCOLORS` |
 | tig | Mocha hex built from the palette |
+| Git colors | Mocha hex in `[color]` sections |
+| Tealdeer | Mocha RGB in `config.toml` |
+| cmus | Nearest 256-color Mocha in `rc` |
+| GoAccess | Dark HTML report (no Catppuccin port) |
 
-Theme submodules track upstream `main`; `f5` updates them with `git submodule update --remote`. Still on Tokyo Night (no Catppuccin port yet): Tealdeer, cmus, and Git's native `[color]` sections. GoAccess uses its built-in HTML report theme.
+Theme submodules track upstream `main`; `f5` updates them with `git submodule update --remote`. GoAccess is the only tool not pixel-exact: its HTML report supports only bright/dark built-ins, so it uses dark. cmus has no 24-bit color support, so it uses the nearest 256-color values.
 
 ## System Update
 

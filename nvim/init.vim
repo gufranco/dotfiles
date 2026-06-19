@@ -88,7 +88,7 @@ Plug 'tpope/vim-sensible'
 Plug 'rstacruz/vim-opinion'
 
 " Theme
-Plug 'ghifarit53/tokyonight-vim'
+Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 
 " UI
 Plug 'itchyny/lightline.vim'
@@ -230,10 +230,7 @@ if &term =~# '^screen' || &term =~# '^tmux'
 endif
 
 try
-  let g:tokyonight_style = 'night'
-  let g:tokyonight_enable_italic = 1
-
-  colorscheme tokyonight
+  colorscheme catppuccin-mocha
 catch /^Vim\%((\a\+)\)\=:E185/
   colorscheme desert
 endtry
@@ -247,7 +244,7 @@ highlight! link SpecialKey Comment
 " Lightline
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-  \ 'colorscheme': 'tokyonight',
+  \ 'colorscheme': 'catppuccin',
   \ 'active': {
   \   'left': [
   \     [ 'mode', 'paste' ],

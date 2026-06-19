@@ -18,6 +18,19 @@ case "$(uname)" in
     export HOMEBREW_NO_ASK=true
     export HOMEBREW_QUIET=true
 
+    # Temporary tap-trust workaround, set 2026-06-17.
+    # The variable is set only until the expiry date. After it, brew reverts to
+    # prompting for tap trust and a warning nags on every shell start until this
+    # block is removed. The nag is the reminder to delete the workaround, not
+    # just bump the date. To extend, move the expiry and update the set date.
+    __brew_tap_trust_expiry=20260717
+    if [ "$(date +%Y%m%d)" -le "$__brew_tap_trust_expiry" ]; then
+      export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
+    else
+      __log_warning "HOMEBREW_NO_REQUIRE_TAP_TRUST expired ${__brew_tap_trust_expiry}; remove the workaround in zsh/settings."
+    fi
+    unset __brew_tap_trust_expiry
+
     # Docker
     # export DOCKER_DEFAULT_PLATFORM="linux/amd64"
 

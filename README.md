@@ -149,13 +149,13 @@ Tmux with 7 plugins and vim-style keybindings:
 
 | Plugin | What it does |
 |:-------|:-------------|
-| Yoru Revamped | Status bar with system stats, git info, weather, network, and Tokyo Night theme |
+| Catppuccin (Mocha) | Status bar, window list, and pane styling |
+| vim-tmux-navigator | Move between nvim splits and tmux panes |
+| tmux-tiling-revamped | i3-like BSP tiling layouts |
 | tmux-resurrect | Save and restore sessions across reboots |
+| tmux-continuum | Automatic session save and restore |
 | tmux-yank | Copy to system clipboard |
-| extrakto | Extract URLs and file paths with fzf |
-| tmux-session-wizard | Fuzzy session switcher |
 | tmux-mighty-scroll | Better scrolling in fullscreen apps |
-| tmux-menus | Popup context menus via F12 |
 
 ### Git
 
@@ -236,7 +236,7 @@ prime-run gamemoderun mangohud %command%
 
 ## Tokyo Night Theme
 
-All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) "Night" variant:
+All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) "Night" variant, except tmux, which uses Catppuccin (Mocha):
 
 | Tool | Method |
 |:-----|:-------|
@@ -246,7 +246,7 @@ All tools use the [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-them
 | Tilix | Exported color scheme |
 | Bat | Theme in `bat/themes/` |
 | Vim | `tokyonight-vim` plugin |
-| Tmux | Yoru Revamped plugin |
+| Tmux | Catppuccin (Mocha) plugin |
 | Bottom | `[styles]` in `bottom.toml` |
 | K9s | Skin file in `k9s/skins/` |
 | Lazygit | `gui.theme` in config |

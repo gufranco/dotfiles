@@ -140,6 +140,9 @@ Plug 'kdheepak/lazygit.nvim'
 " Compatibility
 Plug 'tmux-plugins/vim-tmux', { 'for': 'tmux' }
 
+" Move between nvim splits and tmux panes with C-h/C-j/C-k/C-l
+Plug 'christoomey/vim-tmux-navigator'
+
 call plug#end()
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

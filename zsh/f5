@@ -13,7 +13,7 @@ function __f5_update_dotfiles() {
 
   if git -C "$HOME/.dotfiles" pull --quiet >/dev/null 2>&1 && \
      git -C "$HOME/.dotfiles" fetch --prune --quiet >/dev/null 2>&1; then
-    if git -C "$HOME/.dotfiles" submodule update --init --recursive --quiet; then
+    if git -C "$HOME/.dotfiles" submodule update --init --remote --recursive --quiet; then
       __log_success "Dotfiles and submodules updated"
     else
       __log_success "Dotfiles updated (submodules had issues)"

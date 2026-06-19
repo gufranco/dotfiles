@@ -62,7 +62,7 @@ github_repo_sync() {
     git -C "$target_dir" remote set-url origin "$https_url" 2>/dev/null || true
     git -C "$target_dir" pull --no-edit 2>/dev/null || log_warning "Failed to pull ${label}"
     git -C "$target_dir" remote set-url origin "$ssh_url" 2>/dev/null || true
-    git -C "$target_dir" submodule update --init --recursive 2>/dev/null || log_warning "Submodule update failed"
+    git -C "$target_dir" submodule update --init --remote --recursive 2>/dev/null || log_warning "Submodule update failed"
     log_success "${label} updated"
   else
     git clone --recursive "$https_url" "$target_dir"

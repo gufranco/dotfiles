@@ -46,77 +46,77 @@ bind main F !git commit --fixup %(commit)
 bind main G @sh -c "open $(git remote get-url origin | sed 's/\\.git$//' | sed 's/git@github.com:/https:\\/\\/github.com\\//g')/commit/%(commit)"
 
 ################################################################################
-# Tokyo Night color scheme
+# Catppuccin Mocha color scheme
 ################################################################################
 # General UI
-color default              195 default
-color cursor               195 60      bold
-color title-focus          75  default  bold
-color title-blur           103 default
-color status               195 default
-color id                   173 default
-color date                 103 default
-color author               141 default  bold
-color mode                 195 default
-color overflow             204 default
-color header               75  default  bold
-color section              141 default
+color default              #cdd6f4 default
+color cursor               #cdd6f4 #45475a      bold
+color title-focus          #89b4fa  default  bold
+color title-blur           #a6adc8 default
+color status               #cdd6f4 default
+color id                   #fab387 default
+color date                 #a6adc8 default
+color author               #cba6f7 default  bold
+color mode                 #cdd6f4 default
+color overflow             #f38ba8 default
+color header               #89b4fa  default  bold
+color section              #cba6f7 default
 
 # Main view
-color main-tracked         75  default  bold
-color main-tag             173 default  bold
-color main-local-tag       173 default
-color main-remote          114 default
-color main-replace         173 default
-color main-ref             114 default  bold
-color main-head            141 default  bold
-color graph-commit         173 default  bold
+color main-tracked         #89b4fa  default  bold
+color main-tag             #fab387 default  bold
+color main-local-tag       #fab387 default
+color main-remote          #a6e3a1 default
+color main-replace         #fab387 default
+color main-ref             #a6e3a1 default  bold
+color main-head            #cba6f7 default  bold
+color graph-commit         #fab387 default  bold
 
 # Status view
-color stat-staged          114 default
-color stat-unstaged        173 default
-color stat-untracked       204 default
-color stat-none            103 default
+color stat-staged          #a6e3a1 default
+color stat-unstaged        #fab387 default
+color stat-untracked       #f38ba8 default
+color stat-none            #a6adc8 default
 
 # Diff colors
-color diff-header          173 default  bold
-color diff-index           75  default
-color diff-oldmode         173 default
-color diff-newmode         114 default
-color "--- "               204 default
-color "+++ "               114 default
-color "@@"                 141 default
-color diff-stat            75  default
-color diff-add             114 default
-color diff-del             204 default
-color "Merge: "            75  default
-color "Refs: "             75  default
-color "commit "            173 default
-color "Author: "           141 default
-color "AuthorDate: "       103 default
-color "Commit: "           114 default
-color "CommitDate: "       103 default
-color "Date: "             103 default
-color pp-hierarchyhdr      75  default  bold
+color diff-header          #fab387 default  bold
+color diff-index           #89b4fa  default
+color diff-oldmode         #fab387 default
+color diff-newmode         #a6e3a1 default
+color "--- "               #f38ba8 default
+color "+++ "               #a6e3a1 default
+color "@@"                 #cba6f7 default
+color diff-stat            #89b4fa  default
+color diff-add             #a6e3a1 default
+color diff-del             #f38ba8 default
+color "Merge: "            #89b4fa  default
+color "Refs: "             #89b4fa  default
+color "commit "            #fab387 default
+color "Author: "           #cba6f7 default
+color "AuthorDate: "       #a6adc8 default
+color "Commit: "           #a6e3a1 default
+color "CommitDate: "       #a6adc8 default
+color "Date: "             #a6adc8 default
+color pp-hierarchyhdr      #89b4fa  default  bold
 
 # Commit message
-color "Signed-off-by:"    114 default
-color "Acked-by:"         114 default
-color "Reviewed-by:"      114 default
-color "Helped-by:"        114 default
+color "Signed-off-by:"    #a6e3a1 default
+color "Acked-by:"         #a6e3a1 default
+color "Reviewed-by:"      #a6e3a1 default
+color "Helped-by:"        #a6e3a1 default
 
 # Tree view
-color tree.header          195 default  bold
-color tree.directory       75  default  bold
-color tree.file            195 default
+color tree.header          #cdd6f4 default  bold
+color tree.directory       #89b4fa  default  bold
+color tree.file            #cdd6f4 default
 
 # Grep view
-color grep.file            75  default  bold
-color grep.line-number     103 default
-color grep.delimiter       103 default
-color delimiter            103 default
+color grep.file            #89b4fa  default  bold
+color grep.line-number     #a6adc8 default
+color grep.delimiter       #a6adc8 default
+color delimiter            #a6adc8 default
 
 # Help view
-color help.header          75  default  bold
-color help.section         141 default  bold
-color help.action          114 default
+color help.header          #89b4fa  default  bold
+color help.section         #cba6f7 default  bold
+color help.action          #a6e3a1 default

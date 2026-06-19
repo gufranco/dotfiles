@@ -12,14 +12,14 @@
 --column
 --max-columns=150
 --max-columns-preview
-# Tokyo Night palette
---colors=line:fg:0xe0:0xaf:0x68
+# Catppuccin Mocha palette
+--colors=line:fg:0xf9:0xe2:0xaf
 --colors=line:style:bold
---colors=path:fg:0x7a:0xa2:0xf7
+--colors=path:fg:0x89:0xb4:0xfa
 --colors=path:style:bold
---colors=match:fg:0xf7:0x76:0x8e
+--colors=match:fg:0xf3:0x8b:0xa8
 --colors=match:style:bold
---colors=column:fg:0x56:0x5f:0x89
+--colors=column:fg:0x6c:0x70:0x86
 
 ################################################################################
 # Version Control

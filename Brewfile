@@ -14,6 +14,7 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 ################################################################################
 tap 'Arthur-Ficial/tap'
 tap 'aws/tap'
+tap 'browsh-org/browsh'
 tap 'clojure/tools'
 tap 'DopplerHQ/cli'
 tap 'neomutt/neomutt'
@@ -118,6 +119,7 @@ brew 'lazygit'
 # Networking & HTTP
 ################################################################################
 brew 'bandwhich'
+brew 'browsh-org/browsh/browsh'
 brew 'curl'
 brew 'doggo'
 brew 'gping'

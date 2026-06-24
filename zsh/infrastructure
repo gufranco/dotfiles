@@ -547,3 +547,39 @@ ubuntu-start()    { __docker_container_start "ubuntu"; }
 ubuntu-stop()     { __docker_container_stop "ubuntu"; }
 ubuntu-purge()    { __docker_container_purge "ubuntu"; }
 ubuntu-terminal() { __docker_container_terminal "ubuntu" "/bin/bash"; }
+
+################################################################################
+# Interactive container pickers (fzf)
+################################################################################
+if command -v fzf > /dev/null && command -v docker > /dev/null; then
+  function __docker_pick_container() {
+    command docker ps --format '{{.ID}} {{.Names}} {{.Image}}' \
+      | fzf "$@" \
+      | awk '{ print $1 }'
+  }
+
+  # Exec into a running container, preferring bash, falling back to sh
+  function fde() {
+    local cid
+    cid="$(__docker_pick_container --header='[docker:exec]')"
+    [ -n "$cid" ] || return
+    command docker exec -it "$cid" \
+      sh -c 'if command -v bash > /dev/null 2>&1; then exec bash; else exec sh; fi'
+  }
+
+  # Follow logs of a running container
+  function fdl() {
+    local cid
+    cid="$(__docker_pick_container --header='[docker:logs]')"
+    [ -n "$cid" ] || return
+    command docker logs -f --tail 200 "$cid"
+  }
+
+  # Stop one or more running containers
+  function fds() {
+    local cids
+    cids="$(__docker_pick_container -m --header='[docker:stop]')"
+    [ -n "$cids" ] || return
+    echo "$cids" | xargs command docker stop
+  }
+fi

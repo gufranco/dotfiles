@@ -198,3 +198,61 @@ case "$(uname)" in
     __alias_if_exists gping ping "command gping"
     ;;
 esac
+
+################################################################################
+# Interactive fzf helpers
+################################################################################
+if command -v fzf > /dev/null; then
+  # Kill a process picked from the process list (default signal SIGKILL)
+  function fkill() {
+    local pids
+    pids="$(command ps -ef | sed 1d | fzf -m --header='[kill:process]' | awk '{ print $2 }')"
+    [ -n "$pids" ] || return
+    echo "$pids" | xargs kill -"${1:-9}"
+  }
+
+  # Kill the process listening on a picked TCP port (default signal SIGKILL)
+  function portkill() {
+    local pids
+    pids="$(command lsof -Pwni tcp | sed 1d | fzf -m --header='[kill:port]' | awk '{ print $2 }')"
+    [ -n "$pids" ] || return
+    echo "$pids" | xargs kill -"${1:-9}"
+  }
+
+  # Checkout a git branch or tag picked from the full list
+  function fco() {
+    command git rev-parse HEAD > /dev/null 2>&1 || return
+    local tags branches target
+    tags="$(command git tag | awk '{ print "tag\t" $1 }')"
+    branches="$(command git branch --all \
+      | command grep -v HEAD \
+      | sed 's/.* //; s#remotes/[^/]*/##' \
+      | sort -u \
+      | awk '{ print "branch\t" $1 }')"
+    target="$( (echo "$tags"; echo "$branches") \
+      | sed '/^$/d' \
+      | fzf --no-hscroll --reverse +m -d '\t' -n 2)"
+    [ -n "$target" ] || return
+    command git checkout "$(echo "$target" | awk '{ print $2 }')"
+  }
+
+  # Connect to an ssh host picked from ~/.ssh/config (wildcards excluded)
+  function fssh() {
+    local host
+    host="$(command grep -w '^Host' "$HOME/.ssh/config" 2>/dev/null \
+      | awk '{ print $2 }' \
+      | command grep -v '[*?]' \
+      | fzf --header='[ssh]')"
+    [ -n "$host" ] || return
+    command ssh "$host"
+  }
+fi
+
+################################################################################
+# cheat.sh lookup
+################################################################################
+if command -v curl > /dev/null; then
+  function cheat() {
+    command curl -s "cheat.sh/$1"
+  }
+fi

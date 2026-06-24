@@ -219,7 +219,9 @@ brew 'shellcheck'
 brew 'tokei'
 brew 'universal-ctags'
 brew 'watchman'
-brew 'xcodes'
+# xcodes ships no bottle on the newest macOS, and the CI runners do not need an
+# Xcode version manager. Install it only outside CI.
+brew 'xcodes' unless ENV['CI']
 
 ################################################################################
 # Load Testing & Reliability

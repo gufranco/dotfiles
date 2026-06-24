@@ -127,29 +127,12 @@ eval-cache-clear() {
 }
 
 ################################################################################
-# direnv
+# External tool initialization
 ################################################################################
-__cached_eval direnv hook zsh
-
-################################################################################
-# mise
-################################################################################
-__cached_eval mise activate zsh
-
-################################################################################
-# zoxide (smart cd)
-################################################################################
-__cached_eval zoxide init zsh
-
-################################################################################
-# atuin (shell history)
-################################################################################
-__cached_eval atuin init zsh --disable-up-arrow
-
-################################################################################
-# ngrok
-################################################################################
-__cached_eval ngrok completion
+# The direnv, mise, zoxide, atuin and ngrok inits run from .zshrc after
+# oh-my-zsh, where compinit has defined compdef. ngrok's completion script
+# calls compdef unconditionally; running it before compinit printed
+# "command not found: compdef" twice and failed to register the completion.
 
 ################################################################################
 # starship prompt (loads after oh-my-zsh spaceship if both present)

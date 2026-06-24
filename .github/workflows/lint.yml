@@ -83,7 +83,7 @@ jobs:
             else
               errors=$((errors + 1))
             fi
-          done < <(find . \( -name '*.yml' -o -name '*.yaml' \) \
+          done < <(find . \( -name '*.yml' -o -name '*.yaml' \) -type f \
             -not -path './tmux/plugins/*' \
             -not -path './vim/plugged/*' | sort)
           exit "$errors"
@@ -95,7 +95,8 @@ jobs:
 
           excludes = ('tmux/plugins', 'vim/plugged')
           files = [f for f in pathlib.Path('.').rglob('*.toml')
-                   if not any(e in str(f) for e in excludes)]
+                   if not f.is_symlink()
+                   and not any(e in str(f) for e in excludes)]
           errors = 0
           for f in sorted(files):
               try:

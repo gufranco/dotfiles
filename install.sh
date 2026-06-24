@@ -834,22 +834,10 @@ SYSCTL
     ############################################################################
     # Homebrew packages
     ############################################################################
-    # Homebrew now refuses formulae from non-official taps unless trusted via
-    # HOMEBREW_REQUIRE_TAP_TRUST. The Brewfile pins its own curated taps, so opt
-    # out of that policy and let brew bundle load them.
+    # Homebrew now refuses formulae from non-official taps unless trusted
     export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
     log_info "Installing Homebrew packages..."
     brew update
-    # Newer Homebrew refuses to load formulae from non-official taps when
-    # HOMEBREW_REQUIRE_TAP_TRUST is set, which the macOS CI runners set. Trust
-    # each tap the Brewfile declares so brew bundle can load their formulae.
-    if brew commands 2>/dev/null | grep -qx trust; then
-      while IFS= read -r tap_name; do
-        if [ -n "${tap_name}" ]; then
-          brew trust --tap "${tap_name}" >/dev/null 2>&1 || true
-        fi
-      done < <(grep -E "^tap " "$HOME/.dotfiles/Brewfile" | sed -E "s/^tap +['\"]([^'\"]+)['\"].*/\1/")
-    fi
     brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade --greedy --force || log_warning "Brew upgrade had failures"

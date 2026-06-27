@@ -1,8 +1,7 @@
-# Yazi plugin dependencies
-# Install with: ya pack -i
-# Update with: ya pack -u
+[[plugin.deps]]
+use = "yazi-rs/plugins:git"
+rev = "39aaf6d"
+hash = "88e56a64b7ce7c4314427452343fef17"
 
-[plugin]
-deps = [
-  { use = "yazi-rs/plugins:zoxide" },
-]
+[flavor]
+deps = []

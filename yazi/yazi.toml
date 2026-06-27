@@ -43,7 +43,7 @@ play = [
 
 [open]
 rules = [
-  { name = "*/", use = ["edit", "open", "reveal"] },
+  { url = "*/", use = ["edit", "open", "reveal"] },
   { mime = "text/*", use = ["edit", "reveal"] },
   { mime = "image/*", use = ["open", "reveal"] },
   { mime = "video/*", use = ["play", "open", "reveal"] },
@@ -57,7 +57,7 @@ rules = [
   { mime = "application/x-bzip*", use = ["open", "reveal"] },
   { mime = "application/x-7z-compressed", use = ["open", "reveal"] },
   { mime = "application/pdf", use = ["open", "reveal"] },
-  { name = "*", use = ["open", "reveal"] },
+  { url = "*", use = ["open", "reveal"] },
 ]
 
 [tasks]
@@ -67,6 +67,6 @@ bizarre_retry = 5
 
 [plugin]
 prepend_fetchers = [
-  { id = "git", name = "*", run = "git" },
-  { id = "git", name = "*/", run = "git" },
+  { url = "*", run = "git", group = "git" },
+  { url = "*/", run = "git", group = "git" },
 ]

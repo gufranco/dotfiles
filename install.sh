@@ -1170,7 +1170,7 @@ fi
 ############################################################################
 log_info "Setting up Yazi..."
 safe_link "$HOME/.dotfiles/yazi" "$HOME/.config/yazi"
-if cmd_exists ya; then ya pack -i 2>/dev/null || true; fi
+if cmd_exists ya; then ya pkg install 2>/dev/null || true; fi
 
 ############################################################################
 # Starship

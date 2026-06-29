@@ -143,6 +143,13 @@ Plug 'tmux-plugins/vim-tmux', { 'for': 'tmux' }
 " Move between nvim splits and tmux panes with C-h/C-j/C-k/C-l
 Plug 'christoomey/vim-tmux-navigator'
 
+" Debugging (Neovim only): DAP client, UI, and its async dependency
+if has('nvim')
+  Plug 'mfussenegger/nvim-dap'
+  Plug 'rcarriga/nvim-dap-ui'
+  Plug 'nvim-neotest/nvim-nio'
+endif
+
 call plug#end()
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -165,6 +172,74 @@ endif
 " Core
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:mapleader = ','
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Debugging (nvim-dap)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Neovim only, and placed after mapleader so the <leader>d* maps resolve to the
+" comma leader. The whole block is pcall-guarded, so a fresh checkout with the
+" plugins or the js-debug adapter not yet installed still starts cleanly.
+" Keymaps and the adapter path are documented in nodejs/DEBUGGING.md.
+if has('nvim')
+lua << EOF
+local ok, dap = pcall(require, "dap")
+if ok then
+  local uv = vim.uv or vim.loop
+  local js_debug = vim.fn.expand("~/.local/share/js-debug/src/dapDebugServer.js")
+  if uv.fs_stat(js_debug) then
+    dap.adapters["pwa-node"] = {
+      type = "server",
+      host = "localhost",
+      port = "${port}",
+      executable = {
+        command = "node",
+        args = { js_debug, "${port}" },
+      },
+    }
+    for _, lang in ipairs({ "javascript", "typescript" }) do
+      dap.configurations[lang] = {
+        {
+          type = "pwa-node",
+          request = "launch",
+          name = "Launch file",
+          program = "${file}",
+          cwd = "${workspaceFolder}",
+        },
+        {
+          type = "pwa-node",
+          request = "attach",
+          name = "Attach to process",
+          processId = require("dap.utils").pick_process,
+          cwd = "${workspaceFolder}",
+        },
+      }
+    end
+  end
+
+  local ui_ok, dapui = pcall(require, "dapui")
+  if ui_ok then
+    dapui.setup()
+    dap.listeners.before.attach.dapui_config = function() dapui.open() end
+    dap.listeners.before.launch.dapui_config = function() dapui.open() end
+    dap.listeners.before.event_terminated.dapui_config = function() dapui.close() end
+    dap.listeners.before.event_exited.dapui_config = function() dapui.close() end
+    vim.keymap.set("n", "<leader>du", dapui.toggle, { desc = "DAP UI toggle" })
+  end
+
+  vim.keymap.set("n", "<leader>db", dap.toggle_breakpoint, { desc = "DAP breakpoint" })
+  vim.keymap.set("n", "<leader>dB", function()
+    dap.set_breakpoint(vim.fn.input("Breakpoint condition: "))
+  end, { desc = "DAP conditional breakpoint" })
+  vim.keymap.set("n", "<leader>dc", dap.continue, { desc = "DAP continue" })
+  vim.keymap.set("n", "<leader>di", dap.step_into, { desc = "DAP step into" })
+  vim.keymap.set("n", "<leader>do", dap.step_over, { desc = "DAP step over" })
+  vim.keymap.set("n", "<leader>dO", dap.step_out, { desc = "DAP step out" })
+  vim.keymap.set("n", "<leader>dr", function() dap.repl.toggle() end, { desc = "DAP repl" })
+  vim.keymap.set("n", "<leader>dt", dap.terminate, { desc = "DAP terminate" })
+end
+EOF
+endif
+
 set updatetime=100
 set noerrorbells
 set novisualbell

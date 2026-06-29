@@ -1,0 +1,37 @@
+# ~/.pdbrc - Python debugger startup file
+#
+# This file holds pdb commands, not Python. Each line runs as if typed at the
+# Pdb prompt. Blank lines and lines starting with # are ignored. pdb reads
+# ~/.pdbrc first, then a ./.pdbrc in the current directory, so a project file
+# can override anything defined here.
+#
+# Aliases cannot span multiple lines. Statements are chained with ;; and any
+# alias that imports a helper deletes it afterwards so it does not leak into the
+# frame being debugged. Use %1..%9 for positional args and %* for all of them.
+#
+# Inspection aliases adapted from Trey Hunner, "Customizing pdb with .pdbrc":
+# https://treyhunner.com/2026/04/customizing-pdb-with-pdbrc/
+
+# dir OBJ - every non-dunder attribute and method of OBJ with its value
+alias dir print(*(f"%1.{n} = {v!r}" for n, v in __import__('inspect').getmembers(%1) if not n.startswith("__")), sep="\n")
+
+# attrs OBJ - non-dunder data attributes only, methods excluded
+alias attrs import inspect as __i ;; print(*(f"%1.{n} = {v!r}" for n, v in __i.getmembers(%1, lambda v: not __i.isroutine(v)) if not n.startswith("__")), sep="\n") ;; del __i
+
+# vars OBJ - the instance __dict__ of OBJ
+alias vars print(*(f"%1.{k} = {v!r}" for k, v in vars(%1).items()), sep="\n")
+
+# src OBJ - source file, line number and code of a function or class
+alias src import inspect as __i ;; print(f"{__i.getsourcefile(%1)} on line {__i.getsourcelines(%1)[1]}:\n{''.join(__i.getsource(%1))}") ;; del __i
+
+# loc - every non-dunder local in the current frame
+alias loc print(*(f"{name} = {value!r}" for name, value in vars().items() if not name.startswith("__")), sep="\n")
+
+# pp OBJ - pretty-print any expression
+alias pp import pprint as __p ;; __p.pprint(%1) ;; del __p
+
+# pi OBJ - print instance variables of OBJ, official pdb recipe
+alias pi for __k in %1.__dict__.keys(): print(f"%1.{__k} = {%1.__dict__[__k]}")
+
+# ps - print instance variables of self
+alias ps pi self

@@ -128,7 +128,7 @@ Aliases activate only when the modern tool is installed:
 
 ### Editor
 
-Vim with 31 plugins managed by vim-plug:
+Vim with 34 plugins managed by vim-plug:
 
 | Category | Plugins |
 |:---------|:--------|
@@ -136,12 +136,21 @@ Vim with 31 plugins managed by vim-plug:
 | Navigation | fzf.vim, leap.nvim (jump motions), lazygit.nvim, vim-fetch (open at line) |
 | Git | vim-signify (hunks), vim-fugitive (commands), conflict-marker.vim |
 | Editing | vim-surround, vim-visual-multi, vim-pasta, targets.vim, vim-unimpaired, vim-repeat, vim-abolish (case coercion), splitjoin.vim |
+| Debugging | nvim-dap, nvim-dap-ui, nvim-nio (Neovim only) |
 | Files | vim-eunuch (Rename, Delete, Move, SudoWrite) |
 | UI | lightline, vim-devicons, undotree, vim-cool, vim-search-pulse, winresizer |
 | Defaults | vim-sensible, vim-opinion |
 | Integration | vim-tmux (tmux.conf syntax) |
 
 CoC extensions: TypeScript, ESLint, Prettier, CSS, JSON, Shell, snippets, import-cost.
+
+### Debugging
+
+A ready-to-use debugger for Python and Node.js, linked and installed by `install.sh`.
+
+Python uses the standard library `pdb` with a richer `.pdbrc`. The aliases `dir`, `attrs`, `vars`, `src`, and `loc` inspect objects and locals at the prompt, adapted from Trey Hunner's [Customizing pdb with .pdbrc](https://treyhunner.com/2026/04/customizing-pdb-with-pdbrc/). `breakpoint()` is wired through [`python/debughook.py`](python/debughook.py), which prefers pdbp, then ipdb, then falls back to stdlib pdb, so it never dies in a virtualenv that lacks the fancy debuggers. [`python/pythonrc`](python/pythonrc) is the `PYTHONSTARTUP` file: persistent REPL history and pretty-printed output.
+
+Node.js gets the built-in V8 Inspector workflow plus an editor debugger. The `ni`, `nib`, and `niw` aliases drive `node inspect` and `--inspect-brk` for terminal and Chrome DevTools debugging. `jsr` opens a custom REPL from [`nodejs/repl-init.mjs`](nodejs/repl-init.mjs) with deep colorized inspection. Inside Neovim, nvim-dap attaches to the `pwa-node` adapter for breakpoints and stepping. The full command reference and keymaps live in [`nodejs/DEBUGGING.md`](nodejs/DEBUGGING.md).
 
 ### Terminal Multiplexer
 
@@ -318,6 +327,10 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `nodejs/.npmrc` | `~/.npmrc` |
 | `nodejs/.yarnrc.yml` | `~/.yarnrc.yml` |
 | `nodejs/.pnpmrc` | `~/.pnpmrc` |
+| [`nodejs/repl-init.mjs`](nodejs/repl-init.mjs) | `~/.config/node/repl-init.mjs` |
+| [`python/.pdbrc`](python/.pdbrc) | `~/.pdbrc` |
+| [`python/pythonrc`](python/pythonrc) | `~/.pythonrc` |
+| [`python/debughook.py`](python/debughook.py) | `~/.config/python/debughook.py` |
 | `mutt/.muttrc` | `~/.muttrc` |
 | `mutt` | `~/.mutt` |
 | `curl/.curlrc` | `~/.curlrc` |

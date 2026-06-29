@@ -86,6 +86,25 @@ export CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
 export COLORTERM=truecolor
 
 ################################################################################
+# Debugging and REPL
+################################################################################
+# Python REPL startup file. Runs only in interactive sessions, see python/pythonrc.
+export PYTHONSTARTUP="$HOME/.pythonrc"
+# Make the breakpoint fallback hook importable everywhere. Appended last so it
+# never shadows a project module of the same name. See python/debughook.py.
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$HOME/.config/python"
+# breakpoint() prefers pdbp, then ipdb, then stdlib pdb via the fallback hook.
+export PYTHONBREAKPOINT="debughook.set_trace"
+
+# Persisted, larger Node REPL history.
+export NODE_REPL_HISTORY="$HOME/.node_repl_history"
+export NODE_REPL_HISTORY_SIZE=10000
+export NODE_REPL_MODE=sloppy
+# Safe to set globally: readable stack traces for every node process. No
+# --inspect here, that would clash on port 9229 and let any local code attach.
+export NODE_OPTIONS="--enable-source-maps --stack-trace-limit=50"
+
+################################################################################
 # Cached eval: cache tool init output keyed by binary mtime.
 # Avoids spawning subprocesses on every shell open.
 # Cache is invalidated when the binary changes (upgrade, reinstall).

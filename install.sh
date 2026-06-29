@@ -923,12 +923,61 @@ esac
 ############################################################################
 
 ############################################################################
+# Python (debugger + REPL)
+############################################################################
+log_info "Setting up Python debugging configs..."
+safe_link "$HOME/.dotfiles/python/.pdbrc" "$HOME/.pdbrc"
+safe_link "$HOME/.dotfiles/python/pythonrc" "$HOME/.pythonrc"
+safe_link "$HOME/.dotfiles/python/debughook.py" "$HOME/.config/python/debughook.py"
+# Richer breakpoint() debuggers. The fallback hook degrades to stdlib pdb when
+# these are missing, so this is best-effort and never fatal.
+if cmd_exists python3; then
+  if python3 -m pip install --user --upgrade --quiet pdbp ipdb >/dev/null 2>&1; then
+    log_success "Python debuggers pdbp and ipdb installed"
+  else
+    log_skip "pdbp/ipdb not installed; breakpoint() falls back to stdlib pdb"
+  fi
+fi
+
+############################################################################
 # Node.js
 ############################################################################
 log_info "Setting up Node.js configs..."
 safe_link "$HOME/.dotfiles/nodejs/.npmrc" "$HOME/.npmrc"
 safe_link "$HOME/.dotfiles/nodejs/.yarnrc.yml" "$HOME/.yarnrc.yml"
 safe_link "$HOME/.dotfiles/nodejs/.pnpmrc" "$HOME/.pnpmrc"
+safe_link "$HOME/.dotfiles/nodejs/repl-init.mjs" "$HOME/.config/node/repl-init.mjs"
+
+############################################################################
+# Neovim DAP adapter (vscode-js-debug)
+############################################################################
+log_info "Setting up Neovim DAP adapter (js-debug)..."
+JS_DEBUG_DIR="$HOME/.local/share/js-debug"
+if [ -f "$JS_DEBUG_DIR/src/dapDebugServer.js" ]; then
+  log_skip "js-debug already installed"
+else
+  JS_DEBUG_TAG=$(curl -s --connect-timeout 10 --max-time 30 \
+    https://api.github.com/repos/microsoft/vscode-js-debug/releases/latest \
+    | grep '"tag_name"' | cut -d '"' -f 4)
+  if [ -n "$JS_DEBUG_TAG" ]; then
+    JS_DEBUG_TARBALL="/tmp/js-debug-${JS_DEBUG_TAG}.tar.gz"
+    if curl -#fL --connect-timeout 10 --max-time 180 -o "$JS_DEBUG_TARBALL" \
+      "https://github.com/microsoft/vscode-js-debug/releases/download/${JS_DEBUG_TAG}/js-debug-dap-${JS_DEBUG_TAG}.tar.gz"; then
+      mkdir -p "$JS_DEBUG_DIR"
+      if tar -xzf "$JS_DEBUG_TARBALL" -C "$JS_DEBUG_DIR" --strip-components=1; then
+        echo "$JS_DEBUG_TAG" > "$JS_DEBUG_DIR/.version"
+        log_success "js-debug ${JS_DEBUG_TAG} installed"
+      else
+        log_warning "Failed to extract js-debug"
+      fi
+      rm -f "$JS_DEBUG_TARBALL"
+    else
+      log_warning "Failed to download js-debug; nvim-dap node debugging will be inactive"
+    fi
+  else
+    log_warning "Could not resolve latest js-debug release; skipping"
+  fi
+fi
 
 ############################################################################
 # mise

@@ -120,6 +120,18 @@ if command -v asciinema > /dev/null; then
 fi
 
 ################################################################################
+# Debugging shortcuts
+################################################################################
+# Python: drop into pdb on an existing script without editing it.
+__alias_if_exists python3 pdbg "python3 -m pdb"
+# Node: see nodejs/DEBUGGING.md for the full workflow.
+__alias_if_exists node ni "node inspect"
+__alias_if_exists node nib "node --inspect-brk"
+__alias_if_exists node niw "node --inspect-wait"
+__alias_if_exists node nw "node --watch"
+__alias_if_exists node jsr "node $HOME/.config/node/repl-init.mjs"
+
+################################################################################
 # eza / ls
 ################################################################################
 if command -v eza > /dev/null; then

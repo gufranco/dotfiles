@@ -1,0 +1,81 @@
+# Interactive Python REPL startup file. Not a module: it is exec'd by the
+# interpreter when PYTHONSTARTUP points here, so it has no .py extension and is
+# never imported. It runs only in the REPL, never for scripts and never inside
+# pdb, which makes it the right home for comfort tweaks the debugger does not
+# get. Standard library only; rich is used when present and skipped otherwise.
+#
+# PYTHONSTARTUP: https://docs.python.org/3/using/cmdline.html
+# Idea: https://treyhunner.com/2025/10/handy-python-repl-modifications/
+
+
+def _setup_history():
+    """Persist REPL history across sessions and cap its length."""
+    import atexit
+    import os
+    import readline
+
+    history = os.path.expanduser("~/.python_history")
+    try:
+        readline.read_history_file(history)
+    except (FileNotFoundError, OSError):
+        pass
+    readline.set_history_length(10000)
+
+    def _save(path=history):
+        try:
+            readline.write_history_file(path)
+        except OSError:
+            pass
+
+    atexit.register(_save)
+
+
+def _setup_completion():
+    """Enable tab completion. PyREPL on 3.13+ already does this; harmless twice."""
+    try:
+        import readline
+        import rlcompleter  # noqa: F401
+    except ImportError:
+        return
+    readline.parse_and_bind("tab: complete")
+
+
+def _setup_pretty():
+    """Pretty-print REPL results: rich when available, else pprint."""
+    import sys
+
+    try:
+        import rich.pretty
+    except ImportError:
+        import builtins
+        import pprint
+
+        def _displayhook(value):
+            if value is None:
+                return
+            # Mirror the REPL contract: bind the last result to _ and echo it.
+            builtins._ = value
+            pprint.pprint(value)
+
+        sys.displayhook = _displayhook
+    else:
+        rich.pretty.install()
+
+
+def _main():
+    # readline is absent on some minimal builds; history and completion just do
+    # not load there, which is fine.
+    try:
+        import readline  # noqa: F401
+    except ImportError:
+        pass
+    else:
+        _setup_history()
+        _setup_completion()
+    _setup_pretty()
+
+
+_main()
+
+# Keep the namespace clean so dir() in a fresh REPL is not noisy.
+del _setup_history, _setup_completion, _setup_pretty, _main

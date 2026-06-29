@@ -251,6 +251,45 @@ function __f5_update_macos() {
   __log_success "macOS packages updated"
 }
 
+function __f5_update_js_debug() {
+  local js_debug_dir="$HOME/.local/share/js-debug"
+
+  # First install is install.sh's job; f5 only keeps an existing copy current.
+  if [ ! -f "$js_debug_dir/src/dapDebugServer.js" ]; then
+    return
+  fi
+
+  __log_info "Updating Neovim DAP adapter (js-debug)..."
+
+  local latest
+  latest=$(curl -sL --connect-timeout 10 --max-time 30 \
+    https://api.github.com/repos/microsoft/vscode-js-debug/releases/latest \
+    | grep tag_name | cut -d '"' -f 4)
+
+  if [ -z "$latest" ]; then
+    __log_warning "Could not check js-debug version"
+    return
+  fi
+
+  local current=""
+  [ -f "$js_debug_dir/.version" ] && current=$(cat "$js_debug_dir/.version")
+
+  if [ "$current" = "$latest" ]; then
+    __log_success "js-debug ${latest} (up to date)"
+    return
+  fi
+
+  if curl -#fLo "/tmp/js-debug-${latest}.tar.gz" --connect-timeout 10 --max-time 180 \
+    "https://github.com/microsoft/vscode-js-debug/releases/download/${latest}/js-debug-dap-${latest}.tar.gz" \
+    && tar -xzf "/tmp/js-debug-${latest}.tar.gz" -C "$js_debug_dir" --strip-components=1; then
+    echo "$latest" > "$js_debug_dir/.version"
+    __log_success "js-debug updated to ${latest}"
+  else
+    __log_warning "Failed to update js-debug"
+  fi
+  rm -f "/tmp/js-debug-${latest}.tar.gz"
+}
+
 function __f5_update_python() {
   local pipxfile="$HOME/.dotfiles/Pipxfile"
 
@@ -304,6 +343,17 @@ function __f5_update_python() {
   done < <(pipx list --short 2>/dev/null | awk '{print $1}')
 
   __log_success "pipx tools updated (installed: $installed_count, removed: $removed_count, up-to-date: $skip_count)"
+
+  ############################################################################
+  # Interpreter-local debuggers (importable by breakpoint(), not pipx CLIs)
+  ############################################################################
+  if __cmd_exists python3; then
+    if python3 -m pip install --user --upgrade --quiet pdbp ipdb >/dev/null 2>&1; then
+      __log_success "Python debuggers up to date"
+    else
+      __log_info "Python debuggers not updated; breakpoint() falls back to stdlib pdb"
+    fi
+  fi
 }
 
 function __f5_reload_configs() {
@@ -382,6 +432,7 @@ function f5() {
   esac
 
   __f5_update_python
+  __f5_update_js_debug
 
   __f5_reload_configs
   __f5_show_summary

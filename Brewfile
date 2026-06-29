@@ -13,7 +13,6 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 # Homebrew taps
 ################################################################################
 tap 'Arthur-Ficial/tap' if architecture == 'arm64'
-tap 'aws/tap'
 tap 'browsh-org/browsh'
 tap 'clojure/tools'
 tap 'DopplerHQ/cli'

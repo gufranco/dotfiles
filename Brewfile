@@ -12,7 +12,7 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 ################################################################################
 # Homebrew taps
 ################################################################################
-tap 'Arthur-Ficial/tap'
+tap 'Arthur-Ficial/tap' if architecture == 'arm64'
 tap 'aws/tap'
 tap 'browsh-org/browsh'
 tap 'clojure/tools'
@@ -219,9 +219,6 @@ brew 'shellcheck'
 brew 'tokei'
 brew 'universal-ctags'
 brew 'watchman'
-# xcodes ships no bottle on the newest macOS, and the CI runners do not need an
-# Xcode version manager. Install it only outside CI.
-brew 'xcodes' unless ENV['CI']
 
 ################################################################################
 # Load Testing & Reliability

@@ -290,3 +290,5 @@ specs/
 .turbo/
 .vercel
 .vuepress/dist
+
+**/.claude/settings.local.json

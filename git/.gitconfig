@@ -377,3 +377,15 @@
 
 [includeIf "hasconfig:remote.*.url:ssh://git@github.com/tsos-tech/**"]
   path = ~/.dotfiles/git/.gitconfig-onyx
+
+[includeIf "hasconfig:remote.*.url:git@github-lineleap:*/*"]
+  path = ~/.dotfiles/git/.gitconfig-lineleap
+
+[includeIf "hasconfig:remote.*.url:ssh://git@github-lineleap/*/*"]
+  path = ~/.dotfiles/git/.gitconfig-lineleap
+
+[includeIf "hasconfig:remote.*.url:git@github-buoy:*/*"]
+  path = ~/.dotfiles/git/.gitconfig-buoy
+
+[includeIf "hasconfig:remote.*.url:ssh://git@github-buoy/*/*"]
+  path = ~/.dotfiles/git/.gitconfig-buoy

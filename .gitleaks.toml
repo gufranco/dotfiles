@@ -4,7 +4,8 @@ description = "Known safe paths and false positives"
 paths = [
   '''ssh/id_ed25519_onyx''',
   '''ssh/id_ed25519_personal''',
-  '''ssh/id_rsa_personal''',
+  '''ssh/id_ed25519_lineleap''',
+  '''ssh/id_ed25519_buoy''',
   '''claude/README\.md''',
   '''\.cursor/rules/.*\.mdc''',
 ]

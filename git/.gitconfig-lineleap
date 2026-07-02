@@ -1,0 +1,12 @@
+[user]
+  name = Gustavo Franco
+  email = 299237933+gfranco-c-buoy@users.noreply.github.com
+
+[commit]
+  gpgsign = false
+
+[tag]
+  gpgSign = false
+
+[push]
+  gpgSign = no

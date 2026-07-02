@@ -208,7 +208,7 @@ export ZSH_COMPDUMP="${ZSH_CACHE_DIR:-$HOME/.cache}/.zcompdump-${HOST}-${ZSH_VER
 
 # SSH Agent
 zstyle :omz:plugins:ssh-agent lazy yes
-zstyle :omz:plugins:ssh-agent identities id_rsa_personal id_ed25519_personal id_ed25519_onyx
+zstyle :omz:plugins:ssh-agent identities id_ed25519_personal id_ed25519_onyx id_ed25519_lineleap id_ed25519_buoy
 
 # Plugins
 export plugins=(

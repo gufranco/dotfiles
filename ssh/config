@@ -22,6 +22,22 @@ Host github-onyx
   ControlPath ~/.ssh/control-github-onyx
   ForwardAgent yes
 
+Host github-lineleap
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_lineleap
+  IdentitiesOnly yes
+  ControlPath ~/.ssh/control-github-lineleap
+  ForwardAgent yes
+
+Host github-buoy
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_buoy
+  IdentitiesOnly yes
+  ControlPath ~/.ssh/control-github-buoy
+  ForwardAgent yes
+
 Host gitlab.com
   HostName gitlab.com
   User git

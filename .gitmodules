@@ -37,3 +37,7 @@
 	path = mutt/catppuccin
 	url = https://github.com/catppuccin/neomutt
 	branch = main
+[submodule "mc/catppuccin"]
+	path = mc/catppuccin
+	url = https://github.com/catppuccin/mc
+	branch = main

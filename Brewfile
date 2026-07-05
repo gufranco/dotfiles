@@ -87,7 +87,7 @@ brew 'ack'
 brew 'eza'
 brew 'fd'
 brew 'fzf'
-brew 'nnn'
+brew 'midnight-commander'
 brew 'ripgrep'
 brew 'yazi'
 brew 'zoxide'
@@ -393,9 +393,10 @@ cask 'stats'
 ################################################################################
 cask 'balenaetcher'
 cask 'cyberduck'
-cask 'forklift'
 cask 'keka'
 cask 'maestral'
+cask 'marta'
+cask 'nimble-commander'
 
 ################################################################################
 # Casks - Media & Entertainment

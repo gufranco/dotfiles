@@ -266,7 +266,7 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 | eza | `catppuccin/eza` submodule theme |
 | Mutt | `catppuccin/neomutt` submodule |
 | fzf | Official Mocha `--color` |
-| nnn | Catppuccin `NNN_COLORS` / `NNN_FCOLORS` |
+| Midnight Commander | `catppuccin/mc` submodule skin (inherits Mocha from terminal palette) |
 | tig | Mocha hex built from the palette |
 | Git colors | Mocha hex in `[color]` sections |
 | Tealdeer | Mocha RGB in `config.toml` |

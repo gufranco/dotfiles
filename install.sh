@@ -250,7 +250,7 @@ case "$(uname)" in
     ############################################################################
     APPS=(
       # File managers & Cloud
-      nautilus-dropbox nnn
+      nautilus-dropbox
 
       # Search & Navigation
       fzf universal-ctags
@@ -1149,6 +1149,15 @@ safe_link "$HOME/.dotfiles/eza" "$HOME/.config/eza"
 ############################################################################
 log_info "Setting up cmus..."
 safe_link "$HOME/.dotfiles/cmus/rc" "$HOME/.config/cmus/rc"
+
+############################################################################
+# Midnight Commander (mc)
+############################################################################
+log_info "Setting up Midnight Commander..."
+mkdir -p "$HOME/.config/mc"
+safe_link "$HOME/.dotfiles/mc/ini" "$HOME/.config/mc/ini"
+mkdir -p "$HOME/.local/share/mc/skins"
+safe_link "$HOME/.dotfiles/mc/catppuccin/catppuccin.ini" "$HOME/.local/share/mc/skins/catppuccin.ini"
 
 ############################################################################
 # GitHub CLI

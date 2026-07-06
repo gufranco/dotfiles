@@ -235,7 +235,7 @@ function __f5_update_macos() {
 
   if brew update; then
     brew bundle --file "$HOME/.dotfiles/Brewfile" || __log_warning "Brewfile sync failed"
-    brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
+    brew bundle cleanup --force --zap --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade --greedy || __log_warning "Brew upgrade failed"
     brew cleanup -s || true
   else

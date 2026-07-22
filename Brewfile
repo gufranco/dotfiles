@@ -217,7 +217,7 @@ brew 'mkcert'
 brew 'shellcheck'
 brew 'tokei'
 brew 'universal-ctags'
-brew 'watchman'
+# brew 'watchman'
 
 ################################################################################
 # Load Testing & Reliability

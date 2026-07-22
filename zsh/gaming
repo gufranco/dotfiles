@@ -127,6 +127,76 @@ function gaming-check() {
     ((errors++))
   fi
 
+  # NVIDIA open kernel modules (preferred on Turing+)
+  if dpkg -l 2>/dev/null | grep -q "^ii  nvidia-driver-[0-9]*-open"; then
+    __log_success "NVIDIA: open kernel modules"
+  elif dpkg -l 2>/dev/null | grep -q "^ii  nvidia-driver-[0-9]"; then
+    __log_warning "NVIDIA: proprietary modules (expected on pre-Turing MX)"
+  fi
+
+  # Suspend/resume hardening
+  if grep -q "PreserveVideoMemoryAllocations=1" /etc/modprobe.d/nvidia-power.conf 2>/dev/null; then
+    __log_success "NVIDIA: suspend/resume hardening enabled"
+  else
+    __log_warning "NVIDIA: suspend/resume hardening missing"
+    ((errors++))
+  fi
+
+  # zram swap
+  if command swapon --show 2>/dev/null | grep -q zram; then
+    __log_success "zram: active"
+  else
+    __log_warning "zram: not active"
+    ((errors++))
+  fi
+
+  # swappiness (must be 180 with zram)
+  local swappiness
+  swappiness=$(command sysctl -n vm.swappiness 2>/dev/null)
+  if [ "$swappiness" = "180" ]; then
+    __log_success "vm.swappiness: 180"
+  else
+    __log_warning "vm.swappiness: ${swappiness:-unknown} (expected 180 with zram)"
+  fi
+
+  # XanMod kernel
+  if command uname -r | grep -qi xanmod; then
+    __log_success "Kernel: $(command uname -r)"
+  else
+    __log_warning "Kernel: $(command uname -r) (XanMod not booted; reboot?)"
+  fi
+
+  # scx_lavd scheduler
+  if command systemctl is-active scx.service >/dev/null 2>&1; then
+    __log_success "Scheduler: scx service active"
+  else
+    __log_warning "Scheduler: scx not active (needs XanMod/6.12+ + reboot)"
+  fi
+
+  # earlyoom
+  if command systemctl is-active earlyoom >/dev/null 2>&1; then
+    __log_success "earlyoom: running"
+  else
+    __log_warning "earlyoom: not running"
+    ((errors++))
+  fi
+
+  # Controller udev rules
+  if dpkg -l steam-devices 2>/dev/null | grep -q "^ii"; then
+    __log_success "steam-devices: installed"
+  else
+    __log_warning "steam-devices: not installed"
+    ((errors++))
+  fi
+
+  # Managed config symlinks
+  if [ -L "$HOME/.config/gamemode.ini" ]; then
+    __log_success "gamemode.ini: linked"
+  else
+    __log_warning "gamemode.ini: not linked"
+    ((errors++))
+  fi
+
   # Summary
   echo ""
   if [ "$errors" -eq 0 ]; then
@@ -147,16 +217,18 @@ function gaming-launch-options() {
   echo "  Standard (most games):"
   echo "    prime-run gamemoderun mangohud %command%"
   echo ""
-  echo "  With DLSS/NVAPI (games with DLSS support):"
-  echo "    prime-run PROTON_ENABLE_NVAPI=1 DXVK_ENABLE_NVAPI=1 gamemoderun mangohud %command%"
+  echo "  FSR upscale + frame cap (the key lever on entry GPUs):"
+  echo "    render below native and let gamescope upscale + cap frames"
+  echo "    prime-run gamescope -W 1920 -H 1080 -w 1280 -h 720 -F fsr --sharpness 5 -r 60 --adaptive-sync --mangoapp -- gamemoderun %command%"
   echo ""
-  echo "  With FSR upscaling (render at lower res, upscale):"
-  echo "    prime-run WINE_FULLSCREEN_FSR=1 gamemoderun mangohud %command%"
-  echo ""
-  echo "  With async shaders (GE-Proton only, reduces stutter):"
-  echo "    prime-run DXVK_ASYNC=1 gamemoderun mangohud %command%"
+  echo "  CAS sharpening only (no upscale):"
+  echo "    prime-run ENABLE_VKBASALT=1 gamemoderun mangohud %command%"
   echo ""
   echo "  Debug mode (write logs to /tmp):"
   echo "    prime-run PROTON_LOG=1 gamemoderun %command%"
   echo ""
+  # Note: these GTX 1650 Ti / GeForce MX GPUs have no tensor or RT cores, so
+  # DLSS and hardware ray tracing do not apply. If an RTX card is ever added,
+  # DLSS is enabled with PROTON_ENABLE_NVAPI=1 (plus PROTON_DLSS_UPGRADE=1 on
+  # GE-Proton / proton-cachyos). DXVK_ASYNC is obsolete on DXVK 2.x (GPL).
 }

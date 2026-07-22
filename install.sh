@@ -627,14 +627,30 @@ case "$(uname)" in
     if [ "$(dpkg --print-architecture)" = "amd64" ]; then
       # Enable 32-bit architecture (required for Steam, Proton, and 32-bit drivers)
       sudo dpkg --add-architecture i386
+      # multiverse provides steam-devices and intel-media-va-driver-non-free
+      sudo add-apt-repository -y multiverse >/dev/null 2>&1 || true
       sudo apt update -qq
       sudo apt -y upgrade -qq
 
-      # NVIDIA drivers (auto-detect best driver for installed GPU)
+      # NVIDIA drivers (latest branch from graphics-drivers PPA)
+      # Prefer the open kernel modules on Turing+ GPUs; ubuntu-drivers marks the
+      # recommended package per GPU, so a Pascal MX correctly stays on the
+      # proprietary variant while a GTX 1650 Ti / Turing MX gets -open.
       log_info "Installing NVIDIA drivers..."
       apt_install_if_missing ubuntu-drivers-common
-      sudo ubuntu-drivers autoinstall 2>/dev/null || log_warning "NVIDIA auto-install had warnings"
-      log_success "NVIDIA drivers configured"
+      sudo add-apt-repository -y ppa:graphics-drivers/ppa >/dev/null 2>&1 || true
+      sudo apt update -qq
+      NVIDIA_RECOMMENDED=$(ubuntu-drivers devices 2>/dev/null \
+        | awk '/recommended/ {print $3}' \
+        | grep -E '^nvidia-driver-[0-9]+(-open)?$' \
+        | sort -V | tail -1)
+      if [ -n "$NVIDIA_RECOMMENDED" ]; then
+        apt_install_if_missing "$NVIDIA_RECOMMENDED"
+        log_success "NVIDIA driver ${NVIDIA_RECOMMENDED} installed"
+      else
+        sudo ubuntu-drivers autoinstall 2>/dev/null || log_warning "NVIDIA auto-install had warnings"
+        log_success "NVIDIA drivers configured (autoinstall fallback)"
+      fi
 
       # NVIDIA Prime (hybrid GPU switching for laptops with iGPU + dGPU)
       apt_install_if_missing nvidia-prime
@@ -660,15 +676,21 @@ case "$(uname)" in
         log_skip "NVIDIA DRM modesetting already configured"
       fi
 
-      # NVIDIA dynamic power management (dGPU powers down when idle, saves battery)
+      # NVIDIA power management + suspend/resume hardening
+      # DynamicPowerManagement=0x02: dGPU powers down when idle (saves battery).
+      # PreserveVideoMemoryAllocations=1: prevents VRAM corruption across the
+      # constant suspend/resume cycles of a laptop. Written unconditionally so
+      # existing machines pick up the suspend hardening on re-run.
       NVIDIA_POWER="/etc/modprobe.d/nvidia-power.conf"
-      if [ ! -f "$NVIDIA_POWER" ]; then
-        log_info "Configuring NVIDIA power management..."
-        echo 'options nvidia NVreg_DynamicPowerManagement=0x02' | sudo tee "$NVIDIA_POWER" >/dev/null
-        log_success "NVIDIA power management configured"
-      else
-        log_skip "NVIDIA power management already configured"
-      fi
+      log_info "Configuring NVIDIA power management..."
+      sudo tee "$NVIDIA_POWER" >/dev/null <<'NVPOWER'
+options nvidia NVreg_DynamicPowerManagement=0x02 NVreg_PreserveVideoMemoryAllocations=1 NVreg_TemporaryFilePath=/var/tmp
+NVPOWER
+      # Enable the driver's suspend/resume/hibernate units when present.
+      for unit in nvidia-suspend.service nvidia-hibernate.service nvidia-resume.service; do
+        sudo systemctl enable "$unit" >/dev/null 2>&1 || true
+      done
+      log_success "NVIDIA power management configured"
 
       # Mesa drivers (bleeding edge, includes RADV for AMD iGPU Vulkan)
       log_info "Installing Mesa drivers..."
@@ -692,32 +714,71 @@ case "$(uname)" in
       done
       log_success "Vulkan support installed"
 
-      # Kernel parameters for gaming (SteamOS-aligned values)
+      # iGPU media/VA-API stack, branched per machine (Intel vs AMD APU).
+      # The NVIDIA dGPU is the render path; the iGPU handles display + decode.
+      log_info "Configuring iGPU media stack..."
+      apt_install_if_missing vainfo || log_warning "vainfo unavailable"
+      if lspci | grep -iE 'VGA|3D|Display' | grep -qi intel; then
+        apt_install_if_missing intel-media-va-driver-non-free || log_warning "intel-media-va-driver-non-free unavailable"
+        apt_install_if_missing intel-gpu-tools || log_warning "intel-gpu-tools unavailable"
+        log_success "Intel iGPU media stack installed"
+      elif lspci | grep -iE 'VGA|3D|Display' | grep -qiE 'amd|ati|radeon'; then
+        apt_install_if_missing mesa-va-drivers || log_warning "mesa-va-drivers unavailable"
+        apt_install_if_missing libva2 || log_warning "libva2 unavailable"
+        log_success "AMD iGPU media stack installed"
+      else
+        log_skip "No Intel/AMD iGPU detected for media stack"
+      fi
+
+      # Kernel parameters for gaming (zram-aware, SteamOS-derived values).
+      # Written unconditionally: these are coupled with zram below, and existing
+      # machines must migrate off the old swappiness=10 / dirty_ratio values.
       GAMING_SYSCTL="/etc/sysctl.d/99-gaming.conf"
-      if [ ! -f "$GAMING_SYSCTL" ]; then
-        log_info "Configuring gaming kernel parameters..."
-        sudo tee "$GAMING_SYSCTL" >/dev/null <<'SYSCTL'
+      log_info "Configuring gaming kernel parameters..."
+      sudo tee "$GAMING_SYSCTL" >/dev/null <<'SYSCTL'
 # Memory map limit for large games (Unity, Unreal Engine)
 vm.max_map_count=2147483642
 
-# Prefer keeping game data in RAM (default 60, lower = less swap)
-vm.swappiness=10
+# High swappiness is correct WITH zram: prefer compressing to RAM over dropping
+# page cache (ratio out of 200 since kernel 5.8). Do not lower this while zram
+# is enabled.
+vm.swappiness=180
+
+# Reclaim a little earlier to avoid allocation-stall latency spikes
+vm.watermark_boost_factor=0
+vm.watermark_scale_factor=125
+
+# zram: no swap readahead batching
+vm.page-cluster=0
+
+# Absolute dirty limits cap writeback latency predictably regardless of RAM
+vm.dirty_bytes=268435456
+vm.dirty_background_bytes=134217728
+
+# Keep a small free headroom to reduce allocation stalls
+vm.min_free_kbytes=262144
 
 # Disable proactive memory compaction (reduces random latency spikes)
 vm.compaction_proactiveness=0
 
-# Reduce dirty page ratios to prevent I/O stuttering during gameplay
-vm.dirty_ratio=5
-vm.dirty_background_ratio=5
-
 # Disable split-lock mitigation (causes severe perf loss in some Proton games)
 kernel.split_lock_mitigate=0
 SYSCTL
-        sudo sysctl --system >/dev/null 2>&1
-        log_success "Gaming kernel parameters configured"
-      else
-        log_skip "Gaming kernel parameters already configured"
-      fi
+      sudo sysctl --system >/dev/null 2>&1
+      log_success "Gaming kernel parameters configured"
+
+      # zram swap (compressed RAM), coupled with vm.swappiness=180 above.
+      log_info "Configuring zram swap..."
+      apt_install_if_missing systemd-zram-generator || log_warning "systemd-zram-generator unavailable"
+      sudo mkdir -p /etc/systemd
+      sudo tee /etc/systemd/zram-generator.conf >/dev/null <<'ZRAM'
+[zram0]
+zram-size = min(ram, 8192)
+compression-algorithm = zstd
+ZRAM
+      sudo systemctl daemon-reload >/dev/null 2>&1 || true
+      sudo systemctl start systemd-zram-setup@zram0.service >/dev/null 2>&1 || true
+      log_success "zram swap configured"
 
       # Raise file descriptor limits (Wine/Proton can exceed default 1024)
       GAMING_LIMITS="/etc/security/limits.d/99-gaming.conf"
@@ -735,14 +796,127 @@ SYSCTL
         log_success "User added to input group"
       fi
 
-      # Gaming performance tools
+      # Gaming performance tools + overlays + controller udev rules
       log_info "Installing gaming tools..."
       apt_install_if_missing gamemode
       apt_install_if_missing "libgamemodeauto0:i386"
       apt_install_if_missing mangohud
+      apt_install_if_missing "mangohud:i386" || log_warning "mangohud:i386 unavailable"
       apt_install_if_missing gamescope
       apt_install_if_missing protontricks
+      apt_install_if_missing vkbasalt || log_warning "vkbasalt unavailable"
+      apt_install_if_missing "vkbasalt:i386" || log_warning "vkbasalt:i386 unavailable"
+      apt_install_if_missing goverlay || log_warning "goverlay unavailable"
+      # Valve udev rules: the single biggest "controller works outside Steam" fix
+      apt_install_if_missing steam-devices || log_warning "steam-devices unavailable"
       log_success "Gaming tools installed"
+
+      # XanMod kernel (MAIN, x64v3): fsync/winesync for Proton frame-time
+      # consistency, HZ=500, full preempt. Stock kernel stays as GRUB fallback.
+      if ! pkg_installed linux-xanmod-x64v3; then
+        log_info "Installing XanMod kernel..."
+        sudo mkdir -p /etc/apt/keyrings
+        if curl -fsSL --connect-timeout 10 --max-time 30 https://dl.xanmod.org/archive.key \
+          | sudo gpg --dearmor --yes -o /etc/apt/keyrings/xanmod-archive-keyring.gpg 2>/dev/null; then
+          echo "deb [signed-by=/etc/apt/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main" \
+            | sudo tee /etc/apt/sources.list.d/xanmod-release.list >/dev/null
+          sudo apt update -qq
+          apt_install_if_missing linux-xanmod-x64v3 || log_warning "XanMod install had warnings"
+          log_success "XanMod kernel installed"
+        else
+          log_warning "Could not fetch XanMod key, skipping custom kernel"
+        fi
+      else
+        log_skip "XanMod kernel already installed"
+      fi
+
+      # sched_ext + scx_lavd as the default scheduler (what Valve/CachyOS ship).
+      # sched_ext auto-reverts to EEVDF if the BPF scheduler fails to load.
+      log_info "Configuring scx_lavd scheduler..."
+      if apt-cache show scx-scheds >/dev/null 2>&1; then
+        apt_install_if_missing scx-scheds
+        sudo tee /etc/default/scx >/dev/null <<'SCX'
+SCX_SCHEDULER=scx_lavd
+SCX_FLAGS=""
+SCX
+        sudo systemctl enable --now scx.service >/dev/null 2>&1 \
+          || log_warning "scx.service not enabled (needs XanMod/6.12+ reboot)"
+        log_success "scx_lavd scheduler configured"
+      else
+        log_warning "scx-scheds not available in apt, skipping scheduler"
+      fi
+
+      # earlyoom instead of systemd-oomd: kills the biggest offender before a
+      # multi-second freeze, and protects steam/gamescope/wine.
+      log_info "Configuring earlyoom..."
+      apt_install_if_missing earlyoom
+      # Numeric-only args: robust in a systemd EnvironmentFile. Kill when RAM
+      # drops below 5% (with zram, swap rarely fills), report hourly.
+      sudo tee /etc/default/earlyoom >/dev/null <<'EARLYOOM'
+EARLYOOM_ARGS="-m 5 -s 100 -r 3600"
+EARLYOOM
+      sudo systemctl disable --now systemd-oomd >/dev/null 2>&1 || true
+      sudo systemctl enable --now earlyoom >/dev/null 2>&1 || true
+      sudo systemctl restart earlyoom >/dev/null 2>&1 || true
+      log_success "earlyoom configured"
+
+      # ananicy-cpp: auto-nice background processes so they never preempt games.
+      if apt-cache show ananicy-cpp >/dev/null 2>&1; then
+        log_info "Installing ananicy-cpp..."
+        apt_install_if_missing ananicy-cpp
+        sudo systemctl enable --now ananicy-cpp >/dev/null 2>&1 || true
+        log_success "ananicy-cpp installed"
+      else
+        log_skip "ananicy-cpp not in apt, skipping"
+      fi
+
+      # I/O scheduler: none for NVMe, mq-deadline for SATA SSD.
+      IOSCHED_RULE="/etc/udev/rules.d/60-ioscheduler-gaming.rules"
+      log_info "Configuring I/O scheduler..."
+      sudo tee "$IOSCHED_RULE" >/dev/null <<'IOSCHED'
+ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none"
+ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="mq-deadline"
+IOSCHED
+      sudo udevadm control --reload >/dev/null 2>&1 || true
+      log_success "I/O scheduler configured"
+
+      # Xbox controller DKMS drivers (Bluetooth + wireless dongle). Guarded and
+      # non-fatal: they build kernel modules and may lag a fresh kernel.
+      apt_install_if_missing dkms
+      if ! dkms status 2>/dev/null | grep -qi xpadneo; then
+        log_info "Installing xpadneo (Xbox Bluetooth)..."
+        XPADNEO_DIR="$HOME/.local/src/xpadneo"
+        if git_sync "https://github.com/atar-axis/xpadneo.git" "$XPADNEO_DIR" "xpadneo" \
+          && sudo "$XPADNEO_DIR/install.sh" >/dev/null 2>&1; then
+          log_success "xpadneo installed"
+        else
+          log_warning "xpadneo install skipped (build failed)"
+        fi
+      else
+        log_skip "xpadneo already installed"
+      fi
+      if ! dkms status 2>/dev/null | grep -qi xone; then
+        log_info "Installing xone (Xbox dongle/wired)..."
+        XONE_DIR="$HOME/.local/src/xone"
+        if git_sync "https://github.com/dlundqvist/xone.git" "$XONE_DIR" "xone" \
+          && sudo "$XONE_DIR/install.sh" >/dev/null 2>&1; then
+          sudo xone-get-firmware.sh --skip-disclaimer >/dev/null 2>&1 || true
+          log_success "xone installed"
+        else
+          log_warning "xone install skipped (build failed)"
+        fi
+      else
+        log_skip "xone already installed"
+      fi
+
+      # Gaming config symlinks (single source of truth in the dotfiles repo)
+      log_info "Linking gaming configs..."
+      safe_link "$HOME/.dotfiles/gamemode/gamemode.ini" "$HOME/.config/gamemode.ini"
+      safe_link "$HOME/.dotfiles/mangohud/MangoHud.conf" "$HOME/.config/MangoHud/MangoHud.conf"
+      safe_link "$HOME/.dotfiles/vkbasalt/vkBasalt.conf" "$HOME/.config/vkBasalt/vkBasalt.conf"
+      safe_link "$HOME/.dotfiles/nvidia/99-gaming-nvidia.conf" "$HOME/.config/environment.d/99-gaming-nvidia.conf"
+      mkdir -p "$HOME/.cache/nv"
+      log_success "Gaming configs linked"
 
       # Steam (from Valve's official repository)
       if ! pkg_installed steam-launcher; then
@@ -771,6 +945,23 @@ SYSCTL
       else
         log_skip "ProtonUp-Qt already installed"
       fi
+
+      # Non-Steam launchers (Epic/GOG/Amazon via Heroic, everything else via
+      # Lutris, isolated Windows apps via Bottles). Add their games to Steam as
+      # shortcuts to keep one library.
+      log_info "Installing non-Steam launchers..."
+      GAMING_FLATPAKS=(
+        com.heroicgameslauncher.hgl
+        net.lutris.Lutris
+        com.usebottles.bottles
+      )
+      for app in "${GAMING_FLATPAKS[@]}"; do
+        if ! flatpak list 2>/dev/null | grep -q "$app"; then
+          flatpak install -y --noninteractive flathub "$app" 2>/dev/null \
+            || log_warning "Flatpak install had warnings: $app"
+        fi
+      done
+      log_success "Non-Steam launchers installed"
 
       # GE-Proton (custom Proton with extra game patches, auto-download latest)
       PROTON_GE_DIR="$HOME/.steam/steam/compatibilitytools.d"

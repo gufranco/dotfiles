@@ -150,6 +150,24 @@ function __f5_update_proton_ge() {
   __log_success "GE-Proton updated to ${latest}"
 }
 
+function __f5_update_gaming_dkms() {
+  if ! __cmd_exists dkms; then
+    return
+  fi
+
+  if ! dkms status 2>/dev/null | grep -qiE 'xpadneo|xone'; then
+    return
+  fi
+
+  __log_info "Rebuilding controller kernel modules..."
+
+  if sudo dkms autoinstall >/dev/null 2>&1; then
+    __log_success "Controller modules rebuilt"
+  else
+    __log_warning "Controller module rebuild had warnings"
+  fi
+}
+
 function __f5_update_linux() {
   __log_info "Updating Linux packages..."
 
@@ -423,6 +441,7 @@ function f5() {
   case "$(uname)" in
     "Linux")
       __f5_update_linux
+      __f5_update_gaming_dkms
       __f5_update_standalone_tools
       __f5_update_nerd_fonts
       __f5_update_flatpak

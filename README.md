@@ -200,26 +200,31 @@ Each service has `-init`, `-start`, `-stop`, `-purge`, and `-terminal` functions
 
 ### Linux Gaming (x86_64 only)
 
-Full Steam + Proton gaming setup for NVIDIA hybrid GPU laptops. Installed automatically on `amd64` Ubuntu systems.
+SteamOS-parity Steam + Proton setup for NVIDIA hybrid GPU laptops. Installed automatically on `amd64` Ubuntu systems.
 
 | Component | What it does |
 |:----------|:-------------|
-| NVIDIA auto-detect | Installs the best proprietary driver for the GPU |
+| NVIDIA driver (graphics-drivers PPA) | Latest branch; open kernel modules on Turing+, proprietary on pre-Turing MX |
 | NVIDIA Prime | Hybrid GPU switching: iGPU for desktop, dGPU for games |
-| Mesa bleeding edge | Latest Vulkan (RADV) for AMD iGPU via oibaf PPA |
+| Suspend/resume hardening | Preserves VRAM across the laptop suspend cycles |
+| iGPU media stack | Per machine: Intel (media-va-driver) or AMD (mesa-va-drivers) |
+| Mesa bleeding edge | Latest Vulkan (RADV/ANV) via oibaf PPA |
 | Vulkan 64-bit + 32-bit | Full Vulkan stack for both GPUs |
-| Steam | Native .deb from Valve's official repository |
-| GE-Proton | Custom Proton with extra game patches, auto-downloaded |
-| ProtonUp-Qt | GUI manager for GE-Proton versions (Flatpak) |
-| GameMode | CPU governor + I/O priority optimization while gaming |
-| MangoHud | FPS, CPU/GPU temps, frame time overlay |
+| XanMod kernel | fsync/winesync for Proton frame-time consistency, HZ=500, full preempt |
+| scx_lavd scheduler | Latency-aware sched_ext scheduler (what Valve/CachyOS ship) |
+| zram + tuned sysctl | Compressed RAM swap with zram-aware VM tuning |
+| earlyoom | Kills the biggest offender before a freeze; protects Steam/Proton |
+| ananicy-cpp | Auto-nices background processes so they never preempt games |
+| GameMode | CPU governor flip + priority tuning while gaming |
+| MangoHud + GOverlay | FPS/frametime overlay with a managed config |
+| vkBasalt | CAS sharpening post-processing with a managed config |
 | Gamescope | Valve's micro-compositor with FSR upscaling |
-| Protontricks | Per-game Wine component installer |
-| Kernel tuning | SteamOS-aligned sysctl: memory maps, swappiness, split-lock, compaction |
-| Controller udev | steam-devices rules for PS4, PS5, Switch, Steam Controller |
-| NVIDIA power mgmt | dGPU powers down when idle to save battery |
+| Steam + GE-Proton | Native Steam; GE-Proton auto-downloaded (add proton-cachyos via ProtonUp-Qt) |
+| Heroic / Lutris / Bottles | Epic/GOG/Amazon and other launchers (Flatpak) |
+| Controller drivers | steam-devices udev + xpadneo/xone DKMS for Xbox pads |
+| NVIDIA shader cache env | Persistent, prune-proof shader cache to kill recompile stutter |
 
-**After install, reboot and run:**
+**After install, reboot** (to boot the XanMod kernel and load scx_lavd) **and run:**
 
 ```bash
 gaming-check    # verifies all components
@@ -237,9 +242,11 @@ The standard option for most games:
 prime-run gamemoderun mangohud %command%
 ```
 
-**One-time Steam setup:** Settings, Compatibility, enable "Enable Steam Play for all other titles", select "Proton Experimental" or a GE-Proton version.
+These GPUs are GTX/MX (no tensor or RT cores), so DLSS and hardware ray tracing do not apply. The performance lever is FSR upscaling via gamescope: render below native and upscale.
 
-**GE-Proton stays updated automatically** via `f5`. Check [protondb.com](https://www.protondb.com/) for per-game compatibility reports and recommended settings.
+**One-time Steam setup:** Settings, Compatibility, enable "Enable Steam Play for all other titles", select "Proton Experimental" or a GE-Proton version. Keep Settings, Downloads, Shader Pre-Caching enabled.
+
+**GE-Proton stays updated automatically** via `f5`, which also rebuilds the controller DKMS modules after a kernel bump. Check [protondb.com](https://www.protondb.com/) for per-game compatibility and [areweanticheatyet.com](https://areweanticheatyet.com/) before buying multiplayer titles.
 
 **If a game does not work:** switch to GE-Proton in the game's Compatibility settings, check ProtonDB, or use `protontricks <appid> --gui` to install missing Windows components.
 

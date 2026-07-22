@@ -47,12 +47,29 @@ check_file /etc/sysctl.d/99-gaming.conf "Gaming sysctl config"
 # Gaming file descriptor limits
 check_file /etc/security/limits.d/99-gaming.conf "Gaming limits config"
 
+# zram swap config
+check_file /etc/systemd/zram-generator.conf "zram config"
+
+# NVIDIA power + suspend hardening config
+check_file /etc/modprobe.d/nvidia-power.conf "NVIDIA power config"
+
+# I/O scheduler udev rule
+check_file /etc/udev/rules.d/60-ioscheduler-gaming.rules "I/O scheduler rule"
+
+# earlyoom config
+check_file /etc/default/earlyoom "earlyoom config"
+
 # Gaming performance tools
 check_pkg gamemode
 check_pkg "libgamemodeauto0:i386"
 check_pkg mangohud
 check_pkg gamescope
 check_pkg protontricks
+check_pkg vkbasalt
+check_pkg goverlay
+check_pkg steam-devices
+check_pkg earlyoom
+check_pkg systemd-zram-generator
 
 # Steam
 check_pkg steam-launcher

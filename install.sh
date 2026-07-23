@@ -640,10 +640,12 @@ case "$(uname)" in
       apt_install_if_missing ubuntu-drivers-common
       sudo add-apt-repository -y ppa:graphics-drivers/ppa >/dev/null 2>&1 || true
       sudo apt update -qq
+      # `|| true`: with no NVIDIA GPU present (e.g. CI containers) grep matches
+      # nothing and would abort the script under `set -o pipefail`.
       NVIDIA_RECOMMENDED=$(ubuntu-drivers devices 2>/dev/null \
         | awk '/recommended/ {print $3}' \
         | grep -E '^nvidia-driver-[0-9]+(-open)?$' \
-        | sort -V | tail -1)
+        | sort -V | tail -1 || true)
       if [ -n "$NVIDIA_RECOMMENDED" ]; then
         apt_install_if_missing "$NVIDIA_RECOMMENDED"
         log_success "NVIDIA driver ${NVIDIA_RECOMMENDED} installed"
@@ -764,7 +766,7 @@ vm.compaction_proactiveness=0
 # Disable split-lock mitigation (causes severe perf loss in some Proton games)
 kernel.split_lock_mitigate=0
 SYSCTL
-      sudo sysctl --system >/dev/null 2>&1
+      sudo sysctl --system >/dev/null 2>&1 || log_warning "some sysctl keys not applied"
       log_success "Gaming kernel parameters configured"
 
       # zram swap (compressed RAM), coupled with vm.swappiness=180 above.
@@ -849,7 +851,7 @@ SCX
       # earlyoom instead of systemd-oomd: kills the biggest offender before a
       # multi-second freeze, and protects steam/gamescope/wine.
       log_info "Configuring earlyoom..."
-      apt_install_if_missing earlyoom
+      apt_install_if_missing earlyoom || log_warning "earlyoom unavailable"
       # Numeric-only args: robust in a systemd EnvironmentFile. Kill when RAM
       # drops below 5% (with zram, swap rarely fills), report hourly.
       sudo tee /etc/default/earlyoom >/dev/null <<'EARLYOOM'
@@ -882,7 +884,7 @@ IOSCHED
 
       # Xbox controller DKMS drivers (Bluetooth + wireless dongle). Guarded and
       # non-fatal: they build kernel modules and may lag a fresh kernel.
-      apt_install_if_missing dkms
+      apt_install_if_missing dkms || log_warning "dkms unavailable"
       if ! dkms status 2>/dev/null | grep -qi xpadneo; then
         log_info "Installing xpadneo (Xbox Bluetooth)..."
         XPADNEO_DIR="$HOME/.local/src/xpadneo"

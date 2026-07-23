@@ -595,7 +595,7 @@ case "$(uname)" in
     log_info "Installing Nerd Fonts..."
     mkdir -p "$HOME/.local/share/fonts"
 
-    NERD_FONTS_VERSION=$(curl -s --connect-timeout 10 --max-time 30 https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | grep tag_name | cut -d '"' -f 4)
+    NERD_FONTS_VERSION=$(curl -s --connect-timeout 10 --max-time 30 https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | grep tag_name | cut -d '"' -f 4 || true)
     NERD_FONTS_VERSION="${NERD_FONTS_VERSION:-v3.3.0}"
 
     if [ ! -f "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" ]; then
@@ -803,14 +803,13 @@ ZRAM
       apt_install_if_missing gamemode
       apt_install_if_missing "libgamemodeauto0:i386"
       apt_install_if_missing mangohud
-      apt_install_if_missing "mangohud:i386" || log_warning "mangohud:i386 unavailable"
       apt_install_if_missing gamescope
       apt_install_if_missing protontricks
       apt_install_if_missing vkbasalt || log_warning "vkbasalt unavailable"
-      apt_install_if_missing "vkbasalt:i386" || log_warning "vkbasalt:i386 unavailable"
       apt_install_if_missing goverlay || log_warning "goverlay unavailable"
-      # Valve udev rules: the single biggest "controller works outside Steam" fix
-      apt_install_if_missing steam-devices || log_warning "steam-devices unavailable"
+      # Controller udev rules ship with Valve's steam-launcher (installed below).
+      # The standalone Ubuntu steam-devices package pulls steam-installer, which
+      # conflicts with steam-launcher and would uninstall it, so do not add it.
       log_success "Gaming tools installed"
 
       # XanMod kernel (MAIN, x64v3): fsync/winesync for Proton frame-time
@@ -972,7 +971,7 @@ IOSCHED
         log_info "Installing latest GE-Proton..."
         GE_LATEST=$(curl -sL --connect-timeout 10 --max-time 30 \
           https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest \
-          | grep tag_name | cut -d '"' -f 4)
+          | grep tag_name | cut -d '"' -f 4 || true)
         if [ -n "$GE_LATEST" ]; then
           curl -#fLo "/tmp/${GE_LATEST}.tar.gz" --connect-timeout 10 --max-time 300 \
             "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${GE_LATEST}/${GE_LATEST}.tar.gz"
@@ -1149,9 +1148,11 @@ JS_DEBUG_DIR="$HOME/.local/share/js-debug"
 if [ -f "$JS_DEBUG_DIR/src/dapDebugServer.js" ]; then
   log_skip "js-debug already installed"
 else
+  # `|| true`: a rate-limited GitHub API response has no tag_name, so grep
+  # exits non-zero and would abort the script under `set -o pipefail`.
   JS_DEBUG_TAG=$(curl -s --connect-timeout 10 --max-time 30 \
     https://api.github.com/repos/microsoft/vscode-js-debug/releases/latest \
-    | grep '"tag_name"' | cut -d '"' -f 4)
+    | grep '"tag_name"' | cut -d '"' -f 4 || true)
   if [ -n "$JS_DEBUG_TAG" ]; then
     JS_DEBUG_TARBALL="/tmp/js-debug-${JS_DEBUG_TAG}.tar.gz"
     if curl -#fL --connect-timeout 10 --max-time 180 -o "$JS_DEBUG_TARBALL" \

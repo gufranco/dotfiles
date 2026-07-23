@@ -181,12 +181,11 @@ function gaming-check() {
     ((errors++))
   fi
 
-  # Controller udev rules
-  if dpkg -l steam-devices 2>/dev/null | grep -q "^ii"; then
-    __log_success "steam-devices: installed"
+  # Controller udev rules (shipped by Valve's steam-launcher)
+  if command ls /lib/udev/rules.d/*steam* /usr/lib/udev/rules.d/*steam* >/dev/null 2>&1; then
+    __log_success "Steam controller udev rules: present"
   else
-    __log_warning "steam-devices: not installed"
-    ((errors++))
+    __log_warning "Steam controller udev rules: not found (start Steam once)"
   fi
 
   # Managed config symlinks

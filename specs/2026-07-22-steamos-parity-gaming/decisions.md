@@ -79,6 +79,21 @@ Symlink `gamemode.ini` to `~/.config/gamemode.ini` (no sudo) rather than
 one fixed device and misbehave with PRIME offload on NVIDIA hybrid. dGPU clocks
 are handled by the NVIDIA driver's dynamic power management already.
 
+### D15. steam-devices dropped (conflicts with Valve steam-launcher)
+The Ubuntu `steam-devices` package pulls `steam-installer`, which conflicts
+with Valve's `steam-launcher` and makes apt uninstall it. CI caught this on the
+idempotency pass (steam-launcher removed, Verify Steam failed). Valve's
+steam-launcher already ships the controller udev rules, so steam-devices is
+redundant. Removed from install.sh and both verify scripts. Controller support
+now rests on Valve steam-launcher rules + kernel hid-playstation + xpadneo/xone.
+
+### D16. Guard every `$(curl | grep)` tag lookup against pipefail
+Under `set -o pipefail`, a rate-limited GitHub API response makes `grep` exit
+non-zero and aborts install.sh. Fixed the new NVIDIA detection and, per
+found-fix, the pre-existing nerd-fonts, GE-Proton, and js-debug lookups by
+appending `|| true`. `mangohud:i386` and `vkbasalt:i386` were dropped: no i386
+candidate on Ubuntu 26.04.
+
 ### D14. Uncertain-availability packages are guarded, never fatal
 `ananicy-cpp`, `xpadneo`, `xone`, and `scx-scheds` packaging on Ubuntu 26.04
 cannot be verified from the authoring environment. install.sh installs them

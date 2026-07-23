@@ -67,7 +67,6 @@ check_pkg gamescope
 check_pkg protontricks
 check_pkg vkbasalt
 check_pkg goverlay
-check_pkg steam-devices
 check_pkg earlyoom
 check_pkg systemd-zram-generator
 

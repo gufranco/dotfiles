@@ -29,13 +29,12 @@ source "$ZSH/oh-my-zsh.sh"
 # External tool initialization
 ################################################################################
 # Must run after oh-my-zsh: compinit defines compdef, which these completion
-# and hook scripts call. ngrok's script calls compdef unconditionally, so
-# running it earlier errors and skips completion registration.
+# and hook scripts call. Running them earlier errors and skips completion
+# registration.
 __cached_eval direnv hook zsh
 __cached_eval mise activate zsh
 __cached_eval zoxide init zsh
 __cached_eval atuin init zsh --disable-up-arrow
-__cached_eval ngrok completion
 
 ################################################################################
 # Aliases

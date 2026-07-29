@@ -1,6 +1,6 @@
 # Navi - https://github.com/denisidoro/navi
 # Symlinked to ~/.config/navi/config.yaml
-
+---
 style:
   tag:
     color: blue

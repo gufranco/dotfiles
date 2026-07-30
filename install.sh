@@ -253,19 +253,19 @@ case "$(uname)" in
     ############################################################################
     APPS=(
       # File managers & Cloud
-      nautilus-dropbox mc
+      nautilus-dropbox mc ranger
 
       # Search & Navigation
-      fzf universal-ctags
+      fzf universal-ctags broot
 
       # Shell & Terminal
-      direnv tealdeer tmuxp gum just
+      direnv tealdeer tmuxp gum just thefuck
 
       # Text & Data tools
       glow yq
 
       # Email & Web
-      neomutt lynx
+      neomutt lynx newsboat
 
       # Media
       vlc cmus asciinema ffmpeg fatsort
@@ -280,17 +280,17 @@ case "$(uname)" in
       restic
 
       # System monitoring
-      duf du-dust fastfetch cpufetch procs btm
+      duf du-dust fastfetch cpufetch procs btm glances goaccess
 
       # Security & Encryption
       age
 
       # Dev tools
-      hyperfine tokei tty-clock bear entr bats pipx stress-ng
+      hyperfine tokei tty-clock bear entr bats pipx stress-ng taskwarrior
       openjdk-21-jdk libpq-dev
 
       # Git & Version Control
-      glab lazygit
+      glab lazygit tig
 
       # Cloud & Infrastructure
       ansible
@@ -444,6 +444,25 @@ case "$(uname)" in
       fi
     else
       log_skip "yazi already installed"
+    fi
+
+    if ! cmd_exists navi; then
+      log_info "Installing navi..."
+      NAVI_TAG="$(github_latest_tag denisidoro/navi || true)"
+      case "$DEB_ARCH" in
+        amd64) NAVI_TARGET="x86_64-unknown-linux-musl" ;;
+        arm64) NAVI_TARGET="aarch64-unknown-linux-gnu" ;;
+        *) NAVI_TARGET="" ;;
+      esac
+      if [ -n "$NAVI_TAG" ] && [ -n "$NAVI_TARGET" ] && install_tarball_binary \
+        "https://github.com/denisidoro/navi/releases/download/${NAVI_TAG}/navi-${NAVI_TAG}-${NAVI_TARGET}.tar.gz" \
+        navi; then
+        log_success "navi ${NAVI_TAG} installed"
+      else
+        log_warning "navi install failed"
+      fi
+    else
+      log_skip "navi already installed"
     fi
 
     if ! cmd_exists lazydocker; then

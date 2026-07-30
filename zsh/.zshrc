@@ -35,6 +35,7 @@ __cached_eval direnv hook zsh
 __cached_eval mise activate zsh
 __cached_eval zoxide init zsh
 __cached_eval atuin init zsh --disable-up-arrow
+__cached_eval thefuck --alias
 
 ################################################################################
 # Aliases

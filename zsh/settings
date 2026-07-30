@@ -142,12 +142,6 @@ eval-cache-clear() {
 # completion.
 
 ################################################################################
-# starship prompt (loads after oh-my-zsh spaceship if both present)
-################################################################################
-# Uncomment to switch from spaceship to starship:
-# command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
-
-################################################################################
 # eza
 ################################################################################
 export EZA_CONFIG_DIR="$HOME/.config/eza"
@@ -222,6 +216,19 @@ export SPACESHIP_CHAR_SUFFIX=" "
 ################################################################################
 # Token management (GPG-decrypted secrets with file cache)
 ################################################################################
+function __token_cache_is_fresh() {
+  local cache_file="$1"
+  local max_age="${DOTFILES_TOKEN_CACHE_MAX_AGE:-86400}"
+
+  [ -f "$cache_file" ] || return 1
+
+  local cached_at
+  cached_at="$(command stat -c '%Y' "$cache_file" 2>/dev/null || command stat -f '%m' "$cache_file" 2>/dev/null)" || return 1
+  [ -n "$cached_at" ] || return 1
+
+  [ "$(($(date +%s) - cached_at))" -lt "$max_age" ]
+}
+
 function __update_token() {
   local force="${1:-false}"
   local env_var_name="$2"
@@ -238,7 +245,7 @@ function __update_token() {
   local token_content
 
   # Try cache first (unless force refresh)
-  if [ "$force" != "true" ] && [ -f "$cache_file" ]; then
+  if [ "$force" != "true" ] && __token_cache_is_fresh "$cache_file"; then
     token_content="$(cat "$cache_file" 2>/dev/null | tr -d '\n')"
     if [ -n "$token_content" ]; then
       export "${env_var_name}"="$token_content"

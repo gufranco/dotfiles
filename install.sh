@@ -49,6 +49,9 @@ safe_link() { __safe_link "$@"; }
 git_sync() { __git_sync "$@"; }
 apt_install_if_missing() { __apt_install_if_missing "$@"; }
 apt_add_key_and_repo() { __apt_add_key_and_repo "$@"; }
+github_latest_tag() { __github_latest_tag "$@"; }
+apt_install_deb_url() { __apt_install_deb_url "$@"; }
+install_tarball_binary() { __install_tarball_binary "$@"; }
 brew_install_if_missing() { __brew_install_if_missing "$@"; }
 brew_install_cask_if_missing() { __brew_install_cask_if_missing "$@"; }
 github_repo_sync() {
@@ -250,13 +253,13 @@ case "$(uname)" in
     ############################################################################
     APPS=(
       # File managers & Cloud
-      nautilus-dropbox
+      nautilus-dropbox mc
 
       # Search & Navigation
       fzf universal-ctags
 
       # Shell & Terminal
-      direnv tealdeer tmuxp
+      direnv tealdeer tmuxp gum just
 
       # Text & Data tools
       glow yq
@@ -277,7 +280,7 @@ case "$(uname)" in
       restic
 
       # System monitoring
-      duf du-dust fastfetch cpufetch procs
+      duf du-dust fastfetch cpufetch procs btm
 
       # Security & Encryption
       age
@@ -287,7 +290,7 @@ case "$(uname)" in
       openjdk-21-jdk libpq-dev
 
       # Git & Version Control
-      glab
+      glab lazygit
 
       # Cloud & Infrastructure
       ansible
@@ -405,6 +408,53 @@ case "$(uname)" in
     # Atuin (shell history)
     ############################################################################
     apt_install_if_missing atuin
+
+    DEB_ARCH="$(dpkg --print-architecture)"
+    case "$DEB_ARCH" in
+      amd64) RUST_TARGET_ARCH="x86_64"; LAZYDOCKER_ARCH="x86_64" ;;
+      arm64) RUST_TARGET_ARCH="aarch64"; LAZYDOCKER_ARCH="arm64" ;;
+      *) RUST_TARGET_ARCH=""; LAZYDOCKER_ARCH="" ;;
+    esac
+
+    if ! cmd_exists k9s; then
+      log_info "Installing k9s..."
+      K9S_TAG="$(github_latest_tag derailed/k9s || true)"
+      if [ -n "$K9S_TAG" ] && apt_install_deb_url \
+        "https://github.com/derailed/k9s/releases/download/${K9S_TAG}/k9s_linux_${DEB_ARCH}.deb"; then
+        log_success "k9s ${K9S_TAG} installed"
+      else
+        log_warning "k9s install failed"
+      fi
+    else
+      log_skip "k9s already installed"
+    fi
+
+    if ! cmd_exists yazi; then
+      log_info "Installing yazi..."
+      YAZI_TAG="$(github_latest_tag sxyazi/yazi || true)"
+      if [ -n "$YAZI_TAG" ] && [ -n "$RUST_TARGET_ARCH" ] && apt_install_deb_url \
+        "https://github.com/sxyazi/yazi/releases/download/${YAZI_TAG}/yazi-${RUST_TARGET_ARCH}-unknown-linux-gnu.deb"; then
+        log_success "yazi ${YAZI_TAG} installed"
+      else
+        log_warning "yazi install failed"
+      fi
+    else
+      log_skip "yazi already installed"
+    fi
+
+    if ! cmd_exists lazydocker; then
+      log_info "Installing lazydocker..."
+      LAZYDOCKER_TAG="$(github_latest_tag jesseduffield/lazydocker || true)"
+      if [ -n "$LAZYDOCKER_TAG" ] && [ -n "$LAZYDOCKER_ARCH" ] && install_tarball_binary \
+        "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_TAG}/lazydocker_${LAZYDOCKER_TAG#v}_Linux_${LAZYDOCKER_ARCH}.tar.gz" \
+        lazydocker; then
+        log_success "lazydocker ${LAZYDOCKER_TAG} installed"
+      else
+        log_warning "lazydocker install failed"
+      fi
+    else
+      log_skip "lazydocker already installed"
+    fi
 
     ############################################################################
     # Golang
@@ -1037,52 +1087,6 @@ IOSCHED
     log_success "Homebrew packages updated"
 
     ############################################################################
-    # torrentzip (Go, not in Homebrew)
-    ############################################################################
-    if ! cmd_exists torrentzip; then
-      log_info "Installing torrentzip..."
-      if cmd_exists go; then
-        go install github.com/uwedeportivo/torrentzip/cmd/torrentzip@latest
-        log_success "torrentzip installed"
-      else
-        log_warning "Go not found, skipping torrentzip"
-      fi
-    else
-      log_skip "torrentzip already installed"
-    fi
-
-    ############################################################################
-    # pipx CLI tools (Pipxfile)
-    ############################################################################
-    if cmd_exists pipx && [ -f "$HOME/.dotfiles/Pipxfile" ]; then
-      log_info "Installing pipx tools..."
-      pipx_ok=0
-      pipx_skip=0
-      pipx_fail=0
-      while IFS= read -r pkg || [ -n "$pkg" ]; do
-        [[ -z "$pkg" || "$pkg" == \#* ]] && continue
-        pkg_name="${pkg%%\[*}"
-        if pipx list --short 2>/dev/null | awk '{print $1}' | grep -Fqx "$pkg_name"; then
-          ((pipx_skip++)) || true
-        else
-          if pipx install "$pkg" --quiet 2>/dev/null; then
-            ((pipx_ok++)) || true
-          else
-            log_warning "Failed to install pipx package: $pkg"
-            ((pipx_fail++)) || true
-          fi
-        fi
-      done < "$HOME/.dotfiles/Pipxfile"
-      if [ "$pipx_fail" -eq 0 ]; then
-        log_success "pipx tools installed (new: $pipx_ok, already present: $pipx_skip)"
-      else
-        log_warning "pipx tools installed with $pipx_fail failure(s)"
-      fi
-    else
-      log_skip "pipx not found or Pipxfile missing, skipping pipx tools"
-    fi
-
-    ############################################################################
     # Bash
     ############################################################################
     if ! grep -q "$HOMEBREW_PREFIX/bin/bash" /etc/shells 2>/dev/null; then
@@ -1117,6 +1121,47 @@ esac
 ############################################################################
 # Python (debugger + REPL)
 ############################################################################
+if ! cmd_exists torrentzip; then
+  log_info "Installing torrentzip..."
+  if cmd_exists go; then
+    go install github.com/uwedeportivo/torrentzip/cmd/torrentzip@latest
+    log_success "torrentzip installed"
+  else
+    log_warning "Go not found, skipping torrentzip"
+  fi
+else
+  log_skip "torrentzip already installed"
+fi
+
+if cmd_exists pipx && [ -f "$HOME/.dotfiles/Pipxfile" ]; then
+  log_info "Installing pipx tools..."
+  pipx_ok=0
+  pipx_skip=0
+  pipx_fail=0
+  while IFS= read -r pkg || [ -n "$pkg" ]; do
+    [ -z "$pkg" ] && continue
+    [ "${pkg:0:1}" = '#' ] && continue
+    pkg_name="${pkg%%\[*}"
+    if pipx list --short 2>/dev/null | awk '{print $1}' | grep -Fqx "$pkg_name"; then
+      ((pipx_skip++)) || true
+    else
+      if pipx install "$pkg" --quiet 2>/dev/null; then
+        ((pipx_ok++)) || true
+      else
+        log_warning "Failed to install pipx package: $pkg"
+        ((pipx_fail++)) || true
+      fi
+    fi
+  done < "$HOME/.dotfiles/Pipxfile"
+  if [ "$pipx_fail" -eq 0 ]; then
+    log_success "pipx tools installed (new: $pipx_ok, already present: $pipx_skip)"
+  else
+    log_warning "pipx tools installed with $pipx_fail failure(s)"
+  fi
+else
+  log_skip "pipx not found or Pipxfile missing, skipping pipx tools"
+fi
+
 log_info "Setting up Python debugging configs..."
 safe_link "$HOME/.dotfiles/python/.pdbrc" "$HOME/.pdbrc"
 safe_link "$HOME/.dotfiles/python/pythonrc" "$HOME/.pythonrc"

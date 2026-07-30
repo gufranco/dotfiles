@@ -79,9 +79,13 @@ jobs:
 
       - name: Run install.sh
         run: bash install.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Re-run install.sh (idempotency)
         run: bash install.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify symlinks
         run: bash .github/scripts/verify-symlinks.sh
@@ -91,8 +95,9 @@ jobs:
           set -euo pipefail
           # Source cargo env for rustc (installed via rustup, not in system PATH)
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+          export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
           errors=0
-          cmds="zsh git vim tmux curl wget fzf rg bat eza fdfind delta gh node go starship docker tokei google-chrome-stable gamemoderun mangohud gamescope protontricks zoxide atuin rustc mise direnv entr ffmpeg sshpass"
+          cmds="zsh git vim tmux curl wget fzf rg bat eza fdfind delta gh node go starship docker tokei google-chrome-stable gamemoderun mangohud gamescope protontricks zoxide atuin rustc mise direnv entr ffmpeg sshpass mc gum just btm lazygit k9s yazi lazydocker torrentzip arjun wafw00f scapy graphify"
 
           for cmd in $cmds; do
             if command -v "$cmd" >/dev/null 2>&1; then

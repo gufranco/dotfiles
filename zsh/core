@@ -129,6 +129,46 @@ function __apt_add_key_and_repo() {
   fi
 }
 
+function __github_latest_tag() {
+  local token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+  local -a auth=()
+  [ -n "$token" ] && auth=(-H "Authorization: Bearer $token")
+
+  curl -fsSL --connect-timeout 10 --max-time 30 "${auth[@]}" \
+    "https://api.github.com/repos/$1/releases/latest" \
+    | grep '"tag_name"' | cut -d '"' -f 4
+}
+
+function __apt_install_deb_url() {
+  local url="$1"
+  local tmpdir status
+  tmpdir="$(mktemp -d)" || return 1
+  if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/package.deb"; then
+    sudo apt install -y -qq "$tmpdir/package.deb"
+    status=$?
+  else
+    status=1
+  fi
+  rm -rf "$tmpdir"
+  return "$status"
+}
+
+function __install_tarball_binary() {
+  local url="$1"
+  local binary="$2"
+  local tmpdir status
+  tmpdir="$(mktemp -d)" || return 1
+  if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/archive.tar.gz" \
+    && tar -xzf "$tmpdir/archive.tar.gz" -C "$tmpdir" "$binary"; then
+    sudo install -m 755 "$tmpdir/$binary" "/usr/local/bin/$binary"
+    status=$?
+  else
+    status=1
+  fi
+  rm -rf "$tmpdir"
+  return "$status"
+}
+
 function __brew_install_if_missing() {
   local package="$1"
   brew list "$package" >/dev/null 2>&1 || brew install "$package"

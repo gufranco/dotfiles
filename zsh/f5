@@ -335,10 +335,11 @@ function __f5_update_python() {
     [[ -z "$pkg" || "$pkg" == \#* ]] && continue
     local pkg_name="${pkg%%\[*}"
     if pipx list --short 2>/dev/null | awk '{print $1}' | grep -Fqx "$pkg_name"; then
-      ((skip_count++))
+      skip_count=$((skip_count + 1))
+    elif pipx install "$pkg" --quiet 2>/dev/null; then
+      installed_count=$((installed_count + 1))
     else
-      pipx install "$pkg" --quiet 2>/dev/null && ((installed_count++)) || \
-        __log_warning "Failed to install pipx package: $pkg"
+      __log_warning "Failed to install pipx package: $pkg"
     fi
   done < "$pipxfile"
 
@@ -356,7 +357,9 @@ function __f5_update_python() {
       [[ "${line%%\[*}" == "$installed_pkg" ]] && found=true && break
     done < "$pipxfile"
     if ! $found; then
-      pipx uninstall "$installed_pkg" --quiet 2>/dev/null && ((removed_count++))
+      if pipx uninstall "$installed_pkg" --quiet 2>/dev/null; then
+        removed_count=$((removed_count + 1))
+      fi
     fi
   done < <(pipx list --short 2>/dev/null | awk '{print $1}')
 

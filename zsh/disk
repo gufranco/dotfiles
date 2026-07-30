@@ -485,6 +485,7 @@ function fat_sort() {
       sudo mdutil -X "$mount_point" >/dev/null 2>&1
     fi
 
+    # shellcheck disable=SC2016
     local patterns=(
       # macOS (current)
       ".DS_Store"

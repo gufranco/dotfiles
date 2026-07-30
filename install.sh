@@ -1114,6 +1114,15 @@ IOSCHED
     brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade --greedy --force || log_warning "Brew upgrade had failures"
     brew cleanup -s || true
+
+    while IFS= read -r unlinked_formula; do
+      [ -z "$unlinked_formula" ] && continue
+      log_info "Linking $unlinked_formula..."
+      brew link --overwrite "$unlinked_formula" >/dev/null 2>&1 ||
+        log_warning "Could not link $unlinked_formula"
+    done < <(brew bundle check --verbose --file "$HOME/.dotfiles/Brewfile" 2>&1 |
+      awk '/needs to be linked/ {print $3}')
+
     log_success "Homebrew packages updated"
 
     ############################################################################

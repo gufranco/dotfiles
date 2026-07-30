@@ -28,12 +28,19 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+      - name: Install ShellCheck
+        run: |
+          gh release download --repo koalaman/shellcheck --pattern 'shellcheck-*.linux.x86_64.tar.xz' --output shellcheck.tar.xz
+          tar -xJf shellcheck.tar.xz --strip-components=1 --wildcards '*/shellcheck'
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Run ShellCheck
         run: |
           set -euo pipefail
-          shellcheck install.sh
-          shellcheck .github/scripts/*.sh
-          shellcheck -x -e SC1091 zsh/*
+          ./shellcheck --version
+          ./shellcheck install.sh
+          ./shellcheck .github/scripts/*.sh
+          ./shellcheck -x -e SC1091 zsh/*
 
   shfmt:
     name: shfmt

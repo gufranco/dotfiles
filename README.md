@@ -263,7 +263,6 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 | Bat | `catppuccin/bat` submodule tmTheme |
 | Delta | `catppuccin/delta` submodule feature |
 | Neovim/Vim | `catppuccin/nvim` plugin + lightline |
-| Starship | Official `catppuccin_mocha` palette |
 | Tmux | `catppuccin/tmux` plugin |
 | Bottom | Official Mocha `[styles]` |
 | K9s | `catppuccin/k9s` submodule skin |
@@ -317,7 +316,6 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `bat/catppuccin/themes` | `~/.config/bat/themes` |
 | `eza` | `~/.config/eza` |
 | `yazi` | `~/.config/yazi` |
-| `starship/starship.toml` | `~/.config/starship.toml` |
 | `kanata/kanata.kbd` | `~/.config/kanata/kanata.kbd` |
 | `mise/config.toml` | `~/.config/mise/config.toml` |
 | `bottom/bottom.toml` | `~/.config/bottom/bottom.toml` |
@@ -407,7 +405,6 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── readline/         # Readline config
 ├── ripgrep/          # Ripgrep config
 ├── ssh/              # SSH config and public keys
-├── starship/         # Starship prompt config
 ├── tealdeer/         # Tealdeer (tldr) config, Catppuccin Mocha
 ├── telnet/           # Telnet config
 ├── themes/           # Terminal themes (iTerm2)

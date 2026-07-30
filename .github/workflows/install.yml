@@ -97,7 +97,7 @@ jobs:
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
           export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
           errors=0
-          cmds="zsh git vim tmux curl wget fzf rg bat eza fdfind delta gh node go starship docker tokei google-chrome-stable gamemoderun mangohud gamescope protontricks zoxide atuin rustc mise direnv entr ffmpeg sshpass mc gum just btm lazygit k9s yazi lazydocker torrentzip arjun wafw00f scapy graphify"
+          cmds="zsh git vim tmux curl wget fzf rg bat eza fdfind delta gh node go docker tokei google-chrome-stable gamemoderun mangohud gamescope protontricks zoxide atuin rustc mise direnv entr ffmpeg sshpass mc gum just btm lazygit k9s yazi lazydocker torrentzip arjun wafw00f scapy graphify"
 
           for cmd in $cmds; do
             if command -v "$cmd" >/dev/null 2>&1; then

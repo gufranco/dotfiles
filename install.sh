@@ -395,11 +395,6 @@ case "$(uname)" in
     apt_install_if_missing git-delta
 
     ############################################################################
-    # Starship prompt
-    ############################################################################
-    apt_install_if_missing starship
-
-    ############################################################################
     # Zoxide (smart cd)
     ############################################################################
     apt_install_if_missing zoxide
@@ -1483,14 +1478,6 @@ fi
 log_info "Setting up Yazi..."
 safe_link "$HOME/.dotfiles/yazi" "$HOME/.config/yazi"
 if cmd_exists ya; then ya pkg install 2>/dev/null || true; fi
-
-############################################################################
-# Starship
-############################################################################
-if cmd_exists starship; then
-  log_info "Setting up Starship..."
-  safe_link "$HOME/.dotfiles/starship/starship.toml" "$HOME/.config/starship.toml"
-fi
 
 ############################################################################
 # Kanata

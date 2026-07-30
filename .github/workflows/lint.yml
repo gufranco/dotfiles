@@ -29,7 +29,26 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Run ShellCheck
-        run: shellcheck install.sh
+        run: |
+          set -euo pipefail
+          shellcheck install.sh
+          shellcheck .github/scripts/*.sh
+          shellcheck -x -e SC1091 zsh/*
+
+  shfmt:
+    name: shfmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install shfmt
+        run: |
+          gh release download --repo mvdan/sh --pattern 'shfmt_*_linux_amd64' --output shfmt
+          chmod +x shfmt
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Check formatting
+        run: ./shfmt -i 2 -ci -d install.sh .github/scripts/*.sh
 
   zsh-syntax:
     name: Zsh syntax

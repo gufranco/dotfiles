@@ -411,9 +411,18 @@ case "$(uname)" in
 
     DEB_ARCH="$(dpkg --print-architecture)"
     case "$DEB_ARCH" in
-      amd64) RUST_TARGET_ARCH="x86_64"; LAZYDOCKER_ARCH="x86_64" ;;
-      arm64) RUST_TARGET_ARCH="aarch64"; LAZYDOCKER_ARCH="arm64" ;;
-      *) RUST_TARGET_ARCH=""; LAZYDOCKER_ARCH="" ;;
+      amd64)
+        RUST_TARGET_ARCH="x86_64"
+        LAZYDOCKER_ARCH="x86_64"
+        ;;
+      arm64)
+        RUST_TARGET_ARCH="aarch64"
+        LAZYDOCKER_ARCH="arm64"
+        ;;
+      *)
+        RUST_TARGET_ARCH=""
+        LAZYDOCKER_ARCH=""
+        ;;
     esac
 
     if ! cmd_exists k9s; then
@@ -627,8 +636,14 @@ case "$(uname)" in
     # Snap packages (require systemd, skip in CI/containers)
     # Postman and Discord have no official apt repos
     if [[ -z "$CI" ]] && cmd_exists snap; then
-      snap_installed postman || { log_info "Installing Postman..."; sudo snap install postman 2>/dev/null || true; }
-      snap_installed discord || { log_info "Installing Discord..."; sudo snap install discord 2>/dev/null || true; }
+      snap_installed postman || {
+        log_info "Installing Postman..."
+        sudo snap install postman 2>/dev/null || true
+      }
+      snap_installed discord || {
+        log_info "Installing Discord..."
+        sudo snap install discord 2>/dev/null || true
+      }
     else
       log_skip "Snap packages (CI environment or snapd unavailable)"
     fi
@@ -692,10 +707,10 @@ case "$(uname)" in
       sudo apt update -qq
       # `|| true`: with no NVIDIA GPU present (e.g. CI containers) grep matches
       # nothing and would abort the script under `set -o pipefail`.
-      NVIDIA_RECOMMENDED=$(ubuntu-drivers devices 2>/dev/null \
-        | awk '/recommended/ {print $3}' \
-        | grep -E '^nvidia-driver-[0-9]+(-open)?$' \
-        | sort -V | tail -1 || true)
+      NVIDIA_RECOMMENDED=$(ubuntu-drivers devices 2>/dev/null |
+        awk '/recommended/ {print $3}' |
+        grep -E '^nvidia-driver-[0-9]+(-open)?$' |
+        sort -V | tail -1 || true)
       if [ -n "$NVIDIA_RECOMMENDED" ]; then
         apt_install_if_missing "$NVIDIA_RECOMMENDED"
         log_success "NVIDIA driver ${NVIDIA_RECOMMENDED} installed"
@@ -867,10 +882,10 @@ ZRAM
       if ! pkg_installed linux-xanmod-x64v3; then
         log_info "Installing XanMod kernel..."
         sudo mkdir -p /etc/apt/keyrings
-        if curl -fsSL --connect-timeout 10 --max-time 30 https://dl.xanmod.org/archive.key \
-          | sudo gpg --dearmor --yes -o /etc/apt/keyrings/xanmod-archive-keyring.gpg 2>/dev/null; then
-          echo "deb [signed-by=/etc/apt/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main" \
-            | sudo tee /etc/apt/sources.list.d/xanmod-release.list >/dev/null
+        if curl -fsSL --connect-timeout 10 --max-time 30 https://dl.xanmod.org/archive.key |
+          sudo gpg --dearmor --yes -o /etc/apt/keyrings/xanmod-archive-keyring.gpg 2>/dev/null; then
+          echo "deb [signed-by=/etc/apt/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main" |
+            sudo tee /etc/apt/sources.list.d/xanmod-release.list >/dev/null
           sudo apt update -qq
           apt_install_if_missing linux-xanmod-x64v3 || log_warning "XanMod install had warnings"
           log_success "XanMod kernel installed"
@@ -890,8 +905,8 @@ ZRAM
 SCX_SCHEDULER=scx_lavd
 SCX_FLAGS=""
 SCX
-        sudo systemctl enable --now scx.service >/dev/null 2>&1 \
-          || log_warning "scx.service not enabled (needs XanMod/6.12+ reboot)"
+        sudo systemctl enable --now scx.service >/dev/null 2>&1 ||
+          log_warning "scx.service not enabled (needs XanMod/6.12+ reboot)"
         log_success "scx_lavd scheduler configured"
       else
         log_warning "scx-scheds not available in apt, skipping scheduler"
@@ -937,8 +952,8 @@ IOSCHED
       if ! dkms status 2>/dev/null | grep -qi xpadneo; then
         log_info "Installing xpadneo (Xbox Bluetooth)..."
         XPADNEO_DIR="$HOME/.local/src/xpadneo"
-        if git_sync "https://github.com/atar-axis/xpadneo.git" "$XPADNEO_DIR" "xpadneo" \
-          && sudo "$XPADNEO_DIR/install.sh" >/dev/null 2>&1; then
+        if git_sync "https://github.com/atar-axis/xpadneo.git" "$XPADNEO_DIR" "xpadneo" &&
+          sudo "$XPADNEO_DIR/install.sh" >/dev/null 2>&1; then
           log_success "xpadneo installed"
         else
           log_warning "xpadneo install skipped (build failed)"
@@ -949,8 +964,8 @@ IOSCHED
       if ! dkms status 2>/dev/null | grep -qi xone; then
         log_info "Installing xone (Xbox dongle/wired)..."
         XONE_DIR="$HOME/.local/src/xone"
-        if git_sync "https://github.com/dlundqvist/xone.git" "$XONE_DIR" "xone" \
-          && sudo "$XONE_DIR/install.sh" >/dev/null 2>&1; then
+        if git_sync "https://github.com/dlundqvist/xone.git" "$XONE_DIR" "xone" &&
+          sudo "$XONE_DIR/install.sh" >/dev/null 2>&1; then
           sudo xone-get-firmware.sh --skip-disclaimer >/dev/null 2>&1 || true
           log_success "xone installed"
         else
@@ -1008,8 +1023,8 @@ IOSCHED
       )
       for app in "${GAMING_FLATPAKS[@]}"; do
         if ! flatpak list 2>/dev/null | grep -q "$app"; then
-          flatpak install -y --noninteractive flathub "$app" 2>/dev/null \
-            || log_warning "Flatpak install had warnings: $app"
+          flatpak install -y --noninteractive flathub "$app" 2>/dev/null ||
+            log_warning "Flatpak install had warnings: $app"
         fi
       done
       log_success "Non-Steam launchers installed"
@@ -1020,8 +1035,8 @@ IOSCHED
       if [ -z "$(command ls -A "$PROTON_GE_DIR" 2>/dev/null)" ]; then
         log_info "Installing latest GE-Proton..."
         GE_LATEST=$(curl -sL --connect-timeout 10 --max-time 30 \
-          https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest \
-          | grep tag_name | cut -d '"' -f 4 || true)
+          https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest |
+          grep tag_name | cut -d '"' -f 4 || true)
         if [ -n "$GE_LATEST" ]; then
           curl -#fLo "/tmp/${GE_LATEST}.tar.gz" --connect-timeout 10 --max-time 300 \
             "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${GE_LATEST}/${GE_LATEST}.tar.gz"
@@ -1152,7 +1167,7 @@ if cmd_exists pipx && [ -f "$HOME/.dotfiles/Pipxfile" ]; then
         ((pipx_fail++)) || true
       fi
     fi
-  done < "$HOME/.dotfiles/Pipxfile"
+  done <"$HOME/.dotfiles/Pipxfile"
   if [ "$pipx_fail" -eq 0 ]; then
     log_success "pipx tools installed (new: $pipx_ok, already present: $pipx_skip)"
   else
@@ -1196,15 +1211,15 @@ else
   # `|| true`: a rate-limited GitHub API response has no tag_name, so grep
   # exits non-zero and would abort the script under `set -o pipefail`.
   JS_DEBUG_TAG=$(curl -s --connect-timeout 10 --max-time 30 \
-    https://api.github.com/repos/microsoft/vscode-js-debug/releases/latest \
-    | grep '"tag_name"' | cut -d '"' -f 4 || true)
+    https://api.github.com/repos/microsoft/vscode-js-debug/releases/latest |
+    grep '"tag_name"' | cut -d '"' -f 4 || true)
   if [ -n "$JS_DEBUG_TAG" ]; then
     JS_DEBUG_TARBALL="/tmp/js-debug-${JS_DEBUG_TAG}.tar.gz"
     if curl -#fL --connect-timeout 10 --max-time 180 -o "$JS_DEBUG_TARBALL" \
       "https://github.com/microsoft/vscode-js-debug/releases/download/${JS_DEBUG_TAG}/js-debug-dap-${JS_DEBUG_TAG}.tar.gz"; then
       mkdir -p "$JS_DEBUG_DIR"
       if tar -xzf "$JS_DEBUG_TARBALL" -C "$JS_DEBUG_DIR" --strip-components=1; then
-        echo "$JS_DEBUG_TAG" > "$JS_DEBUG_DIR/.version"
+        echo "$JS_DEBUG_TAG" >"$JS_DEBUG_DIR/.version"
         log_success "js-debug ${JS_DEBUG_TAG} installed"
       else
         log_warning "Failed to extract js-debug"

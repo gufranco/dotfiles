@@ -6,7 +6,7 @@ check_perm() {
   local actual
 
   case "$(uname)" in
-    Linux)  actual=$(stat -Lc %a "$path" 2>/dev/null || echo "missing") ;;
+    Linux) actual=$(stat -Lc %a "$path" 2>/dev/null || echo "missing") ;;
     Darwin) actual=$(stat -Lf %Lp "$path" 2>/dev/null || echo "missing") ;;
   esac
 

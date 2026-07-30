@@ -150,6 +150,14 @@ function __add_to_path() {
   export PATH="$1${p:+:$p}"
 }
 
+function __append_to_path() {
+  local p=":$PATH:"
+  p="${p//:$1:/:}"
+  p="${p#:}"
+  p="${p%:}"
+  export PATH="${p:+$p:}$1"
+}
+
 function __add_gnu_tool() {
   local tool="$1"
   local subpath="${2:-bin}"

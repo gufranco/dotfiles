@@ -4,6 +4,19 @@
 # Paths
 ################################################################################
 case "$(uname)" in
+  "Darwin") export PNPM_HOME="$HOME/Library/pnpm" ;;
+  *) export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm" ;;
+esac
+__add_to_path "$PNPM_HOME"
+
+export GOPATH="$HOME/go"
+__add_to_path "$GOPATH/bin"
+
+__add_to_path "$HOME/.cargo/bin"
+
+__append_to_path "$HOME/.local/bin"
+
+case "$(uname)" in
   "Linux")
     __add_to_path "/usr/libexec/neomutt"
     ;;
@@ -25,17 +38,6 @@ case "$(uname)" in
 
     # Ruby (keg-only fallback, mise shims take priority via settings)
     __add_gnu_tool "ruby"
-
-    # Development environments
-    export PNPM_HOME="$HOME/Library/pnpm"
-    __add_to_path "$PNPM_HOME"
-
-    # Go
-    export GOPATH="$HOME/go"
-    __add_to_path "$GOPATH/bin"
-
-    # Rust
-    __add_to_path "$HOME/.cargo/bin"
 
     # Java
     export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@21"

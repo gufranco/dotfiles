@@ -287,6 +287,7 @@ case "$(uname)" in
 
       # Dev tools
       hyperfine tokei tty-clock bear entr bats pipx stress-ng taskwarrior
+      shfmt cosign lnav pgcli git-absorb kubectx pre-commit
       openjdk-21-jdk libpq-dev
 
       # Git & Version Control

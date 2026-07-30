@@ -23,3 +23,6 @@ impacket
 
 # Knowledge graph generation from any input
 graphifyy
+
+# Python linter and formatter
+ruff

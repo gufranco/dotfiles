@@ -183,7 +183,7 @@ jobs:
 
       - name: Clear runner-image Homebrew conflicts
         run: |
-          brew untap aws/tap hashicorp/tap 2>/dev/null || true
+          brew untap aws/tap 2>/dev/null || true
           sudo rm -f /usr/local/bin/aws /usr/local/bin/aws_completer /usr/local/bin/pod 2>/dev/null || true
 
       - name: Run install.sh

@@ -673,20 +673,23 @@ case "$(uname)" in
     # Nerd Fonts (no apt/snap package available, direct download required)
     ############################################################################
     log_info "Installing Nerd Fonts..."
-    mkdir -p "$HOME/.local/share/fonts"
+    LINUX_NERD_FONTS_DIR="$HOME/.local/share/fonts"
+    mkdir -p "$LINUX_NERD_FONTS_DIR"
 
-    NERD_FONTS_VERSION=$(curl -s --connect-timeout 10 --max-time 30 https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | grep tag_name | cut -d '"' -f 4 || true)
-    NERD_FONTS_VERSION="${NERD_FONTS_VERSION:-v3.3.0}"
-
-    if [ ! -f "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" ]; then
-      curl -#fLo "$HOME/.local/share/fonts/HackNerdFont-Regular.ttf" --connect-timeout 10 --max-time 120 \
-        "https://github.com/ryanoasis/nerd-fonts/raw/${NERD_FONTS_VERSION}/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf"
-    fi
-
-    if [ ! -f "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" ]; then
-      curl -#fLo "$HOME/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf" --connect-timeout 10 --max-time 120 \
-        "https://github.com/ryanoasis/nerd-fonts/raw/${NERD_FONTS_VERSION}/patched-fonts/JetBrainsMono/Ligatures/Regular/JetBrainsMonoNerdFont-Regular.ttf"
-    fi
+    for font in Hack JetBrainsMono; do
+      if [ ! -f "$LINUX_NERD_FONTS_DIR/${font}NerdFont-Regular.ttf" ]; then
+        log_info "Installing $font Nerd Font..."
+        NERD_FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz"
+        if curl -fsSL --connect-timeout 10 --max-time 120 "$NERD_FONT_URL" |
+          tar -xJf - -C "$LINUX_NERD_FONTS_DIR" "${font}NerdFont-Regular.ttf"; then
+          log_success "$font Nerd Font installed"
+        else
+          log_warning "Failed to install $font Nerd Font"
+        fi
+      else
+        log_skip "$font Nerd Font already installed"
+      fi
+    done
 
     sudo fc-cache -fv >/dev/null 2>&1
     log_success "Fonts installed"

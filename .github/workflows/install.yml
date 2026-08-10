@@ -141,6 +141,20 @@ jobs:
           done
           exit $errors
 
+      - name: Verify Nerd Fonts
+        run: |
+          set -euo pipefail
+          errors=0
+          for font in Hack JetBrainsMono; do
+            if [ -f "$HOME/.local/share/fonts/${font}NerdFont-Regular.ttf" ]; then
+              echo "OK: ${font}NerdFont-Regular.ttf"
+            else
+              echo "FAIL: ${font}NerdFont-Regular.ttf not found"
+              errors=$((errors + 1))
+            fi
+          done
+          exit $errors
+
       - name: Verify Oh My Zsh
         run: bash .github/scripts/verify-ohmyzsh.sh
 

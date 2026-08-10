@@ -415,7 +415,6 @@ cask 'wireshark-app'
 # Casks - System & Hardware
 ################################################################################
 # cask 'displaylink'
-cask 'alt-tab'
 cask 'cleanmymac'
 cask 'coconutbattery'
 cask 'grandperspective'

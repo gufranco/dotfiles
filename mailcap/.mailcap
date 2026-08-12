@@ -7,6 +7,11 @@ application/xml; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput
 image/svg+xml; lynx -dump -width=78 -nolist %s | sed 's/^   //'; copiousoutput; needsterminal; nametemplate=%s.svg
 
 ################################################################################
+# OpenPGP
+################################################################################
+application/pgp-keys; gpg --no-options --batch --quiet --show-keys --with-fingerprint %s; copiousoutput; needsterminal; nametemplate=%s.asc
+
+################################################################################
 # Text
 ################################################################################
 text/plain; cat %s; copiousoutput; needsterminal
@@ -28,7 +33,7 @@ image/tiff; file %s; copiousoutput; needsterminal; nametemplate=%s.tiff
 ################################################################################
 # Documents
 ################################################################################
-application/pdf; file %s; copiousoutput; needsterminal; nametemplate=%s.pdf
+application/pdf; pdftotext -layout %s -; copiousoutput; needsterminal; nametemplate=%s.pdf
 application/postscript; file %s; copiousoutput; needsterminal; nametemplate=%s.ps
 application/msword; file %s; copiousoutput; needsterminal; nametemplate=%s.doc
 application/vnd.ms-excel; file %s; copiousoutput; needsterminal; nametemplate=%s.xls
@@ -68,15 +73,15 @@ video/x-matroska; file %s; copiousoutput; needsterminal; nametemplate=%s.mkv
 ################################################################################
 # Code
 ################################################################################
-text/x-python; python3 -m py_compile %s; copiousoutput; needsterminal; nametemplate=%s.py
-text/javascript; node -c %s; copiousoutput; needsterminal; nametemplate=%s.js
+text/x-python; cat %s; copiousoutput; needsterminal; nametemplate=%s.py
+text/javascript; cat %s; copiousoutput; needsterminal; nametemplate=%s.js
 text/css; cat %s; copiousoutput; needsterminal; nametemplate=%s.css
-text/x-sh; bash -n %s; copiousoutput; needsterminal; nametemplate=%s.sh
-text/x-c; gcc -fsyntax-only %s; copiousoutput; needsterminal; nametemplate=%s.c
-text/x-c++; g++ -fsyntax-only %s; copiousoutput; needsterminal; nametemplate=%s.cpp
-text/x-java; javac -Xlint %s; copiousoutput; needsterminal; nametemplate=%s.java
-text/x-go; go build -o /dev/null %s; copiousoutput; needsterminal; nametemplate=%s.go
-text/x-rust; rustc --crate-type bin %s; copiousoutput; needsterminal; nametemplate=%s.rs
+text/x-sh; cat %s; copiousoutput; needsterminal; nametemplate=%s.sh
+text/x-c; cat %s; copiousoutput; needsterminal; nametemplate=%s.c
+text/x-c++; cat %s; copiousoutput; needsterminal; nametemplate=%s.cpp
+text/x-java; cat %s; copiousoutput; needsterminal; nametemplate=%s.java
+text/x-go; cat %s; copiousoutput; needsterminal; nametemplate=%s.go
+text/x-rust; cat %s; copiousoutput; needsterminal; nametemplate=%s.rs
 
 ################################################################################
 # Fallback

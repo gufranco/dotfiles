@@ -262,7 +262,7 @@ case "$(uname)" in
       direnv tealdeer tmuxp gum just thefuck
 
       # Text & Data tools
-      glow yq
+      glow yq poppler-utils
 
       # Email & Web
       neomutt lynx newsboat

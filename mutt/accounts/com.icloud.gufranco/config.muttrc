@@ -6,7 +6,7 @@ source "~/.mutt/normalize.muttrc"
 ################################################################################
 # GPG
 ################################################################################
-set pgp_sign_as = EF3A156101B1D466
+set pgp_default_key = "E239AD03052AE729D40430ADEF3A156101B1D466"
 
 ################################################################################
 # E-mail
@@ -20,8 +20,9 @@ set from = "gufranco@icloud.com"
 set imap_idle
 set imap_keepalive = 60
 set imap_list_subscribed
-set imap_pipeline_depth = 0
 set imap_user = "gufranco@icloud.com"
+set imap_authenticators = "plain:login"
+set smtp_authenticators = "plain:login"
 set smtp_url = "smtp://gufranco@smtp.mail.me.com:587/"
 
 ################################################################################
@@ -34,10 +35,8 @@ source "gpg --quiet --batch --yes -d ~/.mutt/accounts/com.icloud.gufranco/passwo
 ################################################################################
 set ssl_force_tls
 set ssl_starttls
-unset ssl_use_sslv3 = no
-unset ssl_use_tlsv1 = no
-unset ssl_use_tlsv1_1 = no
 set ssl_use_tlsv1_2
+set ssl_use_tlsv1_3
 set ssl_verify_dates
 set ssl_verify_host
 
@@ -49,6 +48,7 @@ set spoolfile = "+INBOX"
 set postponed = "+Drafts"
 set trash = "+Deleted Messages"
 set record = "+Sent Messages"
+set copy
 mailboxes +INBOX \
           +Deleted\ Messages \
           +Drafts \

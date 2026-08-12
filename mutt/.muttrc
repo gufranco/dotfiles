@@ -19,7 +19,7 @@ set charset = "utf-8"
 set attribution_intro = "On %d, %n <%a> wrote:"
 set forward_attribution_intro = "Begin forwarded message:"
 set forward_attribution_trailer = ""
-set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd noautoindent nojoinspaces nosmartindent formatoptions=watqc filetype=mail' -c 'syntax on'"
+set editor = "vim -f -u ~/.mutt/compose.vim"
 
 ################################################################################
 # Status & Sidebar

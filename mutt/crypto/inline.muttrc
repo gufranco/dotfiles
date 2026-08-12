@@ -10,27 +10,3 @@ set pgp_auto_inline
 set pgp_reply_inline
 set pgp_mime_auto = ask-yes
 unset text_flowed
-
-################################################################################
-# GnuPG integration
-################################################################################
-set pgp_use_gpg_agent
-set pgp_check_exit
-set pgp_check_gpg_decrypt_status_fd
-set pgp_good_sign = "^\\[GNUPG:\\] GOODSIG"
-
-################################################################################
-# GnuPG commands
-################################################################################
-set pgp_clearsign_command = "gpg --no-verbose --batch --quiet --output - --armor --textmode --clearsign %?a?--local-user %a? %f"
-set pgp_decode_command = "gpg --status-fd=2 --no-verbose --quiet --batch --output - %f"
-set pgp_decrypt_command = "gpg --status-fd=2 --no-verbose --quiet --batch --output - %f"
-set pgp_encrypt_only_command = "pgpewrap gpg --batch --quiet --no-verbose --output - --encrypt --textmode --armor --always-trust -- -r %r -- %f"
-set pgp_encrypt_sign_command = "pgpewrap gpg --batch --quiet --no-verbose --textmode --output - --encrypt --sign %?a?--local-user %a? --armor --always-trust -- -r %r -- %f"
-set pgp_export_command = "gpg --no-verbose --export --armor %r"
-set pgp_import_command = "gpg --no-verbose --import %f"
-set pgp_list_pubring_command = "gpg --no-verbose --batch --quiet --with-colons --with-fingerprint --list-keys %r"
-set pgp_list_secring_command = "gpg --no-verbose --batch --quiet --with-colons --with-fingerprint --list-secret-keys %r"
-set pgp_sign_command = "gpg --no-verbose --batch --quiet --output - --armor --detach-sign --textmode %?a?--local-user %a? %f"
-set pgp_verify_command = "gpg --status-fd=2 --no-verbose --quiet --batch --output - --verify %s %f"
-set pgp_verify_key_command = "gpg --verbose --batch --fingerprint --check-sigs %r"

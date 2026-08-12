@@ -7,6 +7,7 @@ unmailboxes *
 # GPG
 ################################################################################
 reset pgp_default_key
+reset postpone_encrypt_as
 
 ################################################################################
 # E-mail
@@ -17,7 +18,6 @@ reset from
 ################################################################################
 # IMAP / SMTP
 ################################################################################
-reset imap_authenticators
 reset imap_check_subscribed
 reset imap_idle
 reset imap_keepalive
@@ -40,7 +40,6 @@ reset smtp_pass
 reset ssl_force_tls
 reset ssl_starttls
 reset ssl_use_tlsv1_2
-reset ssl_use_tlsv1_3
 reset ssl_verify_dates
 reset ssl_verify_host
 
@@ -52,7 +51,6 @@ reset spoolfile
 reset postponed
 reset trash
 reset record
-reset copy
 
 ################################################################################
 # Cache

@@ -52,6 +52,7 @@ mutt/accounts/*/cache/*
 !mutt/accounts/*/cache/.gitkeep
 mutt/accounts/*/password
 mutt/accounts/*/password.gpg
+mutt/accounts/*/oauth2.tokens
 
 ################################################################################
 # Tmux

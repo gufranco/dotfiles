@@ -6,14 +6,19 @@ source ~/.dotfiles/mutt/catppuccin/neomuttrc
 ################################################################################
 # Accounts
 ################################################################################
+folder-hook "com.gmail.gustavocfranco" "source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc"
+folder-hook "com.icloud.gufranco" "source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc"
+
 macro index <f2> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc<enter><change-folder>!<enter>"
-macro index <f3> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.live.gufranco/config.muttrc<enter><change-folder>!<enter>"
-macro index <f4> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc<enter><change-folder>!<enter>"
+macro index <f3> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc<enter><change-folder>!<enter>"
 
 ################################################################################
 # Editor
 ################################################################################
 set charset = "utf-8"
+set attribution_intro = "On %d, %n <%a> wrote:"
+set forward_attribution_intro = "Begin forwarded message:"
+set forward_attribution_trailer = ""
 set editor = "vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd noautoindent nojoinspaces nosmartindent formatoptions=watqc filetype=mail' -c 'syntax on'"
 
 ################################################################################
@@ -28,6 +33,10 @@ set sidebar_next_new_wrap
 set sidebar_sort_method = "name"
 set sidebar_visible
 set sidebar_width = 35
+set sidebar_short_path
+set sidebar_delim_chars = "/"
+set sidebar_folder_indent
+set sidebar_indent_string = "  "
 
 ################################################################################
 # Key Bindings
@@ -37,6 +46,12 @@ bind index,pager J sidebar-next
 bind index,pager K sidebar-prev
 bind index,pager L sidebar-open
 bind index,pager G imap-fetch-mail
+macro index,pager \cb "<pipe-message> urlview<enter>" "extract URLs"
+
+macro index <f5> "<limit>~U<enter>" "limit to unread"
+macro index <f6> "<limit>~d>1w<enter>" "limit to last 7 days"
+macro index <f7> "<limit>~F<enter>" "limit to flagged"
+macro index <f8> "<limit>~A<enter>" "clear limit"
 
 ################################################################################
 # MIME & Auto-view
@@ -67,46 +82,73 @@ alternative_order text/plain text/enriched text/html
 # Headers
 ################################################################################
 ignore *
-unignore From: To: CC: Date: Subject:
+unignore From: Reply-To: To: CC: BCC: Date: Subject: Mail-Followup-To: List-Id:
 unhdr_order *
-hdr_order From: To: CC: Date: Subject:
+hdr_order From: Reply-To: To: CC: BCC: Date: Subject: Mail-Followup-To: List-Id:
 
 ################################################################################
 # Crypto
 ################################################################################
+unset crypt_use_gpgme
+set crypt_autosign
+set crypt_replyencrypt
+set crypt_replysign
+set crypt_replysignencrypted
+set crypt_verify_sig
+set pgp_check_gpg_decrypt_status_fd
+set pgp_clearsign_command="gpg --no-verbose --batch --quiet --output - %?p?--passphrase-fd 0? --armor --textmode --clearsign %?a?-u %a? %f"
+set pgp_decode_command="gpg --status-fd=2 %?p?--passphrase-fd 0? --no-verbose --quiet --batch --output - %f"
+set pgp_decrypt_command="gpg --status-fd=2 %?p?--passphrase-fd 0? --no-verbose --quiet --batch --output - %f"
+set pgp_encrypt_only_command="pgpewrap gpg --batch --quiet --no-verbose --output - --encrypt --textmode --armor --always-trust -- -r %r -- %f"
+set pgp_encrypt_sign_command="pgpewrap gpg %?p?--passphrase-fd 0? --batch --quiet --no-verbose --textmode --output - --encrypt --sign %?a?-u %a? --armor --always-trust -- -r %r -- %f"
+set pgp_export_command="gpg --no-verbose --export --armor %r"
+set pgp_good_sign="^\\[GNUPG:\\] GOODSIG"
+set pgp_import_command="gpg --no-verbose --import %f"
+set pgp_list_pubring_command="gpg --no-verbose --batch --quiet --with-colons --list-keys %r"
+set pgp_list_secring_command="gpg --no-verbose --batch --quiet --with-colons --list-secret-keys %r"
+set pgp_sign_command="gpg --no-verbose --batch --quiet --output - %?p?--passphrase-fd 0? --armor --detach-sign --textmode %?a?-u %a? %f"
+set pgp_timeout = 3600
+set pgp_use_gpg_agent
+set pgp_verify_command="gpg --status-fd=2 --no-verbose --quiet --batch --output - --verify %s %f"
+set pgp_verify_key_command="gpg --verbose --batch --fingerprint --check-sigs %r"
+unset pgp_show_unusable
+
 set my_pgp_inline = yes
 
 ifdef my_pgp_inline "source ~/.mutt/crypto/inline.muttrc"
 ifndef my_pgp_inline "source ~/.mutt/crypto/gpgme.muttrc"
 
-set crypt_auto_sign
-set crypt_reply_sign
-set crypt_reply_sign_encrypted
-set crypt_reply_encrypt
-set crypt_verify_sig
-set crypt_confirm_hook
-set crypt_opportunistic_encrypt
-set crypt_opportunistic_encrypt_strong_keys
-set pgp_self_encrypt
-set pgp_auto_decode
-set pgp_strict_enc
-unset pgp_show_unusable
+set postpone_encrypt
+
+################################################################################
+# Privacy
+################################################################################
+set hidden_host
+set tmp_dir = "~/.cache/neomutt/tmp"
+set edit_headers
+set attach_save_dir = "~/Downloads/"
 
 ################################################################################
 # Behavior
 ################################################################################
 set sig_on_top
+unset record
+unset copy
 set use_from
 set envelope_from
+set delete = yes
+set abort_noattach = ask-yes
+set abort_noattach_regex = "\\<(anexo|anexos|anexado|anexada|anexei|segue|seguem|attach|attached|attachments?)\\>"
+set new_mail_command = "~/.mutt/notify.sh '%f' '%n' '%u' '%m' '%b'"
 
 ################################################################################
 # Display
 ################################################################################
 set date_format = "%Y-%m-%d %H:%M"
 set index_format = "[%Z] %D %-20.20F %s"
-set reply_regexp = "^(([Rr][Ee]?(\[[0-9]+\])?: *)?(\[[^]]+\] *)?)*"
-set sort = threads
-set sort_aux = reverse-last-date-received
+set reply_regexp = "^((\\[[^]]+\\][[:space:]]*)|(([Rr][Ee][Ss]?|[Ee][Nn][Cc]|[Ff][Ww][Dd]?|[Aa][Ww])(\\[[0-9]+\\])?:[[:space:]]*))*"
+set use_threads = threads
+set sort = reverse-last-date-received
 set sort_re
 set uncollapse_jump
 set collapse_unread
@@ -122,6 +164,7 @@ set tilde
 ################################################################################
 set mail_check = 60
 set mail_check_stats
+set mail_check_stats_interval = 600
 set sleep_time = 0
 set fast_reply
 set include
@@ -131,7 +174,6 @@ set include
 ################################################################################
 unset beep
 unset wait_key
-push <show-version>
 
 ################################################################################
 # Alternates

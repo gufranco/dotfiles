@@ -441,13 +441,13 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 
 Private keys and credentials are excluded via `.gitignore`. Only public GPG keys and SSH public keys are tracked. API tokens are stored as GPG-encrypted files and decrypted at shell startup with caching.
 
-GnuPG never fetches keys from the network while verifying a signature. Automatic retrieval would tell a third party which messages are being read, so keys are fetched explicitly with `gpg --recv-keys`.
+GnuPG never fetches a key from the network while verifying a signature. Automatic retrieval reveals to a third party which messages are being read, so keys are fetched explicitly with `gpg --recv-keys`.
 
 ### Mail Signing
 
-Outgoing mail is signed by default. The signature is written inline in the message body, the traditional format, instead of being sent as a `signature.asc` attachment.
+Outgoing mail is signed by default, with the signature written inline in the message body rather than attached as `signature.asc`. Postponed drafts are encrypted, so a draft of an encrypted message is never stored in clear text on the mail server.
 
-Inline signing requires NeoMutt's classic PGP backend, because the GPGME backend cannot produce inline messages. Both backends are configured, and one line at the top of the Crypto section in [`mutt/.muttrc`](mutt/.muttrc) selects between them:
+Inline signing requires NeoMutt's classic PGP backend, because the GPGME backend cannot produce inline messages. Both backends are configured and one line at the top of the Crypto section in [`mutt/.muttrc`](mutt/.muttrc) selects between them:
 
 | Setting in [`mutt/.muttrc`](mutt/.muttrc) | Backend | Profile sourced |
 |---|---|---|
@@ -456,7 +456,9 @@ Inline signing requires NeoMutt's classic PGP backend, because the GPGME backend
 
 Switching backends requires restarting NeoMutt, since `crypt_use_gpgme` has no effect when set interactively.
 
-The classic backend invokes `pgpewrap` by bare name to expand multiple recipients. It ships inside NeoMutt's `libexec` directory, which [`zsh/paths`](zsh/paths) puts on `PATH` for both Linux and macOS. PGP encryption fails without it.
+The classic backend invokes `pgpewrap` by bare name to expand multiple recipients. It ships inside NeoMutt's `libexec` directory, which [`zsh/paths`](zsh/paths) puts on `PATH` for both Linux and macOS.
+
+Every setting an account applies has a matching `reset` in [`mutt/normalize.muttrc`](mutt/normalize.muttrc), which runs first when switching accounts. A setting added to an account file without a matching reset leaks into the next account.
 
 ## License
 

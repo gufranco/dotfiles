@@ -10,10 +10,3 @@ unset pgp_auto_inline
 unset pgp_reply_inline
 set pgp_mime_auto = ask-yes
 set text_flowed
-
-################################################################################
-# Protected headers
-################################################################################
-set crypt_protected_headers_read
-set crypt_protected_headers_write
-set crypt_protected_headers_subject = "..."

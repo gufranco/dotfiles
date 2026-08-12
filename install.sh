@@ -265,7 +265,7 @@ case "$(uname)" in
       glow yq poppler-utils
 
       # Email & Web
-      neomutt lynx newsboat
+      neomutt lynx newsboat libnotify-bin
 
       # Media
       vlc cmus asciinema ffmpeg fatsort
@@ -1343,6 +1343,9 @@ log_info "Setting up Neomutt..."
 safe_link "$HOME/.dotfiles/mutt/.muttrc" "$HOME/.muttrc"
 safe_link "$HOME/.dotfiles/mutt" "$HOME/.mutt"
 safe_link "$HOME/.dotfiles/mailcap/.mailcap" "$HOME/.mailcap"
+
+mkdir -p "$HOME/.cache/neomutt/tmp"
+chmod 700 "$HOME/.cache/neomutt" "$HOME/.cache/neomutt/tmp" 2>/dev/null || log_warning "Failed to set neomutt tmp permissions"
 
 ############################################################################
 # Tmux

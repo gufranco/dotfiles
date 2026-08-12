@@ -24,6 +24,10 @@ indent_size = 4
 indent_style = tab
 indent_size = 4
 
+# Shell: shfmt keys, must match the CI check "shfmt -i 2 -ci"
+[*.sh]
+switch_case_indent = true
+
 # Markdown: preserve trailing whitespace (line breaks)
 [*.{md,markdown}]
 trim_trailing_whitespace = false

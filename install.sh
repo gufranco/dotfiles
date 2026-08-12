@@ -1052,17 +1052,24 @@ IOSCHED
       mkdir -p "$PROTON_GE_DIR"
       if [ -z "$(command ls -A "$PROTON_GE_DIR" 2>/dev/null)" ]; then
         log_info "Installing latest GE-Proton..."
-        GE_LATEST=$(curl -sL --connect-timeout 10 --max-time 30 \
-          https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest |
-          grep tag_name | cut -d '"' -f 4 || true)
-        if [ -n "$GE_LATEST" ]; then
-          curl -#fLo "/tmp/${GE_LATEST}.tar.gz" --connect-timeout 10 --max-time 300 \
-            "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${GE_LATEST}/${GE_LATEST}.tar.gz"
-          tar -xzf "/tmp/${GE_LATEST}.tar.gz" -C "$PROTON_GE_DIR"
-          rm -f "/tmp/${GE_LATEST}.tar.gz"
-          log_success "GE-Proton ${GE_LATEST} installed"
+        GE_RELEASE=$(curl -sL --connect-timeout 10 --max-time 30 \
+          https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest || true)
+        GE_LATEST=$(printf '%s' "$GE_RELEASE" | grep '"tag_name"' | cut -d '"' -f 4 || true)
+        GE_TARBALLS=$(printf '%s' "$GE_RELEASE" | grep 'browser_download_url' |
+          cut -d '"' -f 4 | grep '\.tar\.gz$' || true)
+        GE_URL=$(printf '%s\n' "$GE_TARBALLS" | grep 'x86_64' | head -1 || true)
+        [ -n "$GE_URL" ] || GE_URL=$(printf '%s\n' "$GE_TARBALLS" | head -1)
+        if [ -n "$GE_URL" ]; then
+          if curl --progress-bar -fLo /tmp/ge-proton.tar.gz \
+            --connect-timeout 10 --max-time 300 "$GE_URL"; then
+            tar -xzf /tmp/ge-proton.tar.gz -C "$PROTON_GE_DIR"
+            log_success "GE-Proton ${GE_LATEST:-latest} installed"
+          else
+            log_warning "GE-Proton download failed: $GE_URL"
+          fi
+          rm -f /tmp/ge-proton.tar.gz
         else
-          log_warning "Could not determine latest GE-Proton version"
+          log_warning "Could not determine latest GE-Proton download"
         fi
       else
         log_skip "GE-Proton already installed"

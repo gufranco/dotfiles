@@ -2,7 +2,7 @@
 # GitHub CLI - https://cli.github.com/manual/gh_config
 
 git_protocol: ssh
-editor: vim -f -u NONE -c 'set nocompatible nobackup noswapfile nowritebackup cursorline number colorcolumn=72 textwidth=72 wrap linebreak ruler showcmd' -c 'syntax on' -c 'filetype on'
+editor: vim -f -u ~/.dotfiles/git/editor.vim
 pager: delta
 prompt: enabled
 color_labels: enabled

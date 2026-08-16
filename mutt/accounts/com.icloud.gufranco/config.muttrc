@@ -1,7 +1,7 @@
 ################################################################################
 # Normalize settings
 ################################################################################
-source "~/.mutt/normalize.muttrc"
+source "~/.dotfiles/mutt/normalize.muttrc"
 
 ################################################################################
 # GPG
@@ -28,7 +28,7 @@ set smtp_url = "smtp://gufranco@smtp.mail.me.com:587/"
 ################################################################################
 # Password
 ################################################################################
-source "gpg --quiet --batch --yes -d ~/.mutt/accounts/com.icloud.gufranco/password.gpg |"
+source "gpg --quiet --batch --yes -d ~/.dotfiles/mutt/accounts/com.icloud.gufranco/password.gpg |"
 
 ################################################################################
 # Security
@@ -56,10 +56,10 @@ mailboxes +INBOX \
 ################################################################################
 # Cache
 ################################################################################
-set header_cache = "~/.mutt/accounts/com.icloud.gufranco/cache/headers"
-set message_cachedir = "~/.mutt/accounts/com.icloud.gufranco/cache/bodies"
+set header_cache = "~/.dotfiles/mutt/accounts/com.icloud.gufranco/cache/headers"
+set message_cachedir = "~/.dotfiles/mutt/accounts/com.icloud.gufranco/cache/bodies"
 
 ################################################################################
 # Signature
 ################################################################################
-set signature = "~/.mutt/signatures/personal"
+set signature = "~/.dotfiles/mutt/signatures/personal"

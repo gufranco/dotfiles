@@ -6,11 +6,11 @@ source ~/.dotfiles/mutt/catppuccin/neomuttrc
 ################################################################################
 # Accounts
 ################################################################################
-folder-hook "com.gmail.gustavocfranco" "source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc"
-folder-hook "com.icloud.gufranco" "source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc"
+folder-hook "com.gmail.gustavocfranco" "source ~/.dotfiles/mutt/accounts/com.gmail.gustavocfranco/config.muttrc"
+folder-hook "com.icloud.gufranco" "source ~/.dotfiles/mutt/accounts/com.icloud.gufranco/config.muttrc"
 
-macro index <f2> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc<enter><change-folder>!<enter>"
-macro index <f3> "<sync-mailbox><refresh><enter-command>source ~/.mutt/accounts/com.icloud.gufranco/config.muttrc<enter><change-folder>!<enter>"
+macro index <f2> "<sync-mailbox><refresh><enter-command>source ~/.dotfiles/mutt/accounts/com.gmail.gustavocfranco/config.muttrc<enter><change-folder>!<enter>"
+macro index <f3> "<sync-mailbox><refresh><enter-command>source ~/.dotfiles/mutt/accounts/com.icloud.gufranco/config.muttrc<enter><change-folder>!<enter>"
 
 ################################################################################
 # Editor
@@ -19,7 +19,7 @@ set charset = "utf-8"
 set attribution_intro = "On %d, %n <%a> wrote:"
 set forward_attribution_intro = "Begin forwarded message:"
 set forward_attribution_trailer = ""
-set editor = "vim -f -u ~/.mutt/compose.vim"
+set editor = "vim -f -u ~/.dotfiles/mutt/compose.vim"
 
 ################################################################################
 # Status & Sidebar
@@ -115,8 +115,8 @@ unset pgp_show_unusable
 
 set my_pgp_inline = yes
 
-ifdef my_pgp_inline "source ~/.mutt/crypto/inline.muttrc"
-ifndef my_pgp_inline "source ~/.mutt/crypto/gpgme.muttrc"
+ifdef my_pgp_inline "source ~/.dotfiles/mutt/crypto/inline.muttrc"
+ifndef my_pgp_inline "source ~/.dotfiles/mutt/crypto/gpgme.muttrc"
 
 set postpone_encrypt
 
@@ -124,7 +124,6 @@ set postpone_encrypt
 # Privacy
 ################################################################################
 set hidden_host
-set tmp_dir = "~/.cache/neomutt/tmp"
 set edit_headers
 set attach_save_dir = "~/Downloads/"
 
@@ -139,7 +138,7 @@ set envelope_from
 set delete = yes
 set abort_noattach = ask-yes
 set abort_noattach_regex = "\\<(anexo|anexos|anexado|anexada|anexei|segue|seguem|attach|attached|attachments?)\\>"
-set new_mail_command = "~/.mutt/notify.sh '%f' '%n' '%u' '%m' '%b'"
+set new_mail_command = "~/.dotfiles/mutt/notify.sh '%f' '%n' '%u' '%m' '%b'"
 
 ################################################################################
 # Display
@@ -183,4 +182,4 @@ alternates gustavocfranco@gmail.com gufranco@live.com gufranco@icloud.com gufran
 ################################################################################
 # Default Account
 ################################################################################
-source ~/.mutt/accounts/com.gmail.gustavocfranco/config.muttrc
+source ~/.dotfiles/mutt/accounts/com.gmail.gustavocfranco/config.muttrc

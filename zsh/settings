@@ -77,10 +77,10 @@ export COLORTERM=truecolor
 # Debugging and REPL
 ################################################################################
 # Python REPL startup file. Runs only in interactive sessions, see python/pythonrc.
-export PYTHONSTARTUP="$HOME/.pythonrc"
+export PYTHONSTARTUP="$HOME/.dotfiles/python/pythonrc"
 # Make the breakpoint fallback hook importable everywhere. Appended last so it
 # never shadows a project module of the same name. See python/debughook.py.
-export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$HOME/.config/python"
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$HOME/.dotfiles/python"
 # breakpoint() prefers pdbp, then ipdb, then stdlib pdb via the fallback hook.
 export PYTHONBREAKPOINT="debughook.set_trace"
 
@@ -144,7 +144,7 @@ eval-cache-clear() {
 ################################################################################
 # eza
 ################################################################################
-export EZA_CONFIG_DIR="$HOME/.config/eza"
+export EZA_CONFIG_DIR="$HOME/.dotfiles/eza"
 
 ################################################################################
 # fzf (Catppuccin Mocha)

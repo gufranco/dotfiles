@@ -15,7 +15,6 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 tap 'browsh-org/browsh'
 tap 'clojure/tools'
 tap 'dciabrin/ngdevkit' if architecture == 'arm64'
-tap 'dopplerhq/cli'
 tap 'gufranco/osm', 'https://github.com/gufranco/osm'
 tap 'hashicorp/tap'
 tap 'neomutt/neomutt'
@@ -171,6 +170,7 @@ brew 'vercel-cli'
 ################################################################################
 brew 'age'
 brew 'cosign'
+brew 'doppler'
 brew 'ghidra'
 brew 'gitleaks'
 brew 'gnupg'
@@ -380,7 +380,6 @@ cask 'figma'
 # Casks - Security & VPN
 ################################################################################
 cask '1password'
-cask 'dopplerhq/cli/doppler'
 cask 'lastpass'
 cask 'nordvpn'
 cask 'tailscale-app'

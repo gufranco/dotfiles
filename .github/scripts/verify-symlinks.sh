@@ -21,6 +21,7 @@ check "zshrc" "$HOME/.zshrc"
 check "gitconfig" "$HOME/.gitconfig"
 check "vimrc" "$HOME/.vimrc"
 check "vim" "$HOME/.vim"
+check "nvim" "$HOME/.config/nvim"
 check "tmux.conf" "$HOME/.tmux.conf"
 check "tmux" "$HOME/.tmux"
 

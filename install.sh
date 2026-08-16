@@ -168,10 +168,10 @@ case "$(uname)" in
       bash tmux snapd trash-cli xsel bc
 
       # Text & Search
-      vim neovim ripgrep fd-find jq moreutils patchutils urlview
+      vim ripgrep fd-find jq moreutils patchutils urlview
 
       # Network
-      wget rsync rclone nmap mtr telnet httpie sshpass
+      wget rsync rclone nmap mtr telnet sshpass
 
       # System monitoring
       htop
@@ -259,7 +259,10 @@ case "$(uname)" in
       fzf universal-ctags broot
 
       # Shell & Terminal
-      direnv tealdeer tmuxp gum just thefuck
+      direnv tealdeer tmuxp gum thefuck
+
+      # Editors
+      neovim
 
       # Text & Data tools
       glow yq poppler-utils
@@ -280,13 +283,13 @@ case "$(uname)" in
       restic
 
       # System monitoring
-      duf du-dust fastfetch cpufetch procs btm glances goaccess
+      fastfetch btm goaccess
 
       # Security & Encryption
       age
 
       # Dev tools
-      hyperfine tokei tty-clock bear entr bats pipx stress-ng taskwarrior
+      hyperfine tokei tty-clock bear entr bats stress-ng taskwarrior
       shfmt cosign lnav pgcli git-absorb kubectx pre-commit
       openjdk-21-jdk libpq-dev
 
@@ -298,9 +301,6 @@ case "$(uname)" in
 
       # Penetration Testing
       hashcat hydra john nikto sqlmap radare2
-
-      # Retro Gaming & ROM Tools
-      mame
     )
 
     for app in "${APPS[@]}"; do
@@ -605,19 +605,6 @@ case "$(uname)" in
       log_success "VS Code installed"
     else
       log_skip "VS Code already installed"
-    fi
-
-    # Beekeeper Studio
-    if ! pkg_installed beekeeper-studio; then
-      log_info "Installing Beekeeper Studio..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://deb.beekeeperstudio.io/beekeeper.key | sudo gpg --dearmor --yes -o /etc/apt/keyrings/beekeeper-studio.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/beekeeper-studio.gpg] https://deb.beekeeperstudio.io stable main" | sudo tee /etc/apt/sources.list.d/beekeeper-studio.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq beekeeper-studio
-      log_success "Beekeeper Studio installed"
-    else
-      log_skip "Beekeeper Studio already installed"
     fi
 
     # Slack (amd64 only)
@@ -1182,33 +1169,33 @@ else
   log_skip "torrentzip already installed"
 fi
 
-if cmd_exists pipx && [ -f "$HOME/.dotfiles/Pipxfile" ]; then
-  log_info "Installing pipx tools..."
-  pipx_ok=0
-  pipx_skip=0
-  pipx_fail=0
+if cmd_exists uv && [ -f "$HOME/.dotfiles/Uvfile" ]; then
+  log_info "Installing uv tools..."
+  uv_ok=0
+  uv_skip=0
+  uv_fail=0
   while IFS= read -r pkg || [ -n "$pkg" ]; do
     [ -z "$pkg" ] && continue
     [ "${pkg:0:1}" = '#' ] && continue
     pkg_name="${pkg%%\[*}"
-    if pipx list --short 2>/dev/null | awk '{print $1}' | grep -Fqx "$pkg_name"; then
-      ((pipx_skip++)) || true
+    if uv tool list 2>/dev/null | awk '/^[^-[:space:]]/ {print $1}' | grep -Fqx "$pkg_name"; then
+      ((uv_skip++)) || true
     else
-      if pipx install "$pkg" --quiet 2>/dev/null; then
-        ((pipx_ok++)) || true
+      if uv tool install "$pkg" --quiet 2>/dev/null; then
+        ((uv_ok++)) || true
       else
-        log_warning "Failed to install pipx package: $pkg"
-        ((pipx_fail++)) || true
+        log_warning "Failed to install uv tool: $pkg"
+        ((uv_fail++)) || true
       fi
     fi
-  done <"$HOME/.dotfiles/Pipxfile"
-  if [ "$pipx_fail" -eq 0 ]; then
-    log_success "pipx tools installed (new: $pipx_ok, already present: $pipx_skip)"
+  done <"$HOME/.dotfiles/Uvfile"
+  if [ "$uv_fail" -eq 0 ]; then
+    log_success "uv tools installed (new: $uv_ok, already present: $uv_skip)"
   else
-    log_warning "pipx tools installed with $pipx_fail failure(s)"
+    log_warning "uv tools installed with $uv_fail failure(s)"
   fi
 else
-  log_skip "pipx not found or Pipxfile missing, skipping pipx tools"
+  log_skip "uv not found or Uvfile missing, skipping uv tools"
 fi
 
 log_info "Setting up Python debugging configs..."
@@ -1233,39 +1220,6 @@ safe_link "$HOME/.dotfiles/nodejs/.npmrc" "$HOME/.npmrc"
 safe_link "$HOME/.dotfiles/nodejs/.yarnrc.yml" "$HOME/.yarnrc.yml"
 safe_link "$HOME/.dotfiles/nodejs/.pnpmrc" "$HOME/.pnpmrc"
 safe_link "$HOME/.dotfiles/nodejs/repl-init.mjs" "$HOME/.config/node/repl-init.mjs"
-
-############################################################################
-# Neovim DAP adapter (vscode-js-debug)
-############################################################################
-log_info "Setting up Neovim DAP adapter (js-debug)..."
-JS_DEBUG_DIR="$HOME/.local/share/js-debug"
-if [ -f "$JS_DEBUG_DIR/src/dapDebugServer.js" ]; then
-  log_skip "js-debug already installed"
-else
-  # `|| true`: a rate-limited GitHub API response has no tag_name, so grep
-  # exits non-zero and would abort the script under `set -o pipefail`.
-  JS_DEBUG_TAG=$(curl -s --connect-timeout 10 --max-time 30 \
-    https://api.github.com/repos/microsoft/vscode-js-debug/releases/latest |
-    grep '"tag_name"' | cut -d '"' -f 4 || true)
-  if [ -n "$JS_DEBUG_TAG" ]; then
-    JS_DEBUG_TARBALL="/tmp/js-debug-${JS_DEBUG_TAG}.tar.gz"
-    if curl -#fL --connect-timeout 10 --max-time 180 -o "$JS_DEBUG_TARBALL" \
-      "https://github.com/microsoft/vscode-js-debug/releases/download/${JS_DEBUG_TAG}/js-debug-dap-${JS_DEBUG_TAG}.tar.gz"; then
-      mkdir -p "$JS_DEBUG_DIR"
-      if tar -xzf "$JS_DEBUG_TARBALL" -C "$JS_DEBUG_DIR" --strip-components=1; then
-        echo "$JS_DEBUG_TAG" >"$JS_DEBUG_DIR/.version"
-        log_success "js-debug ${JS_DEBUG_TAG} installed"
-      else
-        log_warning "Failed to extract js-debug"
-      fi
-      rm -f "$JS_DEBUG_TARBALL"
-    else
-      log_warning "Failed to download js-debug; nvim-dap node debugging will be inactive"
-    fi
-  else
-    log_warning "Could not resolve latest js-debug release; skipping"
-  fi
-fi
 
 ############################################################################
 # mise
@@ -1304,11 +1258,17 @@ log_info "Setting up Git..."
 safe_link "$HOME/.dotfiles/git/.gitconfig" "$HOME/.gitconfig"
 
 ############################################################################
-# Vim & Neovim (shared config)
+# Vim
 ############################################################################
-log_info "Setting up Vim & Neovim..."
-safe_link "$HOME/.dotfiles/nvim" "$HOME/.vim"
-safe_link "$HOME/.dotfiles/nvim/init.vim" "$HOME/.vimrc"
+log_info "Setting up Vim..."
+safe_link "$HOME/.dotfiles/vim" "$HOME/.vim"
+safe_link "$HOME/.dotfiles/vim/vimrc" "$HOME/.vimrc"
+
+############################################################################
+# Neovim
+############################################################################
+log_info "Setting up Neovim..."
+mkdir -p "$HOME/.config"
 safe_link "$HOME/.dotfiles/nvim" "$HOME/.config/nvim"
 
 ############################################################################
@@ -1350,9 +1310,6 @@ log_info "Setting up Neomutt..."
 safe_link "$HOME/.dotfiles/mutt/.muttrc" "$HOME/.muttrc"
 safe_link "$HOME/.dotfiles/mutt" "$HOME/.mutt"
 safe_link "$HOME/.dotfiles/mailcap/.mailcap" "$HOME/.mailcap"
-
-mkdir -p "$HOME/.cache/neomutt/tmp"
-chmod 700 "$HOME/.cache/neomutt" "$HOME/.cache/neomutt/tmp" 2>/dev/null || log_warning "Failed to set neomutt tmp permissions"
 
 ############################################################################
 # Tmux
@@ -1588,26 +1545,19 @@ safe_link "$HOME/.dotfiles/newsboat/config" "$HOME/.config/newsboat/config"
 safe_link "$HOME/.dotfiles/newsboat/urls" "$HOME/.config/newsboat/urls"
 
 ############################################################################
+# asciinema
+############################################################################
+log_info "Setting up asciinema..."
+mkdir -p "$HOME/.config/asciinema"
+safe_link "$HOME/.dotfiles/asciinema/config.toml" "$HOME/.config/asciinema/config.toml"
+
+############################################################################
 # Navi
 ############################################################################
 log_info "Setting up Navi..."
 mkdir -p "$HOME/.config/navi"
 safe_link "$HOME/.dotfiles/navi/config.yaml" "$HOME/.config/navi/config.yaml"
 safe_link "$HOME/.dotfiles/navi/cheats" "$HOME/.config/navi/cheats"
-
-############################################################################
-# Glances
-############################################################################
-log_info "Setting up Glances..."
-mkdir -p "$HOME/.config/glances"
-safe_link "$HOME/.dotfiles/glances/glances.conf" "$HOME/.config/glances/glances.conf"
-
-############################################################################
-# asciinema
-############################################################################
-log_info "Setting up asciinema..."
-mkdir -p "$HOME/.config/asciinema"
-safe_link "$HOME/.dotfiles/asciinema/config.toml" "$HOME/.config/asciinema/config.toml"
 
 ############################################################################
 # GoAccess

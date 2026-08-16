@@ -12,11 +12,10 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 ################################################################################
 # Homebrew taps
 ################################################################################
-tap 'Arthur-Ficial/tap' if architecture == 'arm64'
 tap 'browsh-org/browsh'
 tap 'clojure/tools'
 tap 'dciabrin/ngdevkit' if architecture == 'arm64'
-tap 'DopplerHQ/cli'
+tap 'dopplerhq/cli'
 tap 'gufranco/osm', 'https://github.com/gufranco/osm'
 tap 'hashicorp/tap'
 tap 'neomutt/neomutt'
@@ -87,7 +86,6 @@ brew 'zlib'
 ################################################################################
 # File Navigation & Search
 ################################################################################
-brew 'ack'
 brew 'ast-grep'
 brew 'broot'
 brew 'eza'
@@ -135,7 +133,6 @@ brew 'curl'
 brew 'doggo'
 brew 'gping'
 brew 'grpcurl'
-brew 'httpie'
 brew 'lynx'
 brew 'mtr'
 brew 'nmap'
@@ -157,7 +154,6 @@ brew 'kubectl'
 brew 'kubectx'
 brew 'lazydocker'
 brew 'lima-additional-guestagents'
-brew 'stern'
 
 ################################################################################
 # Cloud & Infrastructure
@@ -175,19 +171,15 @@ brew 'vercel-cli'
 ################################################################################
 brew 'age'
 brew 'cosign'
-brew 'DopplerHQ/cli/doppler'
 brew 'ghidra'
 brew 'gitleaks'
 brew 'gnupg'
 brew 'gufranco/osm/osm'
-brew 'grype'
 brew 'pinentry-mac'
 brew 'qrencode'
 brew 'radare2'
 brew 'semgrep'
-brew 'snyk-cli'
 brew 'sops'
-brew 'syft'
 brew 'trivy'
 
 ################################################################################
@@ -195,7 +187,6 @@ brew 'trivy'
 ################################################################################
 brew 'dalfox'
 brew 'ffuf'
-brew 'gobuster'
 brew 'hashcat'
 brew 'hydra'
 brew 'john'
@@ -214,7 +205,6 @@ brew 'mise'
 brew 'node', link: true
 brew 'openjdk@21'
 brew 'oven-sh/bun/bun', link: true
-brew 'pipx'
 brew 'pnpm'
 brew 'python', link: true
 brew 'ruby', link: true
@@ -232,14 +222,12 @@ brew 'bear'
 brew 'entr'
 brew 'hadolint'
 brew 'hyperfine'
-brew 'just'
 brew 'kcov'
 brew 'lychee'
 brew 'mkcert'
 brew 'pre-commit'
 brew 'shellcheck'
 brew 'shfmt'
-brew 'task'
 brew 'tokei'
 brew 'typos-cli'
 brew 'universal-ctags'
@@ -253,7 +241,6 @@ brew 'zizmor'
 brew 'k6'
 brew 'stress-ng'
 brew 'toxiproxy'
-brew 'vegeta'
 
 ################################################################################
 # Database & SaaS CLIs
@@ -268,15 +255,10 @@ brew 'supabase'
 # Monitoring & System Info
 ################################################################################
 brew 'bottom'
-brew 'cpufetch'
-brew 'duf'
-brew 'dust'
 brew 'fastfetch'
-brew 'glances'
 brew 'goaccess'
 brew 'htop'
 brew 'lnav'
-brew 'procs'
 brew 'tty-clock'
 
 ################################################################################
@@ -302,7 +284,6 @@ brew 'yt-dlp'
 ################################################################################
 # Backup & Sync
 ################################################################################
-brew 'croc'
 brew 'rclone'
 brew 'restic'
 brew 'rsync'
@@ -310,8 +291,6 @@ brew 'rsync'
 ################################################################################
 # AI & Local Inference
 ################################################################################
-brew 'arthur-ficial/tap/apfel' if architecture == 'arm64'
-brew 'llama.cpp' if architecture == 'arm64'
 brew 'ollama' if architecture == 'arm64'
 brew 'opencode'
 brew 'rtk'
@@ -327,7 +306,6 @@ brew 'mas'
 ################################################################################
 # torrentzip: installed via go install (see install.sh)
 brew 'internetarchive'
-brew 'mame'
 brew 'UltimateNova1203/maxcso/maxcso'
 brew 'dciabrin/ngdevkit/ngdevkit', args: ['force-bottle'] if architecture == 'arm64'
 brew 'dciabrin/ngdevkit/ngdevkit-toolchain', args: ['force-bottle'] if architecture == 'arm64'
@@ -345,11 +323,8 @@ cask 'kitty'
 # Casks - Code Editors & IDEs
 ################################################################################
 cask 'android-studio'
-cask 'cursor'
-cask 'cursor-cli'
 cask 'devin-desktop'
 cask 'sublime-text'
-cask 'textmate'
 cask 'visual-studio-code'
 
 ################################################################################
@@ -360,15 +335,12 @@ cask 'claude-code@latest'
 cask 'codex'
 cask 'coderabbit'
 cask 'codex-app' if architecture == 'arm64'
-cask 'jan' if architecture == 'arm64'
 cask 'lm-studio' if architecture == 'arm64'
 cask 'opencode-desktop'
 
 ################################################################################
 # Casks - API & Database
 ################################################################################
-cask 'beekeeper-studio'
-cask 'bruno'
 cask 'db-browser-for-sqlite'
 cask 'dbeaver-community'
 cask 'mitmproxy'
@@ -387,7 +359,6 @@ cask 'google-chrome'
 ################################################################################
 # Casks - Productivity
 ################################################################################
-cask 'clickup'
 cask 'granola'
 cask 'linear'
 cask 'maccy'
@@ -409,6 +380,7 @@ cask 'figma'
 # Casks - Security & VPN
 ################################################################################
 cask '1password'
+cask 'dopplerhq/cli/doppler'
 cask 'lastpass'
 cask 'nordvpn'
 cask 'tailscale-app'
@@ -419,7 +391,6 @@ cask 'wireshark-app'
 # Casks - System & Hardware
 ################################################################################
 # cask 'displaylink'
-cask 'cleanmymac'
 cask 'coconutbattery'
 cask 'grandperspective'
 cask 'jordanbaird-ice'
@@ -427,7 +398,6 @@ cask 'keycastr'
 cask 'logi-options+'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
-cask 'pearcleaner'
 cask 'stats'
 
 ################################################################################
@@ -436,10 +406,7 @@ cask 'stats'
 cask 'balenaetcher'
 cask 'cyberduck'
 cask 'keka'
-cask 'localsend'
 cask 'maestral'
-cask 'marta'
-cask 'nimble-commander'
 
 ################################################################################
 # Casks - Media & Entertainment
@@ -449,43 +416,19 @@ cask 'calibre'
 cask 'foobar2000'
 cask 'gimp'
 cask 'handbrake-app'
-cask 'iina'
 cask 'inkscape'
 cask 'jdownloader'
 cask 'losslesscut'
 cask 'obs'
 cask 'spotify'
-cask 'steam'
-cask 'swinsian'
 cask 'transmission'
 cask 'vlc'
-
-################################################################################
-# Casks - Emulators
-################################################################################
-cask 'ares-emulator'
-cask 'cemu'
-cask 'dolphin'
-cask 'dosbox-x-app'
-cask 'flycast'
-cask 'melonds'
-cask 'mgba-app'
-cask 'openemu'
-cask 'pcsx2'
-cask 'ppsspp-emulator'
-cask 'retroarch'
-cask 'scummvm-app'
-cask 'snes9x'
-cask 'stella-app'
-cask 'xemu'
 
 ################################################################################
 # Casks - Virtualization
 ################################################################################
 # cask 'orbstack'
-cask 'crossover'
 cask 'parallels' if architecture == 'arm64'
-cask 'utm'
 
 ################################################################################
 # Fonts

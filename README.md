@@ -16,7 +16,7 @@
 
 ---
 
-**50+** tool configs · **23** Catppuccin Mocha themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
+**50+** tool configs · **23** Catppuccin Mocha themed tools · **60** Git aliases · **6** Docker services · **33** Vim plugins
 
 <table>
 <tr>
@@ -31,7 +31,7 @@ One color palette across 19 tools: terminals, editors, file managers, email, mus
 
 ### Modern CLI Replacements
 
-`cat` becomes `bat`, `ls` becomes `eza`, `top` becomes `btm`, `du` becomes `dust`. Graceful fallbacks when the modern tool is not installed.
+`cat` becomes `bat`, `ls` becomes `eza`, `top` becomes `btm`, `ping` becomes `gping`. Graceful fallbacks when the modern tool is not installed.
 
 </td>
 </tr>
@@ -119,24 +119,20 @@ Aliases activate only when the modern tool is installed:
 |:------|:---------|:-----|
 | `cat` | cat | `bat` with syntax highlighting, plain output when piped |
 | `ls` | ls | `eza` with icons, git status, tree view via `lt` |
-| `du` | du | `dust` with visual tree output |
-| `df` | df | `duf` with color output |
-| `ps` | ps | `procs` with tree and color |
 | `top` | top | `btm` (Bottom) system monitor TUI |
 | `ping` | ping | `gping` with graphical output (macOS) |
 | `stats` | - | `tokei` for code statistics (macOS) |
 
 ### Editor
 
-Vim with 34 plugins managed by vim-plug:
+Vim with 33 plugins managed by vim-plug:
 
 | Category | Plugins |
 |:---------|:--------|
 | Language support | coc.nvim (LSP), vim-polyglot, vim-matchup, rainbow_csv |
-| Navigation | fzf.vim, leap.nvim (jump motions), lazygit.nvim, vim-fetch (open at line) |
+| Navigation | fzf.vim, vim-sneak (jump motions), vim-fetch (open at line) |
 | Git | vim-signify (hunks), vim-fugitive (commands), conflict-marker.vim |
 | Editing | vim-surround, vim-visual-multi, vim-pasta, targets.vim, vim-unimpaired, vim-repeat, vim-abolish (case coercion), splitjoin.vim |
-| Debugging | nvim-dap, nvim-dap-ui, nvim-nio (Neovim only) |
 | Files | vim-eunuch (Rename, Delete, Move, SudoWrite) |
 | UI | lightline, vim-devicons, undotree, vim-cool, vim-search-pulse, winresizer |
 | Defaults | vim-sensible, vim-opinion |
@@ -150,7 +146,7 @@ A ready-to-use debugger for Python and Node.js, linked and installed by `install
 
 Python uses the standard library `pdb` with a richer `.pdbrc`. The aliases `dir`, `attrs`, `vars`, `src`, and `loc` inspect objects and locals at the prompt, adapted from Trey Hunner's [Customizing pdb with .pdbrc](https://treyhunner.com/2026/04/customizing-pdb-with-pdbrc/). `breakpoint()` is wired through [`python/debughook.py`](python/debughook.py), which prefers pdbp, then ipdb, then falls back to stdlib pdb, so it never dies in a virtualenv that lacks the fancy debuggers. [`python/pythonrc`](python/pythonrc) is the `PYTHONSTARTUP` file: persistent REPL history and pretty-printed output.
 
-Node.js gets the built-in V8 Inspector workflow plus an editor debugger. The `ni`, `nib`, and `niw` aliases drive `node inspect` and `--inspect-brk` for terminal and Chrome DevTools debugging. `jsr` opens a custom REPL from [`nodejs/repl-init.mjs`](nodejs/repl-init.mjs) with deep colorized inspection. Inside Neovim, nvim-dap attaches to the `pwa-node` adapter for breakpoints and stepping. The full command reference and keymaps live in [`nodejs/DEBUGGING.md`](nodejs/DEBUGGING.md).
+Node.js gets the built-in V8 Inspector workflow. The `ni`, `nib`, and `niw` aliases drive `node inspect` and `--inspect-brk` for terminal and Chrome DevTools debugging. `jsr` opens a custom REPL from [`nodejs/repl-init.mjs`](nodejs/repl-init.mjs) with deep colorized inspection.
 
 ### Terminal Multiplexer
 
@@ -159,7 +155,7 @@ Tmux with 7 plugins and vim-style keybindings:
 | Plugin | What it does |
 |:-------|:-------------|
 | Catppuccin (Mocha) | Status bar, window list, and pane styling |
-| vim-tmux-navigator | Move between nvim splits and tmux panes |
+| vim-tmux-navigator | Move between vim splits and tmux panes |
 | tmux-tiling-revamped | i3-like BSP tiling layouts |
 | tmux-resurrect | Save and restore sessions across reboots |
 | tmux-continuum | Automatic session save and restore |
@@ -262,7 +258,8 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 | Tilix | `catppuccin/tilix` submodule scheme |
 | Bat | `catppuccin/bat` submodule tmTheme |
 | Delta | `catppuccin/delta` submodule feature |
-| Neovim/Vim | `catppuccin/nvim` plugin + lightline |
+| Vim | `catppuccin/vim` plugin + lightline |
+| Neovim | `catppuccin/nvim` plugin + lualine |
 | Tmux | `catppuccin/tmux` plugin |
 | Bottom | Official Mocha `[styles]` |
 | K9s | `catppuccin/k9s` submodule skin |
@@ -305,8 +302,9 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 |:-------|:-------|
 | `zsh/.zshrc` | `~/.zshrc` |
 | `git/.gitconfig` | `~/.gitconfig` |
-| `nvim` | `~/.vim`, `~/.config/nvim` |
-| `nvim/init.vim` | `~/.vimrc` |
+| `vim` | `~/.vim` |
+| `vim/vimrc` | `~/.vimrc` |
+| [`nvim`](nvim) | `~/.config/nvim` |
 | `tmux/.tmux.conf` | `~/.tmux.conf` |
 | `tmux` | `~/.tmux` |
 | `ghostty` | `~/.config/ghostty` |
@@ -319,11 +317,11 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `kanata/kanata.kbd` | `~/.config/kanata/kanata.kbd` |
 | `mise/config.toml` | `~/.config/mise/config.toml` |
 | `bottom/bottom.toml` | `~/.config/bottom/bottom.toml` |
-| `lazygit/config.yml` | `~/.config/lazygit/config.yml` |
+| [`lazygit/config.yml`](lazygit/config.yml) | `~/.config/lazygit/config.yml` |
 | `lazydocker/config.yml` | `~/.config/lazydocker/config.yml` |
 | `k9s/config.yml` | `~/.config/k9s/config.yml` |
 | `k9s/catppuccin/dist` | `~/.config/k9s/skins` |
-| `tealdeer/config.toml` | `~/.config/tealdeer/config.toml` |
+| [`tealdeer/config.toml`](tealdeer/config.toml) | `~/.config/tealdeer/config.toml` |
 | `htop/htoprc` | `~/.config/htop/htoprc` |
 | `gh/config.yml` | `~/.config/gh/config.yml` |
 | `glab/config.yml` | `~/.config/glab-cli/config.yml` |
@@ -344,20 +342,19 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `ripgrep/.ripgreprc` | `~/.ripgreprc` |
 | `fd/.fdrc` | `~/.fdrc` |
 | `telnet/.telnetrc` | `~/.telnetrc` |
-| `cmus/rc` | `~/.config/cmus/rc` |
+| [`cmus/rc`](cmus/rc) | `~/.config/cmus/rc` |
 | `atuin/config.toml` | `~/.config/atuin/config.toml` |
 | `direnv/direnv.toml` | `~/.config/direnv/direnv.toml` |
 | `direnv/direnvrc` | `~/.config/direnv/direnvrc` |
 | `thefuck/settings.py` | `~/.config/thefuck/settings.py` |
-| `tig/config` | `~/.config/tig/config` |
-| `broot/conf.toml` | `~/.config/broot/conf.toml` |
-| `ranger/rc.conf` | `~/.config/ranger/rc.conf` |
-| `ranger/rifle.conf` | `~/.config/ranger/rifle.conf` |
-| `ranger/scope.sh` | `~/.config/ranger/scope.sh` |
+| [`tig/config`](tig/config) | `~/.config/tig/config` |
+| [`broot/conf.toml`](broot/conf.toml) | `~/.config/broot/conf.toml` |
+| [`ranger/rc.conf`](ranger/rc.conf) | `~/.config/ranger/rc.conf` |
+| [`ranger/rifle.conf`](ranger/rifle.conf) | `~/.config/ranger/rifle.conf` |
+| [`ranger/scope.sh`](ranger/scope.sh) | `~/.config/ranger/scope.sh` |
 | `newsboat/config` | `~/.config/newsboat/config` |
 | `newsboat/urls` | `~/.config/newsboat/urls` |
-| `navi/config.yaml` | `~/.config/navi/config.yaml` |
-| `glances/glances.conf` | `~/.config/glances/glances.conf` |
+| [`navi/config.yaml`](navi/config.yaml) | `~/.config/navi/config.yaml` |
 | `asciinema/config` | `~/.config/asciinema/config` |
 | `goaccess/goaccess.conf` | `~/.config/goaccess/goaccess.conf` |
 | `taskwarrior/taskrc` | `~/.config/task/taskrc` |
@@ -387,7 +384,6 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── ghostty/          # Ghostty terminal + Catppuccin Mocha theme
 ├── git/              # Git config, hooks, message template, 60 aliases
 ├── glab/             # GitLab CLI config
-├── glances/          # Glances system monitor config
 ├── gnupg/            # GPG config and public keys
 ├── goaccess/         # GoAccess web log analyzer config
 ├── htop/             # htop config
@@ -400,8 +396,10 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── mise/             # mise runtime manager (Node.js, Python, Ruby)
 ├── mutt/             # Neomutt email client + Catppuccin Mocha theme
 ├── nodejs/           # npm, yarn, pnpm configs + GPG-encrypted tokens
-├── nvim/             # Neovim/Vim config + 31 plugins
+├── nvim/             # Neovim config, standalone lua setup with lazy.nvim
+├── vim/              # Vim config, 33 plugins
 ├── obsidian/         # Obsidian notes config
+├── ranger/           # Ranger file manager config
 ├── readline/         # Readline config
 ├── ripgrep/          # Ripgrep config
 ├── ssh/              # SSH config and public keys
@@ -412,7 +410,6 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── navi/             # Navi cheatsheet manager + custom cheats
 ├── newsboat/         # Newsboat RSS reader config
 ├── opencode/         # OpenCode AI config
-├── ranger/           # Ranger file manager config
 ├── taskwarrior/      # Taskwarrior task manager, Catppuccin Mocha themed
 ├── thefuck/          # TheFuck command corrector config
 ├── tig/              # Tig git TUI, Catppuccin Mocha themed

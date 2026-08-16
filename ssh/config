@@ -9,33 +9,33 @@ Include ~/.colima/ssh_config
 Host github.com
   HostName github.com
   User git
-  IdentityFile ~/.ssh/id_ed25519_personal
+  IdentityFile ~/.dotfiles/ssh/id_ed25519_personal
   IdentitiesOnly yes
-  ControlPath ~/.ssh/control-github-personal
+  ControlPath /tmp/ssh-%u-github-personal
   ForwardAgent yes
 
 Host github-onyx
   HostName github.com
   User git
-  IdentityFile ~/.ssh/id_ed25519_onyx
+  IdentityFile ~/.dotfiles/ssh/id_ed25519_onyx
   IdentitiesOnly yes
-  ControlPath ~/.ssh/control-github-onyx
+  ControlPath /tmp/ssh-%u-github-onyx
   ForwardAgent yes
 
 Host github-lineleap
   HostName github.com
   User git
-  IdentityFile ~/.ssh/id_ed25519_lineleap
+  IdentityFile ~/.dotfiles/ssh/id_ed25519_lineleap
   IdentitiesOnly yes
-  ControlPath ~/.ssh/control-github-lineleap
+  ControlPath /tmp/ssh-%u-github-lineleap
   ForwardAgent yes
 
 Host github-buoy
   HostName github.com
   User git
-  IdentityFile ~/.ssh/id_ed25519_buoy
+  IdentityFile ~/.dotfiles/ssh/id_ed25519_buoy
   IdentitiesOnly yes
-  ControlPath ~/.ssh/control-github-buoy
+  ControlPath /tmp/ssh-%u-github-buoy
   ForwardAgent yes
 
 Host gitlab.com
@@ -55,7 +55,7 @@ Host nas ds923 192.168.0.2
   PasswordAuthentication yes
   KbdInteractiveAuthentication yes
   PubkeyAuthentication yes
-  IdentityFile ~/.ssh/id_ed25519_personal
+  IdentityFile ~/.dotfiles/ssh/id_ed25519_personal
   IdentitiesOnly yes
   ControlMaster no
   ForwardAgent no
@@ -82,7 +82,7 @@ Host *
   # Connection multiplexing
   ControlMaster auto
   ControlPersist 600
-  ControlPath ~/.ssh/control-%C
+  ControlPath /tmp/ssh-%u-%C
 
   # Security settings
   StrictHostKeyChecking ask

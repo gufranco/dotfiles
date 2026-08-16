@@ -1,9 +1,9 @@
-# Pipxfile — CLI tools managed by pipx
+# Uvfile: CLI tools managed by uv
 # Format: one package per line. Comments (#) and blank lines are ignored.
-# Managed by f5 and install.sh — mirrors the Brewfile pattern.
+# Managed by f5 and install.sh, mirrors the Brewfile pattern.
 #
-# Install all:   pipx install <package>
-# Upgrade all:   pipx upgrade-all
+# Install all:   uv tool install <package>
+# Upgrade all:   uv tool upgrade --all
 # Cleanup extra: handled automatically by f5
 
 # Penetration testing — web fuzzing and parameter discovery

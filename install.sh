@@ -480,6 +480,19 @@ case "$(uname)" in
       log_skip "lazydocker already installed"
     fi
 
+    if ! cmd_exists uv; then
+      log_info "Installing uv..."
+      curl -LsSf --connect-timeout 10 --max-time 120 https://astral.sh/uv/install.sh | sh > /dev/null 2>&1 || true
+      PATH="$HOME/.local/bin:$PATH"
+      if cmd_exists uv; then
+        log_success "uv installed"
+      else
+        log_warning "uv install failed"
+      fi
+    else
+      log_skip "uv already installed"
+    fi
+
     ############################################################################
     # Golang
     ############################################################################

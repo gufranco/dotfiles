@@ -1,0 +1,11 @@
+{
+  "coc.preferences.formatOnSave": true,
+  "coc.preferences.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "prettier.requireConfig": true,
+  "diagnostic.displayByAle": false,
+  "suggest.noselect": true,
+  "suggest.enablePreselect": false,
+  "snippets.ultisnips.enable": false
+}

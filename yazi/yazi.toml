@@ -37,7 +37,7 @@ reveal = [
   { run = 'open -R "$@"', desc = "Reveal in Finder", for = "macos" },
 ]
 play = [
-  { run = 'iina "$@"', orphan = true, for = "macos" },
+  { run = 'open -a VLC "$@"', orphan = true, for = "macos" },
   { run = 'mpv "$@"', orphan = true, for = "linux" },
 ]
 

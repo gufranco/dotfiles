@@ -25,6 +25,11 @@ source "$HOME/.dotfiles/zsh/settings"
 ################################################################################
 source "$ZSH/oh-my-zsh.sh"
 
+if typeset -f async_stop_worker >/dev/null 2>&1; then
+  functions -c async_stop_worker __async_stop_worker_upstream
+  async_stop_worker() { __async_stop_worker_upstream "$@" 2>/dev/null; }
+fi
+
 ################################################################################
 # External tool initialization
 ################################################################################

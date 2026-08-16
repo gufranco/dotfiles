@@ -29,10 +29,6 @@
 	path = yazi/catppuccin
 	url = https://github.com/catppuccin/yazi
 	branch = main
-[submodule "eza/catppuccin"]
-	path = eza/catppuccin
-	url = https://github.com/catppuccin/eza
-	branch = main
 [submodule "mutt/catppuccin"]
 	path = mutt/catppuccin
 	url = https://github.com/catppuccin/neomutt

@@ -266,7 +266,7 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 | Lazygit | Official Mocha mauve `gui.theme` |
 | Lazydocker | Official Mocha mauve theme |
 | Yazi | `catppuccin/yazi` submodule flavor |
-| eza | `catppuccin/eza` submodule theme |
+| eza | Mocha mauve `theme.yml` (vendored from `catppuccin/eza`) |
 | Mutt | `catppuccin/neomutt` submodule |
 | fzf | Official Mocha `--color` |
 | Midnight Commander | `catppuccin/mc` submodule skin (inherits Mocha from terminal palette) |

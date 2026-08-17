@@ -346,7 +346,6 @@ cask 'dbeaver-community'
 cask 'mitmproxy'
 cask 'mongodb-compass'
 cask 'postman'
-cask 'proxyman'
 cask 'redis-insight'
 cask 'session-manager-plugin'
 

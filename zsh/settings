@@ -286,3 +286,8 @@ function __update_token() {
 if [ ! -e "$HOME/Workspace" ] && [ -d "$HOME/Dropbox/Workspace" ]; then
   ln -s "$HOME/Dropbox/Workspace" "$HOME/Workspace"
 fi
+
+################################################################################
+# Second brain vault
+################################################################################
+export SECOND_BRAIN_VAULT="$HOME/second-brain"

@@ -290,4 +290,14 @@ fi
 ################################################################################
 # Second brain vault
 ################################################################################
-export SECOND_BRAIN_VAULT="$HOME/second-brain"
+# Exported only when the vault is actually on this machine. Tooling treats the
+# variable as the single source of truth and stops cleanly when it is unset; a
+# variable pointing at a directory that is not there reads as configured and
+# fails later, further from the cause.
+#
+# Written as an if rather than a short-circuit because this is the last line of
+# the file, and a failing test would leave a non-zero status for the sourcing
+# shell in exactly the case being guarded against.
+if [ -d "$HOME/second-brain" ]; then
+  export SECOND_BRAIN_VAULT="$HOME/second-brain"
+fi

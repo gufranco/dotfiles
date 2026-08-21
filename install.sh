@@ -1160,6 +1160,13 @@ IOSCHED
       log_skip "Shell already Zsh"
     fi
 
+    log_info "Disabling .DS_Store on removable and network volumes..."
+    if __macos_no_ds_store_on_foreign_volumes; then
+      log_success "Finder will not write .DS_Store to USB or network volumes"
+    else
+      log_warning "Could not set the Finder defaults"
+    fi
+
     ;;
 esac
 

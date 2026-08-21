@@ -485,26 +485,14 @@ function fat_sort() {
       sudo mdutil -X "$mount_point" >/dev/null 2>&1
     fi
 
+    local patterns=()
+    local macos_pattern
+    while IFS= read -r macos_pattern; do
+      patterns+=("$macos_pattern")
+    done < <(__macos_metadata_patterns)
+
     # shellcheck disable=SC2016
-    local patterns=(
-      # macOS (current)
-      ".DS_Store"
-      ".AppleDB"
-      ".AppleDesktop"
-      ".AppleDouble"
-      ".apdisk"
-      ".com.apple.timemachine.donotpresent"
-      ".com.apple.timemachine.supported"
-      ".DocumentRevisions-V100"
-      ".fseventsd"
-      ".MobileBackups"
-      ".Spotlight-V100"
-      ".TemporaryItems"
-      ".Trashes"
-      ".VolumeIcon.icns"
-      ".metadata_never_index"
-      "._*"
-      "__MACOSX"
+    patterns+=(
       # macOS fsck recovery
       "FSCK*.REC"
       # macOS HFS+ wrapper artifacts
@@ -630,5 +618,167 @@ function fat_sort() {
   else
     __log_error "Failed to sort: $partition"
     return 1
+  fi
+}
+
+################################################################################
+# Stop macOS writing its metadata onto an external volume
+################################################################################
+function disk_quiet() {
+  __dq_usage() {
+    __log_info "Usage: disk_quiet <device|mount_point>"
+    __log_info "       disk_quiet /Volumes/ZIP100    (mount point)"
+    __log_info "       disk_quiet /dev/disk8s1       (partition)"
+    __log_info "       disk_quiet /dev/disk8         (whole disk)"
+    __log_info "       NO_LOG=y disk_quiet <...>     (also write .fseventsd/no_log)"
+    __log_info "       EJECT=y  disk_quiet <...>     (eject when finished)"
+  }
+
+  __dq_mount_point() {
+    diskutil info "$1" 2>/dev/null | awk -F': +' '/Mount Point/ {print $2}'
+  }
+
+  __dq_resolve() {
+    local input="$1"
+    local mount_point
+
+    if [ -d "$input" ] && [ ! -b "$input" ] && [ ! -c "$input" ]; then
+      echo "$input"
+      return 0
+    fi
+
+    mount_point=$(__dq_mount_point "$input")
+    if [ -n "$mount_point" ]; then
+      echo "$mount_point"
+      return 0
+    fi
+
+    local partition
+    partition=$(diskutil list "$input" 2>/dev/null |
+      grep -iE "DOS_FAT|Windows_FAT|Microsoft Basic Data|ExFAT|Apple_HFS|Apple_APFS" |
+      awk '{print $NF}' | head -1)
+    [ -z "$partition" ] && return 1
+
+    mount_point=$(__dq_mount_point "/dev/$partition")
+    if [ -z "$mount_point" ]; then
+      diskutil mount "/dev/$partition" >/dev/null 2>&1 || return 1
+      mount_point=$(__dq_mount_point "/dev/$partition")
+    fi
+
+    [ -z "$mount_point" ] && return 1
+    echo "$mount_point"
+  }
+
+  __dq_is_removable_volume() {
+    local mount_point="$1"
+    local info
+
+    if [ -z "$mount_point" ] || [ ! -d "$mount_point" ]; then
+      __log_error "Not a mounted volume: ${mount_point:-<empty>}"
+      return 1
+    fi
+
+    info=$(diskutil info "$mount_point" 2>/dev/null)
+    if [ -z "$info" ]; then
+      __log_error "Refusing: $mount_point is not a volume"
+      return 1
+    fi
+
+    if echo "$info" | grep -qE "Removable Media: +Removable" ||
+      echo "$info" | grep -qE "Device Location: +External"; then
+      return 0
+    fi
+
+    __log_error "Refusing: $mount_point is not a removable or external volume"
+    return 1
+  }
+
+  __dq_remove_metadata() {
+    local mount_point="$1"
+    local patterns=()
+    local pattern count total=0
+
+    while IFS= read -r pattern; do
+      patterns+=("$pattern")
+    done < <(__macos_metadata_patterns)
+
+    for pattern in "${patterns[@]}"; do
+      count=$(command find "$mount_point" -iname "$pattern" 2>/dev/null | command wc -l | tr -d ' ')
+
+      if [ "$count" -gt 0 ]; then
+        command find "$mount_point" -iname "$pattern" -exec rm -rf {} + 2>/dev/null
+        total=$((total + count))
+        __log_info "  Removed: $pattern ($count)"
+      fi
+    done
+
+    if [ "$total" -gt 0 ]; then
+      __log_success "Removed $total item(s)"
+    else
+      __log_info "Nothing to remove"
+    fi
+  }
+
+  local input="$1"
+
+  if [ "$(uname)" != "Darwin" ]; then
+    __log_error "disk_quiet applies to macOS only"
+    return 1
+  fi
+
+  if [ -z "$input" ]; then
+    __log_error "No device specified"
+    __dq_usage
+    return 1
+  fi
+
+  local mount_point
+  mount_point=$(__dq_resolve "$input")
+  if [ -z "$mount_point" ]; then
+    __log_error "No mounted volume found for: $input"
+    return 1
+  fi
+
+  __dq_is_removable_volume "$mount_point" || return 1
+  __log_info "Volume: $mount_point"
+
+  if __macos_no_ds_store_on_foreign_volumes; then
+    __log_success "Finder will not write .DS_Store to USB or network volumes"
+  else
+    __log_warning "Could not set the Finder defaults"
+  fi
+
+  __log_info "Disabling Spotlight for this volume..."
+  if sudo mdutil -i off -d "$mount_point" >/dev/null 2>&1; then
+    __log_success "Spotlight disabled"
+  else
+    __log_warning "Could not disable Spotlight (volume may be read-only)"
+  fi
+
+  sudo mdutil -X "$mount_point" >/dev/null 2>&1
+
+  __log_info "Removing macOS metadata..."
+  __dq_remove_metadata "$mount_point"
+
+  if [ "${NO_LOG}" = "y" ]; then
+    __log_info "Writing .fseventsd/no_log..."
+    if mkdir -p "$mount_point/.fseventsd" 2>/dev/null &&
+      : >"$mount_point/.fseventsd/no_log" 2>/dev/null; then
+      __log_success "FSEvents will not log on this volume"
+    else
+      __log_warning "Could not write .fseventsd/no_log"
+    fi
+  fi
+
+  sync
+
+  if [ "${EJECT}" = "y" ]; then
+    __log_info "Ejecting..."
+    if sudo diskutil eject "$mount_point" >/dev/null 2>&1; then
+      __log_success "Ejected, safe to remove"
+    else
+      __log_error "Failed to eject"
+      return 1
+    fi
   fi
 }

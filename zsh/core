@@ -230,6 +230,51 @@ function __setup_homebrew() {
 }
 
 ################################################################################
+# Metadata macOS writes onto any volume it mounts read-write
+# (used by fat_sort and disk_quiet)
+################################################################################
+function __macos_metadata_patterns() {
+  cat <<'PATTERNS'
+.DS_Store
+.AppleDB
+.AppleDesktop
+.AppleDouble
+.apdisk
+.com.apple.timemachine.donotpresent
+.com.apple.timemachine.supported
+.DocumentRevisions-V100
+.fseventsd
+.MobileBackups
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.metadata_never_index
+._*
+__MACOSX
+PATTERNS
+}
+
+################################################################################
+# Stop Finder writing .DS_Store to removable and network volumes
+# (used by install.sh and disk_quiet)
+################################################################################
+function __macos_no_ds_store_on_foreign_volumes() {
+  [ "$(uname)" = "Darwin" ] || return 0
+
+  local key changed=0
+  for key in DSDontWriteUSBStores DSDontWriteNetworkStores; do
+    if [ "$(defaults read com.apple.desktopservices "$key" 2>/dev/null)" != "1" ]; then
+      defaults write com.apple.desktopservices "$key" -bool true || return 1
+      changed=1
+    fi
+  done
+
+  [ "$changed" -eq 1 ] && killall Finder 2>/dev/null
+  return 0
+}
+
+################################################################################
 # macOS post-install cleanup (used by install.sh and f5)
 ################################################################################
 function __macos_post_install_cleanup() {

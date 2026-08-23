@@ -57,19 +57,93 @@ function disk_wipe() {
     fi
   }
 
+  ################################################################################
+  # Stopping on a drive that has started failing
+  #
+  # A drive that cannot find a track retracts the head and seeks again, over and
+  # over. On Zip media that is the click of death, and it can wreck the disk,
+  # then the drive, then every disk put in the drive afterwards. Nothing here can
+  # hear it. What it can see is a transfer that fails, or one that collapses
+  # against what the same drive managed a moment earlier, and both are what the
+  # clicking does to the bus. Either stops the wipe and ejects, because the
+  # cheapest moment to take suspect media out is before the next block.
+  ################################################################################
+  __dw_chunk_bytes() {
+    local size="$1"
+    local wanted=$((size / 32))
+    local floor=$((1024 * 1024))
+    local ceiling=$((256 * 1024 * 1024))
+
+    [ "$wanted" -lt "$floor" ] && wanted="$floor"
+    [ "$wanted" -gt "$ceiling" ] && wanted="$ceiling"
+    echo "$wanted"
+  }
+
+  __dw_fault() {
+    local disk="$1"
+    local reason="$2"
+
+    __log_error "STOPPED: $reason"
+    __log_error "Ejecting immediately rather than continuing."
+    sync
+    case "$(uname)" in
+      Darwin) sudo diskutil eject "$disk" >/dev/null 2>&1 ;;
+      Linux) sudo eject "$disk" >/dev/null 2>&1 ;;
+    esac
+    __log_error "A drive that fails this way can damage the next media it is given."
+    return 1
+  }
+
+  __dw_watch() {
+    local what="$1" index="$2" total="$3" took="$4"
+    local ceiling="${STALL_SECONDS:-60}"
+    local factor="${SLOW_FACTOR:-6}"
+
+    __DW_REASON=""
+    if [ "$took" -gt "$ceiling" ]; then
+      __DW_REASON="$what chunk $index of $total took ${took}s, over the ${ceiling}s limit"
+      return 1
+    fi
+    if [ "$__DW_FASTEST" -gt 0 ] && [ "$index" -gt 2 ] &&
+      [ "$took" -gt $((__DW_FASTEST * factor)) ]; then
+      __DW_REASON="$what chunk $index of $total took ${took}s against a best of ${__DW_FASTEST}s"
+      return 1
+    fi
+    if [ "$took" -gt 0 ] && { [ "$__DW_FASTEST" -eq 0 ] || [ "$took" -lt "$__DW_FASTEST" ]; }; then
+      __DW_FASTEST="$took"
+    fi
+    return 0
+  }
+
   __dw_write_pattern() {
     local disk="$1"
     local size="$2"
     local block_size="$3"
     local pattern="$4"
+    local chunk index total started
 
-    __log_info "Writing $pattern..."
+    chunk=$(__dw_chunk_bytes "$size")
+    total=$(((size + chunk - 1) / chunk))
+    __DW_FASTEST=0
 
-    if ! __dw_generate_pattern "$size" "$pattern" | sudo dd of="$disk" bs="$block_size" status=progress 2>&1; then
-      __log_error "Failed to write $pattern"
-      return 1
-    fi
+    __log_info "Writing $pattern in $total chunks, watching for stalls..."
 
+    index=0
+    while [ "$index" -lt "$total" ]; do
+      started=$(date +%s)
+      if ! __dw_generate_pattern "$chunk" "$pattern" |
+        sudo dd of="$disk" bs="$chunk" seek="$index" count=1 conv=notrunc status=none 2>/dev/null; then
+        __dw_fault "$disk" "the write failed on chunk $index of $total"
+        return 1
+      fi
+      if ! __dw_watch "write" "$index" "$total" $(($(date +%s) - started)); then
+        __dw_fault "$disk" "$__DW_REASON"
+        return 1
+      fi
+      index=$((index + 1))
+    done
+
+    sync
     __log_success "Write $pattern completed"
     return 0
   }
@@ -79,14 +153,30 @@ function disk_wipe() {
     local size="$2"
     local block_size="$3"
     local pattern="$4"
+    local chunk index total started
 
-    __log_info "Verifying $pattern..."
+    chunk=$(__dw_chunk_bytes "$size")
+    total=$(((size + chunk - 1) / chunk))
+    __DW_FASTEST=0
 
-    if ! sudo dd if="$disk" bs="$block_size" count=$((size / block_size + 1)) status=none 2>/dev/null | head -c "$size" | \
-      cmp -s - <(__dw_generate_pattern "$size" "$pattern"); then
-      __log_error "Failed to verify $pattern"
-      return 1
-    fi
+    __log_info "Verifying $pattern in $total chunks..."
+
+    index=0
+    while [ "$index" -lt "$total" ]; do
+      local remaining=$((size - index * chunk))
+      local this_chunk=$((remaining < chunk ? remaining : chunk))
+      started=$(date +%s)
+      if ! sudo dd if="$disk" bs="$chunk" skip="$index" count=1 status=none 2>/dev/null |
+        head -c "$this_chunk" | cmp -s - <(__dw_generate_pattern "$this_chunk" "$pattern"); then
+        __dw_fault "$disk" "chunk $index of $total did not read back as $pattern"
+        return 1
+      fi
+      if ! __dw_watch "read" "$index" "$total" $(($(date +%s) - started)); then
+        __dw_fault "$disk" "$__DW_REASON"
+        return 1
+      fi
+      index=$((index + 1))
+    done
 
     __log_success "Verify $pattern completed"
     return 0

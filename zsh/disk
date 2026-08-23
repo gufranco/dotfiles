@@ -57,17 +57,6 @@ function disk_wipe() {
     fi
   }
 
-  ################################################################################
-  # Stopping on a drive that has started failing
-  #
-  # A drive that cannot find a track retracts the head and seeks again, over and
-  # over. On Zip media that is the click of death, and it can wreck the disk,
-  # then the drive, then every disk put in the drive afterwards. Nothing here can
-  # hear it. What it can see is a transfer that fails, or one that collapses
-  # against what the same drive managed a moment earlier, and both are what the
-  # clicking does to the bus. Either stops the wipe and ejects, because the
-  # cheapest moment to take suspect media out is before the next block.
-  ################################################################################
   __dw_chunk_bytes() {
     local size="$1"
     local wanted=$((size / 32))
@@ -94,6 +83,13 @@ function disk_wipe() {
     return 1
   }
 
+  __dw_holds_a_steady_rate() {
+    case "$1" in
+      floppy | zip) return 0 ;;
+      *) return 1 ;;
+    esac
+  }
+
   __dw_watch() {
     local what="$1" index="$2" total="$3" took="$4"
     local ceiling="${STALL_SECONDS:-60}"
@@ -104,7 +100,7 @@ function disk_wipe() {
       __DW_REASON="$what chunk $index of $total took ${took}s, over the ${ceiling}s limit"
       return 1
     fi
-    if [ "$__DW_FASTEST" -gt 0 ] && [ "$index" -gt 2 ] &&
+    if [ "$__DW_STEADY" = "1" ] && [ "$__DW_FASTEST" -gt 0 ] && [ "$index" -gt 2 ] &&
       [ "$took" -gt $((__DW_FASTEST * factor)) ]; then
       __DW_REASON="$what chunk $index of $total took ${took}s against a best of ${__DW_FASTEST}s"
       return 1
@@ -421,6 +417,16 @@ function disk_wipe() {
       fi
       ;;
   esac
+
+  local media
+  media=$(__dw_detect_media "$disk" "$size")
+  if __dw_holds_a_steady_rate "$media"; then
+    __DW_STEADY=1
+    __log_info "Media: $media. A sudden loss of speed will stop the wipe."
+  else
+    __DW_STEADY=0
+    __log_info "Media: $media. Speed varies on this kind, so only errors and stalls stop the wipe."
+  fi
 
   __log_info "Cleaning $disk..."
   for ((index=1; index <= passes; index++)); do

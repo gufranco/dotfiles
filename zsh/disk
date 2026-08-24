@@ -46,25 +46,173 @@ function disk_wipe() {
     return 0
   }
 
-  __dw_generate_pattern() {
+  __dw_now_ms() {
+    if [ -n "${EPOCHREALTIME:-}" ]; then
+      printf '%s\n' "$EPOCHREALTIME" |
+        awk -F'[.,]' '{ printf "%d\n", ($1 * 1000) + substr($2 "000", 1, 3) }'
+    elif __cmd_exists perl; then
+      perl -MTime::HiRes=time -e 'printf "%d\n", time() * 1000'
+    else
+      echo $(($(date +%s) * 1000))
+    fi
+  }
+
+  __dw_io_device() {
+    local disk="$1"
+    local name="${disk##*/}"
+
+    if [ "$(uname)" = "Darwin" ] && [ "${name#r}" = "$name" ] && [ -c "/dev/r$name" ]; then
+      printf '/dev/r%s\n' "$name"
+      return 0
+    fi
+
+    printf '%s\n' "$disk"
+  }
+
+  __dw_device_identity() {
+    local disk="$1"
+    local vendor="" model="" name
+
+    case "$(uname)" in
+      Darwin)
+        model=$(diskutil info -plist "$disk" 2>/dev/null |
+          plutil -extract MediaName raw - 2>/dev/null)
+        ;;
+      Linux)
+        name="${disk##*/}"
+        vendor=$(cat "/sys/block/$name/device/vendor" 2>/dev/null)
+        model=$(cat "/sys/block/$name/device/model" 2>/dev/null)
+        if [ -z "$vendor" ] && [ -z "$model" ]; then
+          vendor=$(lsblk -dno VENDOR "$disk" 2>/dev/null | head -1)
+          model=$(lsblk -dno MODEL "$disk" 2>/dev/null | head -1)
+        fi
+        ;;
+    esac
+
+    printf '%s %s\n' "$vendor" "$model" |
+      tr '[:lower:]' '[:upper:]' | tr -s '[:space:]' ' ' | sed 's/^ //; s/ *$//'
+  }
+
+  __dw_device_family() {
+    case "$1" in
+      *"ZIP 100"* | *"ZIP 250"* | *"ZIP 750"* | *ZIP100* | *ZIP250* | *ZIP750*)
+        echo "zip"
+        ;;
+      *"LS-120"* | *"LS-240"* | *SUPERDISK*)
+        echo "superdisk"
+        ;;
+      *"JAZ "* | *JAZ1GB* | *JAZ2GB*)
+        echo "jaz"
+        ;;
+      *"USB-FDU"* | *"FD-05"* | *"USB FDD"* | *FLOPPY*)
+        echo "floppy"
+        ;;
+      *"POCKETZIP"* | *"CLIK!"*)
+        echo "pocketzip"
+        ;;
+      *)
+        echo ""
+        ;;
+    esac
+  }
+
+  __dw_sector_bytes() {
+    local disk="$1"
+    local bytes=""
+
+    case "$(uname)" in
+      Darwin)
+        bytes=$(diskutil info "$disk" 2>/dev/null |
+          awk -F': +' '/Device Block Size/ { print $2 }' | awk '{ print $1 }')
+        ;;
+      Linux)
+        bytes=$(sudo blockdev --getss "$disk" 2>/dev/null)
+        ;;
+    esac
+
+    if ! [[ "$bytes" =~ ^[0-9]+$ ]] || [ "$bytes" -lt 512 ]; then
+      bytes=512
+    fi
+
+    echo "$bytes"
+  }
+
+  __dw_probe_cache_bypass() {
+    local device="$1"
+    local sector="$2"
+
+    __DW_READ_FLAGS=""
+    __DW_WRITE_FLAGS=""
+    __DW_FLUSH=0
+
+    if [ "$(uname)" != "Linux" ]; then
+      return 0
+    fi
+
+    if sudo dd if="$device" bs="$sector" count=1 iflag=direct status=none >/dev/null 2>&1; then
+      __DW_READ_FLAGS="iflag=direct"
+      __DW_WRITE_FLAGS="oflag=direct"
+      __log_info "Bypassing the page cache so every chunk reaches the media."
+    else
+      __DW_FLUSH=1
+      __log_info "Direct I/O is unavailable, so buffers are dropped before every verify."
+    fi
+  }
+
+  __dw_pattern_file() {
     local size="$1"
     local pattern="$2"
+    local target="${__DW_TMPDIR}/pattern-${pattern}"
 
-    if [ "$pattern" = "0xFF" ]; then
-      head -c "$size" /dev/zero | tr '\000' '\377'
-    else
-      head -c "$size" /dev/zero
+    if [ ! -f "$target" ] || [ "$(__dw_file_size "$target")" -ne "$size" ]; then
+      if [ "$pattern" = "0xFF" ]; then
+        head -c "$size" /dev/zero | tr '\000' '\377' >"$target" || return 1
+      else
+        head -c "$size" /dev/zero >"$target" || return 1
+      fi
     fi
+
+    if [ "$(__dw_file_size "$target")" -ne "$size" ]; then
+      return 1
+    fi
+
+    printf '%s\n' "$target"
+  }
+
+  __dw_file_size() {
+    local bytes
+
+    bytes=$(wc -c <"$1" 2>/dev/null | tr -d '[:space:]')
+    if [ -z "$bytes" ]; then
+      bytes=0
+    fi
+
+    echo "$bytes"
+  }
+
+  __dw_duration() {
+    local ms="$1"
+
+    if [ "$ms" -lt 1000 ]; then
+      printf '%sms\n' "$ms"
+    else
+      printf '%ss\n' "$((ms / 1000))"
+    fi
+  }
+
+  __dw_dd_bytes() {
+    awk '/bytes/ { print $1; exit }' "$1"
   }
 
   __dw_chunk_bytes() {
     local size="$1"
+    local mib=$((1024 * 1024))
     local wanted=$((size / 32))
-    local floor=$((1024 * 1024))
-    local ceiling=$((256 * 1024 * 1024))
+    local ceiling=$((64 * mib))
 
-    [ "$wanted" -lt "$floor" ] && wanted="$floor"
     [ "$wanted" -gt "$ceiling" ] && wanted="$ceiling"
+    wanted=$((wanted - wanted % mib))
+    [ "$wanted" -lt "$mib" ] && wanted="$mib"
     echo "$wanted"
   }
 
@@ -84,113 +232,205 @@ function disk_wipe() {
   }
 
   __dw_holds_a_steady_rate() {
-    case "$1" in
+    local media="$1"
+    local family="$2"
+
+    case "$family" in
+      zip | floppy | superdisk | jaz | pocketzip) return 0 ;;
+    esac
+
+    case "$media" in
       floppy | zip) return 0 ;;
       *) return 1 ;;
     esac
   }
 
+  __dw_best_cost() {
+    case "$1" in
+      write) echo "$__DW_BEST_WRITE" ;;
+      *) echo "$__DW_BEST_READ" ;;
+    esac
+  }
+
+  __dw_remember_cost() {
+    case "$1" in
+      write) __DW_BEST_WRITE="$2" ;;
+      *) __DW_BEST_READ="$2" ;;
+    esac
+  }
+
   __dw_watch() {
-    local what="$1" index="$2" total="$3" took="$4"
-    local ceiling="${STALL_SECONDS:-60}"
-    local factor="${SLOW_FACTOR:-6}"
+    local kind="$1"
+    local label="$2"
+    local index="$3"
+    local total="$4"
+    local bytes="$5"
+    local elapsed="$6"
+    local ceiling=$((${STALL_SECONDS:-60} * 1000))
+    local factor="${SLOW_FACTOR:-0}"
+    local trip="${MIN_TRIP_MS:-1500}"
+    local mib=$((1024 * 1024))
+    local cost best
 
     __DW_REASON=""
-    if [ "$took" -gt "$ceiling" ]; then
-      __DW_REASON="$what chunk $index of $total took ${took}s, over the ${ceiling}s limit"
+
+    if [ "$factor" -eq 0 ]; then
+      if [ "$__DW_STEADY" = "1" ]; then
+        factor=4
+      else
+        factor=8
+      fi
+    fi
+
+    if [ "$elapsed" -gt "$ceiling" ]; then
+      __DW_REASON="$label chunk $index of $total took $(__dw_duration "$elapsed"), over the $(__dw_duration "$ceiling") limit"
       return 1
     fi
-    if [ "$__DW_STEADY" = "1" ] && [ "$__DW_FASTEST" -gt 0 ] && [ "$index" -gt 2 ] &&
-      [ "$took" -gt $((__DW_FASTEST * factor)) ]; then
-      __DW_REASON="$what chunk $index of $total took ${took}s against a best of ${__DW_FASTEST}s"
+
+    [ "$bytes" -le 0 ] && return 0
+    cost=$(((elapsed * mib + bytes - 1) / bytes))
+    [ "$cost" -lt 1 ] && cost=1
+
+    best=$(__dw_best_cost "$kind")
+    if [ "$best" -gt 0 ] && [ "$elapsed" -ge "$trip" ] && [ "$cost" -gt $((best * factor)) ]; then
+      __DW_REASON="$label chunk $index of $total ran at ${cost}ms per MiB against a best of ${best}ms"
       return 1
     fi
-    if [ "$took" -gt 0 ] && { [ "$__DW_FASTEST" -eq 0 ] || [ "$took" -lt "$__DW_FASTEST" ]; }; then
-      __DW_FASTEST="$took"
+
+    if [ "$best" -eq 0 ] || [ "$cost" -lt "$best" ]; then
+      __dw_remember_cost "$kind" "$cost"
     fi
+
     return 0
   }
 
-  __dw_write_pattern() {
-    local disk="$1"
-    local size="$2"
-    local block_size="$3"
-    local pattern="$4"
-    local chunk index total started
+  __dw_move() {
+    local direction="$1"
+    local source="$2"
+    local target="$3"
+    local offset="$4"
+    local bytes="$5"
+    local err="${__DW_TMPDIR}/dd.err"
+    local block seek skip count
+    local -a flags
 
-    chunk=$(__dw_chunk_bytes "$size")
-    total=$(((size + chunk - 1) / chunk))
-    __DW_FASTEST=0
+    if [ $((offset % (1024 * 1024))) -eq 0 ] && [ $((bytes % (1024 * 1024))) -eq 0 ]; then
+      block=$((1024 * 1024))
+    else
+      block="$__DW_SECTOR"
+    fi
 
-    __log_info "Writing $pattern in $total chunks, watching for stalls..."
+    count=$((bytes / block))
+    __DW_MOVED=0
 
-    index=0
-    while [ "$index" -lt "$total" ]; do
-      started=$(date +%s)
-      if ! __dw_generate_pattern "$chunk" "$pattern" |
-        sudo dd of="$disk" bs="$chunk" seek="$index" count=1 conv=notrunc status=none 2>/dev/null; then
-        __dw_fault "$disk" "the write failed on chunk $index of $total"
-        return 1
-      fi
-      if ! __dw_watch "write" "$index" "$total" $(($(date +%s) - started)); then
-        __dw_fault "$disk" "$__DW_REASON"
-        return 1
-      fi
-      index=$((index + 1))
-    done
+    if [ "$direction" = "write" ]; then
+      flags=()
+      [ -n "$__DW_WRITE_FLAGS" ] && flags=("$__DW_WRITE_FLAGS")
+      seek=$((offset / block))
+      sudo dd if="$source" of="$target" bs="$block" seek="$seek" count="$count" conv=notrunc "${flags[@]}" 2>"$err" || return 1
+    else
+      flags=()
+      [ -n "$__DW_READ_FLAGS" ] && flags=("$__DW_READ_FLAGS")
+      skip=$((offset / block))
+      sudo dd if="$source" of="$target" bs="$block" skip="$skip" count="$count" "${flags[@]}" 2>"$err" || return 1
+    fi
 
-    sync
-    __log_success "Write $pattern completed"
+    __DW_MOVED=$(__dw_dd_bytes "$err")
+    [ -z "$__DW_MOVED" ] && __DW_MOVED=0
     return 0
   }
 
-  __dw_verify_pattern() {
-    local disk="$1"
-    local size="$2"
-    local block_size="$3"
+  __dw_run_phase() {
+    local direction="$1"
+    local disk="$2"
+    local size="$3"
     local pattern="$4"
-    local chunk index total started
+    local io chunk total index offset piece started elapsed reference label kind
 
+    io=$(__dw_io_device "$disk")
     chunk=$(__dw_chunk_bytes "$size")
     total=$(((size + chunk - 1) / chunk))
-    __DW_FASTEST=0
 
-    __log_info "Verifying $pattern in $total chunks..."
+    if ! reference=$(__dw_pattern_file "$chunk" "$pattern"); then
+      __log_error "Unable to build the $pattern reference pattern"
+      return 1
+    fi
+
+    if [ "$direction" = "write" ]; then
+      label="write"
+      kind="write"
+      __log_info "Writing $pattern over $total chunks, timing every chunk"
+    else
+      label="read"
+      kind="read"
+      if [ "$__DW_FLUSH" = "1" ]; then
+        sync
+        sudo blockdev --flushbufs "$io" 2>/dev/null
+      fi
+      __log_info "Verifying $pattern over $total chunks, timing every chunk"
+    fi
 
     index=0
     while [ "$index" -lt "$total" ]; do
-      local remaining=$((size - index * chunk))
-      local this_chunk=$((remaining < chunk ? remaining : chunk))
-      started=$(date +%s)
-      if ! sudo dd if="$disk" bs="$chunk" skip="$index" count=1 status=none 2>/dev/null |
-        head -c "$this_chunk" | cmp -s - <(__dw_generate_pattern "$this_chunk" "$pattern"); then
-        __dw_fault "$disk" "chunk $index of $total did not read back as $pattern"
+      offset=$((index * chunk))
+      piece=$((size - offset))
+      [ "$piece" -gt "$chunk" ] && piece="$chunk"
+
+      started=$(__dw_now_ms)
+      if [ "$direction" = "write" ]; then
+        if ! __dw_move write "$reference" "$io" "$offset" "$piece"; then
+          __dw_fault "$disk" "the write failed on chunk $((index + 1)) of $total"
+          return 1
+        fi
+      else
+        if ! __dw_move read "$io" "${__DW_TMPDIR}/readback" "$offset" "$piece"; then
+          __dw_fault "$disk" "the read failed on chunk $((index + 1)) of $total"
+          return 1
+        fi
+      fi
+      elapsed=$(($(__dw_now_ms) - started))
+
+      if [ "$__DW_MOVED" -ne "$piece" ]; then
+        __dw_fault "$disk" "chunk $((index + 1)) of $total moved $__DW_MOVED of $piece bytes"
         return 1
       fi
-      if ! __dw_watch "read" "$index" "$total" $(($(date +%s) - started)); then
+
+      if ! __dw_watch "$kind" "$label" "$((index + 1))" "$total" "$piece" "$elapsed"; then
         __dw_fault "$disk" "$__DW_REASON"
         return 1
       fi
+
+      if [ "$direction" = "read" ] &&
+        ! cmp -s -n "$piece" "${__DW_TMPDIR}/readback" "$reference"; then
+        __dw_fault "$disk" "chunk $((index + 1)) of $total did not read back as $pattern"
+        return 1
+      fi
+
       index=$((index + 1))
     done
 
-    __log_success "Verify $pattern completed"
+    if [ "$direction" = "write" ]; then
+      sync
+      __log_success "Write $pattern completed"
+    else
+      __log_success "Verify $pattern completed"
+    fi
+
     return 0
   }
 
   __dw_execute_pass() {
     local disk="$1"
     local size="$2"
-    local block_size="$3"
-    local index="$4"
-    local passes="$5"
+    local index="$3"
+    local passes="$4"
 
     __log_info "Pass $index of $passes"
 
-    __dw_write_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
-    __dw_verify_pattern "$disk" "$size" "$block_size" "0xFF" || return 1
-    __dw_write_pattern "$disk" "$size" "$block_size" "0x00" || return 1
-    __dw_verify_pattern "$disk" "$size" "$block_size" "0x00" || return 1
+    __dw_run_phase write "$disk" "$size" "0xFF" || return 1
+    __dw_run_phase read "$disk" "$size" "0xFF" || return 1
+    __dw_run_phase write "$disk" "$size" "0x00" || return 1
+    __dw_run_phase read "$disk" "$size" "0x00" || return 1
 
     __log_success "Pass $index/$passes completed"
     return 0
@@ -257,6 +497,10 @@ function disk_wipe() {
         ;;
     esac
 
+    if [ "$__DW_FAMILY" = "zip" ]; then
+      label="ZIP"
+    fi
+
     __log_info "Detected media: $media"
     __log_info "Creating filesystem ($fs_type)..."
 
@@ -271,6 +515,10 @@ function disk_wipe() {
           fi
           ;;
         Linux)
+          if ! __cmd_exists mkfs.fat; then
+            __log_error "mkfs.fat is not installed. Install the dosfstools package."
+            return 1
+          fi
           if sudo mkfs.fat -F 12 -n "$label" "$disk" >/dev/null 2>&1; then
             __log_success "Formatted as $fs_type (superfloppy)"
           else
@@ -298,19 +546,56 @@ function disk_wipe() {
         fi
         ;;
       Linux)
-        if ! echo ",,0c;" | sudo sfdisk "$disk" >/dev/null 2>&1; then
+        if ! __cmd_exists sfdisk; then
+          __log_error "sfdisk is not installed. Install the fdisk package."
+          return 1
+        fi
+
+        local part_type mkfs_tool
+        case "$media" in
+          zip | small)
+            part_type="06"
+            mkfs_tool="mkfs.fat"
+            ;;
+          medium)
+            part_type="0b"
+            mkfs_tool="mkfs.fat"
+            ;;
+          large)
+            part_type="07"
+            mkfs_tool="mkfs.exfat"
+            ;;
+        esac
+
+        if ! __cmd_exists "$mkfs_tool"; then
+          __log_error "$mkfs_tool is not installed."
+          return 1
+        fi
+
+        if ! echo ",,$part_type;" | sudo sfdisk "$disk" >/dev/null 2>&1; then
           __log_error "Failed to create partition table"
           return 1
         fi
 
-        sleep 1
         sudo partprobe "$disk" 2>/dev/null
+        __cmd_exists udevadm && sudo udevadm settle >/dev/null 2>&1
 
         local partition
         if [[ "$disk" =~ [0-9]$ ]]; then
           partition="${disk}p1"
         else
           partition="${disk}1"
+        fi
+
+        local waited=0
+        while [ ! -b "$partition" ] && [ "$waited" -lt 10 ]; do
+          sleep 1
+          waited=$((waited + 1))
+        done
+
+        if [ ! -b "$partition" ]; then
+          __log_error "Partition $partition did not appear"
+          return 1
         fi
 
         local format_ok=false
@@ -340,7 +625,6 @@ function disk_wipe() {
 
   local input="$1"
   local passes="${PASSES:-1}"
-  local block_size=$((1024 * 1024))
 
   if [ -z "$input" ]; then
     __log_error "No device specified"
@@ -388,17 +672,34 @@ function disk_wipe() {
 
   __dw_validate_params "$disk" "$passes" || return 1
 
+  local identity
+  identity=$(__dw_device_identity "$disk")
+  __DW_FAMILY=$(__dw_device_family "$identity")
+  if [ -n "$identity" ]; then
+    __log_info "Device reports itself as: $identity"
+  fi
+  if [ -n "$__DW_FAMILY" ]; then
+    __log_info "Recognised as $__DW_FAMILY media from the device, not from its size."
+  fi
+
+  __dw_confirm "$disk" || return 1
+
   local size
   case "$(uname)" in
     Darwin) size=$(diskutil info "$disk" 2>/dev/null | sed -nE 's/.*Disk Size:.*\(([0-9]+) Bytes\).*/\1/p') ;;
-    Linux)  size=$(command blockdev --getsize64 "$disk" 2>/dev/null) ;;
+    Linux) size=$(sudo blockdev --getsize64 "$disk" 2>/dev/null) ;;
   esac
-  if [ -z "$size" ] || [ "$size" -eq 0 ]; then
+  if ! [[ "$size" =~ ^[0-9]+$ ]] || [ "$size" -eq 0 ]; then
     __log_error "Unable to determine disk size for $disk"
     return 1
   fi
 
-  __dw_confirm "$disk" || return 1
+  __DW_SECTOR=$(__dw_sector_bytes "$disk")
+
+  if [ $((size % __DW_SECTOR)) -ne 0 ]; then
+    __log_warning "Device size is not a whole number of sectors. Skipping the last $((size % __DW_SECTOR)) bytes."
+    size=$((size - size % __DW_SECTOR))
+  fi
 
   __log_info "Unmounting $disk..."
   case "$(uname)" in
@@ -410,7 +711,17 @@ function disk_wipe() {
       fi
       ;;
     Linux)
+      local released=0
+      local child
+      for child in $(lsblk -nro NAME "$disk" 2>/dev/null); do
+        if sudo umount "/dev/$child" 2>/dev/null; then
+          released=$((released + 1))
+        fi
+      done
       if sudo umount "$disk" 2>/dev/null; then
+        released=$((released + 1))
+      fi
+      if [ "$released" -gt 0 ]; then
         __log_success "Disk unmounted"
       else
         __log_warning "Failed to unmount disk (may not be mounted)"
@@ -420,20 +731,40 @@ function disk_wipe() {
 
   local media
   media=$(__dw_detect_media "$disk" "$size")
-  if __dw_holds_a_steady_rate "$media"; then
+  if __dw_holds_a_steady_rate "$media" "$__DW_FAMILY"; then
     __DW_STEADY=1
-    __log_info "Media: $media. A sudden loss of speed will stop the wipe."
+    __log_info "Media: $media. Every chunk is timed and a sudden loss of speed stops the wipe."
   else
     __DW_STEADY=0
-    __log_info "Media: $media. Speed varies on this kind, so only errors and stalls stop the wipe."
+    __log_info "Media: $media. Every chunk is timed against a wider margin, since speed varies on this kind."
   fi
 
+  __dw_probe_cache_bypass "$(__dw_io_device "$disk")" "$__DW_SECTOR"
+
+  zmodload zsh/datetime 2>/dev/null || true
+
+  __DW_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/disk_wipe.XXXXXX") || {
+    __log_error "Unable to create a working directory"
+    return 1
+  }
+  __DW_BEST_WRITE=0
+  __DW_BEST_READ=0
+
   __log_info "Cleaning $disk..."
+  local wipe_status=0
   for ((index=1; index <= passes; index++)); do
-    __dw_execute_pass "$disk" "$size" "$block_size" "$index" "$passes" || return 1
+    if ! __dw_execute_pass "$disk" "$size" "$index" "$passes"; then
+      wipe_status=1
+      break
+    fi
   done
 
-  [ "${CREATE}" = "y" ] && __dw_create_partition "$disk" "$size"
+  rm -rf "$__DW_TMPDIR"
+  [ "$wipe_status" -ne 0 ] && return 1
+
+  if [ "${CREATE:-}" = "y" ] && ! __dw_create_partition "$disk" "$size"; then
+    return 1
+  fi
 
   __log_info "Ejecting device..."
   case "$(uname)" in

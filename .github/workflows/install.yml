@@ -95,9 +95,9 @@ jobs:
           set -euo pipefail
           # Source cargo env for rustc (installed via rustup, not in system PATH)
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
-          export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
+          export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.local/share/mise/shims:$PATH"
           errors=0
-          cmds="zsh git vim tmux curl wget fzf rg bat eza fdfind delta gh node go docker tokei google-chrome-stable gamemoderun mangohud gamescope protontricks zoxide atuin rustc mise direnv entr ffmpeg sshpass mc gum btm lazygit k9s yazi lazydocker navi torrentzip tig ranger broot newsboat goaccess task thefuck shfmt cosign lnav pgcli git-absorb kubectx pre-commit ruff arjun wafw00f scapy graphify"
+          cmds="zsh git vim tmux curl wget fzf rg bat eza fdfind delta gh node go docker tokei google-chrome-stable gamemoderun mangohud gamescope protontricks zoxide atuin rustc mise direnv entr ffmpeg sshpass mc gum btm lazygit k9s yazi lazydocker navi torrentzip tig ranger broot newsboat goaccess task thefuck shfmt cosign lnav pgcli git-absorb kubectx pre-commit ruff arjun wafw00f scapy graphify agent-browser"
 
           for cmd in $cmds; do
             if command -v "$cmd" >/dev/null 2>&1; then

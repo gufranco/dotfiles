@@ -2,6 +2,7 @@
 node = "lts"
 python = "latest"
 ruby = "latest"
+"npm:agent-browser" = "0.34.0"
 
 [settings]
 ruby.compile = false

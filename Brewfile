@@ -197,6 +197,7 @@ brew 'sqlmap'
 ################################################################################
 brew 'clojure/tools/clojure'
 brew 'cocoapods'
+brew 'fvm'
 brew 'golang', link: true
 brew 'golangci-lint'
 brew 'mise'

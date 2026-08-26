@@ -204,16 +204,234 @@ function disk_wipe() {
     awk '/bytes/ { print $1; exit }' "$1"
   }
 
+  __dw_median() {
+    sort -n | awk '
+      { value[NR] = $1 }
+      END {
+        if (NR == 0) { print 0; exit }
+        if (NR % 2) { print value[(NR + 1) / 2]; exit }
+        print int((value[NR / 2] + value[NR / 2 + 1]) / 2)
+      }
+    '
+  }
+
+  __dw_expected_ms() {
+    local kind="$1"
+    local bytes="$2"
+    local overhead rate
+
+    if [ "$kind" = "write" ]; then
+      overhead="$__DW_OVERHEAD_WRITE"
+      rate="$__DW_RATE_WRITE"
+    else
+      overhead="$__DW_OVERHEAD_READ"
+      rate="$__DW_RATE_READ"
+    fi
+
+    if [ "${rate:-0}" -le 0 ]; then
+      echo 0
+      return 0
+    fi
+
+    echo $((overhead + (bytes * 1000) / rate))
+  }
+
+  __dw_time_move() {
+    local direction="$1"
+    local io="$2"
+    local offset="$3"
+    local bytes="$4"
+    local source target started elapsed
+
+    if [ "$direction" = "write" ]; then
+      if ! source=$(__dw_pattern_file "$bytes" "0x00"); then
+        return 1
+      fi
+      target="$io"
+    else
+      source="$io"
+      target="${__DW_TMPDIR}/calibration"
+    fi
+
+    if [ "$direction" != "write" ] && [ "$__DW_FLUSH" = "1" ]; then
+      sync
+      sudo blockdev --flushbufs "$io" 2>/dev/null
+    fi
+
+    started=$(__dw_now_ms)
+    __dw_move "$direction" "$source" "$target" "$offset" "$bytes" || return 1
+    elapsed=$(($(__dw_now_ms) - started))
+
+    [ "$__DW_MOVED" -eq "$bytes" ] || return 1
+    [ "$elapsed" -lt 0 ] && return 1
+
+    echo "$elapsed"
+  }
+
+  __dw_quietest_move() {
+    local direction="$1"
+    local io="$2"
+    local offset="$3"
+    local bytes="$4"
+    local attempt=0
+    local elapsed quietest=""
+
+    while [ "$attempt" -lt 3 ]; do
+      elapsed=$(__dw_time_move "$direction" "$io" "$offset" "$bytes") || return 1
+      if [ -z "$quietest" ] || [ "$elapsed" -lt "$quietest" ]; then
+        quietest="$elapsed"
+      fi
+      attempt=$((attempt + 1))
+    done
+
+    echo "$quietest"
+  }
+
+  __dw_probe_bytes() {
+    local direction="$1"
+    local io="$2"
+    local unit="$3"
+    local ceiling="$4"
+    local floor="${CALIBRATION_FLOOR_MS:-50}"
+    local candidate elapsed
+
+    candidate=$((64 * 1024))
+    [ "$candidate" -lt $((unit * 2)) ] && candidate=$((unit * 2))
+    [ "$candidate" -gt "$ceiling" ] && candidate="$ceiling"
+
+    while [ "$candidate" -lt "$ceiling" ]; do
+      elapsed=$(__dw_quietest_move "$direction" "$io" 0 "$candidate") || return 1
+      [ "$elapsed" -ge "$floor" ] && break
+      candidate=$((candidate * 2))
+    done
+
+    [ "$candidate" -gt "$ceiling" ] && candidate="$ceiling"
+    echo "$candidate"
+  }
+
+  __dw_calibrate() {
+    local direction="$1"
+    local disk="$2"
+    local size="$3"
+    local probes="${CALIBRATION_PROBES:-7}"
+    local io unit large room stride index offset short long overhead rate spread
+    local predicted
+    local overheads="${__DW_TMPDIR}/cal-overhead" rates="${__DW_TMPDIR}/cal-rate"
+    local transfers="${__DW_TMPDIR}/cal-transfer"
+
+    io=$(__dw_io_device "$disk")
+    unit="$__DW_SECTOR"
+    [ "$unit" -lt 4096 ] && unit=4096
+    [ "$probes" -ge 1 ] || probes=1
+
+    stride=$((size / probes))
+    stride=$((stride - stride % unit))
+    if [ "$stride" -lt $((unit * 4)) ]; then
+      probes=1
+      stride="$size"
+    fi
+
+    room=$((stride / 2))
+    [ "$room" -gt $((16 * 1024 * 1024)) ] && room=$((16 * 1024 * 1024))
+    room=$((room - room % unit))
+    if [ "$room" -lt $((unit * 2)) ] || [ $((room + unit)) -gt "$size" ]; then
+      __log_warning "$disk is too small to time, so only the byte-for-byte verify will judge it."
+      return 1
+    fi
+
+    if ! large=$(__dw_probe_bytes "$direction" "$io" "$unit" "$room"); then
+      __log_error "The $direction probe failed on the first sectors of $disk."
+      return 2
+    fi
+
+    : >"$overheads"
+    : >"$rates"
+    : >"$transfers"
+
+    index=0
+    while [ "$index" -lt "$probes" ]; do
+      offset=$((index * stride))
+      [ $((offset + large + unit)) -gt "$size" ] && break
+
+      if ! short=$(__dw_time_move "$direction" "$io" "$offset" "$unit"); then
+        __log_error "The $direction probe failed at offset $offset of $disk."
+        return 2
+      fi
+      if ! long=$(__dw_time_move "$direction" "$io" $((offset + unit)) "$large"); then
+        __log_error "The $direction probe failed at offset $((offset + unit)) of $disk."
+        return 2
+      fi
+
+      printf '%s\n' "$short" >>"$overheads"
+      printf '%s\n' "$long" >>"$transfers"
+      if [ "$long" -gt "$short" ]; then
+        printf '%s\n' "$(((large - unit) * 1000 / (long - short)))" >>"$rates"
+      fi
+
+      index=$((index + 1))
+    done
+
+    overhead=$(__dw_median <"$overheads")
+    rate=$(__dw_median <"$rates")
+
+    if [ "${rate:-0}" -le 0 ]; then
+      long=$(__dw_median <"$transfers")
+      if [ "${long:-0}" -le 0 ]; then
+        __log_warning "$disk answered too fast to time, so only the byte-for-byte verify will judge it."
+        return 1
+      fi
+      overhead=0
+      rate=$((large * 1000 / long))
+      __log_info "Separating $direction overhead from throughput was not possible, so the whole probe sets the pace."
+    fi
+
+    predicted=$((overhead + (large * 1000) / rate))
+    [ "$predicted" -lt 1 ] && predicted=1
+    spread=$(($(sort -n "$transfers" | tail -1) * 100 / predicted))
+    [ "$spread" -lt 100 ] && spread=100
+    spread=$((spread * spread / 100))
+    [ "$spread" -lt 300 ] && spread=300
+    [ "$spread" -gt 1200 ] && spread=1200
+
+    if [ -n "${SLOW_FACTOR:-}" ]; then
+      spread=$((SLOW_FACTOR * 100))
+    fi
+
+    if [ "$direction" = "write" ]; then
+      __DW_OVERHEAD_WRITE="$overhead"
+      __DW_RATE_WRITE="$rate"
+      __DW_FACTOR_WRITE="$spread"
+    else
+      __DW_OVERHEAD_READ="$overhead"
+      __DW_RATE_READ="$rate"
+      __DW_FACTOR_READ="$spread"
+    fi
+
+    __log_info "Measured $direction: $((rate / 1024)) KiB/s sustained, $(__dw_duration "$overhead") to reach a sector, allowing $((spread / 100))x that before stopping."
+    return 0
+  }
+
   __dw_chunk_bytes() {
     local size="$1"
-    local mib=$((1024 * 1024))
-    local wanted=$((size / 32))
-    local ceiling=$((64 * mib))
+    local target="${CHUNK_TARGET_MS:-3000}"
+    local unit="$__DW_SECTOR"
+    local ceiling=$((64 * 1024 * 1024))
+    local candidate best
 
-    [ "$wanted" -gt "$ceiling" ] && wanted="$ceiling"
-    wanted=$((wanted - wanted % mib))
-    [ "$wanted" -lt "$mib" ] && wanted="$mib"
-    echo "$wanted"
+    [ "$unit" -lt 4096 ] && unit=4096
+    candidate="$unit"
+    best="$unit"
+
+    while [ "$candidate" -le "$ceiling" ] && [ "$candidate" -le "$size" ]; do
+      if [ "$candidate" -gt "$unit" ] && [ "$(__dw_expected_ms write "$candidate")" -gt "$target" ]; then
+        break
+      fi
+      best="$candidate"
+      candidate=$((candidate * 2))
+    done
+
+    [ "$best" -gt "$size" ] && best="$size"
+    echo "$best"
   }
 
   __dw_fault() {
@@ -231,34 +449,6 @@ function disk_wipe() {
     return 1
   }
 
-  __dw_holds_a_steady_rate() {
-    local media="$1"
-    local family="$2"
-
-    case "$family" in
-      zip | floppy | superdisk | jaz | pocketzip) return 0 ;;
-    esac
-
-    case "$media" in
-      floppy | zip) return 0 ;;
-      *) return 1 ;;
-    esac
-  }
-
-  __dw_best_cost() {
-    case "$1" in
-      write) echo "$__DW_BEST_WRITE" ;;
-      *) echo "$__DW_BEST_READ" ;;
-    esac
-  }
-
-  __dw_remember_cost() {
-    case "$1" in
-      write) __DW_BEST_WRITE="$2" ;;
-      *) __DW_BEST_READ="$2" ;;
-    esac
-  }
-
   __dw_watch() {
     local kind="$1"
     local label="$2"
@@ -266,42 +456,77 @@ function disk_wipe() {
     local total="$4"
     local bytes="$5"
     local elapsed="$6"
-    local ceiling=$((${STALL_SECONDS:-60} * 1000))
-    local factor="${SLOW_FACTOR:-0}"
-    local trip="${MIN_TRIP_MS:-1500}"
-    local mib=$((1024 * 1024))
-    local cost best
+    local ceiling=$((${STALL_SECONDS:-0} * 1000))
+    local expected factor slack drift baseline budget ratio
 
     __DW_REASON=""
 
-    if [ "$factor" -eq 0 ]; then
-      if [ "$__DW_STEADY" = "1" ]; then
-        factor=4
-      else
-        factor=8
-      fi
-    fi
-
-    if [ "$elapsed" -gt "$ceiling" ]; then
-      __DW_REASON="$label chunk $index of $total took $(__dw_duration "$elapsed"), over the $(__dw_duration "$ceiling") limit"
+    if [ "$ceiling" -gt 0 ] && [ "$elapsed" -gt "$ceiling" ]; then
+      __DW_REASON="$label chunk $index of $total took $(__dw_duration "$elapsed"), over the $(__dw_duration "$ceiling") limit you set"
       return 1
     fi
 
+    [ "$__DW_MEASURED" = "1" ] || return 0
     [ "$bytes" -le 0 ] && return 0
-    cost=$(((elapsed * mib + bytes - 1) / bytes))
-    [ "$cost" -lt 1 ] && cost=1
 
-    best=$(__dw_best_cost "$kind")
-    if [ "$best" -gt 0 ] && [ "$elapsed" -ge "$trip" ] && [ "$cost" -gt $((best * factor)) ]; then
-      __DW_REASON="$label chunk $index of $total ran at ${cost}ms per MiB against a best of ${best}ms"
+    expected=$(__dw_expected_ms "$kind" "$bytes")
+    [ "$expected" -lt 1 ] && expected=1
+
+    if [ "$kind" = "write" ]; then
+      factor="$__DW_FACTOR_WRITE"
+      drift="$__DW_DRIFT_WRITE"
+      slack=$((__DW_OVERHEAD_WRITE * 2))
+    else
+      factor="$__DW_FACTOR_READ"
+      drift="$__DW_DRIFT_READ"
+      slack=$((__DW_OVERHEAD_READ * 2))
+    fi
+
+    [ "$drift" -lt 100 ] && drift=100
+    baseline=$((expected * drift / 100))
+    budget=$((baseline * factor / 100))
+    [ "$budget" -lt $((baseline + slack)) ] && budget=$((baseline + slack))
+
+    if [ "$elapsed" -gt "$budget" ]; then
+      __DW_REASON="$label chunk $index of $total took $(__dw_duration "$elapsed") against $(__dw_duration "$budget") allowed by what this disk measured"
       return 1
     fi
 
-    if [ "$best" -eq 0 ] || [ "$cost" -lt "$best" ]; then
-      __dw_remember_cost "$kind" "$cost"
+    ratio=$((elapsed * 100 / expected))
+    [ "$ratio" -lt 1 ] && ratio=1
+    drift=$(((drift * 3 + ratio) / 4))
+
+    if [ "$drift" -gt "$factor" ]; then
+      __DW_REASON="$label has settled at $((drift / 100))x the speed this disk measured on itself, which it held for the last chunks"
+      return 1
+    fi
+
+    if [ "$kind" = "write" ]; then
+      __DW_DRIFT_WRITE="$drift"
+    else
+      __DW_DRIFT_READ="$drift"
     fi
 
     return 0
+  }
+
+  __dw_block_bytes() {
+    local offset="$1"
+    local bytes="$2"
+    local block=$((1024 * 1024))
+    local floor="$__DW_SECTOR"
+
+    [ "$floor" -ge 512 ] || floor=512
+
+    while [ "$block" -gt "$floor" ]; do
+      if [ $((offset % block)) -eq 0 ] && [ $((bytes % block)) -eq 0 ]; then
+        echo "$block"
+        return 0
+      fi
+      block=$((block / 2))
+    done
+
+    echo "$floor"
   }
 
   __dw_move() {
@@ -314,12 +539,7 @@ function disk_wipe() {
     local block seek skip count
     local -a flags
 
-    if [ $((offset % (1024 * 1024))) -eq 0 ] && [ $((bytes % (1024 * 1024))) -eq 0 ]; then
-      block=$((1024 * 1024))
-    else
-      block="$__DW_SECTOR"
-    fi
-
+    block=$(__dw_block_bytes "$offset" "$bytes")
     count=$((bytes / block))
     __DW_MOVED=0
 
@@ -348,7 +568,7 @@ function disk_wipe() {
     local io chunk total index offset piece started elapsed reference label kind
 
     io=$(__dw_io_device "$disk")
-    chunk=$(__dw_chunk_bytes "$size")
+    chunk="$__DW_CHUNK"
     total=$(((size + chunk - 1) / chunk))
 
     if ! reference=$(__dw_pattern_file "$chunk" "$pattern"); then
@@ -679,7 +899,7 @@ function disk_wipe() {
     __log_info "Device reports itself as: $identity"
   fi
   if [ -n "$__DW_FAMILY" ]; then
-    __log_info "Recognised as $__DW_FAMILY media from the device, not from its size."
+    __log_info "Recognised as $__DW_FAMILY media, which only sets the volume label."
   fi
 
   __dw_confirm "$disk" || return 1
@@ -729,16 +949,6 @@ function disk_wipe() {
       ;;
   esac
 
-  local media
-  media=$(__dw_detect_media "$disk" "$size")
-  if __dw_holds_a_steady_rate "$media" "$__DW_FAMILY"; then
-    __DW_STEADY=1
-    __log_info "Media: $media. Every chunk is timed and a sudden loss of speed stops the wipe."
-  else
-    __DW_STEADY=0
-    __log_info "Media: $media. Every chunk is timed against a wider margin, since speed varies on this kind."
-  fi
-
   __dw_probe_cache_bypass "$(__dw_io_device "$disk")" "$__DW_SECTOR"
 
   zmodload zsh/datetime 2>/dev/null || true
@@ -747,8 +957,39 @@ function disk_wipe() {
     __log_error "Unable to create a working directory"
     return 1
   }
-  __DW_BEST_WRITE=0
-  __DW_BEST_READ=0
+  __DW_DRIFT_WRITE=100
+  __DW_DRIFT_READ=100
+  __DW_MEASURED=0
+  __DW_RATE_READ=0
+  __DW_RATE_WRITE=0
+  __DW_OVERHEAD_READ=0
+  __DW_OVERHEAD_WRITE=0
+  __DW_FACTOR_READ=0
+  __DW_FACTOR_WRITE=0
+
+  __log_info "Measuring $disk before wiping it, so every limit comes from this disk."
+  local calibration=0
+  __dw_calibrate read "$disk" "$size" || calibration=$?
+  if [ "$calibration" -eq 0 ]; then
+    __dw_calibrate write "$disk" "$size" || calibration=$?
+  fi
+
+  case "$calibration" in
+    0) __DW_MEASURED=1 ;;
+    2)
+      rm -rf "$__DW_TMPDIR"
+      __dw_fault "$disk" "the disk failed while being measured, before the wipe started"
+      return 1
+      ;;
+    *) __log_warning "Speed is not being watched on this disk. Only the byte-for-byte verify decides." ;;
+  esac
+
+  if [ "$__DW_MEASURED" = "1" ]; then
+    __DW_CHUNK=$(__dw_chunk_bytes "$size")
+  else
+    __DW_CHUNK=$((1024 * 1024))
+    [ "$__DW_CHUNK" -gt "$size" ] && __DW_CHUNK="$size"
+  fi
 
   __log_info "Cleaning $disk..."
   local wipe_status=0

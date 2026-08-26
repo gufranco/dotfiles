@@ -374,61 +374,68 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 <details>
 <summary><strong>Project structure</strong></summary>
 
-```
-.dotfiles/
-├── asciinema/        # Asciinema terminal recorder config
-├── atuin/            # Atuin shell history config
-├── bat/              # Bat config + Catppuccin Mocha theme
-├── bottom/           # Bottom system monitor, Catppuccin Mocha styled
-├── broot/            # Broot file manager, Catppuccin Mocha themed
-├── cmus/             # cmus music player, Catppuccin Mocha themed
-├── conky/            # Conky system monitor (Linux)
-├── curl/             # Curl config
-├── direnv/           # direnv per-directory env config
-├── eza/              # eza (ls replacement) config + Catppuccin Mocha theme
-├── fd/               # fd (find replacement) config
-├── gh/               # GitHub CLI config
-├── ghostty/          # Ghostty terminal + Catppuccin Mocha theme
-├── git/              # Git config, hooks, message template, 60 aliases
-├── glab/             # GitLab CLI config
-├── gnupg/            # GPG config and public keys
-├── goaccess/         # GoAccess web log analyzer config
-├── htop/             # htop config
-├── k9s/              # K9s Kubernetes dashboard + Catppuccin Mocha skin
-├── kanata/           # Kanata keyboard remapper config
-├── kitty/            # Kitty terminal + Catppuccin Mocha theme
-├── lazydocker/       # Lazydocker config, Catppuccin Mocha
-├── lazygit/          # Lazygit config, Catppuccin Mocha
-├── mailcap/          # Mailcap config
-├── mise/             # mise runtime manager (Node.js, Python, Ruby)
-├── mutt/             # Neomutt email client + Catppuccin Mocha theme
-├── nodejs/           # npm, yarn, pnpm configs + GPG-encrypted tokens
-├── nvim/             # Neovim config, standalone lua setup with lazy.nvim
-├── vim/              # Vim config, 31 plugins
-├── obsidian/         # Obsidian notes config
-├── ranger/           # Ranger file manager config
-├── readline/         # Readline config
-├── ripgrep/          # Ripgrep config
-├── ssh/              # SSH config and public keys
-├── tealdeer/         # Tealdeer (tldr) config, Catppuccin Mocha
-├── telnet/           # Telnet config
-├── themes/           # Terminal themes (iTerm2)
-├── tilix/            # Tilix terminal config
-├── navi/             # Navi cheatsheet manager + custom cheats
-├── newsboat/         # Newsboat RSS reader config
-├── opencode/         # OpenCode AI config
-├── taskwarrior/      # Taskwarrior task manager, Catppuccin Mocha themed
-├── thefuck/          # TheFuck command corrector config
-├── tig/              # Tig git TUI, Catppuccin Mocha themed
-├── tmux/             # Tmux config + 9 plugins
-├── tmuxp/            # tmuxp session layouts
-├── wget/             # Wget config
-├── yazi/             # Yazi file manager + Catppuccin Mocha theme
-├── zsh/              # Zsh: aliases, functions, paths, settings, infrastructure
-├── Brewfile          # Homebrew packages, apps, and fonts
-├── install.sh        # Cross-platform installer
-└── LICENSE           # MIT
-```
+| Path | Contents |
+|:-----|:---------|
+| `asciinema/` | Asciinema terminal recorder config |
+| `atuin/` | Atuin shell history config |
+| `bat/` | Bat config + Catppuccin Mocha theme |
+| `bottom/` | Bottom system monitor, Catppuccin Mocha styled |
+| `broot/` | Broot file manager, Catppuccin Mocha themed |
+| `cmus/` | cmus music player, Catppuccin Mocha themed |
+| `conky/` | Conky system monitor (Linux) |
+| `curl/` | Curl config |
+| `direnv/` | direnv per-directory env config |
+| `eza/` | eza (ls replacement) config + Catppuccin Mocha theme |
+| `fd/` | fd (find replacement) config |
+| `gamemode/` | GameMode CPU governor and priority tuning (Linux gaming) |
+| `gh/` | GitHub CLI config |
+| `ghostty/` | Ghostty terminal + Catppuccin Mocha theme |
+| `git/` | Git config, hooks, message template, 60 aliases |
+| `glab/` | GitLab CLI config |
+| `gnupg/` | GPG config and public keys |
+| `goaccess/` | GoAccess web log analyzer config |
+| `htop/` | htop config |
+| `k9s/` | K9s Kubernetes dashboard + Catppuccin Mocha skin |
+| `kanata/` | Kanata keyboard remapper config |
+| `kitty/` | Kitty terminal + Catppuccin Mocha theme |
+| `lazydocker/` | Lazydocker config, Catppuccin Mocha |
+| `lazygit/` | Lazygit config, Catppuccin Mocha |
+| `mailcap/` | Mailcap config |
+| `mangohud/` | MangoHud FPS and frametime overlay config |
+| `mc/` | Midnight Commander + Catppuccin Mocha skin |
+| `mise/` | mise runtime manager (Node.js, Python, Ruby) |
+| `mutt/` | Neomutt email client + Catppuccin Mocha theme |
+| `navi/` | Navi cheatsheet manager + custom cheats |
+| `newsboat/` | Newsboat RSS reader config |
+| `nodejs/` | npm, yarn, pnpm configs + GPG-encrypted tokens |
+| `nvidia/` | NVIDIA Xorg and shader-cache drop-ins (Linux gaming) |
+| `nvim/` | Neovim config, standalone lua setup with lazy.nvim |
+| `obsidian/` | Obsidian notes config |
+| `opencode/` | OpenCode AI config |
+| `python/` | pdb config, PYTHONSTARTUP, and the breakpoint() hook |
+| `ranger/` | Ranger file manager config |
+| `readline/` | Readline config |
+| `ripgrep/` | Ripgrep config |
+| `ssh/` | SSH config and public keys |
+| `taskwarrior/` | Taskwarrior task manager, Catppuccin Mocha themed |
+| `tealdeer/` | Tealdeer (tldr) config, Catppuccin Mocha |
+| `telnet/` | Telnet config |
+| `tests/` | Python unit tests for the debug hook |
+| `thefuck/` | TheFuck command corrector config |
+| `themes/` | Terminal themes (iTerm2) |
+| `tig/` | Tig git TUI, Catppuccin Mocha themed |
+| `tilix/` | Tilix terminal config |
+| `tmux/` | Tmux config + 9 plugins |
+| `tmuxp/` | tmuxp session layouts |
+| `vim/` | Vim config, 31 plugins |
+| `vkbasalt/` | vkBasalt CAS sharpening config |
+| `wget/` | Wget config |
+| `yazi/` | Yazi file manager + Catppuccin Mocha theme |
+| `zsh/` | Zsh: aliases, functions, paths, settings, infrastructure |
+| `Brewfile` | Homebrew packages, apps, and fonts |
+| `Uvfile` | CLI tools installed with uv |
+| `install.sh` | Cross-platform installer |
+| `LICENSE` | MIT |
 
 </details>
 

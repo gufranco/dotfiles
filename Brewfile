@@ -61,6 +61,7 @@ brew 'make'
 brew 'moreutils'
 brew 'p7zip'
 brew 'patchutils'
+brew 'unar'
 brew 'unzip'
 brew 'zip'
 

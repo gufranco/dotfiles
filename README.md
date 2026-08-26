@@ -16,7 +16,7 @@
 
 ---
 
-**50+** tool configs · **23** Catppuccin Mocha themed tools · **60** Git aliases · **6** Docker services · **33** Vim plugins
+**50+** tool configs · **22** Catppuccin Mocha themed tools · **60** Git aliases · **6** Docker services · **31** Vim plugins
 
 <table>
 <tr>
@@ -24,7 +24,7 @@
 
 ### Catppuccin Mocha Everywhere
 
-One color palette across 19 tools: terminals, editors, file managers, email, music, git diffs, monitoring dashboards, and fuzzy finders.
+One color palette across 22 tools: terminals, editors, file managers, email, music, git diffs, monitoring dashboards, and fuzzy finders.
 
 </td>
 <td width="50%" valign="top">
@@ -125,18 +125,21 @@ Aliases activate only when the modern tool is installed:
 
 ### Editor
 
-Vim with 33 plugins managed by vim-plug:
+Vim with 31 plugins managed by vim-plug:
 
 | Category | Plugins |
 |:---------|:--------|
 | Language support | coc.nvim (LSP), vim-polyglot, vim-matchup, rainbow_csv |
-| Navigation | fzf.vim, vim-sneak (jump motions), vim-fetch (open at line) |
+| Navigation | fzf, fzf.vim, vim-sneak (jump motions), vim-fetch (open at line) |
 | Git | vim-signify (hunks), vim-fugitive (commands), conflict-marker.vim |
 | Editing | vim-surround, vim-visual-multi, vim-pasta, targets.vim, vim-unimpaired, vim-repeat, vim-abolish (case coercion), splitjoin.vim |
 | Files | vim-eunuch (Rename, Delete, Move, SudoWrite) |
 | UI | lightline, vim-devicons, undotree, vim-cool, vim-search-pulse, winresizer |
+| Theme | catppuccin/vim, driving both the colorscheme and lightline |
 | Defaults | vim-sensible, vim-opinion |
-| Integration | vim-tmux (tmux.conf syntax) |
+| Integration | vim-tmux (tmux.conf syntax), vim-tmux-navigator (split movement) |
+
+`vimrc` holds 33 `Plug` lines. Three of them are the Homebrew, `/usr/local`, and `~/.fzf` paths for the same local fzf install, and only the one that exists on the machine loads, so the plugin count is 31.
 
 CoC extensions: TypeScript, ESLint, Prettier, CSS, JSON, Shell, snippets, import-cost.
 
@@ -150,17 +153,21 @@ Node.js gets the built-in V8 Inspector workflow. The `ni`, `nib`, and `niw` alia
 
 ### Terminal Multiplexer
 
-Tmux with 7 plugins and vim-style keybindings:
+Tmux with 9 plugins and vim-style keybindings, installed by tpm:
 
 | Plugin | What it does |
 |:-------|:-------------|
-| Catppuccin (Mocha) | Status bar, window list, and pane styling |
-| vim-tmux-navigator | Move between vim splits and tmux panes |
-| tmux-tiling-revamped | i3-like BSP tiling layouts |
-| tmux-resurrect | Save and restore sessions across reboots |
-| tmux-continuum | Automatic session save and restore |
-| tmux-yank | Copy to system clipboard |
-| tmux-mighty-scroll | Better scrolling in fullscreen apps |
+| catppuccin/tmux | Status bar, window list, and pane styling |
+| tmux-sensible-revamped | Version, OS, and terminal aware defaults: truecolor, OSC 52 clipboard, focus events |
+| tmux-pain-control-revamped | Vim-style pane splits, navigation, resize, and window moves |
+| tmux-launcher-revamped | Opens lazygit, lazydocker, and other TUIs in a popup or a fresh window |
+| tmux-tiling-revamped | i3-like BSP tiling, pane marks, and a floating scratchpad |
+| tmux-scroll-revamped | Sends the wheel to the app when it wants it, enters copy-mode otherwise |
+| tmux-fzf-revamped | Fuzzy switch or kill any session, window, or pane |
+| tmux-extract-revamped | Fuzzy-grab urls, paths, words, or lines off the pane and paste them |
+| tmux-autoreload-revamped | Re-sources the config when it changes |
+
+Everything except the Catppuccin theme comes from the [tmux-revamped](https://github.com/tmux-revamped) family. `tmux-persist-revamped` replaces tmux-resurrect and tmux-continuum with one plugin that writes no temp files; it sits in [`tmux/.tmux.conf`](tmux/.tmux.conf) commented out.
 
 ### Git
 
@@ -397,7 +404,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── mutt/             # Neomutt email client + Catppuccin Mocha theme
 ├── nodejs/           # npm, yarn, pnpm configs + GPG-encrypted tokens
 ├── nvim/             # Neovim config, standalone lua setup with lazy.nvim
-├── vim/              # Vim config, 33 plugins
+├── vim/              # Vim config, 31 plugins
 ├── obsidian/         # Obsidian notes config
 ├── ranger/           # Ranger file manager config
 ├── readline/         # Readline config
@@ -413,7 +420,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 ├── taskwarrior/      # Taskwarrior task manager, Catppuccin Mocha themed
 ├── thefuck/          # TheFuck command corrector config
 ├── tig/              # Tig git TUI, Catppuccin Mocha themed
-├── tmux/             # Tmux config + 7 plugins
+├── tmux/             # Tmux config + 9 plugins
 ├── tmuxp/            # tmuxp session layouts
 ├── wget/             # Wget config
 ├── yazi/             # Yazi file manager + Catppuccin Mocha theme

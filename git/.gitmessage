@@ -4,9 +4,7 @@
 #
 # <footer>
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Type (required)
-# ─────────────────────────────────────────────────────────────────────────────
 # feat:     A new feature
 # fix:      A bug fix
 # docs:     Documentation only changes
@@ -19,31 +17,23 @@
 # chore:    Other changes that don't modify src or test files
 # revert:   Reverts a previous commit
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Scope (optional)
-# ─────────────────────────────────────────────────────────────────────────────
 # The scope provides additional context, like the module or component affected.
 # Examples: feat(auth), fix(api), docs(readme)
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Subject (required)
-# ─────────────────────────────────────────────────────────────────────────────
 # - Use imperative mood: "add" not "added" or "adds"
 # - Don't capitalize the first letter
 # - No period at the end
 # - Max 50 characters
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Body (optional)
-# ─────────────────────────────────────────────────────────────────────────────
 # - Wrap at 72 characters
 # - Explain WHAT and WHY, not HOW
 # - Separate from subject with a blank line
 # - Use bullet points if needed (- or *)
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Footer (optional)
-# ─────────────────────────────────────────────────────────────────────────────
 # BREAKING CHANGE: <description>
 #
 # Closes #123

@@ -6,13 +6,13 @@
 # Upgrade all:   uv tool upgrade --all
 # Cleanup extra: handled automatically by f5
 
-# Penetration testing — web fuzzing and parameter discovery
+# Penetration testing: web fuzzing and parameter discovery
 arjun
 
-# Penetration testing — WAF detection
+# Penetration testing: WAF detection
 wafw00f
 
-# HTTP client — CLI for direct HTTP requests with HTTP/2 support
+# HTTP client: CLI for direct HTTP requests with HTTP/2 support
 httpx[cli,http2]
 
 # Packet crafting and network analysis

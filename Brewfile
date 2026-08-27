@@ -80,6 +80,7 @@ brew 'poppler'
 brew 'pygments'
 brew 'readline'
 brew 'shared-mime-info'
+brew 'tesseract'
 brew 'zlib'
 
 ################################################################################

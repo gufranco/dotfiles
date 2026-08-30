@@ -57,6 +57,61 @@ function disk_wipe() {
     fi
   }
 
+  __dw_bounded() {
+    local seconds="$1"
+    shift
+
+    if __cmd_exists timeout; then
+      timeout "$seconds" "$@"
+      return $?
+    fi
+
+    if __cmd_exists gtimeout; then
+      gtimeout "$seconds" "$@"
+      return $?
+    fi
+
+    "$@" &
+    local pid=$!
+    local waited=0
+
+    while sudo -n kill -0 "$pid" 2>/dev/null; do
+      if [ "$waited" -ge "$seconds" ]; then
+        sudo -n kill -TERM "$pid" 2>/dev/null
+        sleep 1
+        sudo -n kill -KILL "$pid" 2>/dev/null
+        wait "$pid" 2>/dev/null
+        return 124
+      fi
+      sleep 1
+      waited=$((waited + 1))
+    done
+
+    wait "$pid"
+  }
+
+  __dw_is_mounted() {
+    mount | awk -v dev="$1" '$1 == dev || index($1, dev "s") == 1 { found = 1 } END { exit found ? 0 : 1 }'
+  }
+
+  __dw_release_darwin() {
+    local disk="$1"
+
+    __dw_bounded 30 sudo diskutil unmountDisk force "$disk" >/dev/null 2>&1
+
+    if ! __dw_is_mounted "$disk"; then
+      return 0
+    fi
+
+    local slice
+    for slice in $(diskutil list "$disk" 2>/dev/null | awk '$NF ~ /^disk[0-9]+s[0-9]+$/ { print $NF }'); do
+      __dw_bounded 20 sudo diskutil unmount force "/dev/$slice" >/dev/null 2>&1
+    done
+
+    __dw_is_mounted "$disk" && return 1
+    return 0
+  }
+
   __dw_io_device() {
     local disk="$1"
     local name="${disk##*/}"
@@ -137,6 +192,86 @@ function disk_wipe() {
     echo "$bytes"
   }
 
+  __dw_writable_media() {
+    local disk="$1"
+    local answer
+
+    case "$(uname)" in
+      Darwin)
+        answer=$(diskutil info -plist "$disk" 2>/dev/null |
+          plutil -extract WritableMedia raw - 2>/dev/null)
+        case "$answer" in
+          false) return 1 ;;
+          true) return 0 ;;
+        esac
+        ;;
+      Linux)
+        answer=$(sudo blockdev --getro "$disk" 2>/dev/null)
+        case "$answer" in
+          1) return 1 ;;
+          0) return 0 ;;
+        esac
+        ;;
+    esac
+
+    return 2
+  }
+
+  __dw_writes_land() {
+    local disk="$1"
+    local io sector probe readback octal
+    io=$(__dw_io_device "$disk")
+    sector="$__DW_SECTOR"
+    probe="${__DW_TMPDIR}/write-probe"
+    readback="${__DW_TMPDIR}/write-probe-back"
+
+    for octal in '\252' '\125'; do
+      head -c "$sector" /dev/zero | tr '\000' "$octal" >"$probe" || return 2
+      [ "$(__dw_file_size "$probe")" -eq "$sector" ] || return 2
+
+      __dw_move write "$probe" "$io" 0 "$sector" || return 2
+      [ "$__DW_MOVED" -eq "$sector" ] || return 2
+      sync
+
+      __dw_move read "$io" "$readback" 0 "$sector" || return 2
+      [ "$__DW_MOVED" -eq "$sector" ] || return 2
+
+      cmp -s "$probe" "$readback" || return 1
+    done
+
+    return 0
+  }
+
+  __dw_report_write_protected() {
+    local disk="$1"
+    local evidence="$2"
+
+    __log_error "STOPPED: $disk is write protected, so nothing on it can be erased."
+    case "$evidence" in
+      flag) __log_error "The drive reports this media as read-only." ;;
+      silent) __log_error "The drive accepted a test write and the media kept its previous contents." ;;
+    esac
+
+    __dw_write_protect_advice
+    return 0
+  }
+
+  __dw_write_protect_advice() {
+    case "$__DW_FAMILY" in
+      floppy | superdisk)
+        __log_info "Cover the square hole on the corner of the disk by sliding its tab shut, then run this again."
+        ;;
+      zip | jaz | pocketzip)
+        __log_info "Unlock the cartridge, through the Iomega tools or its write-protect tab, then run this again."
+        ;;
+      *)
+        __log_info "Release the write-protect switch or lock on the device, then run this again."
+        ;;
+    esac
+
+    return 0
+  }
+
   __dw_probe_cache_bypass() {
     local device="$1"
     local sector="$2"
@@ -204,6 +339,37 @@ function disk_wipe() {
     awk '/bytes/ { print $1; exit }' "$1"
   }
 
+  __dw_dd_error() {
+    grep -v -E 'records (in|out)|bytes' "$1" 2>/dev/null |
+      sed '/^[[:space:]]*$/d' | tail -2 | tr '\n' ' ' | sed 's/ *$//'
+  }
+
+  __dw_set_error() {
+    __DW_LAST_ERROR="$1"
+    [ -n "${__DW_ERRFILE:-}" ] && printf '%s\n' "$1" >"$__DW_ERRFILE"
+    return 0
+  }
+
+  __dw_get_error() {
+    if [ -n "${__DW_ERRFILE:-}" ] && [ -s "$__DW_ERRFILE" ]; then
+      tr -d '\n' <"$__DW_ERRFILE"
+      return 0
+    fi
+
+    printf '%s' "${__DW_LAST_ERROR:-}"
+  }
+
+  __dw_report_failure() {
+    local detail
+    detail=$(__dw_get_error)
+
+    __log_error "$1"
+    if [ -n "$detail" ]; then
+      __log_error "dd said: $detail"
+      __dw_set_error ""
+    fi
+  }
+
   __dw_median() {
     sort -n | awk '
       { value[NR] = $1 }
@@ -263,7 +429,10 @@ function disk_wipe() {
     elapsed=$(($(__dw_now_ms) - started))
 
     [ "$__DW_MOVED" -eq "$bytes" ] || return 1
-    [ "$elapsed" -lt 0 ] && return 1
+    if [ "$elapsed" -lt 0 ]; then
+      __dw_set_error "the clock went backwards while timing $bytes bytes"
+      return 1
+    fi
 
     echo "$elapsed"
   }
@@ -309,6 +478,14 @@ function disk_wipe() {
     echo "$candidate"
   }
 
+  __dw_explain_read_probe() {
+    [ "$1" -eq 1 ] || return 0
+
+    __log_warning "That was a read of data this wipe is about to overwrite, so it does not decide anything."
+    __log_warning "Continuing. The verify after each write is what judges the media."
+    return 0
+  }
+
   __dw_calibrate() {
     local direction="$1"
     local disk="$2"
@@ -316,6 +493,11 @@ function disk_wipe() {
     local probes="${CALIBRATION_PROBES:-7}"
     local io unit large room stride index offset short long overhead rate spread
     local predicted
+    local fatal=2
+
+    if [ "$direction" = "read" ]; then
+      fatal=1
+    fi
     local overheads="${__DW_TMPDIR}/cal-overhead" rates="${__DW_TMPDIR}/cal-rate"
     local transfers="${__DW_TMPDIR}/cal-transfer"
 
@@ -340,8 +522,9 @@ function disk_wipe() {
     fi
 
     if ! large=$(__dw_probe_bytes "$direction" "$io" "$unit" "$room"); then
-      __log_error "The $direction probe failed on the first sectors of $disk."
-      return 2
+      __dw_report_failure "The $direction probe failed on the first sectors of $disk."
+      __dw_explain_read_probe "$fatal"
+      return "$fatal"
     fi
 
     : >"$overheads"
@@ -354,12 +537,14 @@ function disk_wipe() {
       [ $((offset + large + unit)) -gt "$size" ] && break
 
       if ! short=$(__dw_time_move "$direction" "$io" "$offset" "$unit"); then
-        __log_error "The $direction probe failed at offset $offset of $disk."
-        return 2
+        __dw_report_failure "The $direction probe failed at offset $offset of $disk."
+        __dw_explain_read_probe "$fatal"
+        return "$fatal"
       fi
       if ! long=$(__dw_time_move "$direction" "$io" $((offset + unit)) "$large"); then
-        __log_error "The $direction probe failed at offset $((offset + unit)) of $disk."
-        return 2
+        __dw_report_failure "The $direction probe failed at offset $((offset + unit)) of $disk."
+        __dw_explain_read_probe "$fatal"
+        return "$fatal"
       fi
 
       printf '%s\n' "$short" >>"$overheads"
@@ -438,7 +623,21 @@ function disk_wipe() {
     local disk="$1"
     local reason="$2"
 
+    local detail
+    detail=$(__dw_get_error)
+
     __log_error "STOPPED: $reason"
+    if [ -n "$detail" ]; then
+      __log_error "dd said: $detail"
+    fi
+
+    case "$detail" in
+      *[Rr]ead-only* | *"Permission denied"* | *EROFS*)
+        __log_error "That reads as write protection rather than worn media."
+        __dw_write_protect_advice
+        ;;
+    esac
+
     __log_error "Ejecting immediately rather than continuing."
     sync
     case "$(uname)" in
@@ -517,6 +716,10 @@ function disk_wipe() {
     local floor="$__DW_SECTOR"
 
     [ "$floor" -ge 512 ] || floor=512
+    if [ "${__DW_CEILING:-0}" -gt 0 ] && [ "$block" -gt "$__DW_CEILING" ]; then
+      block="$__DW_CEILING"
+    fi
+    [ "$block" -lt "$floor" ] && block="$floor"
 
     while [ "$block" -gt "$floor" ]; do
       if [ $((offset % block)) -eq 0 ] && [ $((bytes % block)) -eq 0 ]; then
@@ -543,20 +746,33 @@ function disk_wipe() {
     count=$((bytes / block))
     __DW_MOVED=0
 
+    __dw_set_error ""
+
     if [ "$direction" = "write" ]; then
       flags=()
       [ -n "$__DW_WRITE_FLAGS" ] && flags=("$__DW_WRITE_FLAGS")
       seek=$((offset / block))
-      sudo dd if="$source" of="$target" bs="$block" seek="$seek" count="$count" conv=notrunc "${flags[@]}" 2>"$err" || return 1
+      if ! sudo dd if="$source" of="$target" bs="$block" seek="$seek" count="$count" conv=notrunc "${flags[@]}" 2>"$err"; then
+        __dw_set_error "$(__dw_dd_error "$err")"
+        return 1
+      fi
     else
       flags=()
       [ -n "$__DW_READ_FLAGS" ] && flags=("$__DW_READ_FLAGS")
       skip=$((offset / block))
-      sudo dd if="$source" of="$target" bs="$block" skip="$skip" count="$count" "${flags[@]}" 2>"$err" || return 1
+      if ! sudo dd if="$source" of="$target" bs="$block" skip="$skip" count="$count" "${flags[@]}" 2>"$err"; then
+        __dw_set_error "$(__dw_dd_error "$err")"
+        return 1
+      fi
     fi
 
     __DW_MOVED=$(__dw_dd_bytes "$err")
     [ -z "$__DW_MOVED" ] && __DW_MOVED=0
+
+    if [ "$__DW_MOVED" -ne "$bytes" ]; then
+      __dw_set_error "dd moved $__DW_MOVED of $bytes bytes at offset $offset with bs=$block"
+    fi
+
     return 0
   }
 
@@ -566,6 +782,10 @@ function disk_wipe() {
     local size="$3"
     local pattern="$4"
     local io chunk total index offset piece started elapsed reference label kind
+    local attempts="${CHUNK_RETRIES:-3}"
+    local attempt settled marginal=0
+
+    [ "$attempts" -ge 1 ] || attempts=1
 
     io=$(__dw_io_device "$disk")
     chunk="$__DW_CHUNK"
@@ -596,33 +816,54 @@ function disk_wipe() {
       piece=$((size - offset))
       [ "$piece" -gt "$chunk" ] && piece="$chunk"
 
-      started=$(__dw_now_ms)
-      if [ "$direction" = "write" ]; then
-        if ! __dw_move write "$reference" "$io" "$offset" "$piece"; then
-          __dw_fault "$disk" "the write failed on chunk $((index + 1)) of $total"
-          return 1
-        fi
-      else
-        if ! __dw_move read "$io" "${__DW_TMPDIR}/readback" "$offset" "$piece"; then
-          __dw_fault "$disk" "the read failed on chunk $((index + 1)) of $total"
-          return 1
-        fi
-      fi
-      elapsed=$(($(__dw_now_ms) - started))
+      attempt=1
+      settled=0
+      while [ "$attempt" -le "$attempts" ]; do
+        started=$(__dw_now_ms)
 
-      if [ "$__DW_MOVED" -ne "$piece" ]; then
-        __dw_fault "$disk" "chunk $((index + 1)) of $total moved $__DW_MOVED of $piece bytes"
+        if [ "$direction" = "write" ]; then
+          if ! __dw_move write "$reference" "$io" "$offset" "$piece"; then
+            attempt=$((attempt + 1))
+            continue
+          fi
+        else
+          if ! __dw_move read "$io" "${__DW_TMPDIR}/readback" "$offset" "$piece"; then
+            attempt=$((attempt + 1))
+            continue
+          fi
+        fi
+
+        elapsed=$(($(__dw_now_ms) - started))
+
+        if [ "$__DW_MOVED" -ne "$piece" ]; then
+          __dw_set_error "chunk $((index + 1)) of $total moved $__DW_MOVED of $piece bytes"
+          attempt=$((attempt + 1))
+          continue
+        fi
+
+        if [ "$direction" = "read" ] &&
+          ! cmp -s -n "$piece" "${__DW_TMPDIR}/readback" "$reference"; then
+          __dw_set_error "chunk $((index + 1)) of $total did not read back as $pattern"
+          attempt=$((attempt + 1))
+          continue
+        fi
+
+        settled=1
+        break
+      done
+
+      if [ "$settled" -ne 1 ]; then
+        __dw_fault "$disk" "$label chunk $((index + 1)) of $total failed $attempts times at offset $offset"
         return 1
+      fi
+
+      if [ "$attempt" -gt 1 ]; then
+        marginal=$((marginal + 1))
+        __log_warning "$label chunk $((index + 1)) of $total needed $attempt attempts at offset $offset"
       fi
 
       if ! __dw_watch "$kind" "$label" "$((index + 1))" "$total" "$piece" "$elapsed"; then
         __dw_fault "$disk" "$__DW_REASON"
-        return 1
-      fi
-
-      if [ "$direction" = "read" ] &&
-        ! cmp -s -n "$piece" "${__DW_TMPDIR}/readback" "$reference"; then
-        __dw_fault "$disk" "chunk $((index + 1)) of $total did not read back as $pattern"
         return 1
       fi
 
@@ -634,6 +875,10 @@ function disk_wipe() {
       __log_success "Write $pattern completed"
     else
       __log_success "Verify $pattern completed"
+    fi
+
+    if [ "$marginal" -gt 0 ]; then
+      __log_warning "$marginal of $total chunks only settled on a retry. This media is wearing out."
     fi
 
     return 0
@@ -890,6 +1135,9 @@ function disk_wipe() {
   esac
   __log_info "Device: $disk"
 
+  __DW_ERRFILE=""
+  __DW_LAST_ERROR=""
+
   __dw_validate_params "$disk" "$passes" || return 1
 
   local identity
@@ -921,13 +1169,34 @@ function disk_wipe() {
     size=$((size - size % __DW_SECTOR))
   fi
 
+  __DW_CEILING=$((1024 * 1024))
+  while [ "$__DW_CEILING" -gt "$__DW_SECTOR" ] && [ $((__DW_CEILING * 16)) -gt "$size" ]; do
+    __DW_CEILING=$((__DW_CEILING / 2))
+  done
+
+  local writable=0
+  __dw_writable_media "$disk" || writable=$?
+  if [ "$writable" -eq 1 ]; then
+    __dw_report_write_protected "$disk" flag
+    return 1
+  fi
+
+  if ! sudo -n true 2>/dev/null; then
+    __log_info "Administrator access is required to reach the raw device."
+    if ! sudo -v; then
+      __log_error "Administrator access was not granted"
+      return 1
+    fi
+  fi
+
   __log_info "Unmounting $disk..."
   case "$(uname)" in
     Darwin)
-      if sudo diskutil unmountDisk force "$disk"; then
+      if __dw_release_darwin "$disk"; then
         __log_success "Disk unmounted"
       else
-        __log_warning "Failed to unmount disk (may not be mounted)"
+        __log_error "Disk is still mounted, so wiping it would corrupt the mounted volume"
+        return 1
       fi
       ;;
     Linux)
@@ -957,6 +1226,8 @@ function disk_wipe() {
     __log_error "Unable to create a working directory"
     return 1
   }
+  __DW_ERRFILE="${__DW_TMPDIR}/last-error"
+  : >"$__DW_ERRFILE"
   __DW_DRIFT_WRITE=100
   __DW_DRIFT_READ=100
   __DW_MEASURED=0
@@ -967,18 +1238,30 @@ function disk_wipe() {
   __DW_FACTOR_READ=0
   __DW_FACTOR_WRITE=0
 
+  local landed=0
+  __dw_writes_land "$disk" || landed=$?
+  if [ "$landed" -eq 1 ]; then
+    __dw_report_write_protected "$disk" silent
+    rm -rf "$__DW_TMPDIR"
+    __DW_ERRFILE=""
+    return 1
+  fi
+
   __log_info "Measuring $disk before wiping it, so every limit comes from this disk."
   local calibration=0
+  local write_calibration=0
   __dw_calibrate read "$disk" "$size" || calibration=$?
-  if [ "$calibration" -eq 0 ]; then
-    __dw_calibrate write "$disk" "$size" || calibration=$?
+  if [ "$calibration" -ne 2 ]; then
+    __dw_calibrate write "$disk" "$size" || write_calibration=$?
+    [ "$write_calibration" -gt "$calibration" ] && calibration="$write_calibration"
   fi
 
   case "$calibration" in
     0) __DW_MEASURED=1 ;;
     2)
-      rm -rf "$__DW_TMPDIR"
       __dw_fault "$disk" "the disk failed while being measured, before the wipe started"
+      rm -rf "$__DW_TMPDIR"
+      __DW_ERRFILE=""
       return 1
       ;;
     *) __log_warning "Speed is not being watched on this disk. Only the byte-for-byte verify decides." ;;
@@ -987,7 +1270,7 @@ function disk_wipe() {
   if [ "$__DW_MEASURED" = "1" ]; then
     __DW_CHUNK=$(__dw_chunk_bytes "$size")
   else
-    __DW_CHUNK=$((1024 * 1024))
+    __DW_CHUNK="$__DW_CEILING"
     [ "$__DW_CHUNK" -gt "$size" ] && __DW_CHUNK="$size"
   fi
 
@@ -1001,6 +1284,7 @@ function disk_wipe() {
   done
 
   rm -rf "$__DW_TMPDIR"
+  __DW_ERRFILE=""
   [ "$wipe_status" -ne 0 ] && return 1
 
   if [ "${CREATE:-}" = "y" ] && ! __dw_create_partition "$disk" "$size"; then
@@ -1010,12 +1294,22 @@ function disk_wipe() {
   __log_info "Ejecting device..."
   case "$(uname)" in
     Darwin)
-      if sudo diskutil eject "$disk" >/dev/null 2>&1; then
-        __log_success "Device ejected successfully"
-      else
-        __log_error "Failed to eject device"
-        return 1
-      fi
+      case "$__DW_FAMILY" in
+        floppy | superdisk)
+          if __dw_release_darwin "$disk"; then
+            __log_success "Device unmounted. This drive has no software eject, so remove the disk by hand."
+          else
+            __log_warning "Device is still mounted. Remove the disk by hand once it is idle."
+          fi
+          ;;
+        *)
+          if __dw_bounded 30 sudo diskutil eject "$disk" >/dev/null 2>&1; then
+            __log_success "Device ejected successfully"
+          else
+            __log_warning "Failed to eject device. The wipe already finished, so it is safe to remove."
+          fi
+          ;;
+      esac
       ;;
     Linux)
       sync

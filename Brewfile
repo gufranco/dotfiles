@@ -12,6 +12,7 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 ################################################################################
 # Homebrew taps
 ################################################################################
+tap 'bjarneo/cliamp'
 tap 'browsh-org/browsh'
 tap 'clojure/tools'
 tap 'dciabrin/ngdevkit' if architecture == 'arm64'
@@ -274,6 +275,7 @@ brew 'urlview'
 # Media
 ################################################################################
 brew 'asciinema'
+brew 'bjarneo/cliamp/cliamp'
 brew 'cmus'
 brew 'fatsort'
 brew 'ffmpeg'

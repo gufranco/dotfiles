@@ -11,15 +11,15 @@ export SCRIPT_START_TIME
 ################################################################################
 # Load utility functions
 ################################################################################
-# Try to load from local zsh/core first
+# Try to load from local zsh/config/core first
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
 
 # If core not available locally, download temporarily
-if [ -z "$SCRIPT_DIR" ] || [ ! -f "$SCRIPT_DIR/zsh/core" ]; then
+if [ -z "$SCRIPT_DIR" ] || [ ! -f "$SCRIPT_DIR/zsh/config/core" ]; then
   # Running via curl | bash - download core to temp location
   TEMP_UTILITIES=$(mktemp)
   trap 'rm -f "$TEMP_UTILITIES"' EXIT
-  if curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/gufranco/dotfiles/master/zsh/core -o "$TEMP_UTILITIES" 2>/dev/null; then
+  if curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/gufranco/dotfiles/master/zsh/config/core -o "$TEMP_UTILITIES" 2>/dev/null; then
     # shellcheck source=/dev/null
     source "$TEMP_UTILITIES"
     rm -f "$TEMP_UTILITIES"
@@ -31,7 +31,7 @@ if [ -z "$SCRIPT_DIR" ] || [ ! -f "$SCRIPT_DIR/zsh/core" ]; then
 else
   # Load from local file
   # shellcheck source=/dev/null
-  source "$SCRIPT_DIR/zsh/core"
+  source "$SCRIPT_DIR/zsh/config/core"
 fi
 
 ################################################################################

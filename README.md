@@ -431,7 +431,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `vkbasalt/` | vkBasalt CAS sharpening config |
 | `wget/` | Wget config |
 | `yazi/` | Yazi file manager + Catppuccin Mocha theme |
-| `zsh/` | Zsh: aliases, functions, paths, settings, infrastructure |
+| [`zsh/`](zsh) | Zsh: [`config/`](zsh/config) load-ordered shell setup, [`modules/`](zsh/modules) command definitions |
 | `Brewfile` | Homebrew packages, apps, and fonts |
 | `Uvfile` | CLI tools installed with uv |
 | `install.sh` | Cross-platform installer |
@@ -467,7 +467,7 @@ Inline signing requires NeoMutt's classic PGP backend, because the GPGME backend
 
 Switching backends requires restarting NeoMutt, since `crypt_use_gpgme` has no effect when set interactively.
 
-The classic backend invokes `pgpewrap` by bare name to expand multiple recipients. It ships inside NeoMutt's `libexec` directory, which [`zsh/paths`](zsh/paths) puts on `PATH` for both Linux and macOS.
+The classic backend invokes `pgpewrap` by bare name to expand multiple recipients. It ships inside NeoMutt's `libexec` directory, which [`zsh/config/paths`](zsh/config/paths) puts on `PATH` for both Linux and macOS.
 
 Every setting an account applies has a matching `reset` in [`mutt/normalize.muttrc`](mutt/normalize.muttrc), which runs first when switching accounts. A setting added to an account file without a matching reset leaks into the next account.
 

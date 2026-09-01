@@ -40,7 +40,7 @@ jobs:
           ./shellcheck --version
           ./shellcheck install.sh
           ./shellcheck .github/scripts/*.sh
-          ./shellcheck -x -e SC1091 zsh/*
+          ./shellcheck -x -e SC1091 zsh/config/* zsh/modules/*
 
   shfmt:
     name: shfmt
@@ -69,7 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           errors=0
-          for f in zsh/*; do
+          for f in zsh/config/* zsh/modules/*; do
             [ -f "$f" ] || continue
             if zsh -n "$f" 2>&1; then
               echo "OK: $f"

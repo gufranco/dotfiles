@@ -4,10 +4,10 @@
 f5
 
 # Edit zsh config
-$EDITOR ~/.dotfiles/zsh/settings
+$EDITOR ~/.dotfiles/zsh/config/settings
 
 # Edit aliases
-$EDITOR ~/.dotfiles/zsh/aliases
+$EDITOR ~/.dotfiles/zsh/config/aliases
 
 # Reload shell config
 source ~/.zshrc

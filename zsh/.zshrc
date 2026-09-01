@@ -3,22 +3,22 @@
 ################################################################################
 # Core (must load first - provides shared helpers)
 ################################################################################
-source "$HOME/.dotfiles/zsh/core"
+source "$HOME/.dotfiles/zsh/config/core"
 
 ################################################################################
 # Paths
 ################################################################################
-source "$HOME/.dotfiles/zsh/paths"
+source "$HOME/.dotfiles/zsh/config/paths"
 
 ################################################################################
 # Startup
 ################################################################################
-source "$HOME/.dotfiles/zsh/startup"
+source "$HOME/.dotfiles/zsh/config/startup"
 
 ################################################################################
 # Settings
 ################################################################################
-source "$HOME/.dotfiles/zsh/settings"
+source "$HOME/.dotfiles/zsh/config/settings"
 
 ################################################################################
 # Oh-my-zsh
@@ -45,17 +45,17 @@ __cached_eval thefuck --alias
 ################################################################################
 # Aliases
 ################################################################################
-source "$HOME/.dotfiles/zsh/aliases"
+source "$HOME/.dotfiles/zsh/config/aliases"
 
 ################################################################################
 # Domain modules
 ################################################################################
-source "$HOME/.dotfiles/zsh/f5"
-source "$HOME/.dotfiles/zsh/disk"
-source "$HOME/.dotfiles/zsh/sync-games"
-source "$HOME/.dotfiles/zsh/gaming"
-source "$HOME/.dotfiles/zsh/alphabetize"
-source "$HOME/.dotfiles/zsh/nds-trim"
-source "$HOME/.dotfiles/zsh/subs"
-source "$HOME/.dotfiles/zsh/vcd"
-source "$HOME/.dotfiles/zsh/infrastructure"
+source "$HOME/.dotfiles/zsh/modules/f5"
+source "$HOME/.dotfiles/zsh/modules/disk"
+source "$HOME/.dotfiles/zsh/modules/sync-games"
+source "$HOME/.dotfiles/zsh/modules/gaming"
+source "$HOME/.dotfiles/zsh/modules/alphabetize"
+source "$HOME/.dotfiles/zsh/modules/nds-trim"
+source "$HOME/.dotfiles/zsh/modules/subs"
+source "$HOME/.dotfiles/zsh/modules/vcd"
+source "$HOME/.dotfiles/zsh/modules/infrastructure"

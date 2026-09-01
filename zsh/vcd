@@ -25,6 +25,8 @@ Picture:
                          (default: chosen from the source frame rate)
   --letterbox            fit the whole frame, add bars (default)
   --crop                 fill the frame, cut the sides
+  --borders auto|off      strip baked-in black bars before scaling
+                         (default auto, decided by cropdetect)
   --deinterlace auto|on|off   (default auto, decided by idet)
   --denoise SPEC         hqdn3d parameters, e.g. 1:0.7:4:4 (default off,
                          measured to cost quality on clean and grainy sources)
@@ -189,6 +191,36 @@ function __vcd_detect_interlacing() {
       weak = (tff > bff) ? bff : tff
       sampled = tff + bff + prog
       exit !(sampled >= 50 && dominant > prog && dominant > weak * 3)
+    }'
+}
+
+function __vcd_detect_borders() {
+  local ffmpeg_bin="$1"
+  local media="$2"
+  local duration="$3"
+  local width="$4"
+  local height="$5"
+  local fraction
+  local seek
+  local detected
+  local -a boxes=()
+
+  for fraction in 10 30 50 70 90; do
+    seek="$(awk -v d="$duration" -v f="$fraction" 'BEGIN { printf "%.2f", d * f / 100 }')"
+    detected="$("$ffmpeg_bin" -hide_banner -nostdin -ss "$seek" -i "$media" \
+      -frames:v 60 -vf cropdetect=limit=24:round=2:reset=0 -an -f null - 2>&1 |
+      grep -o 'crop=[0-9]*:[0-9]*:[0-9-]*:[0-9-]*' | tail -1)"
+    [ -n "$detected" ] && boxes+=("${detected#crop=}")
+  done
+
+  [ "${#boxes[@]}" -gt 0 ] || return 1
+
+  printf '%s\n' "${boxes[@]}" | awk -F: -v sw="$width" -v sh="$height" '
+    { if ($1 > w) w = $1; if ($2 > h) h = $2 }
+    END {
+      if (w <= 0 || h <= 0 || w > sw || h > sh) { print sw, sh, 0, 0; exit }
+      w = int(w / 2) * 2; h = int(h / 2) * 2
+      print w, h, int((sw - w) / 4) * 2, int((sh - h) / 4) * 2
     }'
 }
 
@@ -370,6 +402,7 @@ function __vcd_run() {
   local overlap=5
   local title=""
   local fit="letterbox"
+  local borders="auto"
   local deinterlace="auto"
   local denoise="off"
   local sharpen="yes"
@@ -432,6 +465,12 @@ function __vcd_run() {
         --deinterlace)
           [ -n "$value" ] || { value="$2"; shift; }
           deinterlace="$value"
+          shift
+          continue
+          ;;
+        --borders)
+          [ -n "$value" ] || { value="$2"; shift; }
+          borders="$value"
           shift
           continue
           ;;
@@ -527,6 +566,14 @@ function __vcd_run() {
     auto | on | off) ;;
     *)
       __log_error "--deinterlace must be auto, on or off, got: $deinterlace"
+      return 1
+      ;;
+  esac
+
+  case "$borders" in
+    auto | off) ;;
+    *)
+      __log_error "--borders must be auto or off, got: $borders"
       return 1
       ;;
   esac
@@ -640,12 +687,28 @@ function __vcd_run() {
     matrix_out="smpte170m"
   fi
 
+  local border_w="$src_w" border_h="$src_h" border_x=0 border_y=0
+  if [ "$borders" = "auto" ]; then
+    read -r border_w border_h border_x border_y <<<"$(
+      __vcd_detect_borders "$ffmpeg_bin" "$input" "$duration" "$src_w" "$src_h"
+    )"
+    if ! __vcd_is_number "$border_w" || ! __vcd_is_number "$border_h"; then
+      border_w="$src_w"
+      border_h="$src_h"
+      border_x=0
+      border_y=0
+    fi
+  fi
+
+  local active_w="$border_w"
+  local active_h="$border_h"
+
   local src_dar
-  src_dar="$(__vcd_source_display_aspect "$src_w" "$src_h" "$src_sar")"
+  src_dar="$(__vcd_source_display_aspect "$active_w" "$active_h" "$src_sar")"
 
   local crop_w crop_h crop_x crop_y inner_w inner_h pad_x pad_y
   read -r crop_w crop_h crop_x crop_y inner_w inner_h pad_x pad_y <<<"$(
-    __vcd_geometry "$fit" "$raster_w" "$raster_h" "$src_w" "$src_h" "$src_dar"
+    __vcd_geometry "$fit" "$raster_w" "$raster_h" "$active_w" "$active_h" "$src_dar"
   )"
 
   local do_deinterlace="$deinterlace"
@@ -703,6 +766,9 @@ function __vcd_run() {
 
   __log_info "Source     $(basename -- "$input")"
   __log_info "  ${src_w}x${src_h}, $(awk -v d="$src_dar" 'BEGIN { printf "%.3f", d }') display aspect, $(awk -v d="$duration" 'BEGIN { printf "%d:%02d:%02d", d/3600, (d%3600)/60, d%60 }')"
+  if [ "$active_w" != "$src_w" ] || [ "$active_h" != "$src_h" ]; then
+    __log_info "  black bars stripped, active picture ${active_w}x${active_h} at +${border_x}+${border_y}"
+  fi
   __log_info "Target     $(printf '%s' "$standard" | tr '[:lower:]' '[:upper:]') VCD, ${raster_w}x${raster_h} at $fps fps"
   __log_info "  picture ${inner_w}x${inner_h} at +${pad_x}+${pad_y}, $fit"
   __log_info "  deinterlace $do_deinterlace, denoise $denoise, sharpen $sharpen, colour $([ "$color_convert" = yes ] && echo "-> $matrix_out" || echo unchanged)"
@@ -723,6 +789,9 @@ function __vcd_run() {
 
   local -a video_filters=()
   [ "$do_deinterlace" = "on" ] && video_filters+=("bwdif=mode=0:parity=-1:deint=0")
+  if [ "$active_w" != "$src_w" ] || [ "$active_h" != "$src_h" ]; then
+    video_filters+=("crop=${border_w}:${border_h}:${border_x}:${border_y}")
+  fi
   video_filters+=("fps=$fps")
   [ "$denoise" != "off" ] && video_filters+=("hqdn3d=$denoise")
   [ "$fit" = "crop" ] && video_filters+=("crop=${crop_w}:${crop_h}:${crop_x}:${crop_y}")

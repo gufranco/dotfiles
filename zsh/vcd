@@ -1,0 +1,824 @@
+#!/usr/bin/env bash
+
+function __vcd_usage() {
+  cat <<'USAGE'
+vcd - author Video CD (VCD 2.0) BIN/CUE images from any video file
+
+Usage:
+  vcd [options] <video> [subtitles]
+
+Arguments:
+  video                  source file in any container ffmpeg can read
+  subtitles              optional external subtitle file (srt, vtt, sub, ass, ssa)
+
+Disc:
+  --cd74                 74-minute media (650 MB)
+  --cd80                 80-minute media (700 MB, default)
+  --cd90                 90-minute media (800 MB, overburn territory)
+  --disc-minutes N       explicit media length in minutes
+  --overlap SECONDS      footage repeated at each disc seam (default 5)
+  --title TEXT           ISO volume label and album id (default: file name)
+
+Picture:
+  --ntsc                 force 352x240 at 29.97 fps
+  --pal                  force 352x288 at 25 fps
+                         (default: chosen from the source frame rate)
+  --letterbox            fit the whole frame, add bars (default)
+  --crop                 fill the frame, cut the sides
+  --deinterlace auto|on|off   (default auto, decided by idet)
+  --denoise SPEC|off     hqdn3d parameters (default 2:1:3:3)
+  --sharpen              light unsharp pass after the downscale
+  --no-color-convert     keep the source matrix instead of converting to BT.601
+
+Sound:
+  --audio-track N        source audio stream index (default 0)
+  --normalize            EBU R128 loudness normalisation
+
+Subtitles:
+  --sub-track N          burn an embedded text subtitle stream instead of a file
+  --sub-style SPEC       ASS style overrides, e.g. Fontsize=22,PrimaryColour=&H00FFFFFF
+
+Output:
+  --output-dir DIR       destination directory (default: next to the source)
+  --keep-mpeg            keep the intermediate MPEG-1 program streams
+  --force                overwrite existing images
+  --dry-run              print the plan and exit
+  -h, --help             this text
+
+Environment:
+  VCD_FFMPEG             ffmpeg binary to use; otherwise the first build on
+                         PATH that provides the filters the run needs
+
+Examples:
+  vcd movie.mkv
+  vcd --cd74 movie.mkv movie.srt
+  vcd --pal --crop --sub-style 'Fontsize=22' movie.mkv movie.srt
+USAGE
+}
+
+function __vcd_ffmpeg_has_filter() {
+  "$1" -hide_banner -filters 2>/dev/null |
+    awk -v want="$2" '$2 == want { hit = 1 } END { exit !hit }'
+}
+
+function __vcd_resolve_ffmpeg() {
+  local need_subtitles="$1"
+  local prefix="${HOMEBREW_PREFIX:-/opt/homebrew}"
+  local candidate
+  local -a candidates=()
+
+  [ -n "${VCD_FFMPEG:-}" ] && candidates+=("$VCD_FFMPEG")
+  candidates+=("$prefix/opt/ffmpeg-full/bin/ffmpeg")
+  candidates+=("/usr/local/opt/ffmpeg-full/bin/ffmpeg")
+  candidate="$(command -v ffmpeg 2>/dev/null)"
+  [ -n "$candidate" ] && candidates+=("$candidate")
+
+  for candidate in "${candidates[@]}"; do
+    [ -x "$candidate" ] || continue
+    if [ "$need_subtitles" = "yes" ] && ! __vcd_ffmpeg_has_filter "$candidate" subtitles; then
+      continue
+    fi
+    echo "$candidate"
+    return 0
+  done
+
+  return 1
+}
+
+function __vcd_probe_format() {
+  "$1" -v error -show_entries "format=$2" \
+    -of default=noprint_wrappers=1:nokey=1 "$3" 2>/dev/null | head -1
+}
+
+function __vcd_probe_stream() {
+  "$1" -v error -select_streams "$2" -show_entries "stream=$3" \
+    -of default=noprint_wrappers=1:nokey=1 "$4" 2>/dev/null | head -1
+}
+
+function __vcd_absolute_path() {
+  local target="$1"
+  local dir
+  local base
+  dir="$(dirname -- "$target")"
+  base="$(basename -- "$target")"
+  dir="$(cd -- "$dir" 2>/dev/null && pwd -P)" || return 1
+  echo "${dir%/}/$base"
+}
+
+function __vcd_is_number() {
+  case "$1" in
+    '' | *[!0-9]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+function __vcd_source_display_aspect() {
+  local width="$1"
+  local height="$2"
+  local sar="$3"
+
+  awk -v w="$width" -v h="$height" -v sar="$sar" '
+    BEGIN {
+      num = 1; den = 1
+      if (split(sar, p, ":") == 2 && p[1] + 0 > 0 && p[2] + 0 > 0) {
+        num = p[1] + 0; den = p[2] + 0
+      }
+      printf "%.10f\n", (w * num) / (h * den)
+    }'
+}
+
+function __vcd_detect_interlacing() {
+  local ffmpeg_bin="$1"
+  local input="$2"
+  local duration="$3"
+  local seek
+  local report
+
+  seek="$(awk -v d="$duration" 'BEGIN { printf "%.2f", (d > 60 ? d * 0.1 : 0) }')"
+  report="$("$ffmpeg_bin" -hide_banner -nostdin -ss "$seek" -i "$input" \
+    -frames:v 300 -filter:v idet -an -f null - 2>&1 |
+    awk '/Multi frame detection/ { line = $0 } END { print line }')"
+
+  [ -n "$report" ] || return 1
+
+  awk -v line="$report" '
+    BEGIN {
+      tff = bff = prog = 0
+      n = split(line, f, /[ \t]+/)
+      for (i = 1; i <= n; i++) {
+        if (f[i] == "TFF:") tff = f[i + 1] + 0
+        if (f[i] == "BFF:") bff = f[i + 1] + 0
+        if (f[i] == "Progressive:") prog = f[i + 1] + 0
+      }
+      dominant = (tff > bff) ? tff : bff
+      weak = (tff > bff) ? bff : tff
+      sampled = tff + bff + prog
+      exit !(sampled >= 50 && dominant > prog && dominant > weak * 3)
+    }'
+}
+
+function __vcd_geometry() {
+  local mode="$1"
+  local raster_w="$2"
+  local raster_h="$3"
+  local src_w="$4"
+  local src_h="$5"
+  local src_dar="$6"
+
+  awk -v mode="$mode" -v rw="$raster_w" -v rh="$raster_h" \
+    -v sw="$src_w" -v sh="$src_h" -v dar="$src_dar" '
+    function even(v) { v = int(v / 2 + 0.5) * 2; return (v < 2 ? 2 : v) }
+    BEGIN {
+      disc = 4.0 / 3.0
+      if (mode == "crop") {
+        sq_w = sh * dar
+        if (dar > disc) {
+          cw = even(sw * disc / dar); ch = even(sh)
+        } else {
+          cw = even(sw); ch = even(sh * dar / disc)
+        }
+        printf "%d %d %d %d %d %d %d %d\n", cw, ch, int((sw - cw) / 2), int((sh - ch) / 2), rw, rh, 0, 0
+      } else {
+        if (dar >= disc) {
+          iw = even(rw); ih = even(rh * disc / dar)
+        } else {
+          iw = even(rw * dar / disc); ih = even(rh)
+        }
+        printf "0 0 0 0 %d %d %d %d\n", iw, ih, int((rw - iw) / 2), int((rh - ih) / 2)
+      }
+    }'
+}
+
+function __vcd_disc_plan() {
+  local duration="$1"
+  local usable="$2"
+  local overlap="$3"
+
+  awk -v d="$duration" -v u="$usable" -v ov="$overlap" '
+    BEGIN {
+      if (ov >= u) ov = 0
+      if (d <= u) { printf "0.000 %.3f\n", d; exit }
+      n = int((d - ov) / (u - ov))
+      if (n * (u - ov) + ov < d - 0.0005) n++
+      per = (d + (n - 1) * ov) / n
+      for (i = 0; i < n; i++) {
+        start = i * (per - ov)
+        printf "%.3f %.3f\n", start, per
+      }
+    }'
+}
+
+function __vcd_subtitle_to_ass() {
+  local ffmpeg_bin="$1"
+  local input="$2"
+  local target="$3"
+
+  "$ffmpeg_bin" -hide_banner -nostdin -v error -y -i "$input" "$target" 2>/dev/null
+}
+
+function __vcd_style_ass() {
+  local input="$1"
+  local output="$2"
+  local play_w="$3"
+  local play_h="$4"
+  local style="$5"
+
+  awk -v pw="$play_w" -v ph="$play_h" -v style="$style" '
+    /^PlayResX:/ { print "PlayResX: " pw; seen_x = 1; next }
+    /^PlayResY:/ { print "PlayResY: " ph; seen_y = 1; next }
+    /^ScaledBorderAndShadow:/ { print "ScaledBorderAndShadow: yes"; seen_s = 1; next }
+    /^Style: Default,/ { print style; next }
+    { print }
+    END {
+      if (!seen_x || !seen_y || !seen_s) exit 1
+    }' "$input" >"$output"
+}
+
+function __vcd_shift_ass() {
+  local input="$1"
+  local output="$2"
+  local offset="$3"
+  local span="$4"
+
+  awk -v off="$offset" -v span="$span" '
+    function to_seconds(t,   p) {
+      split(t, p, ":")
+      return p[1] * 3600 + p[2] * 60 + p[3]
+    }
+    function to_stamp(v,   h, m, s) {
+      if (v < 0) v = 0
+      h = int(v / 3600); v -= h * 3600
+      m = int(v / 60); v -= m * 60
+      s = v
+      return sprintf("%d:%02d:%05.2f", h, m, s)
+    }
+    /^Dialogue:/ {
+      n = split($0, f, ",")
+      start = to_seconds(f[2]) - off
+      end = to_seconds(f[3]) - off
+      if (end <= 0 || start >= span) next
+      f[2] = to_stamp(start)
+      f[3] = to_stamp(end)
+      out = f[1]
+      for (i = 2; i <= n; i++) out = out "," f[i]
+      print out
+      next
+    }
+    { print }' "$input" >"$output"
+}
+
+function __vcd_verify_stream() {
+  local ffprobe_bin="$1"
+  local file="$2"
+  local width="$3"
+  local height="$4"
+  local -a found
+
+  [ -s "$file" ] || {
+    __log_error "Encoder produced no data: $(basename -- "$file")"
+    return 1
+  }
+
+  found=(
+    "$(__vcd_probe_stream "$ffprobe_bin" v:0 codec_name "$file")"
+    "$(__vcd_probe_stream "$ffprobe_bin" v:0 width "$file")"
+    "$(__vcd_probe_stream "$ffprobe_bin" v:0 height "$file")"
+    "$(__vcd_probe_stream "$ffprobe_bin" a:0 codec_name "$file")"
+    "$(__vcd_probe_stream "$ffprobe_bin" a:0 sample_rate "$file")"
+    "$(__vcd_probe_stream "$ffprobe_bin" a:0 channels "$file")"
+  )
+
+  local expected="mpeg1video $width $height mp2 44100 2"
+  local actual="${found[*]}"
+
+  if [ "$actual" != "$expected" ]; then
+    __log_error "Stream is not VCD conformant: $(basename -- "$file")"
+    __log_error "  expected: $expected"
+    __log_error "  actual:   $actual"
+    return 1
+  fi
+
+  return 0
+}
+
+function __vcd_verify_image() {
+  local bin_file="$1"
+  local capacity_sectors="$2"
+  local bytes
+  local sectors
+
+  bytes="$(wc -c <"$bin_file" | tr -d '[:space:]')"
+  sectors=$((bytes / 2352))
+
+  if [ "$sectors" -gt "$capacity_sectors" ]; then
+    __log_error "Image exceeds the media: $sectors sectors, capacity $capacity_sectors"
+    return 1
+  fi
+
+  __log_info "  image $sectors of $capacity_sectors sectors ($((sectors * 100 / capacity_sectors))% full, $((bytes / 1048576)) MiB)"
+  return 0
+}
+
+function __vcd_iso_label() {
+  printf '%s' "$1" |
+    tr '[:lower:]' '[:upper:]' |
+    tr -c 'A-Z0-9_' '_' |
+    cut -c1-32
+}
+
+function __vcd_run() {
+  local work="$1"
+  shift
+
+  local standard=""
+  local disc_minutes=80
+  local overlap=5
+  local title=""
+  local fit="letterbox"
+  local deinterlace="auto"
+  local denoise="2:1:3:3"
+  local sharpen="no"
+  local color_convert="yes"
+  local audio_track=0
+  local normalize="no"
+  local sub_track=""
+  local sub_style=""
+  local output_dir=""
+  local keep_mpeg="no"
+  local force="no"
+  local dry_run="no"
+  local input=""
+  local subtitles=""
+  local positional_done="no"
+
+  while [ "$#" -gt 0 ]; do
+    local option="$1"
+    local value=""
+
+    if [ "$positional_done" = "no" ]; then
+      case "$option" in
+        --*=*)
+          value="${option#*=}"
+          option="${option%%=*}"
+          ;;
+      esac
+
+      case "$option" in
+        -h | --help)
+          __vcd_usage
+          return 0
+          ;;
+        --cd74) disc_minutes=74; shift; continue ;;
+        --cd80) disc_minutes=80; shift; continue ;;
+        --cd90) disc_minutes=90; shift; continue ;;
+        --disc-minutes)
+          [ -n "$value" ] || { value="$2"; shift; }
+          disc_minutes="$value"
+          shift
+          continue
+          ;;
+        --overlap)
+          [ -n "$value" ] || { value="$2"; shift; }
+          overlap="$value"
+          shift
+          continue
+          ;;
+        --title)
+          [ -n "$value" ] || { value="$2"; shift; }
+          title="$value"
+          shift
+          continue
+          ;;
+        --ntsc) standard="ntsc"; shift; continue ;;
+        --pal) standard="pal"; shift; continue ;;
+        --letterbox) fit="letterbox"; shift; continue ;;
+        --crop) fit="crop"; shift; continue ;;
+        --deinterlace)
+          [ -n "$value" ] || { value="$2"; shift; }
+          deinterlace="$value"
+          shift
+          continue
+          ;;
+        --denoise)
+          [ -n "$value" ] || { value="$2"; shift; }
+          denoise="$value"
+          shift
+          continue
+          ;;
+        --sharpen) sharpen="yes"; shift; continue ;;
+        --no-color-convert) color_convert="no"; shift; continue ;;
+        --audio-track)
+          [ -n "$value" ] || { value="$2"; shift; }
+          audio_track="$value"
+          shift
+          continue
+          ;;
+        --normalize) normalize="yes"; shift; continue ;;
+        --sub-track)
+          [ -n "$value" ] || { value="$2"; shift; }
+          sub_track="$value"
+          shift
+          continue
+          ;;
+        --sub-style)
+          [ -n "$value" ] || { value="$2"; shift; }
+          sub_style="$value"
+          shift
+          continue
+          ;;
+        --output-dir)
+          [ -n "$value" ] || { value="$2"; shift; }
+          output_dir="$value"
+          shift
+          continue
+          ;;
+        --keep-mpeg) keep_mpeg="yes"; shift; continue ;;
+        --force) force="yes"; shift; continue ;;
+        --dry-run) dry_run="yes"; shift; continue ;;
+        --) positional_done="yes"; shift; continue ;;
+        -?*)
+          __log_error "Unknown option: $option"
+          __log_error "Run 'vcd --help' for the option list"
+          return 2
+          ;;
+      esac
+    fi
+
+    if [ -z "$input" ]; then
+      input="$1"
+    elif [ -z "$subtitles" ]; then
+      subtitles="$1"
+    else
+      __log_error "Unexpected extra argument: $1"
+      return 2
+    fi
+    shift
+  done
+
+  if [ -z "$input" ]; then
+    __vcd_usage
+    return 2
+  fi
+
+  if [ ! -f "$input" ]; then
+    __log_error "Source not found: $input"
+    return 1
+  fi
+
+  if [ -n "$subtitles" ] && [ ! -f "$subtitles" ]; then
+    __log_error "Subtitle file not found: $subtitles"
+    return 1
+  fi
+
+  if ! __vcd_is_number "$disc_minutes" || [ "$disc_minutes" -lt 1 ]; then
+    __log_error "--disc-minutes must be a positive integer, got: $disc_minutes"
+    return 1
+  fi
+
+  if ! __vcd_is_number "$overlap"; then
+    __log_error "--overlap must be a non-negative integer, got: $overlap"
+    return 1
+  fi
+
+  case "$deinterlace" in
+    auto | on | off) ;;
+    *)
+      __log_error "--deinterlace must be auto, on or off, got: $deinterlace"
+      return 1
+      ;;
+  esac
+
+  local wants_subtitles="no"
+  { [ -n "$subtitles" ] || [ -n "$sub_track" ]; } && wants_subtitles="yes"
+
+  local ffmpeg_bin
+  if ! ffmpeg_bin="$(__vcd_resolve_ffmpeg "$wants_subtitles")"; then
+    if [ "$wants_subtitles" = "yes" ]; then
+      __log_error "No ffmpeg build with the 'subtitles' filter was found"
+      __log_error "Subtitle burn-in needs libass. On macOS: brew install ffmpeg-full"
+      __log_error "Point VCD_FFMPEG at a suitable binary to override the search"
+    else
+      __log_error "ffmpeg is not installed"
+    fi
+    return 1
+  fi
+
+  local ffprobe_bin="${ffmpeg_bin%/ffmpeg}/ffprobe"
+  [ -x "$ffprobe_bin" ] || ffprobe_bin="$(command -v ffprobe 2>/dev/null)"
+
+  if [ -z "$ffprobe_bin" ] || [ ! -x "$ffprobe_bin" ]; then
+    __log_error "ffprobe is not installed"
+    return 1
+  fi
+
+  local tool
+  for tool in vcdimager awk iconv sed file; do
+    if ! __cmd_exists "$tool"; then
+      __log_error "Missing tool: $tool"
+      [ "$tool" = "vcdimager" ] && __log_error "On macOS: brew install vcdimager"
+      return 1
+    fi
+  done
+
+  input="$(__vcd_absolute_path "$input")" || return 1
+  [ -n "$subtitles" ] && { subtitles="$(__vcd_absolute_path "$subtitles")" || return 1; }
+
+  local stem
+  stem="$(basename -- "$input")"
+  stem="${stem%.*}"
+  [ -n "$title" ] || title="$stem"
+
+  if [ -z "$output_dir" ]; then
+    output_dir="$(dirname -- "$input")"
+  fi
+  mkdir -p "$output_dir" || return 1
+  output_dir="$(cd -- "$output_dir" && pwd -P)" || return 1
+
+  local duration
+  duration="$(__vcd_probe_format "$ffprobe_bin" duration "$input")"
+  case "$duration" in
+    '' | N/A) duration="$(__vcd_probe_stream "$ffprobe_bin" v:0 duration "$input")" ;;
+  esac
+  if ! awk -v d="$duration" 'BEGIN { exit !(d + 0 > 0) }' 2>/dev/null; then
+    __log_error "Could not read a usable duration from: $(basename -- "$input")"
+    return 1
+  fi
+
+  local src_w src_h src_sar src_fps src_matrix
+  src_w="$(__vcd_probe_stream "$ffprobe_bin" v:0 width "$input")"
+  src_h="$(__vcd_probe_stream "$ffprobe_bin" v:0 height "$input")"
+  src_sar="$(__vcd_probe_stream "$ffprobe_bin" v:0 sample_aspect_ratio "$input")"
+  src_fps="$(__vcd_probe_stream "$ffprobe_bin" v:0 r_frame_rate "$input")"
+  src_matrix="$(__vcd_probe_stream "$ffprobe_bin" v:0 color_space "$input")"
+
+  if ! __vcd_is_number "$src_w" || ! __vcd_is_number "$src_h"; then
+    __log_error "Source has no readable video stream: $(basename -- "$input")"
+    return 1
+  fi
+
+  local has_audio="yes"
+  [ -n "$(__vcd_probe_stream "$ffprobe_bin" "a:$audio_track" codec_name "$input")" ] || has_audio="no"
+
+  if [ -z "$standard" ]; then
+    standard="$(awk -v r="$src_fps" '
+      BEGIN {
+        split(r, p, "/")
+        fps = (p[2] + 0 > 0) ? p[1] / p[2] : p[1] + 0
+        print (fps > 24.5 && fps < 26.5) || (fps > 49 && fps < 51) ? "pal" : "ntsc"
+      }')"
+  fi
+
+  local raster_w=352 raster_h fps gop matrix_out
+  if [ "$standard" = "pal" ]; then
+    raster_h=288
+    fps="25"
+    gop=12
+    matrix_out="bt470bg"
+  else
+    raster_h=240
+    fps="30000/1001"
+    gop=15
+    matrix_out="smpte170m"
+  fi
+
+  local src_dar
+  src_dar="$(__vcd_source_display_aspect "$src_w" "$src_h" "$src_sar")"
+
+  local crop_w crop_h crop_x crop_y inner_w inner_h pad_x pad_y
+  read -r crop_w crop_h crop_x crop_y inner_w inner_h pad_x pad_y <<<"$(
+    __vcd_geometry "$fit" "$raster_w" "$raster_h" "$src_w" "$src_h" "$src_dar"
+  )"
+
+  local do_deinterlace="$deinterlace"
+  if [ "$deinterlace" = "auto" ]; then
+    if __vcd_detect_interlacing "$ffmpeg_bin" "$input" "$duration"; then
+      do_deinterlace="on"
+    else
+      do_deinterlace="off"
+    fi
+  fi
+
+  local sub_source=""
+  if [ -n "$sub_track" ]; then
+    sub_source="$work/extracted.ass"
+    if ! "$ffmpeg_bin" -hide_banner -nostdin -v error -y -i "$input" \
+      -map "0:s:$sub_track" -c:s ass "$sub_source" 2>/dev/null; then
+      __log_error "Could not extract subtitle stream $sub_track as text"
+      __log_error "Bitmap subtitles (PGS, VobSub) are not supported; supply an external file"
+      return 1
+    fi
+  elif [ -n "$subtitles" ]; then
+    sub_source="$work/source.sub"
+    cp -- "$subtitles" "$sub_source" || return 1
+    __ensure_utf8 "$sub_source" || return 1
+  fi
+
+  local sub_master=""
+  if [ -n "$sub_source" ]; then
+    sub_master="$work/master.ass"
+    case "$subtitles" in
+      *.ass | *.ssa | *.ASS | *.SSA)
+        cp -- "$sub_source" "$sub_master" || return 1
+        ;;
+      *)
+        if ! __vcd_subtitle_to_ass "$ffmpeg_bin" "$sub_source" "$work/plain.ass"; then
+          __log_error "Could not read the subtitle file as text: $(basename -- "${subtitles:-$sub_source}")"
+          return 1
+        fi
+        local style="Style: Default,Arial,18,&H0000FFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,1.5,0.6,2,12,12,8,1"
+        if ! __vcd_style_ass "$work/plain.ass" "$sub_master" "$inner_w" "$inner_h" "$style"; then
+          __log_warning "Subtitle script had no PlayRes header; sizes may drift"
+        fi
+        ;;
+    esac
+  fi
+
+  local capacity_sectors=$((disc_minutes * 60 * 75))
+  local usable
+  usable="$(awk -v c="$capacity_sectors" 'BEGIN { printf "%.3f", (c - 1200) / 75 }')"
+
+  local plan
+  plan="$(__vcd_disc_plan "$duration" "$usable" "$overlap")"
+  local total
+  total="$(printf '%s\n' "$plan" | wc -l | tr -d '[:space:]')"
+
+  __log_info "Source     $(basename -- "$input")"
+  __log_info "  ${src_w}x${src_h}, $(awk -v d="$src_dar" 'BEGIN { printf "%.3f", d }') display aspect, $(awk -v d="$duration" 'BEGIN { printf "%d:%02d:%02d", d/3600, (d%3600)/60, d%60 }')"
+  __log_info "Target     $(printf '%s' "$standard" | tr '[:lower:]' '[:upper:]') VCD, ${raster_w}x${raster_h} at $fps fps"
+  __log_info "  picture ${inner_w}x${inner_h} at +${pad_x}+${pad_y}, $fit"
+  __log_info "  deinterlace $do_deinterlace, denoise $denoise, colour $([ "$color_convert" = yes ] && echo "-> $matrix_out" || echo unchanged)"
+  __log_info "  audio $([ "$has_audio" = yes ] && echo "track $audio_track" || echo "silent (source has none)")"
+  [ -n "$sub_master" ] && __log_info "  subtitles burned in at ${inner_w}x${inner_h}"
+  __log_info "Media      ${disc_minutes} min, ${capacity_sectors} sectors, ${usable}s usable per disc"
+  __log_info "Plan       $total disc(s), ${overlap}s overlap"
+
+  if [ "$dry_run" = "yes" ]; then
+    local index=1
+    while IFS=' ' read -r start span; do
+      [ -n "$start" ] || continue
+      __log_info "  disc $index: start ${start}s, length ${span}s -> $output_dir/${stem}_disc${index}.bin"
+      index=$((index + 1))
+    done <<<"$plan"
+    return 0
+  fi
+
+  local -a video_filters=()
+  [ "$do_deinterlace" = "on" ] && video_filters+=("bwdif=mode=0:parity=-1:deint=0")
+  video_filters+=("fps=$fps")
+  [ "$denoise" != "off" ] && video_filters+=("hqdn3d=$denoise")
+  [ "$fit" = "crop" ] && video_filters+=("crop=${crop_w}:${crop_h}:${crop_x}:${crop_y}")
+
+  local subtitle_slot=""
+  if [ -n "$sub_master" ]; then
+    subtitle_slot="subtitles=filename=subtitles.ass"
+    [ -n "$sub_style" ] && subtitle_slot="${subtitle_slot}:force_style='${sub_style}'"
+  fi
+
+  local -a scale_filters=()
+  scale_filters+=("scale=${inner_w}:${inner_h}:flags=lanczos+accurate_rnd+full_chroma_int")
+  if [ "$inner_w" != "$raster_w" ] || [ "$inner_h" != "$raster_h" ]; then
+    scale_filters+=("pad=${raster_w}:${raster_h}:${pad_x}:${pad_y}:color=black")
+  fi
+  [ "$sharpen" = "yes" ] && scale_filters+=("unsharp=3:3:0.4:3:3:0.0")
+
+  if [ "$color_convert" = "yes" ] && __vcd_ffmpeg_has_filter "$ffmpeg_bin" zscale; then
+    local matrix_in="$src_matrix"
+    case "$matrix_in" in
+      '' | unknown | N/A) [ "$src_h" -ge 720 ] && matrix_in="bt709" || matrix_in="" ;;
+    esac
+    if [ -n "$matrix_in" ] && [ "$matrix_in" != "$matrix_out" ]; then
+      scale_filters+=("zscale=min=${matrix_in}:m=${matrix_out}:pin=${matrix_in}:p=${matrix_out}:tin=${matrix_in}:t=${matrix_out}:rin=tv:r=tv:d=error_diffusion")
+    fi
+  fi
+
+  scale_filters+=("setsar=1" "format=yuv420p")
+
+  local -a audio_filters=()
+  [ "$normalize" = "yes" ] && audio_filters+=("loudnorm=I=-20:TP=-2:LRA=11")
+  audio_filters+=("aresample=44100:resampler=soxr:precision=28:dither_method=triangular_hp")
+  audio_filters+=("aformat=sample_fmts=s16:channel_layouts=stereo")
+
+  local -a encode_video=(
+    -c:v mpeg1video
+    -b:v 1150k -minrate 1150k -maxrate 1150k -bufsize 327680
+    -g "$gop" -bf 2
+    -mbd rd -cmp satd -subcmp satd -trellis 2 -dia_size 3
+    -mpv_flags +naq+qp_rd+cbp_rd
+    -aspect 4:3 -pix_fmt yuv420p
+  )
+  local -a encode_audio=(-c:a mp2 -b:a 224k -ar 44100 -ac 2)
+  local -a mux=(-f vcd -muxrate 1411200 -packetsize 2324)
+
+  local index=1
+  local failures=0
+  local -a produced=()
+  local mpeg=""
+  local bin_file=""
+  local cue_file=""
+  local video_chain=""
+  local audio_chain=""
+  local label=""
+  local album=""
+  album="$(__vcd_iso_label "$title")"
+
+  while IFS=' ' read -r start span; do
+    [ -n "$start" ] || continue
+
+    mpeg="$work/disc${index}.mpg"
+    bin_file="$output_dir/${stem}_disc${index}.bin"
+    cue_file="$output_dir/${stem}_disc${index}.cue"
+
+    if [ "$force" != "yes" ] && { [ -e "$bin_file" ] || [ -e "$cue_file" ]; }; then
+      __log_error "Refusing to overwrite $(basename -- "$bin_file") (pass --force)"
+      return 1
+    fi
+
+    local -a filters=("${video_filters[@]}")
+    if [ -n "$subtitle_slot" ]; then
+      __vcd_shift_ass "$sub_master" "$work/subtitles.ass" "$start" "$span" || return 1
+      filters+=("$subtitle_slot")
+    fi
+    filters+=("${scale_filters[@]}")
+
+    video_chain="$(
+      IFS=,
+      echo "${filters[*]}"
+    )"
+    audio_chain="$(
+      IFS=,
+      echo "${audio_filters[*]}"
+    )"
+
+    local -a inputs=(-ss "$start" -t "$span" -i "$input")
+    local -a maps=(-map 0:v:0 -map "0:a:$audio_track")
+    if [ "$has_audio" = "no" ]; then
+      inputs+=(-f lavfi -t "$span" -i "anullsrc=channel_layout=stereo:sample_rate=44100")
+      maps=(-map 0:v:0 -map 1:a:0)
+    fi
+
+    __log_info "Disc $index of $total: encoding ${span}s from ${start}s"
+
+    if ! (
+      cd "$work" && "$ffmpeg_bin" -hide_banner -nostdin -v error -stats -y \
+        "${inputs[@]}" "${maps[@]}" \
+        -vf "$video_chain" -af "$audio_chain" \
+        "${encode_video[@]}" "${encode_audio[@]}" \
+        "${mux[@]}" "$mpeg"
+    ); then
+      __log_error "Encoding failed on disc $index"
+      return 1
+    fi
+
+    __vcd_verify_stream "$ffprobe_bin" "$mpeg" "$raster_w" "$raster_h" || return 1
+
+    label="$(__vcd_iso_label "${title}_${index}")"
+    if ! vcdimager -t vcd2 -q \
+      -l "$label" \
+      --info-album-id "$album" \
+      --volume-count "$total" --volume-number "$index" \
+      -c "$cue_file" -b "$bin_file" "$mpeg" 2>"$work/vcdimager$index.log"; then
+      __log_error "vcdimager failed on disc $index"
+      sed 's/^/  /' "$work/vcdimager$index.log" >&2
+      return 1
+    fi
+
+    __vcd_verify_image "$bin_file" "$capacity_sectors" || failures=$((failures + 1))
+
+    if [ "$keep_mpeg" = "yes" ]; then
+      mv -- "$mpeg" "$output_dir/${stem}_disc${index}.mpg" || return 1
+    fi
+
+    produced+=("$(basename -- "$cue_file")")
+    __log_success "Disc $index of $total: $(basename -- "$bin_file")"
+    index=$((index + 1))
+  done <<<"$plan"
+
+  if [ "$failures" -gt 0 ]; then
+    __log_error "$failures image(s) do not fit the selected media"
+    return 1
+  fi
+
+  __log_success "Wrote $total VCD image(s) to $output_dir"
+  local name
+  for name in "${produced[@]}"; do
+    __log_info "  $name"
+  done
+
+  return 0
+}
+
+function vcd() {
+  local work
+  work="$(mktemp -d "${TMPDIR:-/tmp}/vcd.XXXXXXXX")" || return 1
+
+  # shellcheck disable=SC2064
+  trap "rm -rf -- '$work'" INT TERM
+
+  __vcd_run "$work" "$@"
+  local exit_code=$?
+
+  trap - INT TERM
+  rm -rf -- "$work"
+
+  return "$exit_code"
+}

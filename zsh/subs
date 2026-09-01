@@ -8,45 +8,6 @@ function subs() {
     return 1
   fi
 
-  __subs_ensure_utf8() {
-    local srt_file="$1"
-    local detected
-    detected="$(command file --mime-encoding "$srt_file" 2>/dev/null | awk -F': ' '{print $2}')"
-
-    if [ -z "$detected" ]; then
-      __log_warning "Could not detect encoding: $(basename "$srt_file")"
-      return 1
-    fi
-
-    # Already UTF-8: strip BOM if present and move on
-    if [ "$detected" = "utf-8" ] || [ "$detected" = "us-ascii" ]; then
-      sed -i '' $'1s/^\xEF\xBB\xBF//' "$srt_file" 2>/dev/null
-      return 0
-    fi
-
-    __log_info "Converting $(basename "$srt_file") from $detected to utf-8"
-
-    local tmp_file="${srt_file}.tmp"
-    if iconv -f "$detected" -t utf-8 "$srt_file" > "$tmp_file" 2>/dev/null; then
-      sed -i '' $'1s/^\xEF\xBB\xBF//' "$tmp_file" 2>/dev/null
-      mv "$tmp_file" "$srt_file"
-      __log_success "Converted: $(basename "$srt_file")"
-    else
-      rm -f "$tmp_file"
-      __log_warning "Conversion failed: $(basename "$srt_file"). Trying windows-1252 fallback"
-
-      if iconv -f windows-1252 -t utf-8 "$srt_file" > "$tmp_file" 2>/dev/null; then
-        sed -i '' $'1s/^\xEF\xBB\xBF//' "$tmp_file" 2>/dev/null
-        mv "$tmp_file" "$srt_file"
-        __log_success "Converted (windows-1252 fallback): $(basename "$srt_file")"
-      else
-        rm -f "$tmp_file"
-        __log_error "All conversion attempts failed: $(basename "$srt_file")"
-        return 1
-      fi
-    fi
-  }
-
   __subs_download_for_file() {
     local video_file="$1"
     local basename
@@ -66,7 +27,7 @@ function subs() {
       local srt_found=0
       for srt in "${video_name}"*.srt; do
         if [ -f "$srt" ]; then
-          __subs_ensure_utf8 "$srt"
+          __ensure_utf8 "$srt"
           srt_found=1
         fi
       done
@@ -130,7 +91,7 @@ function subs() {
   # Also convert any pre-existing subtitle files
   for srt in ./*.srt; do
     if [ -f "$srt" ]; then
-      __subs_ensure_utf8 "$srt"
+      __ensure_utf8 "$srt"
     fi
   done
 

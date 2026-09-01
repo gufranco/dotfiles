@@ -55,6 +55,44 @@ function __snap_installed() {
 ################################################################################
 # File operations
 ################################################################################
+function __ensure_utf8() {
+  local text_file="$1"
+  local detected
+  local tmp_file="${text_file}.utf8.tmp"
+
+  detected="$(command file --mime-encoding "$text_file" 2>/dev/null | awk -F': ' '{print $2}')"
+
+  if [ -z "$detected" ]; then
+    __log_warning "Could not detect encoding: $(basename "$text_file")"
+    return 1
+  fi
+
+  if [ "$detected" = "utf-8" ] || [ "$detected" = "us-ascii" ]; then
+    if sed $'1s/^\xEF\xBB\xBF//' "$text_file" >"$tmp_file" 2>/dev/null; then
+      mv "$tmp_file" "$text_file"
+    else
+      rm -f "$tmp_file"
+    fi
+    return 0
+  fi
+
+  __log_info "Converting $(basename "$text_file") from $detected to utf-8"
+
+  local encoding
+  for encoding in "$detected" windows-1252 iso-8859-1; do
+    if iconv -f "$encoding" -t utf-8 "$text_file" 2>/dev/null | sed $'1s/^\xEF\xBB\xBF//' >"$tmp_file" \
+      && [ -s "$tmp_file" ]; then
+      mv "$tmp_file" "$text_file"
+      __log_success "Converted from $encoding: $(basename "$text_file")"
+      return 0
+    fi
+    rm -f "$tmp_file"
+  done
+
+  __log_error "All conversion attempts failed: $(basename "$text_file")"
+  return 1
+}
+
 function __safe_link() {
   local src="$1"
   local dst="$2"
@@ -141,22 +179,22 @@ function __github_latest_tag() {
 
 function __apt_install_deb_url() {
   local url="$1"
-  local tmpdir status
+  local tmpdir result
   tmpdir="$(mktemp -d)" || return 1
   if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/package.deb"; then
     sudo apt install -y -qq "$tmpdir/package.deb"
-    status=$?
+    result=$?
   else
-    status=1
+    result=1
   fi
   rm -rf "$tmpdir"
-  return "$status"
+  return "$result"
 }
 
 function __install_tarball_binary() {
   local url="$1"
   local binary="$2"
-  local tmpdir status
+  local tmpdir result
   local extracted
   tmpdir="$(mktemp -d)" || return 1
   if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/archive.tar.gz" \
@@ -164,15 +202,15 @@ function __install_tarball_binary() {
     extracted="$(find "$tmpdir" -type f -name "$binary" -print -quit 2>/dev/null)"
     if [ -n "$extracted" ]; then
       sudo install -m 755 "$extracted" "/usr/local/bin/$binary"
-      status=$?
+      result=$?
     else
-      status=1
+      result=1
     fi
   else
-    status=1
+    result=1
   fi
   rm -rf "$tmpdir"
-  return "$status"
+  return "$result"
 }
 
 function __brew_install_if_missing() {

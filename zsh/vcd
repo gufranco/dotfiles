@@ -44,7 +44,9 @@ Sound:
 
 Subtitles:
   --sub-track N          burn an embedded text subtitle stream instead of a file
-  --sub-style SPEC       ASS style overrides, e.g. Fontsize=22,PrimaryColour=&H00FFFFFF
+  --sub-color NAME       yellow or white (default yellow, the regional
+                         convention; white is the Netflix and EBU default)
+  --sub-style SPEC       ASS style overrides, e.g. Fontsize=22,Outline=3
 
 Encoder:
   --encoder NAME         mpeg2enc, ffmpeg or auto (default auto, prefers
@@ -125,6 +127,17 @@ function __vcd_resolve_encoder() {
     echo ffmpeg
   fi
   return 0
+}
+
+function __vcd_log_detail() {
+  local file="$1"
+  local line
+
+  [ -s "$file" ] || return 0
+
+  while IFS= read -r line; do
+    __log_error "  $line"
+  done < <(tail -20 "$file")
 }
 
 function __vcd_probe_format() {
@@ -377,12 +390,32 @@ function __vcd_style_ass() {
   awk -v pw="$play_w" -v ph="$play_h" -v style="$style" '
     /^PlayResX:/ { print "PlayResX: " pw; seen_x = 1; next }
     /^PlayResY:/ { print "PlayResY: " ph; seen_y = 1; next }
-    /^ScaledBorderAndShadow:/ { print "ScaledBorderAndShadow: yes"; seen_s = 1; next }
+    /^ScaledBorderAndShadow:/ { print "ScaledBorderAndShadow: yes\nWrapStyle: 0"; seen_s = 1; next }
+    /^WrapStyle:/ { next }
     /^Style: Default,/ { print style; next }
     { print }
     END {
       if (!seen_x || !seen_y || !seen_s) exit 1
     }' "$input" >"$output"
+}
+
+function __vcd_safe_margins() {
+  local raster_w="$1"
+  local raster_h="$2"
+  local inner_w="$3"
+  local inner_h="$4"
+  local pad_x="$5"
+  local pad_y="$6"
+
+  awk -v rw="$raster_w" -v rh="$raster_h" -v iw="$inner_w" -v ih="$inner_h" \
+    -v px="$pad_x" -v py="$pad_y" '
+    function most(a, b) { return (a > b) ? a : b }
+    BEGIN {
+      bottom = rh - ih - py
+      mv = most(int(rh * 0.10 + 0.5) - bottom, int(ih * 0.04 + 0.5))
+      mh = most(int(rw * 0.10 + 0.5) - px, int(iw * 0.03 + 0.5))
+      print mh, mv
+    }'
 }
 
 function __vcd_shift_ass() {
@@ -496,6 +529,7 @@ function __vcd_run() {
   local normalize="no"
   local sub_track=""
   local sub_style=""
+  local sub_color="yellow"
   local output_dir=""
   local encoder="auto"
   local keep_mpeg="no"
@@ -593,6 +627,12 @@ function __vcd_run() {
           shift
           continue
           ;;
+        --sub-color)
+          [ -n "$value" ] || { value="$2"; shift; }
+          sub_color="$value"
+          shift
+          continue
+          ;;
         --output-dir)
           [ -n "$value" ] || { value="$2"; shift; }
           output_dir="$value"
@@ -662,6 +702,14 @@ function __vcd_run() {
     auto | on | ivtc | off) ;;
     *)
       __log_error "--deinterlace must be auto, on, ivtc or off, got: $deinterlace"
+      return 1
+      ;;
+  esac
+
+  case "$sub_color" in
+    yellow | white) ;;
+    *)
+      __log_error "--sub-color must be yellow or white, got: $sub_color"
       return 1
       ;;
   esac
@@ -843,7 +891,13 @@ function __vcd_run() {
           __log_error "Could not read the subtitle file as text: $(basename -- "${subtitles:-$sub_source}")"
           return 1
         fi
-        local style="Style: Default,Arial,18,&H0000FFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,1.5,0.6,2,12,12,8,1"
+        local margin_h margin_v
+        read -r margin_h margin_v <<<"$(
+          __vcd_safe_margins "$raster_w" "$raster_h" "$inner_w" "$inner_h" "$pad_x" "$pad_y"
+        )"
+        local fill="&H0000FFFF"
+        [ "$sub_color" = "white" ] && fill="&H00FFFFFF"
+        local style="Style: Default,Arial,18,${fill},&H000000FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,1,2.6,1.4,2,${margin_h},${margin_h},${margin_v},1"
         if ! __vcd_style_ass "$work/plain.ass" "$sub_master" "$inner_w" "$inner_h" "$style"; then
           __log_warning "Subtitle script had no PlayRes header; sizes may drift"
         fi
@@ -878,7 +932,7 @@ function __vcd_run() {
   __log_info "  picture ${inner_w}x${inner_h} at +${pad_x}+${pad_y}, $fit"
   __log_info "  deinterlace $do_deinterlace, denoise $denoise, sharpen $sharpen, colour $([ "$color_convert" = yes ] && echo "-> $matrix_out" || echo unchanged)"
   __log_info "  audio $([ "$has_audio" = yes ] && echo "track $audio_track" || echo "silent (source has none)")"
-  [ -n "$sub_master" ] && __log_info "  subtitles burned in at ${inner_w}x${inner_h}"
+  [ -n "$sub_master" ] && __log_info "  subtitles ${sub_color}, burned in at ${inner_w}x${inner_h}, title-safe margins"
   __log_info "Media      ${disc_minutes} min, ${capacity_sectors} sectors, ${usable}s usable per disc"
   __log_info "Plan       $total disc(s), ${overlap}s overlap, $encoder"
 
@@ -1025,13 +1079,18 @@ function __vcd_run() {
           | mpeg2enc "${mpeg2enc_args[@]}" -o "$work/video.m1v"
       ) 2>"$work/encode$index.log"; then
         __log_error "Encoding failed on disc $index"
-        tail -20 "$work/encode$index.log" | sed 's/^/  /' >&2
+        __vcd_log_detail "$work/encode$index.log"
         return 1
       fi
       if ! mplex -f 1 -o "$mpeg" "$work/video.m1v" "$work/audio.mp2" 2>"$work/mplex$index.log"; then
-        __log_error "mplex failed on disc $index"
-        tail -20 "$work/mplex$index.log" | sed 's/^/  /' >&2
-        return 1
+        if [ -s "$mpeg" ]; then
+          __log_warning "mplex reported a buffer margin warning on disc $index"
+          __log_warning "  the stream is verified below; short clips can trip this"
+        else
+          __log_error "mplex failed on disc $index"
+          __vcd_log_detail "$work/mplex$index.log"
+          return 1
+        fi
       fi
       rm -f "$work/video.m1v" "$work/audio.mp2"
     else
@@ -1056,7 +1115,7 @@ function __vcd_run() {
       --volume-count "$total" --volume-number "$index" \
       -c "$cue_file" -b "$bin_file" "$mpeg" 2>"$work/vcdimager$index.log"; then
       __log_error "vcdimager failed on disc $index"
-      sed 's/^/  /' "$work/vcdimager$index.log" >&2
+      __vcd_log_detail "$work/vcdimager$index.log"
       return 1
     fi
 

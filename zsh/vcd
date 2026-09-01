@@ -29,7 +29,9 @@ Picture:
   --crop                 fill the frame, cut the sides
   --borders auto|off      strip baked-in black bars before scaling
                          (default auto, decided by cropdetect)
-  --deinterlace auto|on|off   (default auto, decided by idet)
+  --deinterlace MODE     auto, on, ivtc or off (default auto). ivtc runs
+                         inverse telecine, recovering progressive film from
+                         a 3:2 pulldown carrier instead of interpolating it
   --denoise SPEC         hqdn3d parameters, e.g. 1:0.7:4:4 (default off,
                          measured to cost quality on clean and grainy sources)
   --no-sharpen           skip the unsharp pass applied after the downscale
@@ -166,34 +168,42 @@ function __vcd_source_display_aspect() {
     }'
 }
 
-function __vcd_detect_interlacing() {
+function __vcd_detect_field_mode() {
   local ffmpeg_bin="$1"
   local input="$2"
   local duration="$3"
   local seek
-  local report
 
   seek="$(awk -v d="$duration" 'BEGIN { printf "%.2f", (d > 60 ? d * 0.1 : 0) }')"
-  report="$("$ffmpeg_bin" -hide_banner -nostdin -ss "$seek" -i "$input" \
+
+  "$ffmpeg_bin" -hide_banner -nostdin -ss "$seek" -i "$input" \
     -frames:v 300 -filter:v idet -an -f null - 2>&1 |
-    awk '/Multi frame detection/ { line = $0 } END { print line }')"
-
-  [ -n "$report" ] || return 1
-
-  awk -v line="$report" '
-    BEGIN {
-      tff = bff = prog = 0
-      n = split(line, f, /[ \t]+/)
-      for (i = 1; i <= n; i++) {
-        if (f[i] == "TFF:") tff = f[i + 1] + 0
-        if (f[i] == "BFF:") bff = f[i + 1] + 0
-        if (f[i] == "Progressive:") prog = f[i + 1] + 0
-      }
-      dominant = (tff > bff) ? tff : bff
-      weak = (tff > bff) ? bff : tff
-      sampled = tff + bff + prog
-      exit !(sampled >= 50 && dominant > prog && dominant > weak * 3)
-    }'
+    awk '
+      /Repeated Fields/ { repeated = $0 }
+      /Multi frame detection/ { multi = $0 }
+      END {
+        n = split(repeated, r, /[ \t]+/)
+        for (i = 1; i <= n; i++) {
+          if (r[i] == "Neither:") neither = r[i + 1] + 0
+          if (r[i] == "Top:") top = r[i + 1] + 0
+          if (r[i] == "Bottom:") bottom = r[i + 1] + 0
+        }
+        n = split(multi, m, /[ \t]+/)
+        for (i = 1; i <= n; i++) {
+          if (m[i] == "TFF:") tff = m[i + 1] + 0
+          if (m[i] == "BFF:") bff = m[i + 1] + 0
+          if (m[i] == "Progressive:") prog = m[i + 1] + 0
+        }
+        sampled = tff + bff + prog
+        if (sampled < 50) { print "off"; exit }
+        repeats = top + bottom
+        frames = neither + repeats
+        if (frames > 0 && repeats / frames > 0.25) { print "ivtc"; exit }
+        dominant = (tff > bff) ? tff : bff
+        weak = (tff > bff) ? bff : tff
+        if (dominant > prog && dominant > weak * 3) { print "on"; exit }
+        print "off"
+      }'
 }
 
 function __vcd_detect_borders() {
@@ -648,9 +658,9 @@ function __vcd_run() {
   fi
 
   case "$deinterlace" in
-    auto | on | off) ;;
+    auto | on | ivtc | off) ;;
     *)
-      __log_error "--deinterlace must be auto, on or off, got: $deinterlace"
+      __log_error "--deinterlace must be auto, on, ivtc or off, got: $deinterlace"
       return 1
       ;;
   esac
@@ -798,11 +808,11 @@ function __vcd_run() {
 
   local do_deinterlace="$deinterlace"
   if [ "$deinterlace" = "auto" ]; then
-    if __vcd_detect_interlacing "$ffmpeg_bin" "$input" "$duration"; then
-      do_deinterlace="on"
-    else
-      do_deinterlace="off"
-    fi
+    do_deinterlace="$(__vcd_detect_field_mode "$ffmpeg_bin" "$input" "$duration")"
+    case "$do_deinterlace" in
+      on | ivtc | off) ;;
+      *) do_deinterlace="off" ;;
+    esac
   fi
 
   local sub_source=""
@@ -882,7 +892,10 @@ function __vcd_run() {
   fi
 
   local -a video_filters=()
-  [ "$do_deinterlace" = "on" ] && video_filters+=("bwdif=mode=0:parity=-1:deint=0")
+  case "$do_deinterlace" in
+    ivtc) video_filters+=("fieldmatch" "decimate") ;;
+    on) video_filters+=("bwdif=mode=0:parity=-1:deint=0") ;;
+  esac
   if [ "$active_w" != "$src_w" ] || [ "$active_h" != "$src_h" ]; then
     video_filters+=("crop=${border_w}:${border_h}:${border_x}:${border_y}")
   fi

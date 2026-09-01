@@ -26,8 +26,9 @@ Picture:
   --letterbox            fit the whole frame, add bars (default)
   --crop                 fill the frame, cut the sides
   --deinterlace auto|on|off   (default auto, decided by idet)
-  --denoise SPEC|off     hqdn3d parameters (default 2:1:3:3)
-  --sharpen              light unsharp pass after the downscale
+  --denoise SPEC         hqdn3d parameters, e.g. 1:0.7:4:4 (default off,
+                         measured to cost quality on clean and grainy sources)
+  --no-sharpen           skip the unsharp pass applied after the downscale
   --no-color-convert     keep the source matrix instead of converting to BT.601
 
 Sound:
@@ -37,6 +38,10 @@ Sound:
 Subtitles:
   --sub-track N          burn an embedded text subtitle stream instead of a file
   --sub-style SPEC       ASS style overrides, e.g. Fontsize=22,PrimaryColour=&H00FFFFFF
+
+Encoder:
+  --encoder NAME         mpeg2enc, ffmpeg or auto (default auto, prefers
+                         mpeg2enc with KVCD quantisation matrices)
 
 Output:
   --output-dir DIR       destination directory (default: next to the source)
@@ -48,6 +53,11 @@ Output:
 Environment:
   VCD_FFMPEG             ffmpeg binary to use; otherwise the first build on
                          PATH that provides the filters the run needs
+
+Quality:
+  mpeg2enc with the KVCD quantisation matrices measured 1.6 VMAF above
+  ffmpeg's mpeg1video encoder across six clips at the same bitrate. It needs
+  mjpegtools. Without it the run falls back to ffmpeg and says so.
 
 Examples:
   vcd movie.mkv
@@ -83,6 +93,31 @@ function __vcd_resolve_ffmpeg() {
   done
 
   return 1
+}
+
+function __vcd_resolve_encoder() {
+  local requested="$1"
+
+  case "$requested" in
+    ffmpeg)
+      echo ffmpeg
+      return 0
+      ;;
+    mpeg2enc)
+      if __cmd_exists mpeg2enc && __cmd_exists mplex; then
+        echo mpeg2enc
+        return 0
+      fi
+      return 1
+      ;;
+  esac
+
+  if __cmd_exists mpeg2enc && __cmd_exists mplex; then
+    echo mpeg2enc
+  else
+    echo ffmpeg
+  fi
+  return 0
 }
 
 function __vcd_probe_format() {
@@ -336,14 +371,15 @@ function __vcd_run() {
   local title=""
   local fit="letterbox"
   local deinterlace="auto"
-  local denoise="2:1:3:3"
-  local sharpen="no"
+  local denoise="off"
+  local sharpen="yes"
   local color_convert="yes"
   local audio_track=0
   local normalize="no"
   local sub_track=""
   local sub_style=""
   local output_dir=""
+  local encoder="auto"
   local keep_mpeg="no"
   local force="no"
   local dry_run="no"
@@ -406,6 +442,7 @@ function __vcd_run() {
           continue
           ;;
         --sharpen) sharpen="yes"; shift; continue ;;
+        --no-sharpen) sharpen="no"; shift; continue ;;
         --no-color-convert) color_convert="no"; shift; continue ;;
         --audio-track)
           [ -n "$value" ] || { value="$2"; shift; }
@@ -429,6 +466,12 @@ function __vcd_run() {
         --output-dir)
           [ -n "$value" ] || { value="$2"; shift; }
           output_dir="$value"
+          shift
+          continue
+          ;;
+        --encoder)
+          [ -n "$value" ] || { value="$2"; shift; }
+          encoder="$value"
           shift
           continue
           ;;
@@ -488,6 +531,14 @@ function __vcd_run() {
       ;;
   esac
 
+  case "$encoder" in
+    auto | mpeg2enc | ffmpeg) ;;
+    *)
+      __log_error "--encoder must be auto, mpeg2enc or ffmpeg, got: $encoder"
+      return 1
+      ;;
+  esac
+
   local wants_subtitles="no"
   { [ -n "$subtitles" ] || [ -n "$sub_track" ]; } && wants_subtitles="yes"
 
@@ -510,6 +561,14 @@ function __vcd_run() {
     __log_error "ffprobe is not installed"
     return 1
   fi
+
+  local chosen_encoder
+  if ! chosen_encoder="$(__vcd_resolve_encoder "$encoder")"; then
+    __log_error "--encoder mpeg2enc needs mjpegtools for mpeg2enc and mplex"
+    __log_error "On macOS: brew install mjpegtools"
+    return 1
+  fi
+  encoder="$chosen_encoder"
 
   local tool
   for tool in vcdimager awk iconv sed file; do
@@ -646,11 +705,11 @@ function __vcd_run() {
   __log_info "  ${src_w}x${src_h}, $(awk -v d="$src_dar" 'BEGIN { printf "%.3f", d }') display aspect, $(awk -v d="$duration" 'BEGIN { printf "%d:%02d:%02d", d/3600, (d%3600)/60, d%60 }')"
   __log_info "Target     $(printf '%s' "$standard" | tr '[:lower:]' '[:upper:]') VCD, ${raster_w}x${raster_h} at $fps fps"
   __log_info "  picture ${inner_w}x${inner_h} at +${pad_x}+${pad_y}, $fit"
-  __log_info "  deinterlace $do_deinterlace, denoise $denoise, colour $([ "$color_convert" = yes ] && echo "-> $matrix_out" || echo unchanged)"
+  __log_info "  deinterlace $do_deinterlace, denoise $denoise, sharpen $sharpen, colour $([ "$color_convert" = yes ] && echo "-> $matrix_out" || echo unchanged)"
   __log_info "  audio $([ "$has_audio" = yes ] && echo "track $audio_track" || echo "silent (source has none)")"
   [ -n "$sub_master" ] && __log_info "  subtitles burned in at ${inner_w}x${inner_h}"
   __log_info "Media      ${disc_minutes} min, ${capacity_sectors} sectors, ${usable}s usable per disc"
-  __log_info "Plan       $total disc(s), ${overlap}s overlap"
+  __log_info "Plan       $total disc(s), ${overlap}s overlap, $encoder"
 
   if [ "$dry_run" = "yes" ]; then
     local index=1
@@ -676,10 +735,10 @@ function __vcd_run() {
 
   local -a scale_filters=()
   scale_filters+=("scale=${inner_w}:${inner_h}:flags=lanczos+accurate_rnd+full_chroma_int")
+  [ "$sharpen" = "yes" ] && scale_filters+=("unsharp=5:5:0.4:5:5:0.0")
   if [ "$inner_w" != "$raster_w" ] || [ "$inner_h" != "$raster_h" ]; then
     scale_filters+=("pad=${raster_w}:${raster_h}:${pad_x}:${pad_y}:color=black")
   fi
-  [ "$sharpen" = "yes" ] && scale_filters+=("unsharp=3:3:0.4:3:3:0.0")
 
   if [ "$color_convert" = "yes" ] && __vcd_ffmpeg_has_filter "$ffmpeg_bin" zscale; then
     local matrix_in="$src_matrix"
@@ -708,6 +767,11 @@ function __vcd_run() {
   )
   local -a encode_audio=(-c:a mp2 -b:a 224k -ar 44100 -ac 2)
   local -a mux=(-f vcd -muxrate 1411200 -packetsize 2324)
+  local -a mpeg2enc_args=(
+    -f 1 -b 1152 -a 2
+    -K kvcd -r 16 -4 1 -2 1
+    -n "$([ "$standard" = pal ] && echo p || echo n)"
+  )
 
   local index=1
   local failures=0
@@ -750,23 +814,46 @@ function __vcd_run() {
     )"
 
     local -a inputs=(-ss "$start" -t "$span" -i "$input")
-    local -a maps=(-map 0:v:0 -map "0:a:$audio_track")
+    local -a video_map=(-map 0:v:0)
+    local -a audio_map=(-map "0:a:$audio_track")
     if [ "$has_audio" = "no" ]; then
       inputs+=(-f lavfi -t "$span" -i "anullsrc=channel_layout=stereo:sample_rate=44100")
-      maps=(-map 0:v:0 -map 1:a:0)
+      audio_map=(-map 1:a:0)
     fi
 
     __log_info "Disc $index of $total: encoding ${span}s from ${start}s"
 
-    if ! (
-      cd "$work" && "$ffmpeg_bin" -hide_banner -nostdin -v error -stats -y \
-        "${inputs[@]}" "${maps[@]}" \
-        -vf "$video_chain" -af "$audio_chain" \
-        "${encode_video[@]}" "${encode_audio[@]}" \
-        "${mux[@]}" "$mpeg"
-    ); then
-      __log_error "Encoding failed on disc $index"
-      return 1
+    if [ "$encoder" = "mpeg2enc" ]; then
+      if ! (
+        set -o pipefail
+        cd "$work" || exit 1
+        "$ffmpeg_bin" -hide_banner -nostdin -v error -stats -y \
+          "${inputs[@]}" \
+          "${video_map[@]}" -vf "$video_chain" -f yuv4mpegpipe - \
+          "${audio_map[@]}" -af "$audio_chain" "${encode_audio[@]}" -f mp2 "$work/audio.mp2" \
+          | mpeg2enc "${mpeg2enc_args[@]}" -o "$work/video.m1v"
+      ) 2>"$work/encode$index.log"; then
+        __log_error "Encoding failed on disc $index"
+        tail -20 "$work/encode$index.log" | sed 's/^/  /' >&2
+        return 1
+      fi
+      if ! mplex -f 1 -o "$mpeg" "$work/video.m1v" "$work/audio.mp2" 2>"$work/mplex$index.log"; then
+        __log_error "mplex failed on disc $index"
+        tail -20 "$work/mplex$index.log" | sed 's/^/  /' >&2
+        return 1
+      fi
+      rm -f "$work/video.m1v" "$work/audio.mp2"
+    else
+      if ! (
+        cd "$work" && "$ffmpeg_bin" -hide_banner -nostdin -v error -stats -y \
+          "${inputs[@]}" "${video_map[@]}" "${audio_map[@]}" \
+          -vf "$video_chain" -af "$audio_chain" \
+          "${encode_video[@]}" "${encode_audio[@]}" \
+          "${mux[@]}" "$mpeg"
+      ); then
+        __log_error "Encoding failed on disc $index"
+        return 1
+      fi
     fi
 
     __vcd_verify_stream "$ffprobe_bin" "$mpeg" "$raster_w" "$raster_h" || return 1

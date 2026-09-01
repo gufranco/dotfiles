@@ -52,7 +52,7 @@ jobs:
           # meta-release-lts is broken (only returns Dapper 6.06 as of Apr 2026),
           # so query meta-release and filter for LTS versions instead
           version=$(curl -fsSL https://changelogs.ubuntu.com/meta-release \
-            | grep -B1 'LTS' | grep -oP '^Version: \K[\d.]+' | tail -1)
+            | grep -B1 'LTS' | grep -oP '^Version: \K[\d.]+' | tail -1 | cut -d. -f1,2)
           echo "Latest Ubuntu LTS: ${version:-failed to resolve}"
           echo "version=${version:-24.04}" >> "$GITHUB_OUTPUT"
 

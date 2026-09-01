@@ -20,6 +20,8 @@ Disc:
   --scene-snap SECONDS   move each disc seam onto the nearest scene change
                          within this many seconds, 0 disables (default 15)
   --title TEXT           ISO volume label and album id (default: file name)
+  --chapters MINUTES     entry point every N minutes so the player can skip
+                         within a disc, 0 disables (default 5)
 
 Picture:
   --ntsc                 force 352x240 at 29.97 fps
@@ -40,12 +42,15 @@ Picture:
 
 Sound:
   --audio-track N        source audio stream index (default 0)
-  --normalize            EBU R128 loudness normalisation
+  --normalize            EBU R128 loudness normalisation, measured first so
+                         the correction is exact rather than estimated
 
 Subtitles:
   --sub-track N          burn an embedded text subtitle stream instead of a file
   --sub-color NAME       yellow or white (default yellow, the regional
                          convention; white is the Netflix and EBU default)
+  --sub-offset SECONDS   shift every subtitle, positive delays, accepts a
+                         negative value to pull them earlier (default 0)
   --sub-style SPEC       ASS style overrides, e.g. Fontsize=22,Outline=3
 
 Encoder:
@@ -56,6 +61,10 @@ Output:
   --output-dir DIR       destination directory (default: next to the source)
   --keep-mpeg            keep the intermediate MPEG-1 program streams
   --force                overwrite existing images
+  --resume               keep discs that already exist and verify, encoding
+                         only the ones missing from an interrupted run
+  --preview SECONDS      encode one short sample from the middle instead of
+                         the whole film, for checking settings cheaply
   --dry-run              print the plan and exit
   -h, --help             this text
 
@@ -138,6 +147,65 @@ function __vcd_log_detail() {
   while IFS= read -r line; do
     __log_error "  $line"
   done < <(tail -20 "$file")
+}
+
+function __vcd_loudnorm_measure() {
+  local ffmpeg_bin="$1"
+  local input="$2"
+  local track="$3"
+  local target="I=-20:TP=-2:LRA=11"
+
+  "$ffmpeg_bin" -hide_banner -nostdin -i "$input" -map "0:a:$track" \
+    -af "loudnorm=${target}:print_format=json" -f null - 2>&1 |
+    awk -v t="$target" '
+      /"input_i"/ { gsub(/[",]/, ""); i = $3 }
+      /"input_tp"/ { gsub(/[",]/, ""); tp = $3 }
+      /"input_lra"/ { gsub(/[",]/, ""); lra = $3 }
+      /"input_thresh"/ { gsub(/[",]/, ""); th = $3 }
+      END {
+        if (i == "" || tp == "" || lra == "" || th == "") exit 1
+        printf "loudnorm=%s:measured_I=%s:measured_TP=%s:measured_LRA=%s:measured_thresh=%s:linear=true\n", t, i, tp, lra, th
+      }'
+}
+
+function __vcd_entry_points() {
+  local span="$1"
+  local interval="$2"
+
+  awk -v span="$span" -v iv="$interval" '
+    BEGIN {
+      if (iv <= 0) exit
+      n = 0
+      for (t = iv; t < span - 1 && n < 495; t += iv) {
+        printf "      <entry id=\"entry-%03d\">%d</entry>\n", n, t
+        n++
+      }
+    }'
+}
+
+function __vcd_write_xml() {
+  local target="$1"
+  local mpeg="$2"
+  local label="$3"
+  local album="$4"
+  local count="$5"
+  local number="$6"
+  local entries="$7"
+
+  {
+    printf '%s\n' '<?xml version="1.0"?>'
+    printf '%s\n' '<!DOCTYPE videocd PUBLIC "-//GNU//DTD VideoCD//EN" "http://www.gnu.org/software/vcdimager/videocd.dtd">'
+    printf '%s\n' '<videocd xmlns="http://www.gnu.org/software/vcdimager/1.0/" class="vcd" version="2.0">'
+    printf '  <info>\n    <album-id>%s</album-id>\n    <volume-count>%s</volume-count>\n    <volume-number>%s</volume-number>\n    <restriction>0</restriction>\n  </info>\n' \
+      "$album" "$count" "$number"
+    printf '  <pvd>\n    <volume-id>%s</volume-id>\n    <system-id>CD-RTOS CD-BRIDGE</system-id>\n    <application-id/>\n    <preparer-id/>\n    <publisher-id/>\n  </pvd>\n' \
+      "$label"
+    printf '  <sequence-items>\n    <sequence-item src="%s" id="sequence-00">\n' "$mpeg"
+    [ -n "$entries" ] && printf '%s\n' "$entries"
+    printf '    </sequence-item>\n  </sequence-items>\n'
+    printf '  <pbc>\n    <playlist id="lid-000">\n      <next ref="lid-end"/>\n      <return ref="lid-end"/>\n      <wait>5</wait>\n      <autowait>0</autowait>\n      <play-item ref="sequence-00"/>\n    </playlist>\n    <endlist id="lid-end" rejected="true"/>\n  </pbc>\n'
+    printf '%s\n' '</videocd>'
+  } >"$target"
 }
 
 function __vcd_probe_format() {
@@ -519,6 +587,7 @@ function __vcd_run() {
   local overlap=30
   local scene_snap=15
   local title=""
+  local chapters=5
   local fit="letterbox"
   local borders="auto"
   local deinterlace="auto"
@@ -530,10 +599,13 @@ function __vcd_run() {
   local sub_track=""
   local sub_style=""
   local sub_color="yellow"
+  local sub_offset="0"
+  local preview="0"
   local output_dir=""
   local encoder="auto"
   local keep_mpeg="no"
   local force="no"
+  local resume="no"
   local dry_run="no"
   local input=""
   local subtitles=""
@@ -580,6 +652,12 @@ function __vcd_run() {
         --title)
           [ -n "$value" ] || { value="$2"; shift; }
           title="$value"
+          shift
+          continue
+          ;;
+        --chapters)
+          [ -n "$value" ] || { value="$2"; shift; }
+          chapters="$value"
           shift
           continue
           ;;
@@ -633,6 +711,18 @@ function __vcd_run() {
           shift
           continue
           ;;
+        --sub-offset)
+          [ -n "$value" ] || { value="$2"; shift; }
+          sub_offset="$value"
+          shift
+          continue
+          ;;
+        --preview)
+          [ -n "$value" ] || { value="$2"; shift; }
+          preview="$value"
+          shift
+          continue
+          ;;
         --output-dir)
           [ -n "$value" ] || { value="$2"; shift; }
           output_dir="$value"
@@ -647,6 +737,7 @@ function __vcd_run() {
           ;;
         --keep-mpeg) keep_mpeg="yes"; shift; continue ;;
         --force) force="yes"; shift; continue ;;
+        --resume) resume="yes"; shift; continue ;;
         --dry-run) dry_run="yes"; shift; continue ;;
         --) positional_done="yes"; shift; continue ;;
         -?*)
@@ -706,6 +797,21 @@ function __vcd_run() {
       ;;
   esac
 
+  if ! awk -v v="$sub_offset" 'BEGIN { exit !(v == v + 0) }' 2>/dev/null; then
+    __log_error "--sub-offset must be a number, got: $sub_offset"
+    return 1
+  fi
+
+  if ! __vcd_is_number "$chapters"; then
+    __log_error "--chapters must be a non-negative integer, got: $chapters"
+    return 1
+  fi
+
+  if ! __vcd_is_number "$preview"; then
+    __log_error "--preview must be a non-negative integer, got: $preview"
+    return 1
+  fi
+
   case "$sub_color" in
     yellow | white) ;;
     *)
@@ -762,10 +868,10 @@ function __vcd_run() {
   encoder="$chosen_encoder"
 
   local tool
-  for tool in vcdimager awk iconv sed file; do
+  for tool in vcdxbuild awk iconv sed file; do
     if ! __cmd_exists "$tool"; then
       __log_error "Missing tool: $tool"
-      [ "$tool" = "vcdimager" ] && __log_error "On macOS: brew install vcdimager"
+      [ "$tool" = "vcdxbuild" ] && __log_error "On macOS: brew install vcdimager"
       return 1
     fi
   done
@@ -805,6 +911,25 @@ function __vcd_run() {
     __log_error "Source has no readable video stream: $(basename -- "$input")"
     return 1
   fi
+
+  local track_list
+  track_list="$("$ffprobe_bin" -v error \
+    -show_entries "stream=codec_type,codec_name,channels:stream_tags=language,title" \
+    -of csv=p=0 "$input" 2>/dev/null |
+    awk -F, '
+      $2 == "audio" {
+        line = "audio " na++ ": " $1
+        if ($3 != "") line = line ", " $3 "ch"
+        if ($4 != "") line = line ", " $4
+        if ($5 != "") line = line ", " $5
+        print line
+      }
+      $2 == "subtitle" {
+        line = "subtitle " ns++ ": " $1
+        if ($3 != "") line = line ", " $3
+        if ($4 != "") line = line ", " $4
+        print line
+      }')"
 
   local has_audio="yes"
   [ -n "$(__vcd_probe_stream "$ffprobe_bin" "a:$audio_track" codec_name "$input")" ] || has_audio="no"
@@ -865,12 +990,25 @@ function __vcd_run() {
   fi
 
   local sub_source=""
+  local sub_bitmap="no"
   if [ -n "$sub_track" ]; then
+    case "$(__vcd_probe_stream "$ffprobe_bin" "s:$sub_track" codec_name "$input")" in
+      dvd_subtitle | hdmv_pgs_subtitle | dvb_subtitle | xsub)
+        sub_bitmap="yes"
+        ;;
+    esac
+  fi
+
+  if [ "$sub_bitmap" = "yes" ]; then
+    __log_error "Subtitle stream $sub_track is bitmap, not text"
+    __log_error "  VCD burn-in needs text; extract and OCR it first, for example"
+    __log_error "  with Subtitle Edit or vobsub2srt, then pass the .srt as an argument"
+    return 1
+  elif [ -n "$sub_track" ]; then
     sub_source="$work/extracted.ass"
     if ! "$ffmpeg_bin" -hide_banner -nostdin -v error -y -i "$input" \
       -map "0:s:$sub_track" -c:s ass "$sub_source" 2>/dev/null; then
       __log_error "Could not extract subtitle stream $sub_track as text"
-      __log_error "Bitmap subtitles (PGS, VobSub) are not supported; supply an external file"
       return 1
     fi
   elif [ -n "$subtitles" ]; then
@@ -914,8 +1052,20 @@ function __vcd_run() {
   local total
   total="$(printf '%s\n' "$plan" | wc -l | tr -d '[:space:]')"
 
+  if [ "$preview" -gt 0 ]; then
+    plan="$(awk -v d="$duration" -v n="$preview" '
+      BEGIN {
+        start = d / 2
+        if (start + n > d) start = (d > n) ? d - n : 0
+        span = (d < n) ? d : n
+        printf "%.3f %.3f\n", start, span
+      }')"
+    total=1
+    stem="${stem}_preview"
+  fi
+
   local snapped_plan
-  if [ "$scene_snap" -gt 0 ] && [ "$total" -gt 1 ]; then
+  if [ "$preview" -eq 0 ] && [ "$scene_snap" -gt 0 ] && [ "$total" -gt 1 ]; then
     snapped_plan="$(__vcd_snap_plan "$ffmpeg_bin" "$input" "$plan" "$duration" "$usable" "$overlap" "$scene_snap")"
     if [ "$snapped_plan" != "$plan" ]; then
       plan="$snapped_plan"
@@ -932,9 +1082,19 @@ function __vcd_run() {
   __log_info "  picture ${inner_w}x${inner_h} at +${pad_x}+${pad_y}, $fit"
   __log_info "  deinterlace $do_deinterlace, denoise $denoise, sharpen $sharpen, colour $([ "$color_convert" = yes ] && echo "-> $matrix_out" || echo unchanged)"
   __log_info "  audio $([ "$has_audio" = yes ] && echo "track $audio_track" || echo "silent (source has none)")"
+  if [ -n "$track_list" ]; then
+    local track_line
+    while IFS= read -r track_line; do
+      [ -n "$track_line" ] && __log_info "  $track_line"
+    done <<<"$track_list"
+  fi
   [ -n "$sub_master" ] && __log_info "  subtitles ${sub_color}, burned in at ${inner_w}x${inner_h}, title-safe margins"
   __log_info "Media      ${disc_minutes} min, ${capacity_sectors} sectors, ${usable}s usable per disc"
-  __log_info "Plan       $total disc(s), ${overlap}s overlap, $encoder"
+  if [ "$preview" -gt 0 ]; then
+    __log_info "Plan       preview only, one ${preview}s sample from the middle, $encoder"
+  else
+    __log_info "Plan       $total disc(s), ${overlap}s overlap, $encoder"
+  fi
 
   if [ "$dry_run" = "yes" ]; then
     local index=1
@@ -998,7 +1158,17 @@ function __vcd_run() {
   scale_filters+=("format=yuv420p" "setsar=1")
 
   local -a audio_filters=()
-  [ "$normalize" = "yes" ] && audio_filters+=("loudnorm=I=-20:TP=-2:LRA=11")
+  if [ "$normalize" = "yes" ]; then
+    local loudnorm_filter
+    if [ "$has_audio" = "yes" ] && loudnorm_filter="$(__vcd_loudnorm_measure "$ffmpeg_bin" "$input" "$audio_track")" \
+      && [ -n "$loudnorm_filter" ]; then
+      audio_filters+=("$loudnorm_filter")
+      __log_info "  loudness measured, applying an exact correction"
+    else
+      audio_filters+=("loudnorm=I=-20:TP=-2:LRA=11")
+      __log_warning "Loudness measurement failed, falling back to single-pass"
+    fi
+  fi
   audio_filters+=("aresample=44100:resampler=soxr:precision=28:dither_method=triangular_hp")
   audio_filters+=("aformat=sample_fmts=s16:channel_layouts=stereo")
 
@@ -1037,14 +1207,25 @@ function __vcd_run() {
     bin_file="$output_dir/${stem}_disc${index}.bin"
     cue_file="$output_dir/${stem}_disc${index}.cue"
 
-    if [ "$force" != "yes" ] && { [ -e "$bin_file" ] || [ -e "$cue_file" ]; }; then
-      __log_error "Refusing to overwrite $(basename -- "$bin_file") (pass --force)"
+    if [ "$resume" = "yes" ] && [ -s "$bin_file" ] && [ -s "$cue_file" ]; then
+      if __vcd_verify_image "$bin_file" "$capacity_sectors" >/dev/null 2>&1; then
+        __log_info "Disc $index of $total: already present, keeping it"
+        produced+=("$(basename -- "$cue_file")")
+        index=$((index + 1))
+        continue
+      fi
+      __log_warning "Disc $index of $total: existing image is unusable, re-encoding"
+    fi
+
+    if [ "$force" != "yes" ] && [ "$resume" != "yes" ] && { [ -e "$bin_file" ] || [ -e "$cue_file" ]; }; then
+      __log_error "Refusing to overwrite $(basename -- "$bin_file") (pass --force or --resume)"
       return 1
     fi
 
     local -a filters=("${video_filters[@]}")
     if [ -n "$subtitle_slot" ]; then
-      __vcd_shift_ass "$sub_master" "$work/subtitles.ass" "$start" "$span" || return 1
+      __vcd_shift_ass "$sub_master" "$work/subtitles.ass" \
+        "$(awk -v s="$start" -v o="$sub_offset" 'BEGIN { printf "%.3f", s - o }')" "$span" || return 1
       filters+=("$subtitle_slot")
     fi
     filters+=("${scale_filters[@]}")
@@ -1109,12 +1290,11 @@ function __vcd_run() {
     __vcd_verify_stream "$ffprobe_bin" "$mpeg" "$raster_w" "$raster_h" || return 1
 
     label="$(__vcd_iso_label "${title}_${index}")"
-    if ! vcdimager -t vcd2 -q \
-      -l "$label" \
-      --info-album-id "$album" \
-      --volume-count "$total" --volume-number "$index" \
-      -c "$cue_file" -b "$bin_file" "$mpeg" 2>"$work/vcdimager$index.log"; then
-      __log_error "vcdimager failed on disc $index"
+    local entries=""
+    [ "$chapters" -gt 0 ] && entries="$(__vcd_entry_points "$span" "$((chapters * 60))")"
+    __vcd_write_xml "$work/disc$index.xml" "$mpeg" "$label" "$album" "$total" "$index" "$entries"
+    if ! vcdxbuild -c "$cue_file" -b "$bin_file" "$work/disc$index.xml" 2>"$work/vcdimager$index.log"; then
+      __log_error "vcdxbuild failed on disc $index"
       __vcd_log_detail "$work/vcdimager$index.log"
       return 1
     fi

@@ -55,7 +55,7 @@ Subtitles:
 
 Encoder:
   --encoder NAME         mpeg2enc, ffmpeg or auto (default auto, prefers
-                         mpeg2enc with KVCD quantisation matrices)
+                         mpeg2enc with the TMPGEnc quantisation matrices)
 
 Output:
   --output-dir DIR       destination directory (default: next to the source)
@@ -73,9 +73,10 @@ Environment:
                          PATH that provides the filters the run needs
 
 Quality:
-  mpeg2enc with the KVCD quantisation matrices measured 1.6 VMAF above
-  ffmpeg's mpeg1video encoder across six clips at the same bitrate. It needs
-  mjpegtools. Without it the run falls back to ffmpeg and says so.
+  mpeg2enc with the TMPGEnc quantisation matrices measured above ffmpeg's
+  mpeg1video encoder at the same bitrate, on 18 standard test clips and on
+  7 public domain films and cartoons. It needs mjpegtools. Without it the
+  run falls back to ffmpeg and says so.
 
 Examples:
   vcd movie.mkv
@@ -812,6 +813,11 @@ function __vcd_run() {
     return 1
   fi
 
+  if [ "$force" = "yes" ] && [ "$resume" = "yes" ]; then
+    __log_error "--force and --resume contradict each other; pick one"
+    return 1
+  fi
+
   case "$sub_color" in
     yellow | white) ;;
     *)
@@ -1035,7 +1041,12 @@ function __vcd_run() {
         )"
         local fill="&H0000FFFF"
         [ "$sub_color" = "white" ] && fill="&H00FFFFFF"
-        local style="Style: Default,Arial,18,${fill},&H000000FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,1,2.6,1.4,2,${margin_h},${margin_h},${margin_v},1"
+        local font_size
+        font_size="$(awk -v h="$raster_h" 'BEGIN { printf "%d", int(h * 0.075 + 0.5) }')"
+        local outline shadow
+        outline="$(awk -v f="$font_size" 'BEGIN { printf "%.1f", f * 0.145 }')"
+        shadow="$(awk -v f="$font_size" 'BEGIN { printf "%.1f", f * 0.078 }')"
+        local style="Style: Default,Arial,${font_size},${fill},&H000000FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,1,${outline},${shadow},2,${margin_h},${margin_h},${margin_v},1"
         if ! __vcd_style_ass "$work/plain.ass" "$sub_master" "$inner_w" "$inner_h" "$style"; then
           __log_warning "Subtitle script had no PlayRes header; sizes may drift"
         fi
@@ -1184,7 +1195,7 @@ function __vcd_run() {
   local -a mux=(-f vcd -muxrate 1411200 -packetsize 2324)
   local -a mpeg2enc_args=(
     -f 1 -b 1152 -a 2
-    -K kvcd -r 16 -4 1 -2 1
+    -K tmpgenc -r 16 -4 1 -2 1
     -n "$([ "$standard" = pal ] && echo p || echo n)"
   )
 

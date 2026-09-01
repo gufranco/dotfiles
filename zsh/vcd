@@ -16,7 +16,9 @@ Disc:
   --cd80                 80-minute media (700 MB, default)
   --cd90                 90-minute media (800 MB, overburn territory)
   --disc-minutes N       explicit media length in minutes
-  --overlap SECONDS      footage repeated at each disc seam (default 5)
+  --overlap SECONDS      footage repeated at each disc seam (default 30)
+  --scene-snap SECONDS   move each disc seam onto the nearest scene change
+                         within this many seconds, 0 disables (default 15)
   --title TEXT           ISO volume label and album id (default: file name)
 
 Picture:
@@ -275,6 +277,77 @@ function __vcd_disc_plan() {
     }'
 }
 
+function __vcd_scene_snap() {
+  local ffmpeg_bin="$1"
+  local media="$2"
+  local boundary="$3"
+  local window="$4"
+  local from
+  local span
+
+  from="$(awk -v b="$boundary" -v w="$window" 'BEGIN { v = b - w; printf "%.3f", (v < 0 ? 0 : v) }')"
+  span="$(awk -v w="$window" 'BEGIN { printf "%.3f", w * 2 }')"
+
+  "$ffmpeg_bin" -hide_banner -nostdin -loglevel info -ss "$from" -copyts -t "$span" -i "$media" \
+    -vf "select='gt(scene,0.3)',showinfo" -an -f null - 2>&1 |
+    grep -o 'pts_time:[0-9.]*' | cut -d: -f2 |
+    awk -v b="$boundary" -v w="$window" '
+      {
+        d = $1 - b
+        if (d < 0) d = -d
+        if (d <= w && (best == "" || d < bestd)) { best = $1; bestd = d }
+      }
+      END { if (best != "") printf "%.3f\n", best }'
+}
+
+function __vcd_snap_plan() {
+  local ffmpeg_bin="$1"
+  local media="$2"
+  local plan="$3"
+  local duration="$4"
+  local usable="$5"
+  local overlap="$6"
+  local window="$7"
+
+  local count
+  count="$(printf '%s\n' "$plan" | wc -l | tr -d '[:space:]')"
+  [ "$count" -gt 1 ] || { printf '%s\n' "$plan"; return 0; }
+
+  local -a boundaries=()
+  local start span index=0
+  while IFS=' ' read -r start span; do
+    [ -n "$start" ] || continue
+    index=$((index + 1))
+    [ "$index" -lt "$count" ] || continue
+    boundaries+=("$(awk -v s="$start" -v p="$span" 'BEGIN { printf "%.3f", s + p }')")
+  done <<<"$plan"
+
+  local -a lines=()
+  local prev="0.000"
+  local edge snapped moved=0
+  for edge in "${boundaries[@]}"; do
+    snapped="$(__vcd_scene_snap "$ffmpeg_bin" "$media" "$edge" "$window")"
+    if [ -n "$snapped" ] && [ "$snapped" != "$edge" ]; then
+      edge="$snapped"
+      moved=$((moved + 1))
+    fi
+    lines+=("$(awk -v s="$prev" -v e="$edge" 'BEGIN { printf "%.3f %.3f", s, e - s }')")
+    prev="$(awk -v e="$edge" -v ov="$overlap" 'BEGIN { v = e - ov; printf "%.3f", (v < 0 ? 0 : v) }')"
+  done
+  lines+=("$(awk -v s="$prev" -v d="$duration" 'BEGIN { printf "%.3f %.3f", s, d - s }')")
+
+  [ "$moved" -gt 0 ] || { printf '%s\n' "$plan"; return 0; }
+
+  if ! printf '%s\n' "${lines[@]}" | awk -v u="$usable" '
+    { if ($2 <= 0 || $2 > u) bad = 1 }
+    END { exit bad }'; then
+    printf '%s\n' "$plan"
+    return 0
+  fi
+
+  printf '%s\n' "${lines[@]}"
+}
+
 function __vcd_subtitle_to_ass() {
   local ffmpeg_bin="$1"
   local input="$2"
@@ -399,7 +472,8 @@ function __vcd_run() {
 
   local standard=""
   local disc_minutes=80
-  local overlap=5
+  local overlap=30
+  local scene_snap=15
   local title=""
   local fit="letterbox"
   local borders="auto"
@@ -449,6 +523,12 @@ function __vcd_run() {
         --overlap)
           [ -n "$value" ] || { value="$2"; shift; }
           overlap="$value"
+          shift
+          continue
+          ;;
+        --scene-snap)
+          [ -n "$value" ] || { value="$2"; shift; }
+          scene_snap="$value"
           shift
           continue
           ;;
@@ -559,6 +639,11 @@ function __vcd_run() {
 
   if ! __vcd_is_number "$overlap"; then
     __log_error "--overlap must be a non-negative integer, got: $overlap"
+    return 1
+  fi
+
+  if ! __vcd_is_number "$scene_snap"; then
+    __log_error "--scene-snap must be a non-negative integer, got: $scene_snap"
     return 1
   fi
 
@@ -763,6 +848,15 @@ function __vcd_run() {
   plan="$(__vcd_disc_plan "$duration" "$usable" "$overlap")"
   local total
   total="$(printf '%s\n' "$plan" | wc -l | tr -d '[:space:]')"
+
+  local snapped_plan
+  if [ "$scene_snap" -gt 0 ] && [ "$total" -gt 1 ]; then
+    snapped_plan="$(__vcd_snap_plan "$ffmpeg_bin" "$input" "$plan" "$duration" "$usable" "$overlap" "$scene_snap")"
+    if [ "$snapped_plan" != "$plan" ]; then
+      plan="$snapped_plan"
+      __log_info "Seams      snapped to the nearest scene change within ${scene_snap}s"
+    fi
+  fi
 
   __log_info "Source     $(basename -- "$input")"
   __log_info "  ${src_w}x${src_h}, $(awk -v d="$src_dar" 'BEGIN { printf "%.3f", d }') display aspect, $(awk -v d="$duration" 'BEGIN { printf "%d:%02d:%02d", d/3600, (d%3600)/60, d%60 }')"

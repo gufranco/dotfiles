@@ -21,7 +21,8 @@ Disc:
                          within this many seconds, 0 disables (default 15)
   --title TEXT           ISO volume label and album id (default: file name)
   --chapters MINUTES     entry point every N minutes so the player can skip
-                         within a disc, 0 disables (default 5)
+                         within a disc, snapped to the nearest scene change
+                         like the disc seams are, 0 disables (default 5)
 
 Picture:
   --ntsc                 force 352x240 at 29.97 fps
@@ -172,16 +173,38 @@ function __vcd_loudnorm_measure() {
 function __vcd_entry_points() {
   local span="$1"
   local interval="$2"
+  local ffmpeg_bin="$3"
+  local media="$4"
+  local disc_start="$5"
+  local window="$6"
 
-  awk -v span="$span" -v iv="$interval" '
+  local raw
+  raw="$(awk -v span="$span" -v iv="$interval" '
     BEGIN {
       if (iv <= 0) exit
       n = 0
-      for (t = iv; t < span - 1 && n < 495; t += iv) {
-        printf "      <entry id=\"entry-%03d\">%d</entry>\n", n, t
-        n++
-      }
-    }'
+      for (t = iv; t < span - 1 && n < 495; t += iv) { print t; n++ }
+    }')"
+
+  [ -n "$raw" ] || return 0
+
+  local mark snapped local_mark
+  local n=0
+  while IFS= read -r mark; do
+    [ -n "$mark" ] || continue
+    local_mark="$mark"
+    if [ "$window" -gt 0 ]; then
+      snapped="$(__vcd_scene_snap "$ffmpeg_bin" "$media" \
+        "$(awk -v s="$disc_start" -v m="$mark" 'BEGIN { printf "%.3f", s + m }')" "$window")"
+      if [ -n "$snapped" ]; then
+        local_mark="$(awk -v a="$snapped" -v s="$disc_start" -v span="$span" '
+          BEGIN { v = a - s; if (v > 0 && v < span - 1) printf "%.0f", v }')"
+        [ -n "$local_mark" ] || local_mark="$mark"
+      fi
+    fi
+    printf '      <entry id="entry-%03d">%s</entry>\n' "$n" "$local_mark"
+    n=$((n + 1))
+  done <<<"$raw"
 }
 
 function __vcd_write_xml() {
@@ -1302,7 +1325,8 @@ function __vcd_run() {
 
     label="$(__vcd_iso_label "${title}_${index}")"
     local entries=""
-    [ "$chapters" -gt 0 ] && entries="$(__vcd_entry_points "$span" "$((chapters * 60))")"
+    [ "$chapters" -gt 0 ] && entries="$(__vcd_entry_points "$span" "$((chapters * 60))" \
+      "$ffmpeg_bin" "$input" "$start" "$scene_snap")"
     __vcd_write_xml "$work/disc$index.xml" "$mpeg" "$label" "$album" "$total" "$index" "$entries"
     if ! vcdxbuild -c "$cue_file" -b "$bin_file" "$work/disc$index.xml" 2>"$work/vcdimager$index.log"; then
       __log_error "vcdxbuild failed on disc $index"

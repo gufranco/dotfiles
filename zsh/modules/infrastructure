@@ -157,7 +157,7 @@ function __docker_run_detached() {
 # User confirmation and display helpers
 ################################################################################
 function __confirm_operation() {
-  local prompt="${1:-Do you want to continue?}"
+  local message="${1:-Do you want to continue?}"
 
   if [[ "${CI:-0}" = "1" ]]; then
     echo "CI mode detected - auto-confirming..."
@@ -165,7 +165,7 @@ function __confirm_operation() {
     return 0
   fi
 
-  read -r "?${prompt} (y/N): "
+  read -r "?${message} (y/N): "
   echo ""
 
   if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then

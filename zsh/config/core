@@ -113,12 +113,12 @@ function __safe_link() {
 
 function __git_sync() {
   local url="$1"
-  local path="$2"
+  local target="$2"
   local repo_name
-  repo_name=$(basename "$path")
+  repo_name=$(basename "$target")
 
-  if [ -d "$path/.git" ]; then
-    if git -C "$path" pull --quiet --no-edit >/dev/null 2>&1; then
+  if [ -d "$target/.git" ]; then
+    if git -C "$target" pull --quiet --no-edit >/dev/null 2>&1; then
       __log_success "Updated: $repo_name"
       return 0
     else
@@ -126,8 +126,8 @@ function __git_sync() {
       return 1
     fi
   else
-    rm -rf "$path"
-    if git clone --quiet "$url" "$path" >/dev/null 2>&1; then
+    rm -rf "$target"
+    if git clone --quiet "$url" "$target" >/dev/null 2>&1; then
       __log_success "Cloned: $repo_name"
       return 0
     else

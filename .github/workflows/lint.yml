@@ -79,6 +79,8 @@ jobs:
             fi
           done
           exit "$errors"
+      - name: Check for shadowed zsh special parameters
+        run: python3 .github/scripts/check-zsh-special-params.py
 
   actionlint:
     name: actionlint

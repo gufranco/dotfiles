@@ -1121,7 +1121,7 @@ IOSCHED
     log_info "Installing Homebrew packages..."
     brew update
     brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
-    brew bundle cleanup --force --file "$HOME/.dotfiles/Brewfile" || true
+    brew bundle cleanup --force --no-taps --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade --greedy --force || log_warning "Brew upgrade had failures"
     brew cleanup -s || true
 

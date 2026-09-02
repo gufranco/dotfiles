@@ -19,7 +19,7 @@
   preloadindex = true
   fscache = true
   untrackedCache = true
-  fsmonitor = true
+  fsmonitor = false
   compression = 1
 
 ################################################################################

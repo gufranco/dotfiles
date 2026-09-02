@@ -90,6 +90,27 @@ function disk_wipe() {
     wait "$pid"
   }
 
+  __dw_bounded_ms() {
+    local ms="$1"
+    shift
+
+    local runner=""
+    if __cmd_exists timeout; then
+      runner="timeout"
+    elif __cmd_exists gtimeout; then
+      runner="gtimeout"
+    fi
+
+    if [ -n "$runner" ]; then
+      "$runner" -k 2 "$(printf '%d.%03d' $((ms / 1000)) $((ms % 1000)))" "$@"
+      return $?
+    fi
+
+    local seconds=$(((ms + 999) / 1000))
+    [ "$seconds" -lt 1 ] && seconds=1
+    __dw_bounded "$seconds" "$@"
+  }
+
   __dw_is_mounted() {
     mount | awk -v dev="$1" '$1 == dev || index($1, dev "s") == 1 { found = 1 } END { exit found ? 0 : 1 }'
   }
@@ -169,6 +190,55 @@ function disk_wipe() {
         echo ""
         ;;
     esac
+  }
+
+  __dw_fragile() {
+    case "$__DW_FAMILY" in
+      zip | jaz | pocketzip | floppy | superdisk) return 0 ;;
+      *) return 1 ;;
+    esac
+  }
+
+  __dw_head_crash_family() {
+    case "$__DW_FAMILY" in
+      zip | jaz | pocketzip) return 0 ;;
+      *) return 1 ;;
+    esac
+  }
+
+  __dw_error_class() {
+    case "$1" in
+      *"Device not configured"* | *"No such device"* | *"No such file or directory"* | \
+        *"Operation not permitted"* | *"No medium found"* | *"not ready"* | *"Not ready"* | \
+        *ENXIO* | *ENODEV*)
+        echo "bus"
+        ;;
+      *"Input/output error"* | *"I/O error"* | *EIO* | *"Media error"* | *"medium error"*)
+        echo "media"
+        ;;
+      *)
+        echo "other"
+        ;;
+    esac
+  }
+
+  __dw_device_gone() {
+    local disk="$1"
+    local name="${disk##*/}"
+
+    [ -b "$disk" ] || [ -c "$disk" ] || return 0
+
+    case "$(uname)" in
+      Darwin)
+        [ -c "/dev/r$name" ] || return 0
+        __dw_bounded 10 diskutil info "$disk" >/dev/null 2>&1 || return 0
+        ;;
+      Linux)
+        __dw_bounded 10 sudo blockdev --getsize64 "$disk" >/dev/null 2>&1 || return 0
+        ;;
+    esac
+
+    return 1
   }
 
   __dw_sector_bytes() {
@@ -362,6 +432,7 @@ function disk_wipe() {
   __dw_report_failure() {
     local detail
     detail=$(__dw_get_error)
+    __DW_LAST_DETAIL="$detail"
 
     __log_error "$1"
     if [ -n "$detail" ]; then
@@ -434,6 +505,11 @@ function disk_wipe() {
       return 1
     fi
 
+    if __dw_fragile && [ "$elapsed" -gt "$__DW_PROBE_CEILING" ]; then
+      __dw_set_error "a $bytes byte $direction took $(__dw_duration "$elapsed"), which is a drive retrying a seek rather than reading"
+      return 1
+    fi
+
     echo "$elapsed"
   }
 
@@ -443,9 +519,10 @@ function disk_wipe() {
     local offset="$3"
     local bytes="$4"
     local attempt=0
+    local repeats="$__DW_REPEATS"
     local elapsed quietest=""
 
-    while [ "$attempt" -lt 3 ]; do
+    while [ "$attempt" -lt "$repeats" ]; do
       elapsed=$(__dw_time_move "$direction" "$io" "$offset" "$bytes") || return 1
       if [ -z "$quietest" ] || [ "$elapsed" -lt "$quietest" ]; then
         quietest="$elapsed"
@@ -478,26 +555,40 @@ function disk_wipe() {
     echo "$candidate"
   }
 
-  __dw_explain_read_probe() {
-    [ "$1" -eq 1 ] || return 0
+  __dw_probe_verdict() {
+    local direction="$1"
+    local disk="$2"
+    local class
+
+    class=$(__dw_error_class "${__DW_LAST_DETAIL:-}")
+
+    if [ "$class" = "bus" ] || __dw_device_gone "$disk"; then
+      __log_error "$disk stopped answering the bus, so this is the drive or the cartridge, not the data."
+      return 2
+    fi
+
+    if [ "$direction" = "write" ]; then
+      return 2
+    fi
+
+    if __dw_fragile; then
+      __log_error "A $__DW_FAMILY disk that cannot be read during a light probe is already failing."
+      __log_error "Stopping here rather than seeking across it again."
+      return 2
+    fi
 
     __log_warning "That was a read of data this wipe is about to overwrite, so it does not decide anything."
     __log_warning "Continuing. The verify after each write is what judges the media."
-    return 0
+    return 1
   }
 
   __dw_calibrate() {
     local direction="$1"
     local disk="$2"
     local size="$3"
-    local probes="${CALIBRATION_PROBES:-7}"
+    local probes="${CALIBRATION_PROBES:-$__DW_PROBES}"
     local io unit large room stride index offset short long overhead rate spread
     local predicted
-    local fatal=2
-
-    if [ "$direction" = "read" ]; then
-      fatal=1
-    fi
     local overheads="${__DW_TMPDIR}/cal-overhead" rates="${__DW_TMPDIR}/cal-rate"
     local transfers="${__DW_TMPDIR}/cal-transfer"
 
@@ -523,8 +614,8 @@ function disk_wipe() {
 
     if ! large=$(__dw_probe_bytes "$direction" "$io" "$unit" "$room"); then
       __dw_report_failure "The $direction probe failed on the first sectors of $disk."
-      __dw_explain_read_probe "$fatal"
-      return "$fatal"
+      __dw_probe_verdict "$direction" "$disk"
+      return $?
     fi
 
     : >"$overheads"
@@ -538,13 +629,13 @@ function disk_wipe() {
 
       if ! short=$(__dw_time_move "$direction" "$io" "$offset" "$unit"); then
         __dw_report_failure "The $direction probe failed at offset $offset of $disk."
-        __dw_explain_read_probe "$fatal"
-        return "$fatal"
+        __dw_probe_verdict "$direction" "$disk"
+        return $?
       fi
       if ! long=$(__dw_time_move "$direction" "$io" $((offset + unit)) "$large"); then
         __dw_report_failure "The $direction probe failed at offset $((offset + unit)) of $disk."
-        __dw_explain_read_probe "$fatal"
-        return "$fatal"
+        __dw_probe_verdict "$direction" "$disk"
+        return $?
       fi
 
       printf '%s\n' "$short" >>"$overheads"
@@ -575,8 +666,8 @@ function disk_wipe() {
     spread=$(($(sort -n "$transfers" | tail -1) * 100 / predicted))
     [ "$spread" -lt 100 ] && spread=100
     spread=$((spread * spread / 100))
-    [ "$spread" -lt 300 ] && spread=300
-    [ "$spread" -gt 1200 ] && spread=1200
+    [ "$spread" -lt "$__DW_FACTOR_MIN" ] && spread="$__DW_FACTOR_MIN"
+    [ "$spread" -gt "$__DW_FACTOR_MAX" ] && spread="$__DW_FACTOR_MAX"
 
     if [ -n "${SLOW_FACTOR:-}" ]; then
       spread=$((SLOW_FACTOR * 100))
@@ -598,7 +689,7 @@ function disk_wipe() {
 
   __dw_chunk_bytes() {
     local size="$1"
-    local target="${CHUNK_TARGET_MS:-3000}"
+    local target="${CHUNK_TARGET_MS:-$__DW_CHUNK_TARGET}"
     local unit="$__DW_SECTOR"
     local ceiling=$((64 * 1024 * 1024))
     local candidate best
@@ -622,9 +713,12 @@ function disk_wipe() {
   __dw_fault() {
     local disk="$1"
     local reason="$2"
+    local kind="${3:-}"
 
-    local detail
+    local detail class gone=0
     detail=$(__dw_get_error)
+    [ -z "$detail" ] && detail="${__DW_LAST_DETAIL:-}"
+    class=$(__dw_error_class "$detail")
 
     __log_error "STOPPED: $reason"
     if [ -n "$detail" ]; then
@@ -638,14 +732,125 @@ function disk_wipe() {
         ;;
     esac
 
-    __log_error "Ejecting immediately rather than continuing."
-    sync
-    case "$(uname)" in
-      Darwin) sudo diskutil eject "$disk" >/dev/null 2>&1 ;;
-      Linux) sudo eject "$disk" >/dev/null 2>&1 ;;
-    esac
-    __log_error "A drive that fails this way can damage the next media it is given."
+    __dw_device_gone "$disk" && gone=1
+
+    if [ "$gone" -eq 1 ]; then
+      __log_error "$disk is no longer on the bus, so there is nothing left to eject by software."
+    else
+      __log_error "Ejecting immediately rather than continuing."
+      __dw_bounded 20 sync >/dev/null 2>&1
+      __dw_eject_now "$disk"
+    fi
+
+    __dw_head_crash_advice "$gone" "$class" "$kind"
+    __DW_LAST_DETAIL=""
     return 1
+  }
+
+  __dw_eject_now() {
+    local disk="$1"
+
+    case "$(uname)" in
+      Darwin)
+        if __dw_bounded 30 sudo diskutil eject "$disk" >/dev/null 2>&1; then
+          __log_success "Cartridge ejected."
+          return 0
+        fi
+        if __dw_bounded 20 sudo diskutil unmountDisk force "$disk" >/dev/null 2>&1; then
+          __log_warning "The drive refused to eject. The volume is unmounted, so nothing else will touch it."
+        else
+          __log_error "The drive answered neither eject nor unmount within the time allowed."
+        fi
+        ;;
+      Linux)
+        if __dw_bounded 30 sudo eject "$disk" >/dev/null 2>&1; then
+          __log_success "Cartridge ejected."
+          return 0
+        fi
+        __log_error "The drive did not eject within the time allowed."
+        ;;
+    esac
+
+    __log_error "Cut power to the drive before doing anything else with it. Do not press eject repeatedly."
+    return 1
+  }
+
+  __dw_head_crash_advice() {
+    local gone="$1"
+    local class="$2"
+    local kind="${3:-}"
+
+    if [ "$kind" = "stall" ]; then
+      __log_error "The drive stopped answering mid-transfer, which is a head retrying a seek, not slow data."
+    fi
+
+    if [ "$gone" -eq 1 ]; then
+      __log_error "The drive dropped off the bus mid-operation, which is a hardware fault, not bad data."
+    fi
+
+    if __dw_head_crash_family &&
+      { [ "$gone" -eq 1 ] || [ "$class" != "other" ] || [ -n "$kind" ]; }; then
+      __log_error "On a $__DW_FAMILY drive this is the click of death: the head is out of alignment."
+      __log_error "The drive will damage every cartridge you insert next, and this cartridge will damage every drive."
+      __log_error "Retire both. Do not test this cartridge in a working drive to confirm."
+      __log_error "One stall is the whole verdict. There is no reading it again to be sure."
+      return 0
+    fi
+
+    __log_error "A drive that fails this way can damage the next media it is given."
+    return 0
+  }
+
+  __dw_budget_ms() {
+    local kind="$1"
+    local bytes="$2"
+    local expected factor slack drift baseline budget
+
+    if [ "$__DW_MEASURED" != "1" ] || [ "$bytes" -le 0 ]; then
+      echo 0
+      return 0
+    fi
+
+    expected=$(__dw_expected_ms "$kind" "$bytes")
+    [ "$expected" -lt 1 ] && expected=1
+
+    if [ "$kind" = "write" ]; then
+      factor="$__DW_FACTOR_WRITE"
+      drift="$__DW_DRIFT_WRITE"
+      slack=$((__DW_OVERHEAD_WRITE * __DW_SLACK))
+    else
+      factor="$__DW_FACTOR_READ"
+      drift="$__DW_DRIFT_READ"
+      slack=$((__DW_OVERHEAD_READ * __DW_SLACK))
+    fi
+
+    [ "$drift" -lt 100 ] && drift=100
+    baseline=$((expected * drift / 100))
+    budget=$((baseline * factor / 100))
+    [ "$budget" -lt $((baseline + slack)) ] && budget=$((baseline + slack))
+
+    echo "$budget"
+  }
+
+  __dw_idle_deadline() {
+    if __dw_fragile; then
+      echo "$__DW_PROBE_CEILING"
+    else
+      echo "$__DW_DEADLINE_CAP"
+    fi
+  }
+
+  __dw_deadline_ms() {
+    local kind="$1"
+    local bytes="$2"
+    local budget
+
+    budget=$(__dw_budget_ms "$kind" "$bytes")
+    [ "${budget:-0}" -le 0 ] && budget="$__DW_DEADLINE_CAP"
+    [ "$budget" -lt 2000 ] && budget=2000
+    [ "$budget" -gt "$__DW_DEADLINE_CAP" ] && budget="$__DW_DEADLINE_CAP"
+
+    echo "$budget"
   }
 
   __dw_watch() {
@@ -656,7 +861,7 @@ function disk_wipe() {
     local bytes="$5"
     local elapsed="$6"
     local ceiling=$((${STALL_SECONDS:-0} * 1000))
-    local expected factor slack drift baseline budget ratio
+    local expected factor drift budget ratio
 
     __DW_REASON=""
 
@@ -674,19 +879,15 @@ function disk_wipe() {
     if [ "$kind" = "write" ]; then
       factor="$__DW_FACTOR_WRITE"
       drift="$__DW_DRIFT_WRITE"
-      slack=$((__DW_OVERHEAD_WRITE * 2))
     else
       factor="$__DW_FACTOR_READ"
       drift="$__DW_DRIFT_READ"
-      slack=$((__DW_OVERHEAD_READ * 2))
     fi
 
     [ "$drift" -lt 100 ] && drift=100
-    baseline=$((expected * drift / 100))
-    budget=$((baseline * factor / 100))
-    [ "$budget" -lt $((baseline + slack)) ] && budget=$((baseline + slack))
+    budget=$(__dw_budget_ms "$kind" "$bytes")
 
-    if [ "$elapsed" -gt "$budget" ]; then
+    if [ "$budget" -gt 0 ] && [ "$elapsed" -gt "$budget" ]; then
       __DW_REASON="$label chunk $index of $total took $(__dw_duration "$elapsed") against $(__dw_duration "$budget") allowed by what this disk measured"
       return 1
     fi
@@ -739,32 +940,53 @@ function disk_wipe() {
     local offset="$4"
     local bytes="$5"
     local err="${__DW_TMPDIR}/dd.err"
-    local block seek skip count
-    local -a flags
+    local block count deadline outcome
+    local -a flags move_cmd
 
     block=$(__dw_block_bytes "$offset" "$bytes")
     count=$((bytes / block))
     __DW_MOVED=0
+    __DW_TIMED_OUT=0
+    __DW_INTERRUPTED=0
 
     __dw_set_error ""
 
+    flags=()
     if [ "$direction" = "write" ]; then
-      flags=()
       [ -n "$__DW_WRITE_FLAGS" ] && flags=("$__DW_WRITE_FLAGS")
-      seek=$((offset / block))
-      if ! sudo dd if="$source" of="$target" bs="$block" seek="$seek" count="$count" conv=notrunc "${flags[@]}" 2>"$err"; then
-        __dw_set_error "$(__dw_dd_error "$err")"
-        return 1
-      fi
+      move_cmd=(sudo dd if="$source" of="$target" bs="$block" seek=$((offset / block))
+        count="$count" conv=notrunc "${flags[@]}")
     else
-      flags=()
       [ -n "$__DW_READ_FLAGS" ] && flags=("$__DW_READ_FLAGS")
-      skip=$((offset / block))
-      if ! sudo dd if="$source" of="$target" bs="$block" skip="$skip" count="$count" "${flags[@]}" 2>"$err"; then
+      move_cmd=(sudo dd if="$source" of="$target" bs="$block" skip=$((offset / block))
+        count="$count" "${flags[@]}")
+    fi
+
+    deadline="${__DW_DEADLINE:-0}"
+    outcome=0
+    if [ "$deadline" -gt 0 ]; then
+      __dw_bounded_ms "$deadline" "${move_cmd[@]}" 2>"$err" || outcome=$?
+    else
+      "${move_cmd[@]}" 2>"$err" || outcome=$?
+    fi
+
+    case "$outcome" in
+      0) ;;
+      124 | 137)
+        __DW_TIMED_OUT=1
+        __dw_set_error "the drive did not finish a $bytes byte $direction at offset $offset within $(__dw_duration "$deadline")"
+        return 1
+        ;;
+      130 | 143)
+        __DW_INTERRUPTED=1
+        __dw_set_error "the $direction at offset $offset was interrupted"
+        return 1
+        ;;
+      *)
         __dw_set_error "$(__dw_dd_error "$err")"
         return 1
-      fi
-    fi
+        ;;
+    esac
 
     __DW_MOVED=$(__dw_dd_bytes "$err")
     [ -z "$__DW_MOVED" ] && __DW_MOVED=0
@@ -782,8 +1004,9 @@ function disk_wipe() {
     local size="$3"
     local pattern="$4"
     local io chunk total index offset piece started elapsed reference label kind
-    local attempts="${CHUNK_RETRIES:-3}"
-    local attempt settled marginal=0
+    local moved dropped stalled
+    local attempts="${CHUNK_RETRIES:-$__DW_RETRIES}"
+    local attempt settled marginal=0 class
 
     [ "$attempts" -ge 1 ] || attempts=1
 
@@ -818,19 +1041,40 @@ function disk_wipe() {
 
       attempt=1
       settled=0
+      dropped=0
+      stalled=0
+      __DW_DEADLINE=$(__dw_deadline_ms "$kind" "$piece")
       while [ "$attempt" -le "$attempts" ]; do
         started=$(__dw_now_ms)
 
+        moved=1
         if [ "$direction" = "write" ]; then
-          if ! __dw_move write "$reference" "$io" "$offset" "$piece"; then
-            attempt=$((attempt + 1))
-            continue
-          fi
+          __dw_move write "$reference" "$io" "$offset" "$piece" || moved=0
         else
-          if ! __dw_move read "$io" "${__DW_TMPDIR}/readback" "$offset" "$piece"; then
-            attempt=$((attempt + 1))
-            continue
+          __dw_move read "$io" "${__DW_TMPDIR}/readback" "$offset" "$piece" || moved=0
+        fi
+
+        if [ "$moved" -eq 0 ]; then
+          if [ "${__DW_INTERRUPTED:-0}" -eq 1 ]; then
+            __log_error "STOPPED: interrupted during $label chunk $((index + 1)) of $total."
+            __log_error "Nothing else will be written. Ejecting so the head leaves the surface."
+            __dw_eject_now "$disk"
+            return 1
           fi
+          if [ "${__DW_TIMED_OUT:-0}" -eq 1 ]; then
+            stalled=1
+            break
+          fi
+          class=$(__dw_error_class "$(__dw_get_error)")
+          if [ "$class" = "bus" ]; then
+            dropped=1
+            break
+          fi
+          if [ "$class" = "media" ] && __dw_head_crash_family; then
+            break
+          fi
+          attempt=$((attempt + 1))
+          continue
         fi
 
         elapsed=$(($(__dw_now_ms) - started))
@@ -853,7 +1097,15 @@ function disk_wipe() {
       done
 
       if [ "$settled" -ne 1 ]; then
-        __dw_fault "$disk" "$label chunk $((index + 1)) of $total failed $attempts times at offset $offset"
+        if [ "$stalled" -eq 1 ]; then
+          __dw_fault "$disk" "$label chunk $((index + 1)) of $total went silent for $(__dw_duration "$__DW_DEADLINE") at offset $offset" stall
+        elif [ "$dropped" -eq 1 ]; then
+          __dw_fault "$disk" "$label chunk $((index + 1)) of $total stopped answering at offset $offset"
+        elif __dw_head_crash_family; then
+          __dw_fault "$disk" "$label chunk $((index + 1)) of $total did not come back clean at offset $offset" fatal
+        else
+          __dw_fault "$disk" "$label chunk $((index + 1)) of $total failed $attempts times at offset $offset"
+        fi
         return 1
       fi
 
@@ -863,7 +1115,7 @@ function disk_wipe() {
       fi
 
       if ! __dw_watch "$kind" "$label" "$((index + 1))" "$total" "$piece" "$elapsed"; then
-        __dw_fault "$disk" "$__DW_REASON"
+        __dw_fault "$disk" "$__DW_REASON" stall
         return 1
       fi
 
@@ -880,6 +1132,8 @@ function disk_wipe() {
     if [ "$marginal" -gt 0 ]; then
       __log_warning "$marginal of $total chunks only settled on a retry. This media is wearing out."
     fi
+
+    __DW_DEADLINE=$(__dw_idle_deadline)
 
     return 0
   }
@@ -1137,6 +1391,7 @@ function disk_wipe() {
 
   __DW_ERRFILE=""
   __DW_LAST_ERROR=""
+  __DW_LAST_DETAIL=""
 
   __dw_validate_params "$disk" "$passes" || return 1
 
@@ -1148,6 +1403,37 @@ function disk_wipe() {
   fi
   if [ -n "$__DW_FAMILY" ]; then
     __log_info "Recognised as $__DW_FAMILY media, which only sets the volume label."
+  fi
+
+  __DW_PROBES=7
+  __DW_REPEATS=3
+  __DW_RETRIES=3
+  __DW_FACTOR_MIN=300
+  __DW_FACTOR_MAX=1200
+  __DW_SLACK=2
+  __DW_CHUNK_TARGET=3000
+  __DW_DEADLINE_CAP="${DEADLINE_CAP_MS:-120000}"
+  __DW_PROBE_CEILING="${PROBE_CEILING_MS:-15000}"
+  if __dw_fragile; then
+    __DW_PROBES=2
+    __DW_REPEATS=1
+    __DW_RETRIES=1
+    __DW_FACTOR_MIN=250
+    __DW_FACTOR_MAX=400
+    __log_info "Handling this as fragile media: fewer seeks while measuring, and no retry on a failed chunk."
+  fi
+  if __dw_head_crash_family; then
+    __DW_FACTOR_MIN=175
+    __DW_FACTOR_MAX=250
+    __DW_SLACK=1
+    __DW_CHUNK_TARGET=1000
+    __DW_PROBE_CEILING="${PROBE_CEILING_MS:-4000}"
+    __DW_DEADLINE_CAP="${DEADLINE_CAP_MS:-$__DW_PROBE_CEILING}"
+    __log_info "A $__DW_FAMILY head that mistracks destroys the cartridge and then the next drive it meets."
+    __log_info "Every transfer is therefore cut off at its own deadline rather than waited on, and one stall ends the run."
+  fi
+  if __dw_fragile; then
+    __log_info "Any transfer past $(__dw_duration "$__DW_PROBE_CEILING") stops the run, because that is a head retrying rather than reading."
   fi
 
   __dw_confirm "$disk" || return 1
@@ -1237,6 +1523,9 @@ function disk_wipe() {
   __DW_OVERHEAD_WRITE=0
   __DW_FACTOR_READ=0
   __DW_FACTOR_WRITE=0
+  __DW_TIMED_OUT=0
+  __DW_INTERRUPTED=0
+  __DW_DEADLINE=$(__dw_idle_deadline)
 
   local landed=0
   __dw_writes_land "$disk" || landed=$?
@@ -1246,11 +1535,21 @@ function disk_wipe() {
     __DW_ERRFILE=""
     return 1
   fi
+  if [ "$landed" -eq 2 ] && [ "$(__dw_error_class "$(__dw_get_error)")" = "bus" ]; then
+    __dw_fault "$disk" "$disk stopped answering during the single-sector write test"
+    rm -rf "$__DW_TMPDIR"
+    __DW_ERRFILE=""
+    return 1
+  fi
 
   __log_info "Measuring $disk before wiping it, so every limit comes from this disk."
   local calibration=0
   local write_calibration=0
   __dw_calibrate read "$disk" "$size" || calibration=$?
+  if [ "$calibration" -ne 2 ] && __dw_device_gone "$disk"; then
+    calibration=2
+    __log_error "$disk left the bus while it was being measured."
+  fi
   if [ "$calibration" -ne 2 ]; then
     __dw_calibrate write "$disk" "$size" || write_calibration=$?
     [ "$write_calibration" -gt "$calibration" ] && calibration="$write_calibration"
@@ -1264,7 +1563,18 @@ function disk_wipe() {
       __DW_ERRFILE=""
       return 1
       ;;
-    *) __log_warning "Speed is not being watched on this disk. Only the byte-for-byte verify decides." ;;
+    *)
+      if __dw_fragile; then
+        __log_error "STOPPED: this disk could not be timed, so nothing would be watching for a stall."
+        __log_error "On $__DW_FAMILY media the clock is what catches a failing head before it scores the surface."
+        __log_error "Running blind would risk the cartridge and the drive, so this stops here."
+        __dw_eject_now "$disk"
+        rm -rf "$__DW_TMPDIR"
+        __DW_ERRFILE=""
+        return 1
+      fi
+      __log_warning "Speed is not being watched on this disk. Only the byte-for-byte verify decides."
+      ;;
   esac
 
   if [ "$__DW_MEASURED" = "1" ]; then

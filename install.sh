@@ -172,6 +172,7 @@ case "$(uname)" in
 
       # Network
       wget rsync rclone nmap mtr telnet sshpass
+      gnome-keyring ssh-askpass-gnome
 
       # System monitoring
       htop

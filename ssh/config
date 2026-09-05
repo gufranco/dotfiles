@@ -9,7 +9,7 @@ Include ~/.colima/ssh_config
 Host github.com
   HostName github.com
   User git
-  IdentityFile ~/.dotfiles/ssh/id_ed25519_personal
+  IdentityFile ~/.ssh/id_ed25519_personal
   IdentitiesOnly yes
   ControlPath /tmp/ssh-%u-github-personal
   ForwardAgent yes
@@ -17,7 +17,7 @@ Host github.com
 Host github-onyx
   HostName github.com
   User git
-  IdentityFile ~/.dotfiles/ssh/id_ed25519_onyx
+  IdentityFile ~/.ssh/id_ed25519_onyx
   IdentitiesOnly yes
   ControlPath /tmp/ssh-%u-github-onyx
   ForwardAgent yes
@@ -25,7 +25,7 @@ Host github-onyx
 Host github-lineleap
   HostName github.com
   User git
-  IdentityFile ~/.dotfiles/ssh/id_ed25519_lineleap
+  IdentityFile ~/.ssh/id_ed25519_lineleap
   IdentitiesOnly yes
   ControlPath /tmp/ssh-%u-github-lineleap
   ForwardAgent yes
@@ -33,7 +33,7 @@ Host github-lineleap
 Host github-buoy
   HostName github.com
   User git
-  IdentityFile ~/.dotfiles/ssh/id_ed25519_buoy
+  IdentityFile ~/.ssh/id_ed25519_buoy
   IdentitiesOnly yes
   ControlPath /tmp/ssh-%u-github-buoy
   ForwardAgent yes
@@ -56,7 +56,7 @@ Host nas ds923 192.168.0.2
   PasswordAuthentication yes
   KbdInteractiveAuthentication yes
   PubkeyAuthentication yes
-  IdentityFile ~/.dotfiles/ssh/id_ed25519_personal
+  IdentityFile ~/.ssh/id_ed25519_personal
   IdentitiesOnly yes
   ControlMaster no
   ForwardAgent no

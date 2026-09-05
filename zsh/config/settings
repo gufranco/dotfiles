@@ -181,8 +181,33 @@ export DISABLE_AUTO_TITLE=true
 export ZSH_COMPDUMP="${ZSH_CACHE_DIR:-$HOME/.cache}/.zcompdump-${HOST}-${ZSH_VERSION}"
 
 # SSH Agent
-zstyle :omz:plugins:ssh-agent lazy yes
 zstyle :omz:plugins:ssh-agent identities id_ed25519_personal id_ed25519_onyx id_ed25519_lineleap id_ed25519_buoy
+
+case "$(uname)" in
+  "Darwin")
+    zstyle :omz:plugins:ssh-agent ssh-add-args --apple-use-keychain
+    ;;
+  "Linux")
+    for __ssh_login_keyring_socket in \
+      "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gcr/ssh" \
+      "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/keyring/ssh"; do
+      if [ -S "$__ssh_login_keyring_socket" ]; then
+        export SSH_AUTH_SOCK="$__ssh_login_keyring_socket"
+        zstyle :omz:plugins:ssh-agent agent-forwarding yes
+        break
+      fi
+    done
+    unset __ssh_login_keyring_socket
+
+    for __ssh_askpass_helper in ksshaskpass /usr/lib/ssh/x11-ssh-askpass ssh-askpass; do
+      if command -v "$__ssh_askpass_helper" >/dev/null 2>&1; then
+        zstyle :omz:plugins:ssh-agent helper "$__ssh_askpass_helper"
+        break
+      fi
+    done
+    unset __ssh_askpass_helper
+    ;;
+esac
 
 # Plugins
 export plugins=(

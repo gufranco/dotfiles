@@ -664,6 +664,30 @@ case "$(uname)" in
       log_skip "Snap packages (CI environment or snapd unavailable)"
     fi
 
+    if ! cmd_exists openlogi; then
+      log_info "Installing OpenLogi..."
+      OPENLOGI_TAG="$(github_latest_tag AprilNEA/OpenLogi || true)"
+      if [ -n "$OPENLOGI_TAG" ] && apt_install_deb_url \
+        "https://github.com/AprilNEA/OpenLogi/releases/download/${OPENLOGI_TAG}/openlogi-${OPENLOGI_TAG}-linux-${DEB_ARCH}.deb"; then
+        log_success "OpenLogi ${OPENLOGI_TAG} installed"
+      else
+        log_warning "OpenLogi install failed"
+      fi
+    else
+      log_skip "OpenLogi already installed"
+    fi
+
+    if [[ -z "$CI" ]] && cmd_exists openlogi-agent &&
+      systemctl --user show-environment >/dev/null 2>&1; then
+      if systemctl --user is-enabled openlogi-agent.service >/dev/null 2>&1; then
+        log_skip "OpenLogi agent already enabled"
+      else
+        systemctl --user enable --now openlogi-agent.service >/dev/null 2>&1 &&
+          log_success "OpenLogi agent enabled" ||
+          log_warning "Failed to enable OpenLogi agent"
+      fi
+    fi
+
     ############################################################################
     # GPG
     ############################################################################

@@ -408,9 +408,9 @@ cask 'coconutbattery'
 cask 'grandperspective'
 cask 'jordanbaird-ice'
 cask 'keycastr'
-cask 'logi-options+'
 cask 'monitorcontrol'
 cask 'mx-power-gadget' if architecture == 'arm64'
+cask 'openlogi'
 cask 'stats'
 
 ################################################################################

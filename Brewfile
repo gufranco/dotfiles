@@ -310,11 +310,14 @@ brew 'kanata'
 brew 'mas'
 
 ################################################################################
-# Retro Gaming & ROM Tools
+# Game Development & Retro Gaming
 ################################################################################
 # torrentzip: installed via go install (see install.sh)
 brew 'internetarchive'
+brew 'mame'
 brew 'UltimateNova1203/maxcso/maxcso'
+brew 'mednafen'
+brew 'sdcc'
 # tectonic: renders the printable catalogue that n64-mr-backup-z64-python emits.
 # A single self contained binary, no TeX distribution behind it.
 brew 'tectonic'
@@ -322,6 +325,7 @@ brew 'dciabrin/ngdevkit/ngdevkit', args: ['force-bottle'] if architecture == 'ar
 brew 'dciabrin/ngdevkit/ngdevkit-toolchain', args: ['force-bottle'] if architecture == 'arm64'
 brew 'ucon64'
 brew 'xorriso'
+cask 'ares-emulator'
 
 ################################################################################
 # Casks - Terminals

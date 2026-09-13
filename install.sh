@@ -682,9 +682,11 @@ case "$(uname)" in
       if systemctl --user is-enabled openlogi-agent.service >/dev/null 2>&1; then
         log_skip "OpenLogi agent already enabled"
       else
-        systemctl --user enable --now openlogi-agent.service >/dev/null 2>&1 &&
-          log_success "OpenLogi agent enabled" ||
+        if systemctl --user enable --now openlogi-agent.service >/dev/null 2>&1; then
+          log_success "OpenLogi agent enabled"
+        else
           log_warning "Failed to enable OpenLogi agent"
+        fi
       fi
     fi
 

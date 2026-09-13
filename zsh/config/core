@@ -179,11 +179,17 @@ function __github_latest_tag() {
 
 function __apt_install_deb_url() {
   local url="$1"
-  local tmpdir result
+  local tmpdir result package
   tmpdir="$(mktemp -d)" || return 1
   if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/package.deb"; then
     sudo apt install -y -qq "$tmpdir/package.deb"
     result=$?
+    if [ "$result" -ne 0 ]; then
+      package="$(dpkg-deb -f "$tmpdir/package.deb" Package 2>/dev/null)"
+      if [ -n "$package" ]; then
+        sudo dpkg --purge --force-depends "$package" >/dev/null 2>&1 || true
+      fi
+    fi
   else
     result=1
   fi

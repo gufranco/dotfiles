@@ -664,7 +664,9 @@ case "$(uname)" in
       log_skip "Snap packages (CI environment or snapd unavailable)"
     fi
 
-    if ! cmd_exists openlogi; then
+    if [[ -n "$CI" ]]; then
+      log_skip "OpenLogi skipped in CI, its maintainer scripts require systemd"
+    elif ! cmd_exists openlogi; then
       log_info "Installing OpenLogi..."
       OPENLOGI_TAG="$(github_latest_tag AprilNEA/OpenLogi || true)"
       if [ -n "$OPENLOGI_TAG" ] && apt_install_deb_url \

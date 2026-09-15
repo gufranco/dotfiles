@@ -275,7 +275,7 @@ case "$(uname)" in
       vlc cmus asciinema ffmpeg fatsort
 
       # Desktop
-      conky-all kitty transmission caffeine flameshot
+      conky-all transmission caffeine flameshot
 
       # Fonts (base families, Nerd Font variants installed separately below)
       fonts-hack fonts-firacode fonts-jetbrains-mono fonts-ubuntu
@@ -727,11 +727,6 @@ case "$(uname)" in
     # Conky
     ############################################################################
     safe_link "$HOME/.dotfiles/conky/.conkyrc" "$HOME/.conkyrc"
-
-    ############################################################################
-    # Tilix
-    ############################################################################
-    safe_link "$HOME/.dotfiles/tilix/catppuccin/themes/catppuccin-mocha.json" "$HOME/.config/tilix/schemes/catppuccin-mocha.json"
 
     ############################################################################
     # GPU drivers and gaming (x86_64 only)
@@ -1408,13 +1403,6 @@ safe_link "$HOME/.dotfiles/fd/.fdrc" "$HOME/.fdrc"
 ############################################################################
 log_info "Setting up Telnet..."
 safe_link "$HOME/.dotfiles/telnet/.telnetrc" "$HOME/.telnetrc"
-
-############################################################################
-# Kitty
-############################################################################
-log_info "Setting up Kitty..."
-safe_link "$HOME/.dotfiles/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
-safe_link "$HOME/.dotfiles/kitty/catppuccin/themes" "$HOME/.config/kitty/themes"
 
 ############################################################################
 # Ghostty

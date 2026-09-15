@@ -52,7 +52,6 @@ check "ssh" "$HOME/.ssh"
 # App configs
 check "htop" "$HOME/.config/htop/htoprc"
 check "ghostty" "$HOME/.config/ghostty"
-check "kitty" "$HOME/.config/kitty/kitty.conf"
 check "bat-config" "$HOME/.config/bat/config"
 check "bat-themes" "$HOME/.config/bat/themes"
 check "eza" "$HOME/.config/eza"

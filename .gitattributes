@@ -110,7 +110,6 @@ id_ed25519 binary
 
 # Theme files
 *.tmTheme text eol=lf
-*.itermcolors text eol=lf
 
 # Vim
 *.vim text eol=lf

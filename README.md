@@ -260,9 +260,6 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 | Tool | Method |
 |:-----|:-------|
 | Ghostty | Built-in `catppuccin-mocha` theme |
-| Kitty | `catppuccin/kitty` submodule (`themes/mocha.conf`) |
-| iTerm2 | `catppuccin/iterm` submodule preset (manual import) |
-| Tilix | `catppuccin/tilix` submodule scheme |
 | Bat | `catppuccin/bat` submodule tmTheme |
 | Delta | `catppuccin/delta` submodule feature |
 | Vim | `catppuccin/vim` plugin + lightline |
@@ -315,8 +312,6 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `tmux/.tmux.conf` | `~/.tmux.conf` |
 | `tmux` | `~/.tmux` |
 | `ghostty` | `~/.config/ghostty` |
-| `kitty/kitty.conf` | `~/.config/kitty/kitty.conf` |
-| `kitty/catppuccin/themes` | `~/.config/kitty/themes` |
 | `bat/config` | `~/.config/bat/config` |
 | `bat/catppuccin/themes` | `~/.config/bat/themes` |
 | `eza` | `~/.config/eza` |
@@ -397,7 +392,6 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `htop/` | htop config |
 | `k9s/` | K9s Kubernetes dashboard + Catppuccin Mocha skin |
 | `kanata/` | Kanata keyboard remapper config |
-| `kitty/` | Kitty terminal + Catppuccin Mocha theme |
 | `lazydocker/` | Lazydocker config, Catppuccin Mocha |
 | `lazygit/` | Lazygit config, Catppuccin Mocha |
 | `mailcap/` | Mailcap config |
@@ -421,9 +415,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `telnet/` | Telnet config |
 | `tests/` | Python unit tests for the debug hook |
 | `thefuck/` | TheFuck command corrector config |
-| `themes/` | Terminal themes (iTerm2) |
 | `tig/` | Tig git TUI, Catppuccin Mocha themed |
-| `tilix/` | Tilix terminal config |
 | `tmux/` | Tmux config + 9 plugins |
 | `tmuxp/` | tmuxp session layouts |
 | `vim/` | Vim config, 31 plugins |

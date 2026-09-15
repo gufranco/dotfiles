@@ -12,8 +12,7 @@ fi
 ################################################################################
 # Tmux Terminal Settings
 ################################################################################
-# Set proper TERM for tmux sessions (skip for Kitty terminal)
-if [ -n "$TMUX" ] && [ "$TERM_PROGRAM" != "kitty" ]; then
+if [ -n "$TMUX" ]; then
   export TERM="tmux-256color"
 fi
 

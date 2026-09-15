@@ -269,7 +269,7 @@ case "$(uname)" in
       glow yq poppler-utils
 
       # Email & Web
-      neomutt lynx newsboat libnotify-bin
+      neomutt lynx newsboat
 
       # Media
       vlc cmus asciinema ffmpeg fatsort

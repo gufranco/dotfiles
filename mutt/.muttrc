@@ -138,7 +138,6 @@ set envelope_from
 set delete = yes
 set abort_noattach = ask-yes
 set abort_noattach_regex = "\\<(anexo|anexos|anexado|anexada|anexei|segue|seguem|attach|attached|attachments?)\\>"
-set new_mail_command = "~/.dotfiles/mutt/notify.sh '%f' '%n' '%u' '%m' '%b'"
 
 ################################################################################
 # Display

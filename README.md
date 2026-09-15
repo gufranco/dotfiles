@@ -410,7 +410,6 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `nodejs/` | npm, yarn, pnpm configs + GPG-encrypted tokens |
 | `nvidia/` | NVIDIA Xorg and shader-cache drop-ins (Linux gaming) |
 | `nvim/` | Neovim config, standalone lua setup with lazy.nvim |
-| `obsidian/` | Obsidian notes config |
 | `opencode/` | OpenCode AI config |
 | `python/` | pdb config, PYTHONSTARTUP, and the breakpoint() hook |
 | `ranger/` | Ranger file manager config |

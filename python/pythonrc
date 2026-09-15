@@ -37,7 +37,11 @@ def _setup_completion():
         import rlcompleter  # noqa: F401
     except ImportError:
         return
-    readline.parse_and_bind("tab: complete")
+    backend = getattr(readline, "backend", None)
+    if backend is None:
+        backend = "editline" if "libedit" in (readline.__doc__ or "") else "readline"
+    binding = "bind ^I rl_complete" if backend == "editline" else "tab: complete"
+    readline.parse_and_bind(binding)
 
 
 def _setup_pretty():
@@ -62,20 +66,15 @@ def _setup_pretty():
         rich.pretty.install()
 
 
-def _main():
-    # readline is absent on some minimal builds; history and completion just do
-    # not load there, which is fine.
-    try:
-        import readline  # noqa: F401
-    except ImportError:
-        pass
-    else:
-        _setup_history()
-        _setup_completion()
-    _setup_pretty()
+def _readline_available():
+    import importlib.util
+
+    return importlib.util.find_spec("readline") is not None
 
 
-_main()
+if _readline_available():
+    _setup_history()
+    _setup_completion()
+_setup_pretty()
 
-# Keep the namespace clean so dir() in a fresh REPL is not noisy.
-del _setup_history, _setup_completion, _setup_pretty, _main
+del _readline_available, _setup_history, _setup_completion, _setup_pretty

@@ -3,6 +3,7 @@ node = "lts"
 python = "latest"
 ruby = "latest"
 "npm:agent-browser" = "0.34.0"
+"asdf:mise-plugins/mise-gcloud" = "581.0.0"
 
 [settings]
 ruby.compile = false

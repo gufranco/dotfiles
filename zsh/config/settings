@@ -17,7 +17,6 @@ case "$(uname)" in
     export HOMEBREW_NO_AUTO_UPDATE=true
     export HOMEBREW_NO_ASK=true
     export HOMEBREW_QUIET=true
-    export HOMEBREW_NO_REQUIRE_TAP_TRUST=true
 
     # Docker
     # export DOCKER_DEFAULT_PLATFORM="linux/amd64"

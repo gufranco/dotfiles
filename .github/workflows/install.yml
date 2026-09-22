@@ -214,7 +214,6 @@ jobs:
         run: |
           set -euo pipefail
           eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
-          export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
           brew bundle check --verbose --file Brewfile
           errors=0
           for cmd in bat eza fzf fd rg delta git zsh tmux vim gh node bun pnpm; do

@@ -2,3 +2,4 @@
 self-hosted-runner:
   labels:
     - macos-26-intel
+    - ubuntu-26.04

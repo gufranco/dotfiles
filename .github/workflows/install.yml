@@ -41,7 +41,7 @@ env:
 jobs:
   resolve-ubuntu-lts:
     name: Resolve Ubuntu LTS
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     outputs:
       version: ${{ steps.lts.outputs.version }}
@@ -59,7 +59,7 @@ jobs:
   linux:
     name: Ubuntu LTS (x64)
     needs: [resolve-ubuntu-lts]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     container:
       image: ubuntu:${{ needs.resolve-ubuntu-lts.outputs.version }}
       options: --privileged

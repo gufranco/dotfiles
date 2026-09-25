@@ -28,6 +28,11 @@ function disk_wipe() {
       return 1
     fi
 
+    if ! __cmd_exists openssl; then
+      __log_error "openssl is required to build the per-chunk unique pattern"
+      return 1
+    fi
+
     return 0
   }
 
@@ -370,11 +375,13 @@ function disk_wipe() {
     local target="${__DW_TMPDIR}/pattern-${pattern}"
 
     if [ ! -f "$target" ] || [ "$(__dw_file_size "$target")" -ne "$size" ]; then
-      if [ "$pattern" = "0xFF" ]; then
-        head -c "$size" /dev/zero | tr '\000' '\377' >"$target" || return 1
-      else
-        head -c "$size" /dev/zero >"$target" || return 1
-      fi
+      case "$pattern" in
+        0x00) head -c "$size" /dev/zero >"$target" || return 1 ;;
+        0xFF) head -c "$size" /dev/zero | tr '\000' '\377' >"$target" || return 1 ;;
+        0xAA) head -c "$size" /dev/zero | tr '\000' '\252' >"$target" || return 1 ;;
+        0x55) head -c "$size" /dev/zero | tr '\000' '\125' >"$target" || return 1 ;;
+        *) return 1 ;;
+      esac
     fi
 
     if [ "$(__dw_file_size "$target")" -ne "$size" ]; then
@@ -382,6 +389,94 @@ function disk_wipe() {
     fi
 
     printf '%s\n' "$target"
+  }
+
+  __dw_unique_chunk() {
+    local index="$1"
+    local size="$2"
+    local target="${__DW_TMPDIR}/unique-chunk"
+
+    head -c "$size" /dev/zero |
+      openssl enc -aes-128-ctr -nosalt -K "$__DW_KEY" -iv "$(printf '%032x' "$index")" >"$target" ||
+      return 1
+
+    if [ "$(__dw_file_size "$target")" -ne "$size" ]; then
+      return 1
+    fi
+
+    printf '%s\n' "$target"
+  }
+
+  __dw_bit_report() {
+    local reference="$1"
+    local readback="$2"
+    local piece="$3"
+    local sample="${BIT_SAMPLE:-65536}"
+
+    cmp -l -n "$piece" "$reference" "$readback" 2>/dev/null |
+      head -n "$sample" |
+      awk -v sample="$sample" '
+        function octal(text,   i, value) {
+          value = 0
+          for (i = 1; i <= length(text); i++) value = value * 8 + substr(text, i, 1)
+          return value
+        }
+        {
+          written = octal($2)
+          read = octal($3)
+          lane = ($1 - 1) % 2
+          bytes++
+          for (bit = 0; bit < 8; bit++) {
+            if (int(written / 2 ^ bit) % 2 == int(read / 2 ^ bit) % 2) continue
+            line = lane * 8 + bit
+            flips[line]++
+            if (int(read / 2 ^ bit) % 2) high[line]++
+            else low[line]++
+          }
+        }
+        END {
+          if (bytes == 0) exit
+          printf "Bit report over %d wrong bytes%s:\n", bytes, (bytes >= sample ? ", the first " sample : "")
+          lines = 0
+          bits = 0
+          for (line = 0; line < 16; line++) {
+            if (!flips[line]) continue
+            lines++
+            used[lines] = line
+            bit = line % 8
+            if (!seen[bit]++) { bits++; bitlist[bits] = bit }
+            bitup[bit] += high[line]
+            bitdown[bit] += low[line]
+            printf "  bit %d of %s bytes: wrong %d times, read 1 for 0 %d times, 0 for 1 %d times\n", bit, (line < 8 ? "even" : "odd"), flips[line], high[line] + 0, low[line] + 0
+          }
+          where = ""
+          if (lines == 1) where = sprintf(" in %s bytes only, D%d on a 16-bit bus", (used[1] < 8 ? "even" : "odd"), used[1])
+          only = bitlist[1]
+          if (bytes < 16) {
+            printf "Only %d wrong bytes, too few to tell a data line fault from a media defect.\n", bytes
+          } else if (bits == 1 && (bitup[only] + 0 == 0 || bitdown[only] + 0 == 0)) {
+            printf "Every error is bit %d reading as %d%s. One stuck data line: cable, connector, adapter or drive interface, not the media.\n", only, (bitup[only] ? 1 : 0), where
+          } else if (bits == 1) {
+            printf "Every error is bit %d%s, flipping both ways. One open or intermittent data line, not the media.\n", only, where
+          } else if (lines == 2) {
+            printf "Every error is on D%d or D%d of a 16-bit bus. Two lines failing alone point at a short between them or a bad contact, not the media.\n", used[1], used[2]
+          } else if (bits == 2) {
+            printf "Every error is bit %d or bit %d. Two lines failing alone point at a short between them or a bad contact, not the media.\n", bitlist[1], bitlist[2]
+          } else {
+            printf "Errors spread over %d bit positions. That points at the media or the read signal rather than one data line.\n", bits
+          }
+        }
+      '
+  }
+
+  __dw_log_lines() {
+    local level="$1"
+    local text="$2"
+    local line
+
+    while IFS= read -r line; do
+      [ -n "$line" ] && "$level" "$line"
+    done <<<"$text"
   }
 
   __dw_file_size() {
@@ -1004,7 +1099,7 @@ function disk_wipe() {
     local size="$3"
     local pattern="$4"
     local io chunk total index offset piece started elapsed reference label kind
-    local moved dropped stalled
+    local moved dropped stalled bits
     local attempts="${CHUNK_RETRIES:-$__DW_RETRIES}"
     local attempt settled marginal=0 class
 
@@ -1014,15 +1109,18 @@ function disk_wipe() {
     chunk="$__DW_CHUNK"
     total=$(((size + chunk - 1) / chunk))
 
-    if ! reference=$(__dw_pattern_file "$chunk" "$pattern"); then
+    if [ "$pattern" != "unique" ] && ! reference=$(__dw_pattern_file "$chunk" "$pattern"); then
       __log_error "Unable to build the $pattern reference pattern"
       return 1
     fi
 
+    local shown="$pattern"
+    [ "$pattern" = "unique" ] && shown="per-chunk unique data"
+
     if [ "$direction" = "write" ]; then
       label="write"
       kind="write"
-      __log_info "Writing $pattern over $total chunks, timing every chunk"
+      __log_info "Writing $shown over $total chunks, timing every chunk"
     else
       label="read"
       kind="read"
@@ -1030,7 +1128,7 @@ function disk_wipe() {
         sync
         sudo blockdev --flushbufs "$io" 2>/dev/null
       fi
-      __log_info "Verifying $pattern over $total chunks, timing every chunk"
+      __log_info "Verifying $shown over $total chunks, timing every chunk"
     fi
 
     index=0
@@ -1039,10 +1137,16 @@ function disk_wipe() {
       piece=$((size - offset))
       [ "$piece" -gt "$chunk" ] && piece="$chunk"
 
+      if [ "$pattern" = "unique" ] && ! reference=$(__dw_unique_chunk "$index" "$piece"); then
+        __log_error "Unable to build the unique pattern for chunk $((index + 1)) of $total"
+        return 1
+      fi
+
       attempt=1
       settled=0
       dropped=0
       stalled=0
+      bits=""
       __DW_DEADLINE=$(__dw_deadline_ms "$kind" "$piece")
       while [ "$attempt" -le "$attempts" ]; do
         started=$(__dw_now_ms)
@@ -1087,7 +1191,8 @@ function disk_wipe() {
 
         if [ "$direction" = "read" ] &&
           ! cmp -s -n "$piece" "${__DW_TMPDIR}/readback" "$reference"; then
-          __dw_set_error "chunk $((index + 1)) of $total did not read back as $pattern"
+          __dw_set_error "chunk $((index + 1)) of $total did not read back as $shown"
+          bits=$(__dw_bit_report "$reference" "${__DW_TMPDIR}/readback" "$piece")
           attempt=$((attempt + 1))
           continue
         fi
@@ -1097,6 +1202,7 @@ function disk_wipe() {
       done
 
       if [ "$settled" -ne 1 ]; then
+        __dw_log_lines __log_error "$bits"
         if [ "$stalled" -eq 1 ]; then
           __dw_fault "$disk" "$label chunk $((index + 1)) of $total went silent for $(__dw_duration "$__DW_DEADLINE") at offset $offset" stall
         elif [ "$dropped" -eq 1 ]; then
@@ -1112,6 +1218,7 @@ function disk_wipe() {
       if [ "$attempt" -gt 1 ]; then
         marginal=$((marginal + 1))
         __log_warning "$label chunk $((index + 1)) of $total needed $attempt attempts at offset $offset"
+        __dw_log_lines __log_warning "$bits"
       fi
 
       if ! __dw_watch "$kind" "$label" "$((index + 1))" "$total" "$piece" "$elapsed"; then
@@ -1124,9 +1231,9 @@ function disk_wipe() {
 
     if [ "$direction" = "write" ]; then
       sync
-      __log_success "Write $pattern completed"
+      __log_success "Write $shown completed"
     else
-      __log_success "Verify $pattern completed"
+      __log_success "Verify $shown completed"
     fi
 
     if [ "$marginal" -gt 0 ]; then
@@ -1146,6 +1253,17 @@ function disk_wipe() {
 
     __log_info "Pass $index of $passes"
 
+    if ! __DW_KEY=$(openssl rand -hex 16) || [ "${#__DW_KEY}" -ne 32 ]; then
+      __log_error "Unable to generate the key for the unique pattern"
+      return 1
+    fi
+
+    __dw_run_phase write "$disk" "$size" "unique" || return 1
+    __dw_run_phase read "$disk" "$size" "unique" || return 1
+    __dw_run_phase write "$disk" "$size" "0xAA" || return 1
+    __dw_run_phase read "$disk" "$size" "0xAA" || return 1
+    __dw_run_phase write "$disk" "$size" "0x55" || return 1
+    __dw_run_phase read "$disk" "$size" "0x55" || return 1
     __dw_run_phase write "$disk" "$size" "0xFF" || return 1
     __dw_run_phase read "$disk" "$size" "0xFF" || return 1
     __dw_run_phase write "$disk" "$size" "0x00" || return 1

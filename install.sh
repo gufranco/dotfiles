@@ -1140,9 +1140,13 @@ IOSCHED
     ############################################################################
     # Homebrew packages
     ############################################################################
-    # Homebrew now refuses formulae from non-official taps unless trusted
-    export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
     log_info "Installing Homebrew packages..."
+    while IFS= read -r tap_ref; do
+      [ -z "$tap_ref" ] && continue
+      brew trust --quiet --tap "$tap_ref" ||
+        log_warning "Could not trust tap $tap_ref"
+    done < <(awk -F"'" '/^tap / {print $2; if ($3 == ", ") print $4}' \
+      "$HOME/.dotfiles/Brewfile")
     brew update
     brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
     brew bundle cleanup --force --no-taps --file "$HOME/.dotfiles/Brewfile" || true

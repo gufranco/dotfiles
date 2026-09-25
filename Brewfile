@@ -12,21 +12,21 @@ storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/
 ################################################################################
 # Homebrew taps
 ################################################################################
-tap 'bjarneo/cliamp'
-tap 'browsh-org/browsh'
-tap 'clojure/tools'
-tap 'dciabrin/ngdevkit' if architecture == 'arm64'
-tap 'gufranco/fdstoolkit', 'https://github.com/gufranco/fdstoolkit'
-tap 'gufranco/maeyomi', 'https://github.com/gufranco/maeyomi'
-tap 'gufranco/osm', 'https://github.com/gufranco/osm'
-tap 'hashicorp/tap'
-tap 'neomutt/neomutt'
-tap 'oven-sh/bun'
-tap 'stripe/stripe-cli'
-tap 'UltimateNova1203/maxcso'
-tap 'ungive/media-control'
-tap 'universal-ctags/universal-ctags'
-tap 'withgraphite/tap'
+tap 'bjarneo/cliamp', trusted: true
+tap 'browsh-org/browsh', trusted: true
+tap 'clojure/tools', trusted: true
+tap 'dciabrin/ngdevkit', trusted: true if architecture == 'arm64'
+tap 'gufranco/fdstoolkit', 'https://github.com/gufranco/fdstoolkit', trusted: true
+tap 'gufranco/maeyomi', 'https://github.com/gufranco/maeyomi', trusted: true
+tap 'gufranco/osm', 'https://github.com/gufranco/osm', trusted: true
+tap 'hashicorp/tap', trusted: true
+tap 'neomutt/neomutt', trusted: true
+tap 'oven-sh/bun', trusted: true
+tap 'stripe/stripe-cli', trusted: true
+tap 'UltimateNova1203/maxcso', trusted: true
+tap 'ungive/media-control', trusted: true
+tap 'universal-ctags/universal-ctags', trusted: true
+tap 'withgraphite/tap', trusted: true
 
 ################################################################################
 # Shell & Terminal

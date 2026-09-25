@@ -396,6 +396,7 @@ cask 'figma'
 # Casks - Security & VPN
 ################################################################################
 # cask '1password'
+cask 'keybase'
 # cask 'lastpass'
 cask 'nordvpn'
 cask 'tailscale-app'

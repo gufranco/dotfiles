@@ -170,8 +170,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-26-intel
-            name: macOS Tahoe (x64)
           - runner: macos-26
             name: macOS Tahoe (arm64)
     runs-on: ${{ matrix.runner }}
@@ -188,7 +186,6 @@ jobs:
           sudo rm -rf /Library/Developer/CoreSimulator/Cryptex/* 2>/dev/null || true
           xcrun simctl delete all 2>/dev/null || true
           # macOS arm64: pre-installed Homebrew packages fill the smaller disk
-          # x64 runners have enough space, skip to avoid reinstall overhead
           if [ "$(uname -m)" = "arm64" ] && command -v brew >/dev/null 2>&1; then
             brew list --formula | xargs brew remove --force --ignore-dependencies 2>/dev/null || true
             brew cleanup --prune=all -s 2>/dev/null || true

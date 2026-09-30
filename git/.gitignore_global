@@ -292,3 +292,6 @@ specs/
 .vuepress/dist
 
 **/.claude/settings.local.json
+
+# Session hand-off prompts
+PROMPT.md

@@ -23,7 +23,7 @@ tap 'hashicorp/tap', trusted: true
 tap 'neomutt/neomutt', trusted: true
 tap 'oven-sh/bun', trusted: true
 tap 'stripe/stripe-cli', trusted: true
-tap 'UltimateNova1203/maxcso', trusted: true
+tap 'UltimateNova1203/maxcso', 'https://github.com/SammyCola/maxcso.git', trusted: true
 tap 'ungive/media-control', trusted: true
 tap 'universal-ctags/universal-ctags', trusted: true
 tap 'withgraphite/tap', trusted: true

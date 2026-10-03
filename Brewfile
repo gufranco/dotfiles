@@ -266,6 +266,8 @@ brew 'fastfetch'
 brew 'goaccess'
 brew 'htop'
 brew 'lnav'
+brew 'macmon' if architecture == 'arm64'
+brew 'osx-cpu-temp' if architecture == 'x86_64'
 brew 'tty-clock'
 
 ################################################################################

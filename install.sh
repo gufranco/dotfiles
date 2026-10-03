@@ -175,7 +175,7 @@ case "$(uname)" in
       gnome-keyring ssh-askpass-gnome
 
       # System monitoring
-      htop
+      htop lm-sensors
 
       # Development
       shellcheck ruby ruby-dev python3-pygments

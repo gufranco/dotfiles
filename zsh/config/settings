@@ -92,12 +92,18 @@ export NODE_REPL_MODE=sloppy
 export NODE_OPTIONS="--enable-source-maps --stack-trace-limit=50"
 
 ################################################################################
-# Cached eval: cache tool init output keyed by binary mtime.
+# Cached eval: cache tool init output keyed by binary mtime and PATH.
 # Avoids spawning subprocesses on every shell open.
-# Cache is invalidated when the binary changes (upgrade, reinstall).
+# Cache is invalidated when the binary changes (upgrade, reinstall) or when
+# PATH changes, since an init such as `mise activate` exports a PATH snapshot.
 # Run `eval-cache-clear` to force rebuild.
 ################################################################################
 __EVAL_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/eval-cache"
+
+__eval_cache_path_sum() {
+  [ -n "${__EVAL_CACHE_PATH_SUM:-}" ] && return 0
+  __EVAL_CACHE_PATH_SUM="$(printf '%s' "$PATH" | command cksum | command awk '{print $1}')"
+}
 
 __cached_eval() {
   local cmd="$1"
@@ -107,7 +113,8 @@ __cached_eval() {
 
   local mtime
   mtime="$(command stat -c '%Y' "$bin_path" 2>/dev/null || command stat -f '%m' "$bin_path" 2>/dev/null)" || return 0
-  local cache_key="${cmd}--${mtime}"
+  __eval_cache_path_sum
+  local cache_key="${cmd}--${mtime}--${__EVAL_CACHE_PATH_SUM}"
   local cache_file="${__EVAL_CACHE_DIR}/${cache_key}"
 
   if [ -f "$cache_file" ]; then

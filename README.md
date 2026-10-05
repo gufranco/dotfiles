@@ -293,7 +293,8 @@ Run `f5` in any terminal to update everything at once:
 5. Upgrades mise-managed runtimes (Node.js, Python, Ruby)
 6. On macOS: runs `brew update`, `brew upgrade`, `brew bundle`, and Mac App Store updates
 7. On Linux: runs `apt update` and `apt dist-upgrade`
-8. Reloads Tmux and Zsh configs
+8. Reclaims cache space: scrubs the Homebrew download cache and prunes the npm, pnpm, yarn, uv, and Go caches; on macOS also clears Xcode `DerivedData`, cleans the CocoaPods cache, and deletes unavailable simulators. Docker and the Colima VM disk are left untouched so running dev containers survive.
+9. Reloads Tmux and Zsh configs
 
 ## Symlink Map
 

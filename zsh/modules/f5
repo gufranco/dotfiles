@@ -395,6 +395,97 @@ function __f5_update_python() {
   fi
 }
 
+function __f5_clean_caches() {
+  __log_info "Reclaiming cache space..."
+
+  local clean_count=0
+  local clean_errors=0
+
+  if __cmd_exists brew; then
+    local brew_cache
+    brew_cache="$(brew --cache 2>/dev/null)"
+    if brew cleanup -s --prune=all >/dev/null 2>&1; then
+      [ -n "$brew_cache" ] && command rm -rf "${brew_cache:?}" 2>/dev/null
+      ((clean_count++))
+    else
+      ((clean_errors++))
+    fi
+  fi
+
+  if __cmd_exists npm; then
+    if npm cache clean --force >/dev/null 2>&1; then
+      ((clean_count++))
+    else
+      ((clean_errors++))
+    fi
+  fi
+
+  if __cmd_exists pnpm; then
+    if pnpm store prune >/dev/null 2>&1; then
+      ((clean_count++))
+    else
+      ((clean_errors++))
+    fi
+  fi
+
+  if __cmd_exists yarn; then
+    if yarn cache clean >/dev/null 2>&1; then
+      ((clean_count++))
+    else
+      ((clean_errors++))
+    fi
+  fi
+
+  if __cmd_exists uv; then
+    if uv cache prune >/dev/null 2>&1; then
+      ((clean_count++))
+    else
+      ((clean_errors++))
+    fi
+  fi
+
+  if __cmd_exists go; then
+    if go clean -cache >/dev/null 2>&1; then
+      ((clean_count++))
+    else
+      ((clean_errors++))
+    fi
+  fi
+
+  if [ "$(uname)" = "Darwin" ]; then
+    if __cmd_exists pod; then
+      if pod cache clean --all >/dev/null 2>&1; then
+        ((clean_count++))
+      else
+        ((clean_errors++))
+      fi
+    fi
+
+    local derived="$HOME/Library/Developer/Xcode/DerivedData"
+    if [ -d "$derived" ]; then
+      if command rm -rf "${derived:?}" 2>/dev/null; then
+        ((clean_count++))
+      else
+        ((clean_errors++))
+      fi
+    fi
+
+    if __cmd_exists xcrun; then
+      if xcrun simctl delete unavailable >/dev/null 2>&1; then
+        ((clean_count++))
+      else
+        ((clean_errors++))
+      fi
+    fi
+  fi
+
+  if [ "$clean_errors" -gt 0 ]; then
+    __log_warning "Cleaned $clean_count cache stores ($clean_errors failed)"
+  else
+    __log_success "Cleaned $clean_count cache stores"
+  fi
+}
+
 function __f5_reload_configs() {
   __log_info "Reloading configurations..."
 
@@ -474,6 +565,8 @@ function f5() {
   esac
 
   __f5_update_python
+
+  __f5_clean_caches
 
   __f5_reload_configs
   __f5_show_summary

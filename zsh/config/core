@@ -248,7 +248,7 @@ function __append_to_path() {
   export PATH="${p:+$p:}$1"
 }
 
-function __add_gnu_tool() {
+function __add_formula_path() {
   local tool="$1"
   local subpath="${2:-bin}"
   __add_to_path "$HOMEBREW_PREFIX/opt/$tool/$subpath"

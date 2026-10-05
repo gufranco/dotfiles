@@ -32,13 +32,13 @@ case "$(uname)" in
     esac
 
     # Homebrew packages
-    __add_gnu_tool "curl"
-    __add_gnu_tool "libpq"
-    __add_gnu_tool "openssl"
-    __add_gnu_tool "neomutt" "libexec/neomutt"
+    __add_formula_path "curl"
+    __add_formula_path "libpq"
+    __add_formula_path "openssl"
+    __add_formula_path "neomutt" "libexec/neomutt"
 
     # Ruby (keg-only fallback, mise shims take priority via settings)
-    __add_gnu_tool "ruby"
+    __add_formula_path "ruby"
 
     # Java
     export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@21"
@@ -49,26 +49,26 @@ case "$(uname)" in
     __add_to_path "$ANDROID_HOME/platform-tools"
     __add_to_path "$ANDROID_HOME/emulator"
 
-    # GNU utilities (replacing BSD versions)
-    __add_gnu_tool "bc"
-    __add_gnu_tool "coreutils" "libexec/gnubin"
-    __add_gnu_tool "gawk" "libexec/gnubin"
-    __add_gnu_tool "gnu-sed" "libexec/gnubin"
-    __add_gnu_tool "findutils" "libexec/gnubin"
-    __add_gnu_tool "grep" "libexec/gnubin"
-    __add_gnu_tool "binutils"
-    __add_gnu_tool "make" "libexec/gnubin"
-    __add_gnu_tool "gnu-tar" "libexec/gnubin"
-    __add_gnu_tool "which"
-    __add_gnu_tool "diffutils"
-    __add_gnu_tool "patch"
-    __add_gnu_tool "gnu-time" "libexec/gnubin"
-    __add_gnu_tool "gnu-which" "libexec/gnubin"
-    __add_gnu_tool "gnu-units"
-    __add_gnu_tool "gnu-indent" "libexec/gnubin"
-    __add_gnu_tool "inetutils" "libexec/gnubin"
-    __add_gnu_tool "mailutils"
-    __add_gnu_tool "moreutils"
-    __add_gnu_tool "patchutils"
+    # GNU and uutils tools in place of the BSD versions
+    __add_formula_path "bc"
+    __add_formula_path "uutils-coreutils" "libexec/uubin"
+    __add_formula_path "gawk" "libexec/gnubin"
+    __add_formula_path "gnu-sed" "libexec/gnubin"
+    __add_formula_path "uutils-findutils" "libexec/uubin"
+    __add_formula_path "grep" "libexec/gnubin"
+    __add_formula_path "binutils"
+    __add_formula_path "make" "libexec/gnubin"
+    __add_formula_path "gnu-tar" "libexec/gnubin"
+    __add_formula_path "which"
+    __add_formula_path "uutils-diffutils" "libexec/uubin"
+    __add_formula_path "patch"
+    __add_formula_path "gnu-time" "libexec/gnubin"
+    __add_formula_path "gnu-which" "libexec/gnubin"
+    __add_formula_path "gnu-units"
+    __add_formula_path "gnu-indent" "libexec/gnubin"
+    __add_formula_path "inetutils" "libexec/gnubin"
+    __add_formula_path "mailutils"
+    __add_formula_path "moreutils"
+    __add_formula_path "patchutils"
     ;;
 esac

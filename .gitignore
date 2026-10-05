@@ -60,6 +60,7 @@ mutt/accounts/*/oauth2.tokens
 tmux/resurrect/
 tmux/plugins/*
 !tmux/plugins/tpm
+tmux/autoreload-revamped/
 tmux/.tmux-powerlinerc
 
 ################################################################################

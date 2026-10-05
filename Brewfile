@@ -95,7 +95,7 @@ brew 'zlib'
 ################################################################################
 brew 'ast-grep'
 brew 'broot'
-brew 'eza'
+# brew 'eza'
 brew 'fd'
 brew 'fzf'
 brew 'midnight-commander'

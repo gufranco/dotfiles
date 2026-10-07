@@ -187,7 +187,7 @@ export DISABLE_AUTO_TITLE=true
 export ZSH_COMPDUMP="${ZSH_CACHE_DIR:-$HOME/.cache}/.zcompdump-${HOST}-${ZSH_VERSION}"
 
 # SSH Agent
-zstyle :omz:plugins:ssh-agent identities id_ed25519_personal id_ed25519_onyx id_ed25519_lineleap id_ed25519_buoy
+zstyle :omz:plugins:ssh-agent identities id_ed25519_personal id_ed25519_onyx
 
 case "$(uname)" in
   "Darwin")

@@ -45,7 +45,7 @@ brew 'zsh-autosuggestions'
 brew 'zsh-syntax-highlighting'
 
 ################################################################################
-# GNU & Core Utilities
+# Core Utilities
 ################################################################################
 brew 'bc'
 brew 'binutils'

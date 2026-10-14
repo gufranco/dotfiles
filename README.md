@@ -153,7 +153,7 @@ Node.js gets the built-in V8 Inspector workflow. The `ni`, `nib`, and `niw` alia
 
 ### Terminal Multiplexer
 
-Tmux with 9 plugins and vim-style keybindings, installed by tpm:
+Tmux with 18 plugins and vim-style keybindings, installed by tpm:
 
 | Plugin | What it does |
 |:-------|:-------------|
@@ -166,8 +166,10 @@ Tmux with 9 plugins and vim-style keybindings, installed by tpm:
 | tmux-fzf-revamped | Fuzzy switch or kill any session, window, or pane |
 | tmux-extract-revamped | Fuzzy-grab urls, paths, words, or lines off the pane and paste them |
 | tmux-autoreload-revamped | Re-sources the config when it changes |
+| tmux-persist-revamped | Saves sessions and restores them when the server starts |
+| tmux-cpu, ram, disk, battery, git, time, music and weather revamped | Status bar segments |
 
-Everything except the Catppuccin theme comes from the [tmux-revamped](https://github.com/tmux-revamped) family. `tmux-persist-revamped` replaces tmux-resurrect and tmux-continuum with one plugin that writes no temp files; it sits in [`tmux/.tmux.conf`](tmux/.tmux.conf) commented out.
+Everything except the Catppuccin theme comes from the [tmux-revamped](https://github.com/tmux-revamped) family. `tmux-persist-revamped` replaces tmux-resurrect and tmux-continuum with one plugin that writes no temp files.
 
 ### Git
 
@@ -224,7 +226,7 @@ SteamOS-parity Steam + Proton setup for NVIDIA hybrid GPU laptops. Installed aut
 | Gamescope | Valve's micro-compositor with FSR upscaling |
 | Steam + GE-Proton | Native Steam; GE-Proton auto-downloaded (add proton-cachyos via ProtonUp-Qt) |
 | Heroic / Lutris / Bottles | Epic/GOG/Amazon and other launchers (Flatpak) |
-| Controller drivers | steam-devices udev + xpadneo/xone DKMS for Xbox pads |
+| Controller drivers | udev rules from steam-launcher + xpadneo/xone DKMS for Xbox pads |
 | NVIDIA shader cache env | Persistent, prune-proof shader cache to kill recompile stutter |
 
 **After install, reboot** (to boot the XanMod kernel and load scx_lavd) **and run:**
@@ -259,7 +261,7 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 
 | Tool | Method |
 |:-----|:-------|
-| Ghostty | Built-in `catppuccin-mocha` theme |
+| Ghostty | Built-in `Catppuccin Mocha` theme |
 | Bat | `catppuccin/bat` submodule tmTheme |
 | Delta | `catppuccin/delta` submodule feature |
 | Vim | `catppuccin/vim` plugin + lightline |
@@ -287,14 +289,16 @@ Theme submodules track upstream `main`; `f5` updates them with `git submodule up
 Run `f5` in any terminal to update everything at once:
 
 1. Pulls latest dotfiles and submodules
-2. Updates AWS configuration
-3. Updates Vim plugins and CoC extensions
+2. Updates AWS configuration and the Claude engineering rules
+3. Updates Vim plugins and CoC extensions, and Neovim plugins
 4. Updates Oh My Zsh, Zsh plugins, and Tmux plugins
-5. Upgrades mise-managed runtimes (Node.js, Python, Ruby)
-6. On macOS: runs `brew update`, `brew upgrade`, `brew bundle`, and Mac App Store updates
-7. On Linux: runs `apt update` and `apt dist-upgrade`
-8. Reclaims cache space: scrubs the Homebrew download cache and prunes the npm, pnpm, yarn, uv, and Go caches; on macOS also clears Xcode `DerivedData`, cleans the CocoaPods cache, and deletes unavailable simulators. Docker and the Colima VM disk are left untouched so running dev containers survive.
-9. Reloads Tmux and Zsh configs
+5. Refreshes tool data such as the tldr cache
+6. Upgrades mise-managed runtimes (Node.js, Python, Ruby)
+7. On macOS: runs `brew update`, `brew bundle`, `brew bundle cleanup --force --zap`, which uninstalls anything not in the Brewfile, `brew upgrade`, and Mac App Store updates
+8. On Linux: runs `apt update`, `apt dist-upgrade` and `apt autoremove`, rebuilds the xpadneo and xone modules, and updates standalone tools, Nerd Fonts, Flatpak apps, and GE-Proton
+9. Installs, upgrades and prunes the uv tools listed in the `Uvfile`
+10. Reclaims cache space: scrubs the Homebrew download cache and prunes the npm, pnpm, yarn, uv, and Go caches; on macOS also clears Xcode `DerivedData`, cleans the CocoaPods cache, and deletes unavailable simulators. Docker and the Colima VM disk are left untouched so running dev containers survive.
+11. Reloads Tmux and Zsh configs
 
 ## Symlink Map
 
@@ -357,7 +361,7 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `newsboat/config` | `~/.config/newsboat/config` |
 | `newsboat/urls` | `~/.config/newsboat/urls` |
 | [`navi/config.yaml`](navi/config.yaml) | `~/.config/navi/config.yaml` |
-| `asciinema/config` | `~/.config/asciinema/config` |
+| `asciinema/config.toml` | `~/.config/asciinema/config.toml` |
 | `goaccess/goaccess.conf` | `~/.config/goaccess/goaccess.conf` |
 | `taskwarrior/taskrc` | `~/.config/task/taskrc` |
 | `opencode/opencode.json` | `~/.config/opencode/opencode.json` |
@@ -387,9 +391,9 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `gamemode/` | GameMode CPU governor and priority tuning (Linux gaming) |
 | `gh/` | GitHub CLI config |
 | `ghostty/` | Ghostty terminal + Catppuccin Mocha theme |
-| `git/` | Git config, hooks, message template, 60 aliases |
+| `git/` | Git config, message template, 60 aliases |
 | `glab/` | GitLab CLI config |
-| `gnupg/` | GPG config and public keys |
+| `gnupg/` | GPG config and keys |
 | `goaccess/` | GoAccess web log analyzer config |
 | `htop/` | htop config |
 | `k9s/` | K9s Kubernetes dashboard + Catppuccin Mocha skin |
@@ -411,14 +415,14 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `ranger/` | Ranger file manager config |
 | `readline/` | Readline config |
 | `ripgrep/` | Ripgrep config |
-| `ssh/` | SSH config and public keys |
+| `ssh/` | SSH config and keys |
 | `taskwarrior/` | Taskwarrior task manager, Catppuccin Mocha themed |
 | `tealdeer/` | Tealdeer (tldr) config, Catppuccin Mocha |
 | `telnet/` | Telnet config |
 | `tests/` | Python unit tests for the debug hook |
 | `thefuck/` | TheFuck command corrector config |
 | `tig/` | Tig git TUI, Catppuccin Mocha themed |
-| `tmux/` | Tmux config + 9 plugins |
+| `tmux/` | Tmux config + 18 plugins |
 | `tmuxp/` | tmuxp session layouts |
 | `vim/` | Vim config, 31 plugins |
 | `vkbasalt/` | vkBasalt CAS sharpening config |
@@ -443,7 +447,7 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 
 ## Security
 
-Private keys and credentials are excluded via `.gitignore`. Only public GPG keys and SSH public keys are tracked. API tokens are stored as GPG-encrypted files and decrypted at shell startup with caching.
+The SSH and GPG private keys in `ssh/` and `gnupg/keys/` are tracked, each protected by a passphrase. Other credentials are excluded via `.gitignore`. API tokens are stored as GPG-encrypted files and decrypted at shell startup with caching.
 
 GnuPG never fetches a key from the network while verifying a signature. Automatic retrieval reveals to a third party which messages are being read, so keys are fetched explicitly with `gpg --recv-keys`.
 

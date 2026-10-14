@@ -290,8 +290,10 @@ brew 'cmus'
 brew 'fatsort'
 brew 'ffmpeg'
 brew 'ffmpeg-full'
+brew 'imagemagick' # Image CLI: reduce colors, slice sprite sheets into tiles, remap onto a fixed console palette
 brew 'media-control'
 brew 'mjpegtools'
+brew 'pngquant' # Lossy PNG quantizer that reduces an image to a limited color palette
 brew 'subliminal'
 brew 'vcdimager'
 brew 'whisper-cpp'
@@ -321,11 +323,13 @@ brew 'mas'
 # Game Development & Retro Gaming
 ################################################################################
 # torrentzip: installed via go install (see install.sh)
+brew 'cc65' # 6502 C compiler and assembler for NES, Atari, C64 and Apple II; no graphics converter
 brew 'internetarchive'
 brew 'gufranco/maeyomi/maeyomi'
 brew 'mame'
 brew 'UltimateNova1203/maxcso/maxcso'
 brew 'mednafen'
+brew 'rgbds' # Game Boy and Game Boy Color toolchain; rgbgfx turns a PNG into 2bpp tiles and palettes
 brew 'sdcc'
 # tectonic: renders the printable catalogue that n64-mr-backup-z64-python emits.
 # A single self contained binary, no TeX distribution behind it.
@@ -399,6 +403,9 @@ cask 'figma'
 # kicad: schematic and PCB design; kicad-cli runs ERC, DRC and Gerber export
 # for the psone-cdr-unlock carrier board.
 cask 'kicad'
+cask 'pikopixel' # Simple pixel art editor for small sprites and icons
+cask 'pixelorama' # Godot-based sprite editor with animation, layers and palettes; free Aseprite alternative
+cask 'tiled' # Tilemap and level editor; exports maps as TMX, JSON or CSV for game engines
 
 ################################################################################
 # Casks - Security & VPN
@@ -438,10 +445,11 @@ cask 'maestral'
 cask 'audacity'
 cask 'calibre'
 cask 'foobar2000'
-cask 'gimp'
+cask 'gimp' # General-purpose raster image editor; handles sprites but is not pixel-art focused
 cask 'handbrake-app'
 cask 'inkscape'
 cask 'jdownloader'
+cask 'krita' # Digital painting app; usable for sprites but not pixel-art focused
 cask 'losslesscut'
 cask 'obs'
 cask 'spotify'

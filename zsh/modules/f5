@@ -102,14 +102,14 @@ function __f5_update_tool_data() {
   __log_info "Updating tool plugins and caches..."
 
   local data_count=0
-  local data_errors=0
   local data_skipped=0
+  local -a failed_tools=()
 
   if __cmd_exists ya; then
     if ya pkg upgrade > /dev/null 2>&1; then
       ((data_count++))
     else
-      ((data_errors++))
+      failed_tools+=("yazi packages")
     fi
   else
     ((data_skipped++))
@@ -119,14 +119,14 @@ function __f5_update_tool_data() {
     if tldr --update > /dev/null 2>&1; then
       ((data_count++))
     else
-      ((data_errors++))
+      failed_tools+=("tldr")
     fi
   else
     ((data_skipped++))
   fi
 
-  if [ "$data_errors" -gt 0 ]; then
-    __log_warning "Updated $data_count tool caches ($data_errors failed, $data_skipped not installed)"
+  if [ "${#failed_tools[@]}" -gt 0 ]; then
+    __log_warning "Updated $data_count tool caches ($data_skipped not installed), failed: ${failed_tools[*]}"
   else
     __log_success "Updated $data_count tool caches ($data_skipped not installed)"
   fi
@@ -431,7 +431,7 @@ function __f5_clean_caches() {
   __log_info "Reclaiming cache space..."
 
   local clean_count=0
-  local clean_errors=0
+  local -a failed_stores=()
 
   if __cmd_exists brew; then
     local brew_cache
@@ -440,7 +440,7 @@ function __f5_clean_caches() {
       [ -n "$brew_cache" ] && command rm -rf "${brew_cache:?}" 2>/dev/null
       ((clean_count++))
     else
-      ((clean_errors++))
+      failed_stores+=("brew")
     fi
   fi
 
@@ -448,7 +448,7 @@ function __f5_clean_caches() {
     if npm cache clean --force >/dev/null 2>&1; then
       ((clean_count++))
     else
-      ((clean_errors++))
+      failed_stores+=("npm")
     fi
   fi
 
@@ -456,7 +456,7 @@ function __f5_clean_caches() {
     if pnpm store prune >/dev/null 2>&1; then
       ((clean_count++))
     else
-      ((clean_errors++))
+      failed_stores+=("pnpm")
     fi
   fi
 
@@ -464,7 +464,7 @@ function __f5_clean_caches() {
     if yarn cache clean >/dev/null 2>&1; then
       ((clean_count++))
     else
-      ((clean_errors++))
+      failed_stores+=("yarn")
     fi
   fi
 
@@ -472,7 +472,7 @@ function __f5_clean_caches() {
     if uv cache prune >/dev/null 2>&1; then
       ((clean_count++))
     else
-      ((clean_errors++))
+      failed_stores+=("uv")
     fi
   fi
 
@@ -480,7 +480,7 @@ function __f5_clean_caches() {
     if go clean -cache >/dev/null 2>&1; then
       ((clean_count++))
     else
-      ((clean_errors++))
+      failed_stores+=("go")
     fi
   fi
 
@@ -489,7 +489,7 @@ function __f5_clean_caches() {
       if pod cache clean --all >/dev/null 2>&1; then
         ((clean_count++))
       else
-        ((clean_errors++))
+        failed_stores+=("cocoapods")
       fi
     fi
 
@@ -498,7 +498,7 @@ function __f5_clean_caches() {
       if command rm -rf "${derived:?}" 2>/dev/null; then
         ((clean_count++))
       else
-        ((clean_errors++))
+        failed_stores+=("DerivedData")
       fi
     fi
 
@@ -506,13 +506,13 @@ function __f5_clean_caches() {
       if xcrun simctl delete unavailable >/dev/null 2>&1; then
         ((clean_count++))
       else
-        ((clean_errors++))
+        failed_stores+=("simulators")
       fi
     fi
   fi
 
-  if [ "$clean_errors" -gt 0 ]; then
-    __log_warning "Cleaned $clean_count cache stores ($clean_errors failed)"
+  if [ "${#failed_stores[@]}" -gt 0 ]; then
+    __log_warning "Cleaned $clean_count cache stores, failed: ${failed_stores[*]}"
   else
     __log_success "Cleaned $clean_count cache stores"
   fi

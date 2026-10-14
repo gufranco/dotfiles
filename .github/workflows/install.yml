@@ -218,7 +218,7 @@ jobs:
           eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
           brew bundle check --verbose --file Brewfile
           errors=0
-          for cmd in bat eza fzf fd rg delta git zsh tmux vim gh node bun pnpm; do
+          for cmd in bat fzf fd rg delta git zsh tmux vim gh node bun pnpm; do
             if command -v "$cmd" >/dev/null 2>&1; then
               echo "OK: $cmd ($(command -v "$cmd"))"
             else

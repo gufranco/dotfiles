@@ -53,7 +53,7 @@ shell-integration-features = cursor,sudo,title
 ################################################################################
 # Clipboard
 ################################################################################
-clipboard-read = allow
+clipboard-read = ask
 clipboard-write = allow
 clipboard-paste-protection = true
 clipboard-paste-bracketed-safe = true

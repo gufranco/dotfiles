@@ -259,13 +259,20 @@ function __f5_update_gaming_dkms() {
 function __f5_update_linux() {
   __log_info "Updating Linux packages..."
 
-  if sudo apt update -qq >/dev/null 2>&1 || sudo apt update; then
-    sudo apt dist-upgrade -y -qq >/dev/null 2>&1 || sudo apt dist-upgrade -y
-    sudo apt autoremove -y -qq >/dev/null 2>&1 || sudo apt autoremove -y
-    sudo apt clean >/dev/null 2>&1 || true
+  if ! sudo apt update -qq >/dev/null 2>&1; then
+    __log_error "Failed to update Linux package lists"
+    return
+  fi
+
+  local failed=0
+  sudo apt dist-upgrade -y -qq >/dev/null 2>&1 || failed=$((failed + 1))
+  sudo apt autoremove -y -qq >/dev/null 2>&1 || failed=$((failed + 1))
+  sudo apt clean >/dev/null 2>&1 || true
+
+  if [ "$failed" -eq 0 ]; then
     __log_success "Linux packages updated"
   else
-    __log_error "Failed to update Linux packages"
+    __log_warning "Linux packages updated with ${failed} failed step(s); run sudo apt dist-upgrade to see why"
   fi
 }
 

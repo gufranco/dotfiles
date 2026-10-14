@@ -553,10 +553,18 @@ function __f5_show_summary() {
   f5_mins=$((f5_total / 60))
   f5_secs=$((f5_total % 60))
 
+  local issues="${__LOG_ISSUE_COUNT:-0}"
+
   echo ""
-  __log_success "==============================================================="
-  __log_success "Update completed successfully!"
-  __log_success "==============================================================="
+  if [ "$issues" -eq 0 ]; then
+    __log_success "==============================================================="
+    __log_success "Update completed successfully!"
+    __log_success "==============================================================="
+  else
+    __log_warning "==============================================================="
+    __log_warning "Update finished with ${issues} warning(s) or error(s), see above"
+    __log_warning "==============================================================="
+  fi
   echo ""
   __log_info "Total time: ${f5_mins}m ${f5_secs}s"
   echo ""
@@ -568,6 +576,7 @@ function __f5_show_summary() {
 function f5() {
   SCRIPT_START_TIME=$(date +%s)
   export SCRIPT_START_TIME
+  __LOG_ISSUE_COUNT=0
 
   echo ""
   __log_info "==============================================================="

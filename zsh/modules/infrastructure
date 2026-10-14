@@ -299,6 +299,14 @@ function colima-start() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      --cores | --memory | --storage)
+        if [[ $# -lt 2 ]]; then
+          __log_error "$1 needs a value"
+          return 1
+        fi
+        ;;
+    esac
+    case "$1" in
       --cores)   cores="$2";   shift 2 ;;
       --memory)  memory="$2";  shift 2 ;;
       --storage) storage="$2"; shift 2 ;;
@@ -395,15 +403,22 @@ function colima-purge() {
 
   __confirm_operation "Are you sure you want to continue?" || return 1
 
-  docker-purge "${profile}"
+  __docker_purge_context "${profile}"
   command colima stop --profile "${profile}" --force 2>/dev/null || true
   command colima delete --profile "${profile}" --force 2>/dev/null || true
 
   # Clean orphan disks
+  local listing
+  if ! listing="$(command colima list 2>/dev/null)"; then
+    __log_warning "colima list failed, so orphan disks are left in place"
+    command colima prune --all --force
+    return 0
+  fi
+
   local -a active=()
   while read -r name _; do
-    [[ "$name" != "PROFILE" ]] && active+=("$name")
-  done < <(command colima list 2>/dev/null)
+    [[ -n "$name" && "$name" != "PROFILE" ]] && active+=("$name")
+  done <<<"$listing"
 
   for dir in "$disks_dir"/colima*(/N); do
     local disk="${dir:t}"
@@ -424,6 +439,13 @@ function colima-purge() {
 ################################################################################
 function docker-purge() {
   local profile="${1:-default}"
+
+  __confirm_operation "Remove every container, image, volume and build cache in the ${profile} profile?" || return 1
+  __docker_purge_context "${profile}"
+}
+
+function __docker_purge_context() {
+  local profile="${1:-default}"
   local context
   context="$([[ "${profile}" = "default" ]] && echo "colima" || echo "colima-${profile}")"
 
@@ -437,13 +459,6 @@ function docker-purge() {
 
   DOCKER_CONTEXT="${context}" command docker system prune -af --volumes --filter "label!=keep" 2>/dev/null || true
   DOCKER_CONTEXT="${context}" command docker builder prune -af 2>/dev/null || true
-
-  image_ids="$(DOCKER_CONTEXT="${context}" command docker images -q 2>/dev/null)"
-  if [ -n "$image_ids" ]; then
-    echo "$image_ids" | while IFS= read -r image_id; do
-      [ -n "$image_id" ] && DOCKER_CONTEXT="${context}" command docker rmi -f "$image_id" 2>/dev/null || true
-    done
-  fi
 }
 
 ################################################################################

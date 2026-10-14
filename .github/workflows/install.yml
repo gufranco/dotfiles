@@ -18,6 +18,8 @@ on:
       - 'install.sh'
       - 'zsh/**'
       - 'Brewfile'
+      - 'Uvfile'
+      - 'mise/**'
       - '.github/workflows/install.yml'
       - '.github/scripts/**'
   pull_request:
@@ -26,6 +28,8 @@ on:
       - 'install.sh'
       - 'zsh/**'
       - 'Brewfile'
+      - 'Uvfile'
+      - 'mise/**'
       - '.github/workflows/install.yml'
       - '.github/scripts/**'
 
@@ -80,6 +84,9 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+
+      - name: Use this checkout as ~/.dotfiles
+        run: ln -sfn "$GITHUB_WORKSPACE" "$HOME/.dotfiles"
 
       - name: Run install.sh
         run: bash install.sh
@@ -202,6 +209,9 @@ jobs:
           brew untap aws/tap 2>/dev/null || true
           brew untap hashicorp/tap 2>/dev/null || true
           sudo rm -f /usr/local/bin/aws /usr/local/bin/aws_completer /usr/local/bin/pod 2>/dev/null || true
+
+      - name: Use this checkout as ~/.dotfiles
+        run: ln -sfn "$GITHUB_WORKSPACE" "$HOME/.dotfiles"
 
       - name: Run install.sh
         run: bash install.sh

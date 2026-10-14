@@ -3,6 +3,10 @@
 # subs - Download pt-BR subtitles for video files using subliminal.
 
 function subs() {
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    setopt local_options null_glob
+  fi
+
   if ! __cmd_exists subliminal; then
     __log_error "subliminal is not installed. Install with: pip install subliminal"
     return 1

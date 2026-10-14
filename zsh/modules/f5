@@ -469,8 +469,10 @@ function __f5_clean_caches() {
   fi
 
   if __cmd_exists uv; then
-    if uv cache prune >/dev/null 2>&1; then
+    if UV_LOCK_TIMEOUT=15 uv cache prune >/dev/null 2>&1; then
       ((clean_count++))
+    elif pgrep -x uv >/dev/null 2>&1; then
+      __log_info "Skipped the uv cache: a running uv process holds it"
     else
       failed_stores+=("uv")
     fi

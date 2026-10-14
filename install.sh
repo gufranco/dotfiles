@@ -94,7 +94,10 @@ echo ""
 if [[ -z "$CI" ]]; then
   echo ""
   log_warning "This script will install/update dotfiles and may overwrite existing configurations."
-  read -p "Continue? (Y/n) " -n 1 -r
+  if ! read -p "Continue? (Y/n) " -n 1 -r </dev/tty; then
+    log_error "No terminal to confirm on. Set CI=1 to run without the prompt."
+    exit 1
+  fi
   echo ""
   if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ -n "$REPLY" ]]; then
     log_info "Installation cancelled."

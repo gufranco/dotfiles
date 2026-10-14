@@ -35,7 +35,9 @@ jobs:
           persist-credentials: false
       - name: Install ShellCheck
         run: |
-          gh release download --repo koalaman/shellcheck --pattern 'shellcheck-*.linux.x86_64.tar.xz' --output shellcheck.tar.xz
+          set -euo pipefail
+          gh release download v0.11.0 --repo koalaman/shellcheck --pattern 'shellcheck-v0.11.0.linux.x86_64.tar.xz' --output shellcheck.tar.xz
+          echo "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198  shellcheck.tar.xz" | sha256sum -c -
           tar -xJf shellcheck.tar.xz --strip-components=1 --wildcards '*/shellcheck'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -57,7 +59,9 @@ jobs:
           persist-credentials: false
       - name: Install shfmt
         run: |
-          gh release download --repo mvdan/sh --pattern 'shfmt_*_linux_amd64' --output shfmt
+          set -euo pipefail
+          gh release download v3.14.1 --repo mvdan/sh --pattern 'shfmt_v3.14.1_linux_amd64' --output shfmt
+          echo "76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf  shfmt" | sha256sum -c -
           chmod +x shfmt
         env:
           GH_TOKEN: ${{ github.token }}
@@ -99,10 +103,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - name: Run actionlint
+      - name: Install actionlint
         run: |
-          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          ./actionlint
+          set -euo pipefail
+          gh release download v1.7.12 --repo rhysd/actionlint --pattern 'actionlint_1.7.12_linux_amd64.tar.gz' --output actionlint.tar.gz
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  actionlint.tar.gz" | sha256sum -c -
+          tar -xzf actionlint.tar.gz actionlint
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Run actionlint
+        run: ./actionlint
 
   config-lint:
     name: YAML & TOML lint
@@ -113,7 +123,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install yamllint
-        run: pip install --quiet yamllint
+        run: pip install --quiet yamllint==1.38.0
       - name: Lint YAML files
         run: |
           set -euo pipefail
@@ -160,7 +170,9 @@ jobs:
           fetch-depth: 0
       - name: Install gitleaks
         run: |
-          gh release download --repo gitleaks/gitleaks --pattern 'gitleaks_*_linux_x64.tar.gz' --output gitleaks.tar.gz
+          set -euo pipefail
+          gh release download v8.30.1 --repo gitleaks/gitleaks --pattern 'gitleaks_8.30.1_linux_x64.tar.gz' --output gitleaks.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz" | sha256sum -c -
           tar xzf gitleaks.tar.gz gitleaks
         env:
           GH_TOKEN: ${{ github.token }}

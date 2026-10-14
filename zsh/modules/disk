@@ -1801,15 +1801,42 @@ function fat_sort() {
         return 1
         ;;
       Linux)
-        if [[ "$device" =~ [0-9]$ ]]; then
+        if [ "$(lsblk -dnro TYPE "$device" 2>/dev/null)" = "part" ]; then
           echo "$device"
           return 0
         fi
 
-        echo "${device}1"
+        local name
+        name=$(lsblk -nro NAME,FSTYPE "$device" 2>/dev/null | awk '$2 ~ /^(vfat|exfat|msdos)$/ { print $1; exit }')
+
+        if [ -n "$name" ]; then
+          echo "/dev/$name"
+          return 0
+        fi
+
+        __log_error "No FAT partition found on $device"
+        return 1
+        ;;
+    esac
+  }
+
+  __fat_sort_require_fat() {
+    local partition="$1"
+    local fs_type=""
+
+    case "$(uname)" in
+      Darwin) fs_type=$(diskutil info "$partition" 2>/dev/null | awk -F': +' '/Type \(Bundle\)/ {print $2}') ;;
+      Linux) fs_type=$(lsblk -dnro FSTYPE "$partition" 2>/dev/null) ;;
+    esac
+
+    case "$fs_type" in
+      msdos | vfat | exfat)
         return 0
         ;;
     esac
+
+    __log_error "Refusing: $partition is ${fs_type:-of unknown type}, not FAT or exFAT"
+    return 1
   }
 
   __fat_sort_ensure_mounted() {
@@ -1897,7 +1924,7 @@ function fat_sort() {
       ".journal"
       ".journal_info_block"
       # Mac OS 9 / Classic
-      "Icon?"
+      $'Icon\r'
       "Network Trash Folder"
       "Temporary Items"
       "TheFindByContentFolder"
@@ -1922,7 +1949,7 @@ function fat_sort() {
       "DumpStack.log"
       "DumpStack.log.tmp"
       # CHKDSK recovered fragments
-      "FOUND.*"
+      'FOUND.[0-9][0-9][0-9]'
       # Office lock/temp files
       '~$*'
       ".~lock.*"
@@ -1991,6 +2018,7 @@ function fat_sort() {
 
   local partition
   partition=$(__fat_sort_find_partition "$device") || return 1
+  __fat_sort_require_fat "$partition" || return 1
   __log_info "Partition: $partition"
 
   local mount_point

@@ -12,7 +12,6 @@ Host github.com
   IdentityFile ~/.ssh/id_ed25519_personal
   IdentitiesOnly yes
   ControlPath /tmp/ssh-%u-github-personal
-  ForwardAgent yes
 
 Host github-onyx
   HostName github.com
@@ -20,17 +19,14 @@ Host github-onyx
   IdentityFile ~/.ssh/id_ed25519_onyx
   IdentitiesOnly yes
   ControlPath /tmp/ssh-%u-github-onyx
-  ForwardAgent yes
 
 Host gitlab.com
   HostName gitlab.com
   User git
-  ForwardAgent yes
 
 Host bitbucket.org
   HostName bitbucket.org
   User git
-  ForwardAgent yes
 
 Host nas ds923 192.168.0.2
   HostName 192.168.0.2
@@ -84,7 +80,7 @@ Host *
   NumberOfPasswordPrompts 3
 
   # Cryptographic algorithms (secure)
-  KexAlgorithms curve25519-sha256@libssh.org,curve25519-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
+  KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256@libssh.org,curve25519-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
   HostKeyAlgorithms ssh-ed25519,ssh-ed25519-cert-v01@openssh.com,rsa-sha2-512,rsa-sha2-256
   PubkeyAcceptedAlgorithms ssh-ed25519,ssh-ed25519-cert-v01@openssh.com,rsa-sha2-512,rsa-sha2-256
   Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr

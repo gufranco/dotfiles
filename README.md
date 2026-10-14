@@ -298,7 +298,7 @@ Run `f5` in any terminal to update everything at once:
 
 ## Symlink Map
 
-All configs are symlinked by `install.sh` using `safe_link`, which is idempotent and creates parent directories automatically.
+All configs are symlinked by `install.sh` using `safe_link`, which is idempotent, creates parent directories, and moves an existing file or directory aside to `<path>.backup.<timestamp>` before linking.
 
 <details>
 <summary><strong>Full symlink map</strong></summary>
@@ -327,7 +327,6 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | [`tealdeer/config.toml`](tealdeer/config.toml) | `~/.config/tealdeer/config.toml` |
 | `htop/htoprc` | `~/.config/htop/htoprc` |
 | `gh/config.yml` | `~/.config/gh/config.yml` |
-| `glab/config.yml` | `~/.config/glab-cli/config.yml` |
 | `gnupg` | `~/.gnupg` |
 | `ssh` | `~/.ssh` |
 | `nodejs/.npmrc` | `~/.npmrc` |
@@ -364,6 +363,8 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `opencode/opencode.json` | `~/.config/opencode/opencode.json` |
 
 On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Library/Application Support/`.
+
+`glab/config.yml` is copied, not linked, to `~/.config/glab-cli/config.yml` on first install, because `glab auth login` writes the token into that file.
 
 </details>
 

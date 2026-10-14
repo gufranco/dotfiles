@@ -58,12 +58,18 @@ check "eza" "$HOME/.config/eza"
 check "cmus" "$HOME/.config/cmus/rc"
 check "yazi" "$HOME/.config/yazi"
 check "gh" "$HOME/.config/gh/config.yml"
-check "glab" "$HOME/.config/glab-cli/config.yml"
 check "tealdeer" "$HOME/.config/tealdeer/config.toml"
 check "bottom" "$HOME/.config/bottom/bottom.toml"
 check "lazygit" "$HOME/.config/lazygit/config.yml"
 check "lazydocker" "$HOME/.config/lazydocker/config.yml"
 check "k9s" "$HOME/.config/k9s/config.yml"
+
+if [ -f "$HOME/.config/glab-cli/config.yml" ] && [ ! -L "$HOME/.config/glab-cli/config.yml" ]; then
+  echo "OK: glab (seeded copy)"
+else
+  echo "FAIL: glab ($HOME/.config/glab-cli/config.yml is not a regular file)"
+  errors=$((errors + 1))
+fi
 
 # Platform-specific
 case "$(uname)" in

@@ -1457,7 +1457,16 @@ safe_link "$HOME/.dotfiles/gh/config.yml" "$HOME/.config/gh/config.yml"
 ############################################################################
 log_info "Setting up GitLab CLI..."
 mkdir -p "$HOME/.config/glab-cli"
-safe_link "$HOME/.dotfiles/glab/config.yml" "$HOME/.config/glab-cli/config.yml"
+GLAB_CONFIG="$HOME/.config/glab-cli/config.yml"
+if [ -L "$GLAB_CONFIG" ]; then
+  rm -f "$GLAB_CONFIG"
+fi
+if [ -e "$GLAB_CONFIG" ]; then
+  log_skip "glab config already present"
+else
+  install -m 600 "$HOME/.dotfiles/glab/config.yml" "$GLAB_CONFIG"
+  log_success "Seeded: $GLAB_CONFIG"
+fi
 
 ############################################################################
 # Tealdeer (tldr)

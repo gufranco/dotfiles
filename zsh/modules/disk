@@ -1614,10 +1614,17 @@ function disk_wipe() {
       if sudo umount "$disk" 2>/dev/null; then
         released=$((released + 1))
       fi
+      local mounts
+      if ! mounts=$(lsblk -nro MOUNTPOINT "$disk" 2>/dev/null); then
+        __log_error "Unable to read the mount state of $disk, so the wipe stops here"
+        return 1
+      fi
+      if [ -n "${mounts//[[:space:]]/}" ]; then
+        __log_error "Disk is still mounted, so wiping it would corrupt the mounted volume"
+        return 1
+      fi
       if [ "$released" -gt 0 ]; then
         __log_success "Disk unmounted"
-      else
-        __log_warning "Failed to unmount disk (may not be mounted)"
       fi
       ;;
   esac

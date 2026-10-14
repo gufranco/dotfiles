@@ -163,12 +163,15 @@ function __apt_add_key_and_repo() {
       __log_warning "Failed to download GPG key: $key_url"
       return 1
     fi
+  fi
+
+  if [ ! -f "$repo_file" ]; then
     echo "$repo_line" | sudo tee "$repo_file" >/dev/null
     sudo apt update -qq
+  fi
 
-    if [ -n "$package" ]; then
-      sudo apt install -y -qq "$package"
-    fi
+  if [ -n "$package" ] && ! __pkg_installed "$package"; then
+    sudo apt install -y -qq "$package"
   fi
 }
 

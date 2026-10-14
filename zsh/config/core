@@ -102,8 +102,13 @@ function __safe_link() {
     return 0
   fi
 
-  if [ -e "$dst" ] || [ -L "$dst" ]; then
-    rm -rf "$dst"
+  if [ -L "$dst" ]; then
+    rm -f "$dst"
+  elif [ -e "$dst" ]; then
+    local backup
+    backup="${dst}.backup.$(date +%Y%m%d%H%M%S)"
+    mv "$dst" "$backup"
+    __log_warning "Backed up: $dst -> $backup"
   fi
 
   mkdir -p "$(dirname "$dst")"

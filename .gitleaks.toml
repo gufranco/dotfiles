@@ -1,9 +1,22 @@
+[extend]
+useDefault = true
+
 [allowlist]
-description = "Known safe paths and false positives"
+description = "Passphrase-protected keys kept in the repository or its history, and known false positives"
 
 paths = [
   '''ssh/id_ed25519_onyx''',
   '''ssh/id_ed25519_personal''',
+  '''ssh/id_ed25519_lineleap''',
+  '''ssh/id_ed25519_buoy''',
+  '''ssh/id_rsa_personal''',
+  '''gnupg/keys/[a-z.]+\.private\.pgp''',
   '''claude/README\.md''',
   '''\.cursor/rules/.*\.mdc''',
+]
+
+regexTarget = "line"
+regexes = [
+  '''^\s*set\s+pgp_default_key\s*=''',
+  '''^\s*pgp_default_key\s*=''',
 ]

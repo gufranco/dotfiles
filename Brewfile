@@ -171,7 +171,7 @@ brew 'flyctl' # Fly.io command-line interface
 brew 'opentofu' # Open source Terraform fork
 brew 'hashicorp/tap/terraform' # HashiCorp Terraform infrastructure as code
 brew 'terraform-docs' # Generates documentation from Terraform modules
-brew 'vercel-cli' # Vercel command-line interface
+brew 'vercel' # Vercel command-line interface
 
 ################################################################################
 # Security & Encryption
@@ -296,7 +296,7 @@ brew 'mjpegtools' # MPEG and MJPEG video tools, used for Video CD encoding
 brew 'pngquant' # Lossy PNG quantizer that reduces an image to a limited color palette
 brew 'subliminal' # Searches and downloads subtitles
 brew 'vcdimager' # Authors Video CD and Super Video CD images
-brew 'whisper-cpp' # Local speech-to-text with OpenAI Whisper models in C++
+brew 'whisper.cpp' # Local speech-to-text with OpenAI Whisper models in C++
 brew 'yt-dlp' # Downloads audio and video from YouTube and many other sites
 
 ################################################################################
@@ -399,8 +399,6 @@ cask 'slack' # Team chat
 ################################################################################
 cask 'figma' # Collaborative interface design tool
 cask 'kicad' # Schematic and PCB design; kicad-cli runs ERC, DRC and Gerber export for the psone-cdr-unlock board
-cask 'pikopixel' # Simple pixel art editor for small sprites and icons
-cask 'pixelorama' # Godot-based sprite editor with animation, layers and palettes; free Aseprite alternative
 cask 'tiled' # Tilemap and level editor; exports maps as TMX, JSON or CSV for game engines
 
 ################################################################################

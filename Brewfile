@@ -396,6 +396,9 @@ cask 'slack'
 # Casks - Design
 ################################################################################
 cask 'figma'
+# kicad: schematic and PCB design; kicad-cli runs ERC, DRC and Gerber export
+# for the psone-cdr-unlock carrier board.
+cask 'kicad'
 
 ################################################################################
 # Casks - Security & VPN

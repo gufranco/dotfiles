@@ -123,7 +123,14 @@ function __docker_container_stop() {
 
 function __docker_container_purge() {
   local container_name="$1"
-  local data_dir="$HOME/Docker/${container_name^}"
+  if [ -z "$container_name" ]; then
+    __log_error "No container name given"
+    return 1
+  fi
+
+  local first_letter
+  first_letter=$(printf '%s' "${container_name:0:1}" | tr '[:lower:]' '[:upper:]')
+  local data_dir="$HOME/Docker/${first_letter}${container_name:1}"
 
   __docker_container_stop "$container_name" 2>/dev/null || true
   command docker rm "$container_name" 2>/dev/null || true

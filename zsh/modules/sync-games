@@ -22,6 +22,7 @@ __sync_collection() {
     --multi-thread-streams=4 \
     --size-only \
     --delete-excluded \
+    --backup-dir "./.sync-games-trash/$(date +%Y-%m-%d)/$folder" \
     --retries 3 \
     --retries-sleep 10s \
     --low-level-retries 10 \
@@ -38,6 +39,11 @@ __sync_collection() {
 # Sync game library
 ################################################################################
 function sync_games() {
+  if ! __cmd_exists rclone; then
+    __log_error "rclone is not installed."
+    return 1
+  fi
+
   __sync_internet_archive() {
     local group="Internet Archive"
 
@@ -65,7 +71,6 @@ function sync_games() {
       "Dreamcast|DCCM_CDI_SEGA_DREAMCAST"
       "Dreamcast|dcrespo"
       "Dreamcast|dreamcast_cdi_gdi_hack_proto"
-      "Dreamcast|DreamcastSelfBoot"
       "Dreamcast|echelon-cdi-archive"
       "Dreamcast|jetradio-j-hack-by-yzb"
       "Dreamcast|kalisto-cdi-archive"
@@ -198,6 +203,7 @@ function sync_games() {
       --multi-thread-streams=0 \
       --size-only \
       --delete-excluded \
+      --backup-dir "./.sync-games-trash/$(date +%Y-%m-%d)/$folder" \
       --retries 3 \
       --retries-sleep 10s \
       --low-level-retries 10 \

@@ -201,16 +201,41 @@ function __f5_update_proton_ge() {
     return
   fi
 
-  if [ -d "$proton_dir/$latest" ]; then
+  local arch
+  arch="$(uname -m)"
+  [ "$arch" = "arm64" ] && arch="aarch64"
+  local asset="${latest}-${arch}"
+
+  if [ -d "$proton_dir/$asset" ] || [ -d "$proton_dir/$latest" ]; then
     __log_success "GE-Proton ${latest} (up to date)"
     return
   fi
 
-  curl -#fLo "/tmp/${latest}.tar.gz" --connect-timeout 10 --max-time 300 \
-    "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${latest}/${latest}.tar.gz"
-  tar -xzf "/tmp/${latest}.tar.gz" -C "$proton_dir"
-  rm -f "/tmp/${latest}.tar.gz"
-  __log_success "GE-Proton updated to ${latest}"
+  if __f5_install_proton_ge "$proton_dir" "$latest" "$asset"; then
+    __log_success "GE-Proton updated to ${latest}"
+  else
+    __log_warning "GE-Proton ${latest} download or checksum failed"
+  fi
+}
+
+function __f5_install_proton_ge() {
+  local proton_dir="$1"
+  local tag="$2"
+  local asset="$3"
+  local base="https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${tag}"
+  local work
+  work="$(mktemp -d)" || return 1
+
+  local result=1
+  if curl -fsSL --connect-timeout 10 --max-time 900 -o "$work/$asset.tar.gz" "$base/$asset.tar.gz" &&
+    curl -fsSL --connect-timeout 10 --max-time 30 -o "$work/$asset.sha512sum" "$base/$asset.sha512sum" &&
+    (cd "$work" && sha512sum -c --status "$asset.sha512sum") &&
+    tar -xzf "$work/$asset.tar.gz" -C "$proton_dir"; then
+    result=0
+  fi
+
+  rm -rf "${work:?}"
+  return "$result"
 }
 
 function __f5_update_gaming_dkms() {

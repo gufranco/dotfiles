@@ -1266,6 +1266,14 @@ safe_link "$HOME/.dotfiles/nodejs/.yarnrc.yml" "$HOME/.yarnrc.yml"
 safe_link "$HOME/.dotfiles/nodejs/.pnpmrc" "$HOME/.pnpmrc"
 safe_link "$HOME/.dotfiles/nodejs/repl-init.mjs" "$HOME/.config/node/repl-init.mjs"
 
+log_info "Setting up linter configs..."
+safe_link "$HOME/.dotfiles/clang-tidy/.clang-tidy" "$HOME/.clang-tidy"
+safe_link "$HOME/.dotfiles/golangci/golangci.yml" "$HOME/.golangci.yml"
+safe_link "$HOME/.dotfiles/ruff/ruff.toml" "$HOME/.config/ruff/ruff.toml"
+safe_link "$HOME/.dotfiles/rubocop/config.yml" "$HOME/.config/rubocop/config.yml"
+safe_link "$HOME/.dotfiles/luacheck/luacheckrc" "$HOME/.config/luacheck/.luacheckrc"
+safe_link "$HOME/.dotfiles/dart/analysis_options.yaml" "$HOME/analysis_options.yaml"
+
 ############################################################################
 # mise
 ############################################################################

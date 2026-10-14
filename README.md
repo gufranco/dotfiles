@@ -337,6 +337,12 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `nodejs/.yarnrc.yml` | `~/.yarnrc.yml` |
 | `nodejs/.pnpmrc` | `~/.pnpmrc` |
 | [`nodejs/repl-init.mjs`](nodejs/repl-init.mjs) | `~/.config/node/repl-init.mjs` |
+| `clang-tidy/.clang-tidy` | `~/.clang-tidy` |
+| [`golangci/golangci.yml`](golangci/golangci.yml) | `~/.golangci.yml` |
+| [`ruff/ruff.toml`](ruff/ruff.toml) | `~/.config/ruff/ruff.toml` |
+| [`rubocop/config.yml`](rubocop/config.yml) | `~/.config/rubocop/config.yml` |
+| [`luacheck/luacheckrc`](luacheck/luacheckrc) | `~/.config/luacheck/.luacheckrc` |
+| [`dart/analysis_options.yaml`](dart/analysis_options.yaml) | `~/analysis_options.yaml` |
 | [`python/.pdbrc`](python/.pdbrc) | `~/.pdbrc` |
 | [`python/pythonrc`](python/pythonrc) | `~/.pythonrc` |
 | [`python/debughook.py`](python/debughook.py) | `~/.config/python/debughook.py` |
@@ -382,9 +388,11 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `bat/` | Bat config + Catppuccin Mocha theme |
 | `bottom/` | Bottom system monitor, Catppuccin Mocha styled |
 | `broot/` | Broot file manager, Catppuccin Mocha themed |
+| `clang-tidy/` | clang-tidy defaults plus the immutability checks for C and C++ |
 | `cmus/` | cmus music player, Catppuccin Mocha themed |
 | `conky/` | Conky system monitor (Linux) |
 | `curl/` | Curl config |
+| `dart/` | Dart analyzer defaults, including the shared immutability lints |
 | `direnv/` | direnv per-directory env config |
 | `eza/` | eza (ls replacement) config + Catppuccin Mocha theme |
 | `fd/` | fd (find replacement) config |
@@ -395,11 +403,13 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `glab/` | GitLab CLI config |
 | `gnupg/` | GPG config and keys |
 | `goaccess/` | GoAccess web log analyzer config |
+| `golangci/` | golangci-lint standard linters plus the immutability linters for Go |
 | `htop/` | htop config |
 | `k9s/` | K9s Kubernetes dashboard + Catppuccin Mocha skin |
 | `kanata/` | Kanata keyboard remapper config |
 | `lazydocker/` | Lazydocker config, Catppuccin Mocha |
 | `lazygit/` | Lazygit config, Catppuccin Mocha |
+| `luacheck/` | luacheck defaults that forbid implicit globals in Lua |
 | `mailcap/` | Mailcap config |
 | `mangohud/` | MangoHud FPS and frametime overlay config |
 | `mc/` | Midnight Commander + Catppuccin Mocha skin |
@@ -414,6 +424,8 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `python/` | pdb config, PYTHONSTARTUP, and the breakpoint() hook |
 | `ranger/` | Ranger file manager config |
 | `readline/` | Readline config |
+| `rubocop/` | RuboCop defaults plus the shared immutability cops |
+| `ruff/` | Ruff defaults plus the shared immutability rules |
 | `ripgrep/` | Ripgrep config |
 | `ssh/` | SSH config and keys |
 | `taskwarrior/` | Taskwarrior task manager, Catppuccin Mocha themed |

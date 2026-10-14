@@ -208,6 +208,7 @@ brew 'sqlmap' # Automated SQL injection detection and exploitation
 ################################################################################
 brew 'clojure/tools/clojure' # Clojure language and CLI tools
 brew 'cocoapods' # Dependency manager for iOS and macOS projects
+brew 'dart-sdk' # Dart SDK and its analyzer
 brew 'fvm' # Flutter SDK version manager per project
 brew 'golang', link: true # Go programming language
 brew 'golangci-lint' # Runs many Go linters in parallel
@@ -229,15 +230,22 @@ brew 'act' # Runs GitHub Actions workflows locally
 brew 'actionlint' # Linter for GitHub Actions workflow files
 brew 'bats' # Bash Automated Testing System
 brew 'bear' # Generates compile_commands.json for clang tooling
+brew 'detekt' # Static analysis for Kotlin
 brew 'entr' # Runs a command when watched files change
 brew 'hadolint' # Dockerfile linter
 brew 'hyperfine' # Command-line benchmarking tool
 brew 'kcov' # Code coverage for compiled programs, Python and shell scripts
+brew 'llvm' # Clang toolchain, including clang-tidy
+brew 'luacheck' # Static analysis for Lua
 brew 'lychee' # Fast link checker for Markdown, HTML and websites
 brew 'mkcert' # Creates locally trusted development TLS certificates
+brew 'pmd' # Static analysis for Java
 brew 'pre-commit' # Manages multi-language git pre-commit hooks
+brew 'pyright' # Static type checker for Python
+brew 'rubocop' # Static analysis and formatter for Ruby
 brew 'shellcheck' # Static analysis for shell scripts
 brew 'shfmt' # Shell script formatter
+brew 'swiftlint' # Static analysis for Swift
 brew 'tokei' # Counts lines of code by language
 brew 'typos-cli' # Source code spell checker
 brew 'universal-ctags' # Generates tag indexes for source navigation

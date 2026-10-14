@@ -1,0 +1,13 @@
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  misc-const-correctness,
+  readability-non-const-parameter,
+  cppcoreguidelines-avoid-non-const-global-variables,
+  cppcoreguidelines-pro-type-const-cast,
+  readability-make-member-function-const
+CheckOptions:
+  - key: misc-const-correctness.AnalyzeValues
+    value: true
+  - key: misc-const-correctness.WarnPointersAsValues
+    value: false

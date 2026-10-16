@@ -346,6 +346,7 @@ brew 'dciabrin/ngdevkit/ngdevkit-toolchain', args: ['force-bottle'] if architect
 brew 'ucon64'
 brew 'xorriso'
 cask 'ares-emulator'
+cask 'retroarch-metal'
 
 ################################################################################
 # Casks - Terminals

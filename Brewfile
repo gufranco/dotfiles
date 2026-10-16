@@ -171,7 +171,7 @@ brew 'flyctl'
 brew 'opentofu'
 brew 'hashicorp/tap/terraform'
 brew 'terraform-docs'
-brew 'vercel'
+cask 'vercel'
 
 ################################################################################
 # Security & Encryption

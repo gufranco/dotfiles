@@ -8,6 +8,7 @@ case "$(uname)" in
   *) export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm" ;;
 esac
 __add_to_path "$PNPM_HOME"
+__add_to_path "$PNPM_HOME/bin"
 
 export GOPATH="$HOME/go"
 __add_to_path "$GOPATH/bin"

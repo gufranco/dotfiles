@@ -163,6 +163,7 @@ Tmux with 18 plugins and vim-style keybindings, installed by tpm:
 | tmux-launcher-revamped | Opens lazygit, lazydocker, and other TUIs in a popup or a fresh window |
 | tmux-tiling-revamped | i3-like BSP tiling, pane marks, and a floating scratchpad |
 | tmux-scroll-revamped | Sends the wheel to the app when it wants it, enters copy-mode otherwise |
+| tmux-reorder-revamped | Drag a window tab on the status bar and it slides into place under the pointer |
 | tmux-fzf-revamped | Fuzzy switch or kill any session, window, or pane |
 | tmux-extract-revamped | Fuzzy-grab urls, paths, words, or lines off the pane and paste them |
 | tmux-autoreload-revamped | Re-sources the config when it changes |

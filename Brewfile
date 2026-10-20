@@ -16,6 +16,7 @@ tap 'bjarneo/cliamp', trusted: true
 tap 'browsh-org/browsh', trusted: true
 tap 'clojure/tools', trusted: true
 tap 'dciabrin/ngdevkit', trusted: true if architecture == 'arm64'
+tap 'gufranco/anypatch', 'https://github.com/gufranco/anypatch', trusted: true
 tap 'gufranco/fdstoolkit', 'https://github.com/gufranco/fdstoolkit', trusted: true
 tap 'gufranco/maeyomi', 'https://github.com/gufranco/maeyomi', trusted: true
 tap 'gufranco/osm', 'https://github.com/gufranco/osm', trusted: true
@@ -334,6 +335,7 @@ brew 'mas'
 # torrentzip: installed via go install (see install.sh)
 brew 'cc65'
 brew 'internetarchive'
+brew 'gufranco/anypatch/anypatch'
 brew 'gufranco/maeyomi/maeyomi'
 brew 'mame'
 brew 'UltimateNova1203/maxcso/maxcso'

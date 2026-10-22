@@ -331,6 +331,7 @@ brew 'mas'
 # Game Development & Retro Gaming
 ################################################################################
 # torrentzip: installed via go install (see install.sh)
+brew 'gufranco/tap/aseprite'
 brew 'cc65'
 brew 'internetarchive'
 brew 'gufranco/tap/anypatch'

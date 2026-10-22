@@ -463,6 +463,8 @@ cask 'vlc'
 ################################################################################
 # Casks - MIDI
 ################################################################################
+cask 'gufranco/tap/lmms'
+cask 'gufranco/tap/sunvox'
 cask 'midi-monitor'
 cask 'musescore'
 cask 'reaper'

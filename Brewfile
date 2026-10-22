@@ -463,6 +463,18 @@ cask 'transmission'
 cask 'vlc'
 
 ################################################################################
+# Casks - MIDI
+################################################################################
+cask 'lmms'
+cask 'midi-monitor'
+cask 'musescore'
+cask 'reaper'
+cask 'sonic-pi'
+cask 'sunvox'
+cask 'surge-xt'
+cask 'vcv-rack'
+
+################################################################################
 # Casks - Virtualization
 ################################################################################
 cask 'parallels' if architecture == 'arm64'

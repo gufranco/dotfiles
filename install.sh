@@ -1145,6 +1145,7 @@ IOSCHED
     ############################################################################
     log_info "Installing Homebrew packages..."
     brew update
+    brew trust gufranco/tap || log_warning "Could not trust gufranco/tap"
     brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
     brew bundle cleanup --force --no-taps --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade --greedy --force || log_warning "Brew upgrade had failures"

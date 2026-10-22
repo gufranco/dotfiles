@@ -349,6 +349,7 @@ function __f5_update_macos() {
   local macos_errors=0
 
   if brew update; then
+    brew trust gufranco/tap || true
     brew bundle --file "$HOME/.dotfiles/Brewfile" || ((macos_errors++))
     brew bundle cleanup --force --zap --file "$HOME/.dotfiles/Brewfile" || true
     brew upgrade --greedy || ((macos_errors++))

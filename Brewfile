@@ -463,21 +463,21 @@ cask 'vlc'
 ################################################################################
 # Casks - MIDI
 ################################################################################
-cask 'lmms'
 cask 'midi-monitor'
 cask 'musescore'
 cask 'reaper'
 cask 'sonic-pi'
-cask 'sunvox'
 cask 'surge-xt'
 cask 'vcv-rack'
 
 ################################################################################
 # Casks - Sprite & Image Editors
 ################################################################################
-cask 'gufranco/tap/pixelorama', args: { no_quarantine: true }
-cask 'gufranco/tap/pikopixel', args: { no_quarantine: true }
-cask 'gufranco/tap/lazpaint', args: { no_quarantine: true }
+cask 'gufranco/tap/pixelorama'
+cask 'gufranco/tap/pikopixel'
+cask 'gufranco/tap/lazpaint'
+cask 'gufranco/tap/ldtk'
+cask 'gufranco/tap/libresprite'
 
 ################################################################################
 # Casks - Virtualization

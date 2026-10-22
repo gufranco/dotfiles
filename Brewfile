@@ -301,6 +301,7 @@ brew 'imagemagick'
 brew 'media-control'
 brew 'mjpegtools'
 brew 'pngquant'
+brew 'potrace'
 brew 'subliminal'
 brew 'vcdimager'
 brew 'whisper.cpp'
@@ -470,6 +471,13 @@ cask 'sonic-pi'
 cask 'sunvox'
 cask 'surge-xt'
 cask 'vcv-rack'
+
+################################################################################
+# Casks - Sprite & Image Editors
+################################################################################
+cask 'gufranco/tap/pixelorama', args: { no_quarantine: true }
+cask 'gufranco/tap/pikopixel', args: { no_quarantine: true }
+cask 'gufranco/tap/lazpaint', args: { no_quarantine: true }
 
 ################################################################################
 # Casks - Virtualization

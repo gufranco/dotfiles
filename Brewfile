@@ -16,10 +16,7 @@ tap 'bjarneo/cliamp', trusted: true
 tap 'browsh-org/browsh', trusted: true
 tap 'clojure/tools', trusted: true
 tap 'dciabrin/ngdevkit', trusted: true if architecture == 'arm64'
-tap 'gufranco/anypatch', 'https://github.com/gufranco/anypatch', trusted: true
-tap 'gufranco/fdstoolkit', 'https://github.com/gufranco/fdstoolkit', trusted: true
-tap 'gufranco/maeyomi', 'https://github.com/gufranco/maeyomi', trusted: true
-tap 'gufranco/osm', 'https://github.com/gufranco/osm', trusted: true
+tap 'gufranco/tap', 'https://github.com/gufranco/homebrew-tap', trusted: true
 tap 'hashicorp/tap', trusted: true
 tap 'neomutt/neomutt', trusted: true
 tap 'oven-sh/bun', trusted: true
@@ -184,8 +181,8 @@ brew 'doppler'
 brew 'ghidra'
 brew 'gitleaks'
 brew 'gnupg'
-brew 'gufranco/fdstoolkit/fdstoolkit'
-brew 'gufranco/osm/osm'
+brew 'gufranco/tap/fdstoolkit'
+brew 'gufranco/tap/osm'
 brew 'pinentry-mac'
 brew 'qrencode'
 brew 'radare2'
@@ -335,8 +332,8 @@ brew 'mas'
 # torrentzip: installed via go install (see install.sh)
 brew 'cc65'
 brew 'internetarchive'
-brew 'gufranco/anypatch/anypatch'
-brew 'gufranco/maeyomi/maeyomi'
+brew 'gufranco/tap/anypatch'
+brew 'gufranco/tap/maeyomi'
 brew 'mame'
 brew 'UltimateNova1203/maxcso/maxcso'
 brew 'mednafen'

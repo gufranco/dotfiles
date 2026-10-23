@@ -343,23 +343,52 @@ function __f5_update_flatpak() {
   fi
 }
 
+function __f5_strip_tap_quarantine() {
+  __cmd_exists jq || return
+
+  local installed
+  installed=$(brew list --cask 2>/dev/null)
+  [ -n "$installed" ] || return
+
+  local apps
+  apps=$(brew info --cask --json=v2 ${=installed} 2>/dev/null |
+    jq -r '.casks[] | select(.tap == "gufranco/tap") | .artifacts[].app[]? // empty')
+  [ -n "$apps" ] || return
+
+  __log_info "Removing tap apps from quarantine..."
+
+  local app apppath name stripped=0
+  while IFS= read -r app; do
+    [ -n "$app" ] || continue
+    apppath="/Applications/$app"
+    [ -e "$apppath" ] || continue
+    xattr -p com.apple.quarantine "$apppath" >/dev/null 2>&1 || continue
+    xattr -dr com.apple.quarantine "$apppath" 2>/dev/null
+    name=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$apppath/Contents/Info.plist" 2>/dev/null)
+    __log_success "Released ${name:-${app%.app}} from quarantine"
+    stripped=$((stripped + 1))
+  done <<<"$apps"
+
+  [ "$stripped" -eq 0 ] && __log_info "No tap apps under quarantine"
+}
+
 function __f5_update_macos() {
   __log_info "Updating macOS packages..."
 
   local macos_errors=0
 
-  if brew update; then
-    brew trust gufranco/tap || true
-    brew bundle --file "$HOME/.dotfiles/Brewfile" || ((macos_errors++))
-    brew bundle cleanup --force --zap --file "$HOME/.dotfiles/Brewfile" || true
-    brew upgrade --greedy || ((macos_errors++))
-    brew cleanup -s || true
+  if brew update >/dev/null 2>&1; then
+    brew bundle --file "$HOME/.dotfiles/Brewfile" >/dev/null 2>&1 || ((macos_errors++))
+    brew bundle cleanup --force --zap --file "$HOME/.dotfiles/Brewfile" >/dev/null 2>&1 || true
+    brew upgrade --greedy >/dev/null 2>&1 || ((macos_errors++))
+    brew cleanup -s >/dev/null 2>&1 || true
+    __f5_strip_tap_quarantine
   else
     ((macos_errors++))
   fi
 
   if __cmd_exists mas; then
-    mas upgrade || ((macos_errors++))
+    mas upgrade >/dev/null 2>&1 || ((macos_errors++))
   fi
 
   __macos_post_install_cleanup

@@ -1,5 +1,9 @@
 #!/bin/sh
 sed -E \
+  -e '/overhead from throughput was not possible/d' \
+  -e '/answered too fast to time/d' \
+  -e '/Speed is not being watched on this disk/d' \
+  -e '/^.*Measured (read|write): /d' \
   -e 's#/dev/r?disk[0-9]+#DEV#g' \
   -e 's#/dev/loop[0-9]+#DEV#g' \
   -e 's/[0-9]+ KiB\/s/N KiB\/s/g' \

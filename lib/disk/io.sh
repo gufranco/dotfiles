@@ -306,6 +306,6 @@ disk_fault() {
 
 disk_bit_report() {
   disk_br_sample="${BIT_SAMPLE:-65536}"
-  { cmp -l -n "$3" "$1" "$2" 2>/dev/null || true; } |
+  { cmp -l "$1" "$2" 2>/dev/null || true; } |
     awk -v sample="${disk_br_sample}" -f "${DISK_LIB}/bitreport.awk"
 }

@@ -1,0 +1,98 @@
+#!/bin/sh
+[ -n "${ZSH_VERSION:-}" ] && emulate sh
+
+disk_self="$0"
+case "${disk_self}" in
+  */*) ;;
+  *) disk_self="$(command -v -- "${disk_self}")" ;;
+esac
+DISK_LIB="$(cd "${disk_self%/*}/../lib/disk" && pwd)" || exit 1
+
+# shellcheck source=SCRIPTDIR/../lib/disk/core.sh
+. "${DISK_LIB}/core.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/io.sh
+. "${DISK_LIB}/io.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/calibrate.sh
+. "${DISK_LIB}/calibrate.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/wipe.sh
+. "${DISK_LIB}/wipe.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/source.sh
+. "${DISK_LIB}/source.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/guard.sh
+. "${DISK_LIB}/guard.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/ui.sh
+. "${DISK_LIB}/ui.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/write.sh
+. "${DISK_LIB}/write.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/after.sh
+. "${DISK_LIB}/after.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/boot.sh
+. "${DISK_LIB}/boot.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/flow.sh
+. "${DISK_LIB}/flow.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/format.sh
+. "${DISK_LIB}/format.sh"
+
+disk_write_usage() {
+  disk_info "Usage: kakikomi <image|url|device> [target...]"
+  disk_info "       kakikomi debian.img.xz /dev/disk4"
+  disk_info "       kakikomi https://example.org/os.img.gz"
+  disk_info "       kakikomi /dev/disk4 /dev/disk5 /dev/disk6   (clone disk4 onto two drives)"
+  disk_info "       kakikomi --release                         (remove guards left by a run)"
+  disk_info "       kakikomi format <device> [fat32|exfat|fat|floppy] [LABEL]   (quick format)"
+  disk_info "Leave the target out to pick from attached removable disks."
+  disk_info "VERIFY=n skips the read-back, DELETE=y removes the image after it validated,"
+  disk_info "AGAIN=y writes the same image to the next disk you insert, ZERO_TAIL=y blanks"
+  disk_info "the rest of a larger disk, SHA256=<hash> checks the image, ALLOW_INTERNAL=y"
+  disk_info "permits internal disks, KEEP_GUARD=y keeps macOS from mounting it later too."
+}
+
+disk_write_windows_mode() {
+  disk_is_windows_iso "${DISK_SRC_PATH}" || return 0
+  disk_info "This is a Windows installer ISO. Written as is it would not boot from USB,"
+  disk_info "so it is laid out as a UEFI-bootable FAT32 drive instead. MODE=raw writes it unchanged."
+  disk_ww_image="$(disk_windows_image "${DISK_SRC_PATH}")" || return 1
+  DISK_SRC_PATH="${disk_ww_image}"
+  DISK_SRC_SIZE="$(disk_file_size "${disk_ww_image}")"
+  DISK_SRC_NOTE="Windows installer laid out as FAT32"
+  return 0
+}
+
+disk_write_main() {
+  case "${1:-}" in
+    format)
+      shift
+      disk_format_main "$@"
+      return "$?"
+      ;;
+    --release)
+      DISK_TMPDIR="${TMPDIR:-/tmp}"
+      disk_fstab_release_all
+      return "$?"
+      ;;
+    -h | --help)
+      disk_write_usage
+      return 0
+      ;;
+    '')
+      disk_error "No image specified"
+      disk_write_usage
+      return 1
+      ;;
+    *) ;;
+  esac
+  disk_wm_source="$1"
+  shift
+  DISK_SRC_WORK="$(mktemp -d "${TMPDIR:-/tmp}/disk_write_src.XXXXXX")" || return 1
+  trap disk_write_cleanup EXIT
+  trap disk_write_interrupted INT TERM HUP
+  disk_source_open "${disk_wm_source}" || return 1
+  disk_write_published
+  disk_write_windows_mode || return 1
+  disk_write_checksum || return 1
+  disk_wm_status=0
+  disk_write_once "$@" || disk_wm_status=1
+  disk_after_write "${disk_wm_status}"
+}
+
+disk_write_main "$@"

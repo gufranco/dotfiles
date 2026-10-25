@@ -167,6 +167,9 @@ case "$(uname)" in
       # Compression
       exfatprogs p7zip-full unrar unzip zip zlib1g-dev
 
+      # Disk imaging
+      mtools wimtools
+
       # Shell & Terminal
       bash tmux snapd trash-cli xsel bc
 

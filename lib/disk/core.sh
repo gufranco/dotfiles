@@ -6,7 +6,11 @@
 disk_log() {
   disk_log_prefix="$1"
   shift
-  printf '%b %s\n' "${disk_log_prefix}" "$*"
+  if [ -n "${DISK_LOG_TAG}" ]; then
+    printf '%b %s: %s\n' "${disk_log_prefix}" "${DISK_LOG_TAG}" "$*"
+  else
+    printf '%b %s\n' "${disk_log_prefix}" "$*"
+  fi
 }
 
 disk_info() {
@@ -18,11 +22,11 @@ disk_success() {
 }
 
 disk_warning() {
-  disk_log '\033[0;33m[!]\033[0m' "$@"
+  disk_log '\033[0;33m[!]\033[0m' "$@" >&2
 }
 
 disk_error() {
-  disk_log '\033[0;31m[\0342\0234\0227]\033[0m' "$@"
+  disk_log '\033[0;31m[\0342\0234\0227]\033[0m' "$@" >&2
 }
 
 disk_log_lines() {
@@ -54,13 +58,26 @@ disk_os() {
 }
 
 disk_now_ms() {
+  if disk_nm_value="$(perl -MTime::HiRes=clock_gettime,CLOCK_MONOTONIC -e 'printf "%d\n", clock_gettime(CLOCK_MONOTONIC) * 1000' 2>/dev/null)" &&
+    disk_is_uint "${disk_nm_value}"; then
+    printf '%s\n' "${disk_nm_value}"
+    return 0
+  fi
+  if [ -r /proc/uptime ]; then
+    disk_nm_uptime=""
+    disk_nm_idle=""
+    read -r disk_nm_uptime disk_nm_idle </proc/uptime
+    disk_nm_whole="${disk_nm_uptime%.*}"
+    disk_nm_cents="${disk_nm_uptime#*.}"
+    if disk_is_uint "${disk_nm_whole}" && disk_is_uint "${disk_nm_cents}" && [ -n "${disk_nm_idle}" ]; then
+      disk_nm_two="1${disk_nm_cents%"${disk_nm_cents#??}"}"
+      printf '%s\n' "$((disk_nm_whole * 1000 + (disk_nm_two - 100) * 10))"
+      return 0
+    fi
+  fi
   disk_nm_value="$(date +%s%N 2>/dev/null)"
   if disk_is_uint "${disk_nm_value}" && [ "${#disk_nm_value}" -gt 13 ]; then
     printf '%s\n' "$((disk_nm_value / 1000000))"
-    return 0
-  fi
-  if disk_cmd_exists perl; then
-    perl -MTime::HiRes=time -e 'printf "%d\n", time() * 1000'
     return 0
   fi
   disk_nm_value="$(date +%s)"
@@ -361,6 +378,11 @@ disk_resolve() {
       [ -n "${disk_rs_whole}" ] && disk_rs_disk="/dev/${disk_rs_whole}"
       ;;
     Linux)
+      disk_rs_type="$(lsblk -dno TYPE "${disk_rs_disk}" 2>/dev/null)"
+      [ "${disk_rs_type}" = "part" ] || {
+        printf '%s\n' "${disk_rs_disk}"
+        return 0
+      }
       disk_rs_parent="$(lsblk -no PKNAME "${disk_rs_disk}" 2>/dev/null)"
       disk_rs_parent="$(printf '%s\n' "${disk_rs_parent}" | sed -n '1p')"
       [ -n "${disk_rs_parent}" ] && disk_rs_disk="/dev/${disk_rs_parent}"

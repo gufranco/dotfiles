@@ -2,8 +2,6 @@
 This will ERASE all data on DEV. Continue? (y/N): [0;34m[INFO][0m Unmounting DEV...
 [0;34m[INFO][0m Direct I/O is unavailable, so buffers are dropped before every verify.
 [0;34m[INFO][0m Measuring DEV before wiping it, so every limit comes from this disk.
-[0;34m[INFO][0m Measured read: N KiB/s sustained, N to reach a sector, allowing Nx that before stopping.
-[0;34m[INFO][0m Measured write: N KiB/s sustained, N to reach a sector, allowing Nx that before stopping.
 [0;34m[INFO][0m Cleaning DEV...
 [0;34m[INFO][0m Pass 1 of 1
 [0;34m[INFO][0m Writing per-chunk unique data over N chunks, timing every chunk

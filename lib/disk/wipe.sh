@@ -47,12 +47,24 @@ disk_wipe_attempt() {
     disk_set_error "chunk $6 moved ${DISK_MOVED} of $5 bytes"
     return 1
   fi
-  if [ "$1" = "read" ] && ! cmp -s -n "$5" "${DISK_TMPDIR}/readback" "$2"; then
+  [ "$1" = "read" ] || return 0
+  disk_wa_reference="$(disk_exact_reference "$2" "$5")" || return 1
+  if ! cmp -s "${DISK_TMPDIR}/readback" "${disk_wa_reference}"; then
     disk_set_error "chunk $6 did not read back as $7"
-    DISK_BITS="$(disk_bit_report "$2" "${DISK_TMPDIR}/readback" "$5")"
+    DISK_BITS="$(disk_bit_report "${disk_wa_reference}" "${DISK_TMPDIR}/readback" "$5")"
     return 1
   fi
   return 0
+}
+
+disk_exact_reference() {
+  disk_er_size="$(disk_file_size "$1")"
+  if [ "${disk_er_size}" -eq "$2" ]; then
+    printf '%s\n' "$1"
+    return 0
+  fi
+  head -c "$2" "$1" >"${DISK_TMPDIR}/reference" || return 1
+  printf '%s\n' "${DISK_TMPDIR}/reference"
 }
 
 disk_chunk_settle() {

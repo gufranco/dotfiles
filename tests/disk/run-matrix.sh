@@ -22,7 +22,7 @@ IFS='|'
 for shell in ${shells}; do
   IFS="${old_ifs}"
   printf '== %s ==\n' "${shell}"
-  if ! DISK_SHELL="${shell}" bats "$@"; then
+  if ! DISK_SHELL="${shell}" bats --print-output-on-failure "$@"; then
     failed=$((failed + 1))
   fi
   IFS='|'

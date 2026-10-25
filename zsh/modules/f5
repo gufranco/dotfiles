@@ -346,12 +346,8 @@ function __f5_update_flatpak() {
 function __f5_strip_tap_quarantine() {
   __cmd_exists jq || return
 
-  local installed
-  installed=$(brew list --cask 2>/dev/null)
-  [ -n "$installed" ] || return
-
   local apps
-  apps=$(brew info --cask --json=v2 ${=installed} 2>/dev/null |
+  apps=$(brew info --cask --json=v2 --installed 2>/dev/null |
     jq -r '.casks[] | select(.tap == "gufranco/tap") | .artifacts[].app[]? // empty')
   [ -n "$apps" ] || return
 

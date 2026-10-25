@@ -107,7 +107,7 @@ disk_test_fill() {
   local mebibytes="$2"
   local octal="$3"
 
-  { head -c $((mebibytes * 1048576)) /dev/zero || true; } | tr '\000' "${octal}" >"${file}"
+  { head -c $((mebibytes * 1048576)) /dev/zero || true; } | LC_ALL=C tr '\000' "${octal}" >"${file}"
 }
 
 disk_test_range_bytes() {

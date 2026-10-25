@@ -1,5 +1,8 @@
 #!/bin/sh
 
+LC_ALL=C
+export LC_ALL
+
 : "${DISK_LIB:=}"
 : "${DISK_OS:=}"
 : "${DISK_TMPDIR:=}"

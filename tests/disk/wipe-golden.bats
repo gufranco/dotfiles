@@ -44,3 +44,17 @@ disk_wipe_run() {
   bytes="$(disk_test_unique_bytes "${IMAGE}")"
   [[ "${bytes}" == "00" ]]
 }
+
+@test "kiyome builds byte patterns under a UTF-8 locale with the system tr" {
+  # Arrange
+  local search_path="/usr/bin:/bin:${PATH}"
+
+  # Act
+  run env PATH="${search_path}" LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 sh "${DISK_TESTS_DIR}/call.sh" call_pattern 4096 0xAA
+
+  # Assert
+  [[ "${status}" -eq 0 ]]
+  [[ "${output}" == *"aa "* ]]
+  [[ "${output}" != *"c2"* ]]
+  [[ "${output}" == *"4096"* ]]
+}

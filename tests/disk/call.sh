@@ -44,4 +44,11 @@ call_first_boot_disk() {
   printf '%s\n' "${disk_cb_list}" | sed -n '1p'
 }
 
+call_pattern() {
+  disk_make_tmpdir pattern || return 1
+  disk_cp_file="$(disk_pattern_file "$1" "$2")" || return 1
+  od -An -tx1 -v "${disk_cp_file}" | awk '{ for (i = 1; i <= NF; i++) seen[$i] = 1 } END { for (b in seen) printf "%s ", b }'
+  wc -c <"${disk_cp_file}"
+}
+
 "$@"

@@ -287,34 +287,7 @@ Theme submodules track upstream `main`; `f5` updates them with `git submodule up
 
 ## Disk Tools
 
-Three commands in [`bin/`](bin), all plain POSIX shell, run under `sh`, `dash`, `bash` and `zsh` on macOS and Linux. They share [`lib/disk/`](lib/disk) and were built for floppies, Zip and Jaz cartridges, SuperDisks, USB sticks and hard disks alike.
-
-| Command | What it does |
-|:--------|:-------------|
-| `kakikomi <image\|url\|device> [target...]` | Writes an image to one or more disks and reads every chunk back before the next. A balenaEtcher replacement. |
-| `kakikomi <windows.iso> <target>` | Turns a Windows installer ISO into a UEFI-bootable FAT32 stick, splitting an `install.wim` over 4 GiB. The basic Rufus job. |
-| `kakikomi format <target> [fat32\|exfat\|fat\|floppy] [LABEL]` | Quick format: writes only the new filesystem structures and reads them back. |
-| `kiyome <target>` | Overwrites the disk with five verified patterns and doubles as a bad block check. |
-
-**The target is never mounted.** macOS writes `.fseventsd`, `.Spotlight-V100` and `._` files onto any FAT volume it mounts, even for a moment. `kakikomi` blanks the first MiB of the target before writing anything and writes the image's first MiB last, so nothing is mountable mid-write. Before that last write it tells the system to leave each volume alone: an `/etc/fstab` `noauto` line per volume UUID on macOS, a `UDISKS_IGNORE` udev rule on Linux. A watcher reports any mount that slips through, and `REINSERT=y` reads the whole disk back after you unplug and replug it.
-
-**It stops at the first problem.** Every chunk is timed against what the disk measured on itself, read back and compared; a mismatch, a stall or a vanished device stops that disk, ejects it, and prints which bit lines were wrong. Zip, Jaz and floppy drives get tighter limits and no retries, since a mistracking head damages the next cartridge it meets.
-
-**Sources:** raw `.img`, `.iso`, `.bin` and floppy images; `.gz`, `.xz`, `.zst` and `.bz2` streamed without extracting; a `.zip` holding one image; `.dmg`, `.vhd`, `.vhdx`, `.vmdk` and `.qcow2` converted first; an `http(s)` URL; or another drive to clone. With no target, it lists the removable disks and hides the system disk.
-
-| Variable | Effect |
-|:---------|:-------|
-| `VERIFY=n` | Skip the final whole-disk SHA-256 comparison. Asked interactively when unset. |
-| `DELETE=y` | Move the image to the Trash once every disk validated. Ignored when nothing was read back. |
-| `AGAIN=y` | Write the same image to the next disk you insert, for batches. |
-| `REINSERT=y` | After ejecting, wait for the disk to come back and compare it again. |
-| `ZERO_TAIL=y` | Blank the space past the image on a larger disk. |
-| `SHA256=<hash>` | Stop unless the image matches. A sibling `.sha256` or `SHA256SUMS` file is read automatically. |
-| `ALLOW_INTERNAL=y` | Allow an internal disk. The disk holding the running system is always refused. |
-| `KEEP_GUARD=y` | Keep the fstab guard after the run, so this Mac never mounts that disk; `kakikomi --release` removes it. |
-| `MODE=raw` | Write a Windows ISO byte for byte instead of laying it out as FAT32. |
-
-The tests in [`tests/disk/`](tests/disk) attach file-backed disks with `hdiutil` or `losetup`, inject faults with `dmsetup` on Linux, and run under every shell through [`run-matrix.sh`](tests/disk/run-matrix.sh); [`linux-container.sh`](tests/disk/linux-container.sh) runs the Linux half from a Mac.
+Image writing and disk wiping live in [kakikomi](https://github.com/gufranco/kakikomi), installed by the Brewfile on macOS and by `install.sh` on Linux. `kakikomi` writes images to floppies, Zip disks, USB sticks and hard disks, verified chunk by chunk and never mounted; `kiyome` wipes a disk with five verified patterns.
 
 ## System Update
 

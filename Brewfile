@@ -394,6 +394,8 @@ cask 'google-chrome'
 # Casks - Productivity
 ################################################################################
 cask 'granola'
+cask 'libreoffice'
+cask 'libreoffice-language-pack'
 cask 'linear'
 cask 'maccy'
 cask 'obsidian'

@@ -82,7 +82,7 @@ write_with() {
   [[ "${output}" == *"STOPPED: the image needs 16777728 bytes and ${DEVICE} holds 16777216."* ]]
   local first
   first="$(disk_test_range_bytes "${TARGET_IMG}" 0 512)"
-  [[ "${first}" == "aa" ]]
+  [[ "${first}" == "aa" ]] || { printf "found bytes: %s\n" "${first}"; false; }
 }
 
 @test "kakikomi writes nothing when the confirmation is not the disk name" {
@@ -97,7 +97,7 @@ write_with() {
   [[ "${output}" == *"Operation cancelled"* ]]
   local bytes
   bytes="$(disk_test_unique_bytes "${TARGET_IMG}")"
-  [[ "${bytes}" == "aa" ]]
+  [[ "${bytes}" == "aa" ]] || { printf "found bytes: %s\n" "${bytes}"; false; }
 }
 
 @test "kakikomi blanks the rest of a larger disk with ZERO_TAIL" {
@@ -111,7 +111,7 @@ write_with() {
   [[ "${status}" -eq 0 ]]
   local tail_bytes
   tail_bytes="$(disk_test_range_bytes "${TARGET_IMG}" 8388608 8388608)"
-  [[ "${tail_bytes}" == "00" ]]
+  [[ "${tail_bytes}" == "00" ]] || { printf "found bytes: %s\n" "${tail_bytes}"; false; }
 }
 
 @test "kakikomi leaves the old contents past the image without ZERO_TAIL" {
@@ -126,7 +126,7 @@ write_with() {
   [[ "${output}" == *"ZERO_TAIL=y blanks it."* ]]
   local tail_bytes
   tail_bytes="$(disk_test_range_bytes "${TARGET_IMG}" 8388608 8388608)"
-  [[ "${tail_bytes}" == "aa" ]]
+  [[ "${tail_bytes}" == "aa" ]] || { printf "found bytes: %s\n" "${tail_bytes}"; false; }
 }
 
 @test "kakikomi stopped mid-run leaves the first sectors blank" {
@@ -148,7 +148,7 @@ write_with() {
   grep -q "STOPPED: interrupted during write chunk" "${log}"
   local head_bytes
   head_bytes="$(disk_test_range_bytes "${TARGET_IMG}" 0 1048576)"
-  [[ "${head_bytes}" == "00" ]]
+  [[ "${head_bytes}" == "00" ]] || { printf "found bytes: %s\n" "${head_bytes}"; false; }
 }
 
 @test "kakikomi refuses a target that holds the running system" {

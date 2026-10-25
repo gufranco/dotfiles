@@ -67,7 +67,7 @@ format_with() {
   [[ "${status}" -eq 0 ]]
   local tail_bytes
   tail_bytes="$(disk_test_range_bytes "${TARGET_IMG}" 62914560 4194304)"
-  [[ "${tail_bytes}" == "aa" ]]
+  [[ "${tail_bytes}" == "aa" ]] || { printf "found bytes: %s\n" "${tail_bytes}"; false; }
 }
 
 @test "kakikomi format writes a floppy filesystem with no partition table" {

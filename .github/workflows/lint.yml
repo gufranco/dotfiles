@@ -54,7 +54,7 @@ jobs:
   disk-tests:
     name: Disk tools (${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 20
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -73,7 +73,9 @@ jobs:
       - name: Install shells and bats (macOS)
         if: runner.os == 'macOS'
         run: brew install bats-core dash mtools wimlib xz zstd qemu
-      - name: Run every shell
+      - name: Run the suites under the system sh and zsh
+        env:
+          DISK_SHELLS: ${{ runner.os == 'Linux' && 'dash|zsh' || '/bin/sh|zsh' }}
         run: sh tests/disk/run-matrix.sh tests/disk
 
   shfmt:

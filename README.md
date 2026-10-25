@@ -90,7 +90,7 @@ curl -fsSL https://raw.githubusercontent.com/gufranco/dotfiles/master/install.sh
 ```bash
 source ~/.zshrc
 bat --version    # syntax-highlighted cat
-eza --version    # modern ls
+zoxide --version # smart cd
 ```
 
 The installer detects your OS and architecture automatically. On macOS it installs Homebrew and runs the Brewfile. On Linux it uses apt, snap, and direct downloads.

@@ -48,6 +48,29 @@ jobs:
           ./shellcheck install.sh
           ./shellcheck .github/scripts/*.sh
           ./shellcheck -x -e SC1091 zsh/config/* zsh/modules/*
+          ./shellcheck -x -s sh -o all bin/* lib/disk/*.sh
+          ./shellcheck -x -o all tests/disk/*.sh tests/disk/*.bash tests/disk/*.bats tests/disk/shim/*
+
+  disk-tests:
+    name: Disk tools (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-26.04, macos-26]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install shells and bats (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats dash zsh
+      - name: Install shells and bats (macOS)
+        if: runner.os == 'macOS'
+        run: brew install bats-core dash
+      - name: Run every shell
+        run: sh tests/disk/run-matrix.sh tests/disk
 
   shfmt:
     name: shfmt

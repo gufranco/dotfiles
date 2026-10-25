@@ -13,6 +13,16 @@ disk_test_path() {
   fi
 }
 
+disk_test_run() {
+  local program="$1"
+  local search_path
+  local -a shell_words
+  shift
+  search_path="$(disk_test_path)"
+  read -r -a shell_words <<<"${DISK_SHELL:-sh}"
+  PATH="${search_path}" "${shell_words[@]}" "${DOTFILES_DIR}/bin/${program}" "$@"
+}
+
 disk_test_attach() {
   local image="$1"
   local listing

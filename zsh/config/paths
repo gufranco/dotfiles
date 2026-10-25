@@ -16,6 +16,7 @@ __add_to_path "$GOPATH/bin"
 __add_to_path "$HOME/.cargo/bin"
 
 __append_to_path "$HOME/.local/bin"
+__append_to_path "$HOME/.dotfiles/bin"
 
 case "$(uname)" in
   "Linux")

@@ -16,15 +16,7 @@ teardown() {
 }
 
 disk_wipe_run() {
-  local search_path
-  search_path="$(disk_test_path)"
-
-  if [[ -n "${DISK_WIPE_SHELL:-}" ]]; then
-    printf 'y\n' | PATH="${search_path}" ${DISK_WIPE_SHELL} "${DOTFILES_DIR}/bin/disk_wipe" "${DEVICE}"
-  else
-    printf 'y\n' | PATH="${search_path}" zsh -f -c \
-      "source '${DOTFILES_DIR}/zsh/config/core'; source '${DOTFILES_DIR}/zsh/modules/disk'; disk_wipe '${DEVICE}'"
-  fi
+  printf 'y\n' | disk_test_run disk_wipe "${DEVICE}"
 }
 
 @test "disk_wipe output matches the recorded golden run" {

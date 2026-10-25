@@ -1,0 +1,197 @@
+#!/bin/sh
+[ -n "${ZSH_VERSION:-}" ] && emulate sh
+
+disk_self="$0"
+case "${disk_self}" in
+  */*) ;;
+  *) disk_self="$(command -v -- "${disk_self}")" ;;
+esac
+DISK_LIB="$(cd "${disk_self%/*}/../lib/disk" && pwd)" || exit 1
+
+# shellcheck source=SCRIPTDIR/../lib/disk/core.sh
+. "${DISK_LIB}/core.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/io.sh
+. "${DISK_LIB}/io.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/calibrate.sh
+. "${DISK_LIB}/calibrate.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/wipe.sh
+. "${DISK_LIB}/wipe.sh"
+# shellcheck source=SCRIPTDIR/../lib/disk/boot.sh
+. "${DISK_LIB}/boot.sh"
+
+disk_wipe_usage() {
+  disk_info "Usage: disk_wipe <device|mount_point>"
+  disk_info "       disk_wipe /dev/disk4       (macOS, whole disk)"
+  disk_info "       disk_wipe /dev/sdb         (Linux, whole disk)"
+  disk_info "       disk_wipe /Volumes/USB     (macOS, mount point)"
+  disk_info "       disk_wipe /mnt/usb         (Linux, mount point)"
+  disk_info "       PASSES=N disk_wipe <device|mount_point>"
+  disk_info "       CREATE=y disk_wipe <device|mount_point>"
+}
+
+disk_wipe_validate() {
+  if ! disk_is_uint "$2" || [ "$2" -lt 1 ]; then
+    disk_error "Invalid PASSES value: $2 (must be a positive integer)"
+    return 1
+  fi
+  if [ ! -b "$1" ] && [ ! -c "$1" ]; then
+    disk_error "Device not found or invalid: $1"
+    return 1
+  fi
+  if ! disk_cmd_exists openssl; then
+    disk_error "openssl is required to build the per-chunk unique pattern"
+    return 1
+  fi
+  return 0
+}
+
+disk_wipe_confirm() {
+  printf 'This will ERASE all data on %s. Continue? (y/N): ' "$1"
+  disk_wc_answer=""
+  IFS= read -r disk_wc_answer
+  if [ "${disk_wc_answer}" != "y" ]; then
+    disk_warning "Operation cancelled"
+    return 1
+  fi
+  return 0
+}
+
+disk_wipe_identify() {
+  disk_wi_identity="$(disk_identity "$1")"
+  DISK_FAMILY="$(disk_family_of "${disk_wi_identity}")"
+  [ -n "${disk_wi_identity}" ] && disk_info "Device reports itself as: ${disk_wi_identity}"
+  [ -n "${DISK_FAMILY}" ] && disk_info "Recognised as ${DISK_FAMILY} media, which only sets the volume label."
+  return 0
+}
+
+disk_wipe_size() {
+  DISK_SIZE="$(disk_size_bytes "$1")"
+  if ! disk_is_uint "${DISK_SIZE}" || [ "${DISK_SIZE}" -eq 0 ]; then
+    disk_error "Unable to determine disk size for $1"
+    return 1
+  fi
+  DISK_SECTOR="$(disk_sector_bytes "$1")"
+  if [ $((DISK_SIZE % DISK_SECTOR)) -ne 0 ]; then
+    disk_warning "Device size is not a whole number of sectors. Skipping the last $((DISK_SIZE % DISK_SECTOR)) bytes."
+    DISK_SIZE=$((DISK_SIZE - DISK_SIZE % DISK_SECTOR))
+  fi
+  disk_set_ceiling "${DISK_SIZE}"
+  return 0
+}
+
+disk_wipe_landing() {
+  disk_wl_status=0
+  disk_writes_land "$1" || disk_wl_status="$?"
+  if [ "${disk_wl_status}" -eq 1 ]; then
+    disk_report_write_protected "$1" silent erased
+    return 1
+  fi
+  disk_wl_detail="$(disk_get_error)"
+  disk_wl_class="$(disk_error_class "${disk_wl_detail}")"
+  if [ "${disk_wl_status}" -eq 2 ] && [ "${disk_wl_class}" = "bus" ]; then
+    disk_fault "$1" "$1 stopped answering during the single-sector write test"
+    return 1
+  fi
+  return 0
+}
+
+disk_wipe_passes() {
+  disk_info "Cleaning $1..."
+  disk_wp_index=1
+  while [ "${disk_wp_index}" -le "$3" ]; do
+    disk_execute_pass "$1" "$2" "${disk_wp_index}" "$3" || return 1
+    disk_wp_index=$((disk_wp_index + 1))
+  done
+  return 0
+}
+
+disk_wipe_eject() {
+  disk_info "Ejecting device..."
+  disk_we_os="$(disk_os)"
+  case "${disk_we_os}" in
+    Darwin)
+      case "${DISK_FAMILY}" in
+        floppy | superdisk)
+          if disk_release "$1"; then
+            disk_success "Device unmounted. This drive has no software eject, so remove the disk by hand."
+          else
+            disk_warning "Device is still mounted. Remove the disk by hand once it is idle."
+          fi
+          ;;
+        *)
+          if disk_bounded 30 sudo diskutil eject "$1" >/dev/null 2>&1; then
+            disk_success "Device ejected successfully"
+          else
+            disk_warning "Failed to eject device. The wipe already finished, so it is safe to remove."
+          fi
+          ;;
+      esac
+      ;;
+    Linux)
+      sync
+      if sudo eject "$1" 2>/dev/null; then
+        disk_success "Device ejected successfully"
+      else
+        disk_warning "Failed to eject device (may not support eject)"
+      fi
+      ;;
+    *) ;;
+  esac
+  return 0
+}
+
+disk_wipe_prepare() {
+  disk_wipe_validate "$1" "$2" || return 1
+  disk_wipe_identify "$1"
+  disk_tune
+  disk_wipe_confirm "$1" || return 1
+  disk_wipe_size "$1" || return 1
+  disk_wpr_writable=0
+  disk_writable_media "$1" || disk_wpr_writable="$?"
+  if [ "${disk_wpr_writable}" -eq 1 ]; then
+    disk_report_write_protected "$1" flag erased
+    return 1
+  fi
+  disk_require_sudo || return 1
+  disk_unmount_for_write "$1" || return 1
+  disk_wpr_io="$(disk_io_device "$1")"
+  disk_probe_cache_bypass "${disk_wpr_io}" "${DISK_SECTOR}"
+  return 0
+}
+
+disk_wipe_main() {
+  if [ "$#" -eq 0 ] || [ -z "$1" ]; then
+    disk_error "No device specified"
+    disk_wipe_usage
+    return 1
+  fi
+  disk_wm_disk="$(disk_resolve "$1")" || return 1
+  disk_info "Device: ${disk_wm_disk}"
+  DISK_ERRFILE=""
+  DISK_LAST_ERROR=""
+  DISK_LAST_DETAIL=""
+  DISK_FAMILY=""
+  DISK_ACTION_NOUN="wipe"
+  disk_wm_passes="${PASSES:-1}"
+
+  disk_wipe_prepare "${disk_wm_disk}" "${disk_wm_passes}" || return 1
+  disk_make_tmpdir disk_wipe || return 1
+  disk_reset_measurements
+  disk_wm_status=0
+  disk_wipe_landing "${disk_wm_disk}" || disk_wm_status=1
+  if [ "${disk_wm_status}" -eq 0 ]; then
+    disk_measure "${disk_wm_disk}" "${DISK_SIZE}" wiping "the wipe" || disk_wm_status=1
+  fi
+  if [ "${disk_wm_status}" -eq 0 ]; then
+    disk_wipe_passes "${disk_wm_disk}" "${DISK_SIZE}" "${disk_wm_passes}" || disk_wm_status=1
+  fi
+  disk_drop_tmpdir
+  [ "${disk_wm_status}" -ne 0 ] && return 1
+
+  if [ "${CREATE:-}" = "y" ] && ! disk_create_partition "${disk_wm_disk}" "${DISK_SIZE}"; then
+    return 1
+  fi
+  disk_wipe_eject "${disk_wm_disk}"
+}
+
+disk_wipe_main "$@"

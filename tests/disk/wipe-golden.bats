@@ -16,10 +16,10 @@ teardown() {
 }
 
 disk_wipe_run() {
-  printf 'y\n' | disk_test_run disk_wipe "${DEVICE}"
+  printf 'y\n' | disk_test_run kiyome "${DEVICE}"
 }
 
-@test "disk_wipe output matches the recorded golden run" {
+@test "kiyome output matches the recorded golden run" {
   # Arrange
   local name="wipe"
 
@@ -31,7 +31,7 @@ disk_wipe_run() {
   disk_test_matches_golden "${name}" "${output}"
 }
 
-@test "disk_wipe leaves every byte of the device zero" {
+@test "kiyome leaves every byte of the device zero" {
   # Arrange
   dd if=/dev/urandom of="${IMAGE}" bs=512 count=16 conv=notrunc 2>/dev/null
 

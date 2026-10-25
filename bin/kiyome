@@ -20,13 +20,13 @@ DISK_LIB="$(cd "${disk_self%/*}/../lib/disk" && pwd)" || exit 1
 . "${DISK_LIB}/boot.sh"
 
 disk_wipe_usage() {
-  disk_info "Usage: disk_wipe <device|mount_point>"
-  disk_info "       disk_wipe /dev/disk4       (macOS, whole disk)"
-  disk_info "       disk_wipe /dev/sdb         (Linux, whole disk)"
-  disk_info "       disk_wipe /Volumes/USB     (macOS, mount point)"
-  disk_info "       disk_wipe /mnt/usb         (Linux, mount point)"
-  disk_info "       PASSES=N disk_wipe <device|mount_point>"
-  disk_info "       CREATE=y disk_wipe <device|mount_point>"
+  disk_info "Usage: kiyome <device|mount_point>"
+  disk_info "       kiyome /dev/disk4       (macOS, whole disk)"
+  disk_info "       kiyome /dev/sdb         (Linux, whole disk)"
+  disk_info "       kiyome /Volumes/USB     (macOS, mount point)"
+  disk_info "       kiyome /mnt/usb         (Linux, mount point)"
+  disk_info "       PASSES=N kiyome <device|mount_point>"
+  disk_info "       CREATE=y kiyome <device|mount_point>"
 }
 
 disk_wipe_validate() {
@@ -175,7 +175,7 @@ disk_wipe_main() {
   disk_wm_passes="${PASSES:-1}"
 
   disk_wipe_prepare "${disk_wm_disk}" "${disk_wm_passes}" || return 1
-  disk_make_tmpdir disk_wipe || return 1
+  disk_make_tmpdir kiyome || return 1
   disk_reset_measurements
   disk_wm_status=0
   disk_wipe_landing "${disk_wm_disk}" || disk_wm_status=1

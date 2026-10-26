@@ -444,7 +444,6 @@ cask 'stats'
 ################################################################################
 # Casks - File Management & Utilities
 ################################################################################
-cask 'balenaetcher'
 cask 'cyberduck'
 cask 'keka'
 cask 'maestral'

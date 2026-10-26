@@ -1637,16 +1637,15 @@ safe_link "$HOME/.dotfiles/taskwarrior/taskrc" "$HOME/.taskrc"
 ############################################################################
 github_repo_sync "https://github.com/gufranco/claude-engineering-rules.git" "$HOME/.claude" "Claude engineering rules"
 
-############################################################################
-# kakikomi (macOS installs it from the Brewfile)
-############################################################################
 if [ "$(uname)" = "Linux" ]; then
-  github_repo_sync "https://github.com/gufranco/kakikomi.git" "$HOME/.local/src/kakikomi" "kakikomi"
-  if make -C "$HOME/.local/src/kakikomi" install PREFIX="$HOME/.local" >/dev/null; then
-    log_success "kakikomi installed"
-  else
-    log_warning "kakikomi install failed"
-  fi
+  for disk_tool in kakikomi kiyome; do
+    github_repo_sync "https://github.com/gufranco/${disk_tool}.git" "$HOME/.local/src/${disk_tool}" "${disk_tool}"
+    if make -C "$HOME/.local/src/${disk_tool}" install PREFIX="$HOME/.local" >/dev/null; then
+      log_success "${disk_tool} installed"
+    else
+      log_warning "${disk_tool} install failed"
+    fi
+  done
 fi
 
 ############################################################################

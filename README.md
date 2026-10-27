@@ -285,9 +285,9 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 
 Theme submodules track upstream `main`; `f5` updates them with `git submodule update --remote`. GoAccess is the only tool not pixel-exact: its HTML report supports only bright/dark built-ins, so it uses dark. cmus has no 24-bit color support, so it uses the nearest 256-color values.
 
-## Disk Tools
+## Disk and Disc Tools
 
-Two tools of their own, installed by the Brewfile on macOS and by `install.sh` on Linux. [kakikomi](https://github.com/gufranco/kakikomi) writes images to floppies, Zip disks, USB sticks and hard disks, verified chunk by chunk and never mounted. [kiyome](https://github.com/gufranco/kiyome) wipes a disk with five verified patterns and names any failing bit line.
+Three tools of their own, installed by the Brewfile on macOS and by `install.sh` on Linux. [kakikomi](https://github.com/gufranco/kakikomi) writes images to floppies, Zip disks, USB sticks and hard disks, verified chunk by chunk and never mounted. [kiyome](https://github.com/gufranco/kiyome) wipes a disk with five verified patterns and names any failing bit line. [yakitsuke](https://github.com/gufranco/yakitsuke) turns any video into Video CD images split across discs, with subtitles styled for the picture under each line.
 
 ## System Update
 

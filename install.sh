@@ -278,7 +278,7 @@ case "$(uname)" in
       neomutt lynx newsboat
 
       # Media
-      vlc cmus asciinema ffmpeg fatsort
+      vlc cmus asciinema ffmpeg fatsort mjpegtools vcdimager
 
       # Desktop
       conky-all transmission caffeine flameshot
@@ -1638,12 +1638,12 @@ safe_link "$HOME/.dotfiles/taskwarrior/taskrc" "$HOME/.taskrc"
 github_repo_sync "https://github.com/gufranco/claude-engineering-rules.git" "$HOME/.claude" "Claude engineering rules"
 
 if [ "$(uname)" = "Linux" ]; then
-  for disk_tool in kakikomi kiyome; do
-    github_repo_sync "https://github.com/gufranco/${disk_tool}.git" "$HOME/.local/src/${disk_tool}" "${disk_tool}"
-    if make -C "$HOME/.local/src/${disk_tool}" install PREFIX="$HOME/.local" >/dev/null; then
-      log_success "${disk_tool} installed"
+  for own_tool in kakikomi kiyome yakitsuke; do
+    github_repo_sync "https://github.com/gufranco/${own_tool}.git" "$HOME/.local/src/${own_tool}" "${own_tool}"
+    if make -C "$HOME/.local/src/${own_tool}" install PREFIX="$HOME/.local" >/dev/null; then
+      log_success "${own_tool} installed"
     else
-      log_warning "${disk_tool} install failed"
+      log_warning "${own_tool} install failed"
     fi
   done
 fi

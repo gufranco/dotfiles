@@ -39,6 +39,7 @@ export HISTORY_IGNORE="(cd|ls|[bf]g|clear|exit)"
 export HISTSIZE=2147483647
 export SAVEHIST=2147483647
 export LANG=pt_BR.UTF-8
+export JIMAKU_LANGUAGE=pt-BR
 
 # Auto-report execution time for commands taking longer than 5 seconds
 export REPORTTIME=5

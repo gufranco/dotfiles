@@ -13,10 +13,6 @@
 	path = k9s/catppuccin
 	url = https://github.com/catppuccin/k9s
 	branch = main
-[submodule "yazi/catppuccin"]
-	path = yazi/catppuccin
-	url = https://github.com/catppuccin/yazi
-	branch = main
 [submodule "mutt/catppuccin"]
 	path = mutt/catppuccin
 	url = https://github.com/catppuccin/neomutt

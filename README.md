@@ -287,7 +287,7 @@ Theme submodules track upstream `main`; `f5` updates them with `git submodule up
 
 ## Own Tools
 
-Four tools of their own, installed by the Brewfile on macOS and by `install.sh` on Linux. [kakikomi](https://github.com/gufranco/kakikomi) writes images to floppies, Zip disks, USB sticks and hard disks, verified chunk by chunk and never mounted. [kiyome](https://github.com/gufranco/kiyome) wipes a disk with five verified patterns and names any failing bit line. [yakitsuke](https://github.com/gufranco/yakitsuke) turns any video into Video CD images split across discs, with subtitles styled for the picture under each line. [shiwake](https://github.com/gufranco/shiwake) sorts the files of a folder into A to Z subfolders by their first letter, never moving one file over another.
+Five tools of their own, installed by the Brewfile on macOS and by `install.sh` on Linux. [kakikomi](https://github.com/gufranco/kakikomi) writes images to floppies, Zip disks, USB sticks and hard disks, verified chunk by chunk and never mounted. [kiyome](https://github.com/gufranco/kiyome) wipes a disk with five verified patterns and names any failing bit line. [yakitsuke](https://github.com/gufranco/yakitsuke) turns any video into Video CD images split across discs, with subtitles styled for the picture under each line. [shiwake](https://github.com/gufranco/shiwake) sorts the files of a folder into A to Z subfolders by their first letter, never moving one file over another. [jimaku](https://github.com/gufranco/jimaku) downloads subtitles for every video in a folder and saves them as UTF-8, in the language set by `JIMAKU_LANGUAGE`.
 
 ## System Update
 

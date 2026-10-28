@@ -186,6 +186,9 @@ case "$(uname)" in
       # Development
       shellcheck ruby ruby-dev python3-pygments
 
+      # Subtitles
+      subliminal
+
       # Misc
       ubuntu-restricted-extras
     )
@@ -1638,7 +1641,7 @@ safe_link "$HOME/.dotfiles/taskwarrior/taskrc" "$HOME/.taskrc"
 github_repo_sync "https://github.com/gufranco/claude-engineering-rules.git" "$HOME/.claude" "Claude engineering rules"
 
 if [ "$(uname)" = "Linux" ]; then
-  for own_tool in kakikomi kiyome shiwake yakitsuke; do
+  for own_tool in jimaku kakikomi kiyome shiwake yakitsuke; do
     github_repo_sync "https://github.com/gufranco/${own_tool}.git" "$HOME/.local/src/${own_tool}" "${own_tool}"
     if make -C "$HOME/.local/src/${own_tool}" install PREFIX="$HOME/.local" >/dev/null; then
       log_success "${own_tool} installed"

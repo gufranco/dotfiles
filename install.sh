@@ -418,15 +418,12 @@ case "$(uname)" in
     DEB_ARCH="$(dpkg --print-architecture)"
     case "$DEB_ARCH" in
       amd64)
-        RUST_TARGET_ARCH="x86_64"
         LAZYDOCKER_ARCH="x86_64"
         ;;
       arm64)
-        RUST_TARGET_ARCH="aarch64"
         LAZYDOCKER_ARCH="arm64"
         ;;
       *)
-        RUST_TARGET_ARCH=""
         LAZYDOCKER_ARCH=""
         ;;
     esac
@@ -442,19 +439,6 @@ case "$(uname)" in
       fi
     else
       log_skip "k9s already installed"
-    fi
-
-    if ! cmd_exists yazi; then
-      log_info "Installing yazi..."
-      YAZI_TAG="$(github_latest_tag sxyazi/yazi || true)"
-      if [ -n "$YAZI_TAG" ] && [ -n "$RUST_TARGET_ARCH" ] && apt_install_deb_url \
-        "https://github.com/sxyazi/yazi/releases/download/${YAZI_TAG}/yazi-${RUST_TARGET_ARCH}-unknown-linux-gnu.deb"; then
-        log_success "yazi ${YAZI_TAG} installed"
-      else
-        log_warning "yazi install failed"
-      fi
-    else
-      log_skip "yazi already installed"
     fi
 
     if ! cmd_exists navi; then
@@ -1532,13 +1516,6 @@ if [ "$(uname)" = "Darwin" ]; then
   safe_link "$HOME/.dotfiles/k9s/config.yml" "$HOME/Library/Application Support/k9s/config.yml"
   safe_link "$HOME/.dotfiles/k9s/catppuccin/dist" "$HOME/Library/Application Support/k9s/skins"
 fi
-
-############################################################################
-# Yazi
-############################################################################
-log_info "Setting up Yazi..."
-safe_link "$HOME/.dotfiles/yazi" "$HOME/.config/yazi"
-if cmd_exists ya; then ya pkg install 2>/dev/null || true; fi
 
 ############################################################################
 # Kanata

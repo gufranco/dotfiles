@@ -10,21 +10,6 @@ __alias_if_exists find findf "command find . -type f -name"
 __alias_if_exists find findd "command find . -type d -name"
 
 ################################################################################
-# Yazi with CWD sync (exit yazi and land in the directory you navigated to)
-################################################################################
-if command -v yazi > /dev/null; then
-  function r() {
-    local tmp
-    tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-    command yazi "$@" --cwd-file="$tmp"
-    if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-      builtin cd -- "$cwd" || return
-    fi
-    rm -f -- "$tmp"
-  }
-fi
-
-################################################################################
 # Broot with CWD sync
 ################################################################################
 if command -v broot > /dev/null; then

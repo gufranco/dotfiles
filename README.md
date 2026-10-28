@@ -272,7 +272,6 @@ Most tools use the [Catppuccin](https://catppuccin.com) Mocha flavor with the ma
 | K9s | `catppuccin/k9s` submodule skin |
 | Lazygit | Official Mocha mauve `gui.theme` |
 | Lazydocker | Official Mocha mauve theme |
-| Yazi | `catppuccin/yazi` submodule flavor |
 | eza | Mocha mauve `theme.yml` (vendored from `catppuccin/eza`) |
 | Mutt | `catppuccin/neomutt` submodule |
 | fzf | Official Mocha `--color` |
@@ -325,7 +324,6 @@ All configs are symlinked by `install.sh` using `safe_link`, which is idempotent
 | `bat/config` | `~/.config/bat/config` |
 | `bat/catppuccin/themes` | `~/.config/bat/themes` |
 | `eza` | `~/.config/eza` |
-| `yazi` | `~/.config/yazi` |
 | `kanata/kanata.kbd` | `~/.config/kanata/kanata.kbd` |
 | `mise/config.toml` | `~/.config/mise/config.toml` |
 | `bottom/bottom.toml` | `~/.config/bottom/bottom.toml` |
@@ -444,7 +442,6 @@ On macOS, lazygit, lazydocker, k9s, and ghostty also get symlinks into `~/Librar
 | `vim/` | Vim config, 31 plugins |
 | `vkbasalt/` | vkBasalt CAS sharpening config |
 | `wget/` | Wget config |
-| `yazi/` | Yazi file manager + Catppuccin Mocha theme |
 | [`zsh/`](zsh) | Zsh: [`config/`](zsh/config) load-ordered shell setup, [`modules/`](zsh/modules) command definitions |
 | `Brewfile` | Homebrew packages, apps, and fonts |
 | `Uvfile` | CLI tools installed with uv |

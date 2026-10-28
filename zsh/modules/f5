@@ -105,16 +105,6 @@ function __f5_update_tool_data() {
   local data_skipped=0
   local -a failed_tools=()
 
-  if __cmd_exists ya; then
-    if ya pkg upgrade > /dev/null 2>&1; then
-      ((data_count++))
-    else
-      failed_tools+=("yazi packages")
-    fi
-  else
-    ((data_skipped++))
-  fi
-
   if __cmd_exists tldr; then
     if tldr --update > /dev/null 2>&1; then
       ((data_count++))

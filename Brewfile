@@ -101,7 +101,6 @@ brew 'fzf'
 brew 'midnight-commander'
 brew 'ranger'
 brew 'ripgrep'
-brew 'yazi'
 brew 'zoxide'
 
 ################################################################################

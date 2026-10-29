@@ -6,6 +6,7 @@
 
 [![Install](https://img.shields.io/github/actions/workflow/status/gufranco/dotfiles/install.yml?branch=master&style=flat-square&label=install)](https://github.com/gufranco/dotfiles/actions/workflows/install.yml)
 [![Lint](https://img.shields.io/github/actions/workflow/status/gufranco/dotfiles/lint.yml?branch=master&style=flat-square&label=lint)](https://github.com/gufranco/dotfiles/actions/workflows/lint.yml)
+[![Release](https://img.shields.io/github/v/release/gufranco/dotfiles?style=flat-square&label=release)](https://github.com/gufranco/dotfiles/releases/latest)
 [![License](https://img.shields.io/github/license/gufranco/dotfiles?style=flat-square)](LICENSE)
 
 </div>
@@ -437,7 +438,7 @@ GoAccess 沒有 Catppuccin 移植版本，其 HTML 報告只提供淺色和深�
    python3 -m unittest discover -s tests -v
    ```
 
-[lint 工作流程](.github/workflows/lint.yml) 亦會執行 shfmt、zsh 語法檢查、actionlint、YAML 和 TOML 檢查，以及 gitleaks 機密資料掃描。[安裝工作流程](.github/workflows/install.yml) 在 Ubuntu 和 macOS 上各執行兩次 `install.sh`，以證明它是冪等的。
+[lint 工作流程](.github/workflows/lint.yml) 亦會執行 shfmt、zsh 語法檢查、actionlint、YAML 和 TOML 檢查，以及 gitleaks 機密資料掃描。[安裝工作流程](.github/workflows/install.yml) 在 Ubuntu 和 macOS 上各執行兩次 `install.sh`，以證明它是冪等的。`master` 上的 Lint 通過後，[發佈工作流程](.github/workflows/release.yml) 會執行 semantic-release：讀取上一個標籤之後的 Conventional Commits，決定下一個版本，寫入 `CHANGELOG.md`，並發佈 GitHub release。
 
 ## 安全
 

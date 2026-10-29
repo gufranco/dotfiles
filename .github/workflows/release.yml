@@ -1,0 +1,59 @@
+---
+name: Release
+
+on:
+  workflow_run:
+    workflows: [Lint]
+    types: [completed]
+    branches: [master]
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Version, tag and publish
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43  # v2.22.3
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Release only the commit Lint passed
+        id: fresh
+        env:
+          PASSED: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -eu
+          if [ "$(git rev-parse HEAD)" = "$PASSED" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "master has moved past $PASSED; its own Lint run will release it"
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run semantic-release
+        if: steps.fresh.outputs.current == 'true'
+        uses: cycjimmy/semantic-release-action@d9bf53a078bd2f86aaffaec796dbb3d28f1b6f34  # v8.1.3
+        with:
+          semantic_version: 25.0.9
+          extra_plugins: |
+            @semantic-release/changelog@7.0.0
+            @semantic-release/git@11.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

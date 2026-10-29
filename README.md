@@ -6,6 +6,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 
 [![Install](https://img.shields.io/github/actions/workflow/status/gufranco/dotfiles/install.yml?branch=master&style=flat-square&label=install)](https://github.com/gufranco/dotfiles/actions/workflows/install.yml)
 [![Lint](https://img.shields.io/github/actions/workflow/status/gufranco/dotfiles/lint.yml?branch=master&style=flat-square&label=lint)](https://github.com/gufranco/dotfiles/actions/workflows/lint.yml)
+[![Release](https://img.shields.io/github/v/release/gufranco/dotfiles?style=flat-square&label=release)](https://github.com/gufranco/dotfiles/releases/latest)
 [![License](https://img.shields.io/github/license/gufranco/dotfiles?style=flat-square)](LICENSE)
 
 </div>
@@ -437,7 +438,7 @@ On macOS, lazygit, lazydocker, k9s and Ghostty also get links under `~/Library/A
    python3 -m unittest discover -s tests -v
    ```
 
-The [lint workflow](.github/workflows/lint.yml) also runs shfmt, a zsh syntax check, actionlint, YAML and TOML lint, and a gitleaks secrets scan. The [install workflow](.github/workflows/install.yml) runs `install.sh` twice on Ubuntu and macOS to prove it is idempotent.
+The [lint workflow](.github/workflows/lint.yml) also runs shfmt, a zsh syntax check, actionlint, YAML and TOML lint, and a gitleaks secrets scan. The [install workflow](.github/workflows/install.yml) runs `install.sh` twice on Ubuntu and macOS to prove it is idempotent. After Lint passes on `master`, the [release workflow](.github/workflows/release.yml) runs semantic-release, which reads the Conventional Commits since the last tag, cuts the next version, writes `CHANGELOG.md` and publishes a GitHub release.
 
 ## Security
 

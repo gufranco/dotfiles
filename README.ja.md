@@ -6,6 +6,7 @@
 
 [![Install](https://img.shields.io/github/actions/workflow/status/gufranco/dotfiles/install.yml?branch=master&style=flat-square&label=install)](https://github.com/gufranco/dotfiles/actions/workflows/install.yml)
 [![Lint](https://img.shields.io/github/actions/workflow/status/gufranco/dotfiles/lint.yml?branch=master&style=flat-square&label=lint)](https://github.com/gufranco/dotfiles/actions/workflows/lint.yml)
+[![Release](https://img.shields.io/github/v/release/gufranco/dotfiles?style=flat-square&label=release)](https://github.com/gufranco/dotfiles/releases/latest)
 [![License](https://img.shields.io/github/license/gufranco/dotfiles?style=flat-square)](LICENSE)
 
 </div>
@@ -437,7 +438,7 @@ macOSでは、lazygit、lazydocker、k9s、Ghosttyのリンクが`~/Library/Appl
    python3 -m unittest discover -s tests -v
    ```
 
-[lintワークフロー](.github/workflows/lint.yml)はほかに、shfmt、zshの構文チェック、actionlint、YAMLとTOMLのlint、gitleaksによるシークレットスキャンも実行します。[インストールワークフロー](.github/workflows/install.yml)はUbuntuとmacOSで`install.sh`を2回実行し、冪等であることを確かめます。
+[lintワークフロー](.github/workflows/lint.yml)はほかに、shfmt、zshの構文チェック、actionlint、YAMLとTOMLのlint、gitleaksによるシークレットスキャンも実行します。[インストールワークフロー](.github/workflows/install.yml)はUbuntuとmacOSで`install.sh`を2回実行し、冪等であることを確かめます。`master`でLintが通ると、[リリースワークフロー](.github/workflows/release.yml)がsemantic-releaseを実行し、前回のタグ以降のConventional Commitsから次のバージョンを決め、`CHANGELOG.md`を書き、GitHubリリースを公開します。
 
 ## セキュリティ
 

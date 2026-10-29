@@ -480,7 +480,7 @@ cask 'vlc'
 cask 'gufranco/tap/furnace'
 cask 'gufranco/tap/lmms'
 cask 'gufranco/tap/sunvox'
-cask 'midi-monitor'
+# cask 'midi-monitor'
 cask 'musescore'
 cask 'reaper'
 cask 'sonic-pi'
@@ -519,6 +519,7 @@ cask 'font-ubuntu-sans-nerd-font'
 unless ENV['CI']
   mas 'Xcode', id: 497_799_835
   mas 'Amphetamine', id: 937_984_704
+  mas 'MIDI Connect', id: 6_476_070_288
   mas 'Magnet', id: 441_258_766
 
   if architecture == 'arm64' && storage >= 2048

@@ -418,6 +418,7 @@ GoAccess 沒有 Catppuccin 移植版本，其 HTML 報告只提供淺色和深�
 | [`Brewfile`](Brewfile) | Homebrew 的 formula、cask、字型和 Mac App Store 應用程式 |
 | [`Uvfile`](Uvfile) | 以 uv 安裝的命令行工具 |
 | [`install.sh`](install.sh) | 跨平台安裝程式 |
+| [`CHANGELOG.md`](CHANGELOG.md) | 由 semantic-release 寫入的發佈說明 |
 
 </details>
 

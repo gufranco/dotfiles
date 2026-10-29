@@ -418,6 +418,7 @@ On macOS, lazygit, lazydocker, k9s and Ghostty also get links under `~/Library/A
 | [`Brewfile`](Brewfile) | Homebrew formulae, casks, fonts and Mac App Store apps |
 | [`Uvfile`](Uvfile) | CLI tools installed with uv |
 | [`install.sh`](install.sh) | Cross-platform installer |
+| [`CHANGELOG.md`](CHANGELOG.md) | Release notes written by semantic-release |
 
 </details>
 

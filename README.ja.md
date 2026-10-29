@@ -418,6 +418,7 @@ macOSでは、lazygit、lazydocker、k9s、Ghosttyのリンクが`~/Library/Appl
 | [`Brewfile`](Brewfile) | Homebrewのformula、cask、フォント、Mac App Storeアプリ |
 | [`Uvfile`](Uvfile) | uvでインストールするCLIツール |
 | [`install.sh`](install.sh) | クロスプラットフォームのインストーラー |
+| [`CHANGELOG.md`](CHANGELOG.md) | semantic-releaseが書くリリースノート |
 
 </details>
 

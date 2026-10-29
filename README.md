@@ -437,7 +437,7 @@ On macOS, lazygit, lazydocker, k9s and Ghostty also get links under `~/Library/A
    python3 -m unittest discover -s tests -v
    ```
 
-The [lint workflow](.github/workflows/lint.yml) also runs shfmt, a zsh syntax check, actionlint, YAML and TOML lint, and a gitleaks secrets scan. The [install workflow](.github/workflows/install.yml) runs `install.sh` twice on Ubuntu and macOS to prove it is idempotent. After Lint passes on `master`, the [release workflow](.github/workflows/release.yml) runs semantic-release, which reads the Conventional Commits since the last tag, cuts the next version, writes `CHANGELOG.md` and publishes a GitHub release.
+The [lint workflow](.github/workflows/lint.yml) also runs shfmt, a zsh syntax check, actionlint, YAML and TOML lint, and a gitleaks secrets scan. The [install workflow](.github/workflows/install.yml) runs `install.sh` twice on Ubuntu and macOS to prove it is idempotent. After Lint passes on `master`, the [release workflow](.github/workflows/release.yml) runs semantic-release, which reads the Conventional Commits since the last tag, cuts the next version, writes [`CHANGELOG.md`](CHANGELOG.md) and publishes a GitHub release.
 
 ## Security
 

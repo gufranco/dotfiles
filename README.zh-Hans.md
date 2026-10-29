@@ -437,7 +437,7 @@ GoAccess 没有 Catppuccin 移植，其 HTML 报告只提供亮色和暗色两�
    python3 -m unittest discover -s tests -v
    ```
 
-[lint 工作流](.github/workflows/lint.yml) 还会运行 shfmt、zsh 语法检查、actionlint、YAML 和 TOML 检查，以及 gitleaks 密钥扫描。[安装工作流](.github/workflows/install.yml) 在 Ubuntu 和 macOS 上各运行两次 `install.sh`，以证明它是幂等的。`master` 上的 Lint 通过后，[发布工作流](.github/workflows/release.yml) 会运行 semantic-release：读取上一个标签之后的 Conventional Commits，确定下一个版本，写入 `CHANGELOG.md`，并发布 GitHub release。
+[lint 工作流](.github/workflows/lint.yml) 还会运行 shfmt、zsh 语法检查、actionlint、YAML 和 TOML 检查，以及 gitleaks 密钥扫描。[安装工作流](.github/workflows/install.yml) 在 Ubuntu 和 macOS 上各运行两次 `install.sh`，以证明它是幂等的。`master` 上的 Lint 通过后，[发布工作流](.github/workflows/release.yml) 会运行 semantic-release：读取上一个标签之后的 Conventional Commits，确定下一个版本，写入 [`CHANGELOG.md`](CHANGELOG.md)，并发布 GitHub release。
 
 ## 安全
 

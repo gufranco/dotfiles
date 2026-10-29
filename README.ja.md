@@ -437,7 +437,7 @@ macOSでは、lazygit、lazydocker、k9s、Ghosttyのリンクが`~/Library/Appl
    python3 -m unittest discover -s tests -v
    ```
 
-[lintワークフロー](.github/workflows/lint.yml)はほかに、shfmt、zshの構文チェック、actionlint、YAMLとTOMLのlint、gitleaksによるシークレットスキャンも実行します。[インストールワークフロー](.github/workflows/install.yml)はUbuntuとmacOSで`install.sh`を2回実行し、冪等であることを確かめます。`master`でLintが通ると、[リリースワークフロー](.github/workflows/release.yml)がsemantic-releaseを実行し、前回のタグ以降のConventional Commitsから次のバージョンを決め、`CHANGELOG.md`を書き、GitHubリリースを公開します。
+[lintワークフロー](.github/workflows/lint.yml)はほかに、shfmt、zshの構文チェック、actionlint、YAMLとTOMLのlint、gitleaksによるシークレットスキャンも実行します。[インストールワークフロー](.github/workflows/install.yml)はUbuntuとmacOSで`install.sh`を2回実行し、冪等であることを確かめます。`master`でLintが通ると、[リリースワークフロー](.github/workflows/release.yml)がsemantic-releaseを実行し、前回のタグ以降のConventional Commitsから次のバージョンを決め、[`CHANGELOG.md`](CHANGELOG.md)を書き、GitHubリリースを公開します。
 
 ## セキュリティ
 

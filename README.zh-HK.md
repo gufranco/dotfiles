@@ -402,7 +402,6 @@ GoAccess 沒有 Catppuccin 移植版本，其 HTML 報告只提供淺色和深�
 | [`ripgrep/`](ripgrep) | ripgrep |
 | [`rubocop/`](rubocop) | RuboCop 預設設定和不可變性 cop |
 | [`ruff/`](ruff) | Ruff 預設設定和不可變性規則 |
-| [`specs/`](specs) | 行為規格和設計記錄 |
 | [`ssh/`](ssh) | SSH 設定和金鑰 |
 | [`taskwarrior/`](taskwarrior) | Taskwarrior 工作管理工具 |
 | [`tealdeer/`](tealdeer) | tldr 用戶端 Tealdeer |

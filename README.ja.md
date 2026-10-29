@@ -402,7 +402,6 @@ macOSでは、lazygit、lazydocker、k9s、Ghosttyのリンクが`~/Library/Appl
 | [`ripgrep/`](ripgrep) | ripgrep |
 | [`rubocop/`](rubocop) | RuboCopのデフォルト設定とイミュータビリティのcop |
 | [`ruff/`](ruff) | Ruffのデフォルト設定とイミュータビリティのルール |
-| [`specs/`](specs) | 振る舞いの仕様と設計の記録 |
 | [`ssh/`](ssh) | SSHの設定と鍵 |
 | [`taskwarrior/`](taskwarrior) | Taskwarriorタスクマネージャー |
 | [`tealdeer/`](tealdeer) | tldrクライアントのTealdeer |

@@ -402,7 +402,6 @@ GoAccess 没有 Catppuccin 移植，其 HTML 报告只提供亮色和暗色两�
 | [`ripgrep/`](ripgrep) | ripgrep |
 | [`rubocop/`](rubocop) | RuboCop 默认设置和不可变性 cop |
 | [`ruff/`](ruff) | Ruff 默认设置和不可变性规则 |
-| [`specs/`](specs) | 行为规格和设计记录 |
 | [`ssh/`](ssh) | SSH 配置和密钥 |
 | [`taskwarrior/`](taskwarrior) | Taskwarrior 任务管理器 |
 | [`tealdeer/`](tealdeer) | tldr 客户端 Tealdeer |

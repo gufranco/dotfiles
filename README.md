@@ -402,7 +402,6 @@ On macOS, lazygit, lazydocker, k9s and Ghostty also get links under `~/Library/A
 | [`ripgrep/`](ripgrep) | ripgrep |
 | [`rubocop/`](rubocop) | RuboCop defaults plus immutability cops |
 | [`ruff/`](ruff) | Ruff defaults plus immutability rules |
-| [`specs/`](specs) | Behavior specs and design records |
 | [`ssh/`](ssh) | SSH config and keys |
 | [`taskwarrior/`](taskwarrior) | Taskwarrior task manager |
 | [`tealdeer/`](tealdeer) | Tealdeer, a tldr client |

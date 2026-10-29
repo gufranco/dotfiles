@@ -351,8 +351,15 @@ brew 'dciabrin/ngdevkit/ngdevkit', args: ['force-bottle'] if architecture == 'ar
 brew 'dciabrin/ngdevkit/ngdevkit-toolchain', args: ['force-bottle'] if architecture == 'arm64'
 brew 'ucon64'
 brew 'xorriso'
+# brew 'gufranco/tap/marsdev'  # needs a formula in gufranco/tap: Marsdev toolchain, the macOS route to SGDK
 cask 'ares-emulator'
+# cask 'gufranco/tap/castle-engine'  # needs a cask in gufranco/tap: macOS zip from castle-engine.itch.io, unsigned, needs FPC
+cask 'defold'
+cask 'gb-studio'
+cask 'gdevelop'
+cask 'godot'
 cask 'retroarch-metal'
+# cask 'gufranco/tap/spine'  # needs a cask in gufranco/tap: esotericsoftware.com/spine-download, paid license, the trial cannot save or export
 
 ################################################################################
 # Casks - Terminals
@@ -487,6 +494,7 @@ cask 'gufranco/tap/pixelorama'
 cask 'gufranco/tap/pikopixel'
 cask 'gufranco/tap/lazpaint'
 cask 'gufranco/tap/ldtk'
+# cask 'gufranco/tap/ogmo-editor'  # needs a cask in gufranco/tap: Ogmo Editor.app.zip 3.4.0 from ogmoeditor.itch.io
 cask 'gufranco/tap/libresprite'
 
 ################################################################################

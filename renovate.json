@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "enabledManagers": ["github-actions"],
+  "dependencyDashboard": false,
+  "semanticCommits": "enabled",
+  "semanticCommitType": "ci",
+  "schedule": ["before 6am on monday"],
+  "timezone": "Etc/UTC",
+  "labels": ["dependencies", "github-actions"],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["github-runner"],
+      "enabled": true
+    }
+  ]
+}

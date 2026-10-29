@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/gufranco/dotfiles/compare/v1.0.0...v1.0.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* install fusho on linux with the family ([98959d8](https://github.com/gufranco/dotfiles/commit/98959d8d4375c3b02306e61f33c609905dae2826))
+
 # 1.0.0 (2026-10-29)
 
 

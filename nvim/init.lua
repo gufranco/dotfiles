@@ -1,3 +1,4 @@
+-- luacheck: globals vim
 vim.g.mapleader = ","
 vim.g.maplocalleader = ","
 
@@ -192,7 +193,10 @@ require("lazy").setup({
     "neovim/nvim-lspconfig",
     dependencies = {
       { "mason-org/mason.nvim", opts = {} },
-      { "mason-org/mason-lspconfig.nvim", opts = { ensure_installed = { "lua_ls", "ts_ls", "bashls", "jsonls", "yamlls" } } },
+      {
+        "mason-org/mason-lspconfig.nvim",
+        opts = { ensure_installed = { "lua_ls", "ts_ls", "bashls", "jsonls", "yamlls" } },
+      },
       "hrsh7th/cmp-nvim-lsp",
     },
     config = function()

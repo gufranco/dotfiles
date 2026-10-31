@@ -17,8 +17,6 @@ gui:
   skipRewordInEditorWarning: true
   border: rounded
   animateExplosion: false
-  authorColors:
-    "*": "#b4befe"
   theme:
     activeBorderColor:
       - '#cba6f7'
@@ -45,9 +43,11 @@ gui:
       - '#f38ba8'
     defaultFgColor:
       - '#cdd6f4'
+    authorColors:
+      "*": "#b4befe"
 git:
-  pagers:
-    - pager: delta --paging=never
+  diffRenderers:
+    - command: delta --paging=never
   commit:
     autoWrapCommitMessage: true
     autoWrapWidth: 72

@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/gufranco/dotfiles/compare/v1.0.1...v1.1.0) (2026-10-31)
+
+
+### Bug Fixes
+
+* **lazygit:** move to the current config keys ([332bfd7](https://github.com/gufranco/dotfiles/commit/332bfd7e41a031d8b336656cd757e8de7fa122f4))
+* **nvim:** use the catppuccin-mocha lualine theme ([e00c4da](https://github.com/gufranco/dotfiles/commit/e00c4daae419a5c1e13dd2b00fdcc4b0cc59ecd8))
+
+
+### Features
+
+* **zsh:** use a US English locale and ISO dates ([0420ee0](https://github.com/gufranco/dotfiles/commit/0420ee0b0d6dc0bb74cbdd1af3af67cefe826923))
+
 ## [1.0.1](https://github.com/gufranco/dotfiles/compare/v1.0.0...v1.0.1) (2026-10-29)
 
 

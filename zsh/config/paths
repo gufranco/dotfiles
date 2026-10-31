@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-################################################################################
-# Paths
-################################################################################
 case "$(uname)" in
   "Darwin") export PNPM_HOME="$HOME/Library/pnpm" ;;
   *) export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm" ;;
@@ -23,7 +20,6 @@ case "$(uname)" in
     ;;
 
   "Darwin")
-    # Architecture-specific paths
     case "$(uname -m)" in
       "arm64")
         __setup_homebrew "/opt/homebrew"
@@ -32,44 +28,48 @@ case "$(uname)" in
       "x86_64") __setup_homebrew "/usr/local" ;;
     esac
 
-    # Homebrew packages
     __add_formula_path "curl"
     __add_formula_path "libpq"
     __add_formula_path "openssl"
     __add_formula_path "neomutt" "libexec/neomutt"
-
-    # Ruby (keg-only fallback, mise shims take priority via settings)
     __add_formula_path "ruby"
 
-    # Java
     export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@21"
     __add_to_path "$JAVA_HOME/bin"
 
-    # Android
     export ANDROID_HOME="$HOME/Library/Android/sdk"
     __add_to_path "$ANDROID_HOME/platform-tools"
     __add_to_path "$ANDROID_HOME/emulator"
 
-    # GNU and uutils tools in place of the BSD versions
     __add_formula_path "bc"
-    __add_formula_path "uutils-coreutils" "libexec/uubin"
+    __add_formula_path "coreutils" "libexec/gnubin"
     __add_formula_path "gawk" "libexec/gnubin"
     __add_formula_path "gnu-sed" "libexec/gnubin"
-    __add_formula_path "uutils-findutils" "libexec/uubin"
+    __add_formula_path "findutils" "libexec/gnubin"
     __add_formula_path "grep" "libexec/gnubin"
-    __add_formula_path "binutils"
     __add_formula_path "make" "libexec/gnubin"
     __add_formula_path "gnu-tar" "libexec/gnubin"
-    __add_formula_path "which"
-    __add_formula_path "uutils-diffutils" "libexec/uubin"
-    __add_formula_path "patch"
+    __add_formula_path "diffutils"
+    __add_formula_path "gpatch" "libexec/gnubin"
     __add_formula_path "gnu-time" "libexec/gnubin"
     __add_formula_path "gnu-which" "libexec/gnubin"
-    __add_formula_path "gnu-units"
+    __add_formula_path "gnu-units" "libexec/gnubin"
     __add_formula_path "gnu-indent" "libexec/gnubin"
-    __add_formula_path "inetutils" "libexec/gnubin"
-    __add_formula_path "mailutils"
+    __add_formula_path "ed" "libexec/gnubin"
+    __add_formula_path "cpio"
+    __add_formula_path "m4"
+    __add_formula_path "bison"
+    __add_formula_path "util-linux"
+    __add_formula_path "ncurses"
+    __add_formula_path "libiconv"
+    __add_formula_path "whois"
+    __add_formula_path "file-formula"
+    __add_formula_path "man-db" "libexec/bin"
+    __add_formula_path "zip"
+    __add_formula_path "unzip"
+    __append_to_path "$HOMEBREW_PREFIX/opt/util-linux/sbin"
     __add_formula_path "moreutils"
+    __add_formula_path "parallel"
     __add_formula_path "patchutils"
     ;;
 esac

@@ -34,26 +34,132 @@ else
   source "$SCRIPT_DIR/zsh/config/core"
 fi
 
-################################################################################
-# Wrapper functions (remove __ prefix for install.sh)
-################################################################################
-log_info() { __log_info "$@"; }
-log_success() { __log_success "$@"; }
-log_warning() { __log_warning "$@"; }
-log_error() { __log_error "$@"; }
-log_skip() { __log_info "$@"; }
+log_info() { __say "$@"; }
+log_success() { __say "$@"; }
+log_skip() { __say "$@"; }
+log_warning() { __warn install "$@"; }
+log_error() { __error install "$@"; }
 cmd_exists() { __cmd_exists "$@"; }
-pkg_installed() { __pkg_installed "$@"; }
-snap_installed() { __snap_installed "$@"; }
 safe_link() { __safe_link "$@"; }
-git_sync() { __git_sync "$@"; }
-apt_install_if_missing() { __apt_install_if_missing "$@"; }
-apt_add_key_and_repo() { __apt_add_key_and_repo "$@"; }
-github_latest_tag() { __github_latest_tag "$@"; }
-apt_install_deb_url() { __apt_install_deb_url "$@"; }
-install_tarball_binary() { __install_tarball_binary "$@"; }
-brew_install_if_missing() { __brew_install_if_missing "$@"; }
-brew_install_cask_if_missing() { __brew_install_cask_if_missing "$@"; }
+
+pkg_installed() {
+  dpkg -l "$1" 2>/dev/null | grep -q "^ii"
+}
+
+snap_installed() {
+  snap list "$1" >/dev/null 2>&1
+}
+
+git_sync() {
+  local url="$1"
+  local target="$2"
+  local repo_name
+  repo_name=$(basename "$target")
+
+  if [ -d "$target/.git" ]; then
+    git -C "$target" pull --no-edit || {
+      log_warning "could not update ${repo_name}"
+      return 1
+    }
+    return 0
+  fi
+
+  rm -rf "${target:?}"
+  git clone "$url" "$target" || {
+    log_error "could not clone ${repo_name}"
+    return 1
+  }
+}
+
+apt_install_if_missing() {
+  local package="$1"
+  pkg_installed "$package" || sudo apt install -y -qq "$package"
+}
+
+apt_add_key_and_repo() {
+  local key_url="$1"
+  local key_file="$2"
+  local repo_line="$3"
+  local repo_file="$4"
+  local package="${5:-}"
+
+  if [ ! -f "$key_file" ]; then
+    sudo mkdir -p "$(dirname "$key_file")" 2>/dev/null || true
+    if ! curl -fsSL --connect-timeout 10 --max-time 30 "$key_url" | sudo gpg --dearmor --yes -o "$key_file" 2>/dev/null; then
+      log_warning "could not download the GPG key ${key_url}"
+      return 1
+    fi
+  fi
+
+  if [ ! -f "$repo_file" ]; then
+    echo "$repo_line" | sudo tee "$repo_file" >/dev/null
+    sudo apt update -qq
+  fi
+
+  if [ -n "$package" ] && ! pkg_installed "$package"; then
+    sudo apt install -y -qq "$package"
+  fi
+}
+
+github_latest_tag() {
+  local token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+  local -a auth=()
+  [ -n "$token" ] && auth=(-H "Authorization: Bearer $token")
+
+  curl -fsSL --connect-timeout 10 --max-time 30 "${auth[@]}" \
+    "https://api.github.com/repos/$1/releases/latest" |
+    grep '"tag_name"' | cut -d '"' -f 4
+}
+
+apt_install_deb_url() {
+  local url="$1"
+  local tmpdir result package
+  tmpdir="$(mktemp -d)" || return 1
+  if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/package.deb"; then
+    sudo apt install -y -qq "$tmpdir/package.deb"
+    result=$?
+    if [ "$result" -ne 0 ]; then
+      package="$(dpkg-deb -f "$tmpdir/package.deb" Package 2>/dev/null)"
+      if [ -n "$package" ]; then
+        sudo dpkg --purge --force-depends "$package" >/dev/null 2>&1 || true
+      fi
+    fi
+  else
+    result=1
+  fi
+  rm -rf "$tmpdir"
+  return "$result"
+}
+
+install_tarball_binary() {
+  local url="$1"
+  local binary="$2"
+  local tmpdir result extracted
+  tmpdir="$(mktemp -d)" || return 1
+  if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/archive.tar.gz" &&
+    tar -xzf "$tmpdir/archive.tar.gz" -C "$tmpdir"; then
+    extracted="$(find "$tmpdir" -type f -name "$binary" -print -quit 2>/dev/null)"
+    if [ -n "$extracted" ]; then
+      sudo install -m 755 "$extracted" "/usr/local/bin/$binary"
+      result=$?
+    else
+      result=1
+    fi
+  else
+    result=1
+  fi
+  rm -rf "$tmpdir"
+  return "$result"
+}
+
+brew_install_if_missing() {
+  brew list "$1" >/dev/null 2>&1 || brew install "$1"
+}
+
+brew_install_cask_if_missing() {
+  brew list --cask "$1" >/dev/null 2>&1 || brew install --cask "$1"
+}
+
 github_repo_sync() {
   local https_url="$1"
   local target_dir="$2"
@@ -63,9 +169,9 @@ github_repo_sync() {
   log_info "Setting up ${label}..."
   if [ -d "$target_dir/.git" ]; then
     git -C "$target_dir" remote set-url origin "$https_url" 2>/dev/null || true
-    git -C "$target_dir" pull --no-edit 2>/dev/null || log_warning "Failed to pull ${label}"
+    git -C "$target_dir" pull --no-edit 2>/dev/null || log_warning "failed to pull ${label}"
     git -C "$target_dir" remote set-url origin "$ssh_url" 2>/dev/null || true
-    git -C "$target_dir" submodule update --init --remote --recursive 2>/dev/null || log_warning "Submodule update failed"
+    git -C "$target_dir" submodule update --init --remote --recursive 2>/dev/null || log_warning "submodule update failed"
     log_success "${label} updated"
   else
     git clone --recursive "$https_url" "$target_dir"
@@ -77,25 +183,21 @@ github_repo_sync() {
 ################################################################################
 # Error handling
 ################################################################################
-trap 'log_error "Installation failed at line $LINENO"' ERR
+trap 'log_error "installation failed at line $LINENO"' ERR
 
 ################################################################################
 # Installation
 ################################################################################
-echo ""
-log_info "==============================================================="
-log_info "Dotfiles Installation Script"
-log_info "==============================================================="
-echo ""
+log_info "Installing the dotfiles."
 
 ################################################################################
 # User confirmation (skip in CI)
 ################################################################################
 if [[ -z "$CI" ]]; then
   echo ""
-  log_warning "This script will install/update dotfiles and may overwrite existing configurations."
+  log_warning "this script will install/update dotfiles and may overwrite existing configurations."
   if ! read -p "Continue? (Y/n) " -n 1 -r </dev/tty; then
-    log_error "No terminal to confirm on. Set CI=1 to run without the prompt."
+    log_error "no terminal to confirm on. Set CI=1 to run without the prompt."
     exit 1
   fi
   echo ""
@@ -209,7 +311,6 @@ case "$(uname)" in
     ############################################################################
     log_info "Installing Zsh..."
     apt_install_if_missing zsh
-    apt_install_if_missing zsh-syntax-highlighting
 
     if ! grep -q "$(command -v zsh)" /etc/shells 2>/dev/null; then
       command -v zsh | sudo tee -a /etc/shells >/dev/null
@@ -316,7 +417,7 @@ case "$(uname)" in
     for app in "${APPS[@]}"; do
       if ! pkg_installed "$app"; then
         log_info "Installing $app..."
-        sudo apt install -y -qq "$app" 2>/dev/null || log_warning "Failed: $app"
+        sudo apt install -y -qq "$app" 2>/dev/null || log_warning "failed: $app"
       fi
     done
 
@@ -343,7 +444,7 @@ case "$(uname)" in
         if curl -fsSL --connect-timeout 10 --max-time 120 "$NERD_FONT_URL" | tar -xJf - -C "$NERD_FONTS_DIR" 2>/dev/null; then
           log_success "$font Nerd Font installed"
         else
-          log_warning "Failed to install $font Nerd Font"
+          log_warning "failed to install $font Nerd Font"
         fi
       else
         log_skip "$font Nerd Font already installed"
@@ -665,7 +766,7 @@ case "$(uname)" in
         if systemctl --user enable --now openlogi-agent.service >/dev/null 2>&1; then
           log_success "OpenLogi agent enabled"
         else
-          log_warning "Failed to enable OpenLogi agent"
+          log_warning "failed to enable OpenLogi agent"
         fi
       fi
     fi
@@ -691,7 +792,7 @@ case "$(uname)" in
           tar -xJf - -C "$LINUX_NERD_FONTS_DIR" "${font}NerdFont-Regular.ttf"; then
           log_success "$font Nerd Font installed"
         else
-          log_warning "Failed to install $font Nerd Font"
+          log_warning "failed to install $font Nerd Font"
         fi
       else
         log_skip "$font Nerd Font already installed"
@@ -910,7 +1011,7 @@ ZRAM
           apt_install_if_missing linux-xanmod-x64v3 || log_warning "XanMod install had warnings"
           log_success "XanMod kernel installed"
         else
-          log_warning "Could not fetch XanMod key, skipping custom kernel"
+          log_warning "could not fetch XanMod key, skipping custom kernel"
         fi
       else
         log_skip "XanMod kernel already installed"
@@ -1071,7 +1172,7 @@ IOSCHED
           fi
           rm -f /tmp/ge-proton.tar.gz
         else
-          log_warning "Could not determine latest GE-Proton download"
+          log_warning "could not determine latest GE-Proton download"
         fi
       else
         log_skip "GE-Proton already installed"
@@ -1120,19 +1221,24 @@ IOSCHED
     ############################################################################
     log_info "Installing Homebrew packages..."
     brew update
-    brew trust gufranco/tap || log_warning "Could not trust gufranco/tap"
+    brew trust gufranco/tap || log_warning "could not trust gufranco/tap"
     brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
     brew bundle cleanup --force --no-taps --file "$HOME/.dotfiles/Brewfile" || true
-    brew upgrade --greedy --force || log_warning "Brew upgrade had failures"
+    brew upgrade --greedy --force || log_warning "brew upgrade had failures"
     brew cleanup -s || true
 
     while IFS= read -r unlinked_formula; do
       [ -z "$unlinked_formula" ] && continue
       log_info "Linking $unlinked_formula..."
       brew link --overwrite "$unlinked_formula" >/dev/null 2>&1 ||
-        log_warning "Could not link $unlinked_formula"
+        log_warning "could not link $unlinked_formula"
     done < <(brew bundle check --verbose --file "$HOME/.dotfiles/Brewfile" 2>&1 |
       awk '/needs to be linked/ {print $3}')
+
+    for llvm_tool in clang-tidy clang-format; do
+      [ -x "$HOMEBREW_PREFIX/opt/llvm/bin/$llvm_tool" ] &&
+        safe_link "$HOMEBREW_PREFIX/opt/llvm/bin/$llvm_tool" "$HOME/.local/bin/$llvm_tool"
+    done
 
     log_success "Homebrew packages updated"
 
@@ -1165,7 +1271,7 @@ IOSCHED
     if __macos_no_ds_store_on_foreign_volumes; then
       log_success "Finder will not write .DS_Store to USB or network volumes"
     else
-      log_warning "Could not set the Finder defaults"
+      log_warning "could not set the Finder defaults"
     fi
 
     ;;
@@ -1205,7 +1311,7 @@ if cmd_exists uv && [ -f "$HOME/.dotfiles/Uvfile" ]; then
       if uv tool install "$pkg" --quiet 2>/dev/null; then
         ((uv_ok++)) || true
       else
-        log_warning "Failed to install uv tool: $pkg"
+        log_warning "failed to install uv tool: $pkg"
         ((uv_fail++)) || true
       fi
     fi
@@ -1305,7 +1411,7 @@ safe_link "$HOME/.dotfiles/nvim" "$HOME/.config/nvim"
 ############################################################################
 log_info "Setting up GPG..."
 safe_link "$HOME/.dotfiles/gnupg" "$HOME/.gnupg"
-chmod 700 "$HOME/.gnupg" 2>/dev/null || log_warning "Failed to set gnupg permissions"
+chmod 700 "$HOME/.gnupg" 2>/dev/null || log_warning "failed to set gnupg permissions"
 chmod 400 "$HOME/.gnupg/keys/"* 2>/dev/null || true
 
 case "$(uname)" in
@@ -1319,7 +1425,7 @@ esac
 
 # Import GPG keys (idempotent - import is safe to repeat)
 for key in "$HOME/.gnupg/keys/"*.pgp; do
-  [ -f "$key" ] && { gpg --batch --yes --quiet --import "$key" 2>/dev/null || log_warning "Failed to import GPG key: $(basename "$key")"; }
+  [ -f "$key" ] && { gpg --batch --yes --quiet --import "$key" 2>/dev/null || log_warning "failed to import GPG key: $(basename "$key")"; }
 done
 
 ############################################################################
@@ -1327,7 +1433,7 @@ done
 ############################################################################
 log_info "Setting up SSH..."
 safe_link "$HOME/.dotfiles/ssh" "$HOME/.ssh"
-chmod 700 "$HOME/.ssh" 2>/dev/null || log_warning "Failed to set ssh permissions"
+chmod 700 "$HOME/.ssh" 2>/dev/null || log_warning "failed to set ssh permissions"
 chmod 600 "$HOME/.ssh/config" 2>/dev/null || true
 chmod 400 "$HOME/.ssh/id_"* 2>/dev/null || true
 chmod 644 "$HOME/.ssh/"*.pub 2>/dev/null || true
@@ -1623,15 +1729,8 @@ TOTAL_ELAPSED=$((SCRIPT_END_TIME - SCRIPT_START_TIME))
 TOTAL_MINS=$((TOTAL_ELAPSED / 60))
 TOTAL_SECS=$((TOTAL_ELAPSED % 60))
 
-echo ""
-log_success "==============================================================="
-log_success "Installation completed successfully!"
-log_success "==============================================================="
-echo ""
-log_info "Total execution time: ${TOTAL_MINS}m ${TOTAL_SECS}s"
-echo ""
-log_warning "Some changes may require a reboot to take effect"
+log_info "Some changes take effect only after a reboot."
 if [ "$(uname)" = "Linux" ] && [ "$(dpkg --print-architecture 2>/dev/null)" = "amd64" ]; then
-  log_warning "GPU and gaming changes require a reboot. Run 'gaming-check' after reboot to verify."
+  log_info "Reboot for the GPU and gaming changes, then run gaming-check."
 fi
-echo ""
+log_success "Installed in ${TOTAL_MINS}m${TOTAL_SECS}s."

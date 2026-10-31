@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-################################################################################
-# Resource calculation for VMs
-################################################################################
+__DOCKER_SERVICES=(mongo postgres redis valkey redict ubuntu)
+
 function __clamp_resource() {
   local value="$1"
   local minimum="$2"
@@ -11,597 +10,337 @@ function __clamp_resource() {
 
   if [ "$value" -gt "$maximum" ]; then
     echo "$maximum"
-    return
+  elif [ "$value" -ge "$minimum" ]; then
+    echo "$value"
+  elif [ "$total" -ge "$minimum" ]; then
+    echo "$minimum"
+  else
+    echo "$total"
   fi
-
-  if [ "$value" -lt "$minimum" ]; then
-    if [ "$total" -ge "$minimum" ]; then
-      echo "$minimum"
-    else
-      echo "$total"
-    fi
-    return
-  fi
-
-  echo "$value"
 }
 
 function __round_to_power_of_2() {
   local value="$1"
   local rounded=1
-
   while [ "$rounded" -lt "$value" ]; do
-    rounded=$(( rounded * 2 ))
+    rounded=$((rounded * 2))
   done
-
   echo "$rounded"
 }
 
 function __calculate_vm_cores() {
-  local percentage=50
-  local minimum=2
-  local maximum=4
-  local total
-
+  local total result
   case "$(uname -s)" in
     Darwin) total="$(sysctl -n hw.ncpu)" ;;
-    Linux)  total="$(nproc)" ;;
+    Linux) total="$(nproc)" ;;
   esac
-
-  local result=$(( total * percentage / 100 ))
-
-  if [ "$result" -ge 2 ] && [ $(( result % 2 )) -ne 0 ]; then
-    result=$(( result + 1 ))
-  fi
-
-  __clamp_resource "$result" "$minimum" "$maximum" "$total"
+  result=$((total * 50 / 100))
+  [ "$result" -ge 2 ] && [ $((result % 2)) -ne 0 ] && result=$((result + 1))
+  __clamp_resource "$result" 2 4 "$total"
 }
 
 function __calculate_vm_memory() {
-  local percentage=50
-  local minimum=2
-  local maximum=8
   local total
-
   case "$(uname -s)" in
-    Darwin) total=$(( "$(sysctl -n hw.memsize)" / 1024 / 1024 / 1024 )) ;;
-    Linux)  total=$(( "$(grep MemTotal /proc/meminfo | awk '{print $2}')" / 1024 / 1024 )) ;;
+    Darwin) total=$(($(sysctl -n hw.memsize) / 1024 / 1024 / 1024)) ;;
+    Linux) total=$(($(awk '/MemTotal/ {print $2}' /proc/meminfo) / 1024 / 1024)) ;;
   esac
-
-  local result=$(( total * percentage / 100 ))
-  result=$(__round_to_power_of_2 "$result")
-
-  __clamp_resource "$result" "$minimum" "$maximum" "$total"
+  __clamp_resource "$(__round_to_power_of_2 $((total * 50 / 100)))" 2 8 "$total"
 }
 
 function __calculate_vm_storage() {
-  local percentage=25
-  local minimum=8
-  local maximum=64
-  local total
-
+  local bytes total
   case "$(uname -s)" in
-    Darwin)
-      total=$(( (("$(diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}')" / 1073741824) + 255) / 256 * 256 ))
-      ;;
-    Linux)
-      total=$(( (("$(lsblk -bdno SIZE "/dev/$(lsblk -no pkname "$(df / --output=source | tail -n1)")")" / 1073741824) + 255) / 256 * 256 ))
+    Darwin) bytes="$(diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}')" ;;
+    Linux) bytes="$(lsblk -bdno SIZE "/dev/$(lsblk -no pkname "$(df / --output=source | tail -n1)")")" ;;
+  esac
+  total=$(((bytes / 1073741824 + 255) / 256 * 256))
+  __clamp_resource "$(__round_to_power_of_2 $((total * 25 / 100)))" 8 64 "$total"
+}
+
+function __ensure_docker_compose_plugin() {
+  __cmd_exists docker-compose || return 0
+  __safe_link "$(command -v docker-compose)" "${HOME}/.docker/cli-plugins/docker-compose"
+}
+
+function __confirm_typed() {
+  local name="$1"
+  local expected="$2"
+  local action="$3"
+  local answer
+
+  [ "${CI:-0}" = 1 ] && return 0
+  if [ ! -t 0 ]; then
+    __stop "$name" "no terminal to confirm on"
+    return 1
+  fi
+  printf 'Type %s to %s, or anything else to stop: ' "$expected" "$action" >&2
+  read -r answer
+  [ "$answer" = "$expected" ] && return 0
+  __stop "$name" "nothing was changed"
+  return 1
+}
+
+function __confirm_yes() {
+  local name="$1"
+  local question="$2"
+  local answer
+
+  [ "${CI:-0}" = 1 ] && return 0
+  if [ ! -t 0 ]; then
+    __stop "$name" "no terminal to confirm on"
+    return 1
+  fi
+  printf '%s [y/N]: ' "$question" >&2
+  read -r answer
+  case "$answer" in
+    y | Y | yes) return 0 ;;
+    *)
+      __stop "$name" "nothing was changed"
+      return 1
       ;;
   esac
-
-  local result=$(( total * percentage / 100 ))
-  result=$(__round_to_power_of_2 "$result")
-
-  __clamp_resource "$result" "$minimum" "$maximum" "$total"
 }
 
-################################################################################
-# Docker helpers
-################################################################################
-function __ensure_docker_compose_plugin() {
-  if ! __cmd_exists docker-compose; then
-    __log_info "docker-compose not found, skipping plugin setup"
-    return
-  fi
+function __docker_container_start() { command docker start "$1"; }
+function __docker_container_stop() { command docker stop "$1"; }
 
-  local compose_bin
-  compose_bin="$(command -v docker-compose)"
-
-  __safe_link "$compose_bin" "${HOME}/.docker/cli-plugins/docker-compose"
-  chmod +x "${HOME}/.docker/cli-plugins/docker-compose" 2>/dev/null
-}
-
-function __docker_container_start() {
-  local container_name="$1"
-  command docker start "$container_name"
-}
-
-function __docker_container_stop() {
-  local container_name="$1"
-  command docker stop "$container_name"
+function __capitalize() {
+  printf '%s%s\n' "$(printf '%s' "${1:0:1}" | tr '[:lower:]' '[:upper:]')" "${1:1}"
 }
 
 function __docker_container_purge() {
   local container_name="$1"
-  if [ -z "$container_name" ]; then
-    __log_error "No container name given"
-    return 1
-  fi
+  local data_dir
+  data_dir="$HOME/Docker/$(__capitalize "$container_name")"
 
-  local first_letter
-  first_letter=$(printf '%s' "${container_name:0:1}" | tr '[:lower:]' '[:upper:]')
-  local data_dir="$HOME/Docker/${first_letter}${container_name:1}"
-
-  __docker_container_stop "$container_name" 2>/dev/null || true
-  command docker rm "$container_name" 2>/dev/null || true
-  rm -rf "$data_dir"
+  command docker stop "$container_name"
+  command docker rm "$container_name"
+  rm -rf "${data_dir:?}"
 }
 
 function __docker_container_terminal() {
-  local container_name="$1"
-  local shell="${2:-/bin/sh}"
-  command docker exec -it "$container_name" "$shell"
+  command docker exec -it "$1" "${2:-/bin/sh}"
 }
 
 function __docker_run_detached() {
   local container_name="$1"
+  local data_dir
   shift
-
-  command docker run \
-    --detach \
-    --hostname "$container_name" \
-    --name "$container_name" \
-    --restart unless-stopped \
-    \
-    --log-driver "local" \
-    --log-opt "max-size=10m" \
-    --log-opt "max-file=3" \
-    \
-    "$@"
+  data_dir="$HOME/Docker/$(__capitalize "$container_name")"
+  mkdir -p "$data_dir"
+  command docker run --detach --hostname "$container_name" --name "$container_name" \
+    --restart unless-stopped --log-driver local --log-opt max-size=10m --log-opt max-file=3 \
+    --mount "type=bind,source=${data_dir},target=/external" "$@"
 }
 
-################################################################################
-# User confirmation and display helpers
-################################################################################
-function __confirm_operation() {
-  local message="${1:-Do you want to continue?}"
-
-  if [[ "${CI:-0}" = "1" ]]; then
-    echo "CI mode detected - auto-confirming..."
-    echo ""
-    return 0
-  fi
-
-  read -r "?${message} (y/N): "
-  echo ""
-
-  if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
-    return 1
-  fi
-
-  return 0
-}
-
-function __show_header() {
-  local title="$1"
-  local subtitle="${2:-}"
-
-  echo ""
-  echo "================================================================================"
-  if [ -n "$subtitle" ]; then
-    echo "  ${title} - ${subtitle}"
-  else
-    echo "  ${title}"
-  fi
-  echo "================================================================================"
-  echo ""
-}
-
-function __show_runtime_info() {
-  local vm_type="$1"
-  local arch_desc="$2"
-  local mount_type="$3"
-  local extra_info="${4:-}"
-
-  echo "Runtime:"
-  echo "  Engine:         Docker"
-  echo "  VM Type:        ${vm_type}"
-  echo "  Architecture:   ${arch_desc}"
-  echo "  Mount Type:     ${mount_type}"
-  echo "  File Watching:  inotify enabled"
-  [ -n "$extra_info" ] && echo "  ${extra_info}"
-  echo ""
-  echo "Network:"
-  echo "  DNS:            1.1.1.1, 8.8.8.8"
-  echo "  Address:        Reachable from host"
-  echo ""
-}
-
-function __show_performance_info() {
-  local extra_info="${1:-}"
-
-  echo "Performance:"
-  echo "  Auto Activate:  Enabled"
-  [ -n "$extra_info" ] && echo "  ${extra_info}"
-  echo "  BuildKit:       Enabled (faster builds & I/O)"
-  echo "  Inline Cache:   Enabled (persistent cache)"
-  echo ""
-}
-
-function __confirm_colima_config() {
-  local profile="$1"
-  local cores="$2"
-  local memory="$3"
-  local storage="$4"
-  local os_type="$5"
-  local arch="$6"
-
-  __show_header "Colima VM" "Configuration"
-  echo "Profile:          ${profile}"
-  echo "Platform:         ${os_type} (${arch})"
-  echo ""
-  echo "Configuration:"
-  echo "  CPU Cores:      ${cores}"
-  echo "  Memory:         ${memory}GiB"
-  echo "  Disk:           ${storage}GiB"
-  echo ""
-
-  __confirm_operation "Do you want to continue with these configurations?"
-}
-
-function __vm_start() {
-  local profile="$1"
-  local cores="$2"
-  local memory="$3"
-  local storage="$4"
-  local arch="$5"
-  shift 5
-
-  command colima start \
-    --profile "${profile}" \
-    --cpu "${cores}" \
-    --memory "${memory}" \
-    --disk "${storage}" \
-    \
-    --runtime "docker" \
-    --arch "${arch}" \
-    \
-    --mount "$HOME:w" \
-    --mount-inotify \
-    \
-    --dns "1.1.1.1" \
-    --dns "8.8.8.8" \
-    \
-    --network-address \
-    --activate \
-    \
-    --env DOCKER_BUILDKIT=1 \
-    --env COMPOSE_DOCKER_CLI_BUILD=1 \
-    --env BUILDKIT_INLINE_CACHE=1 \
-    \
-    "$@"
-}
-
-################################################################################
-# Colima VM management
-################################################################################
-function colima-start() {
-  __ensure_docker_compose_plugin
-
-  local profile="default"
-  local cores=""
-  local memory=""
-  local storage=""
-  local os_type
-  local arch
-  os_type="$(uname -s)"
-  arch="$(uname -m)"
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --cores | --memory | --storage)
-        if [[ $# -lt 2 ]]; then
-          __log_error "$1 needs a value"
-          return 1
-        fi
-        ;;
-    esac
-    case "$1" in
-      --cores)   cores="$2";   shift 2 ;;
-      --memory)  memory="$2";  shift 2 ;;
-      --storage) storage="$2"; shift 2 ;;
-      *)
-        if [[ "$profile" == "default" && "$1" != "--"* ]]; then
-          profile="$1"
-        fi
-        shift
-        ;;
-    esac
+# shellcheck disable=SC2004,SC2034,SC2154
+function __docker_define_services() {
+  local service shell
+  for service in "${__DOCKER_SERVICES[@]}"; do
+    shell="/bin/sh"
+    [ "$service" = ubuntu ] && shell="/bin/bash"
+    functions[${service}-start]="__docker_container_start ${service}"
+    functions[${service}-stop]="__docker_container_stop ${service}"
+    functions[${service}-purge]="__docker_container_purge ${service}"
+    functions[${service}-terminal]="__docker_container_terminal ${service} ${shell}"
   done
-
-  cores="${cores:-$(__calculate_vm_cores)}"
-  memory="${memory:-$(__calculate_vm_memory)}"
-  storage="${storage:-$(__calculate_vm_storage)}"
-
-  __confirm_colima_config "$profile" "$cores" "$memory" "$storage" "$os_type" "$arch" || return 1
-  __show_header "Colima VM" "Starting"
-
-  case "$os_type" in
-    "Darwin")
-      case "$arch" in
-        "x86_64")
-          __show_runtime_info \
-            "Virtualization.framework (Apple native)" \
-            "x86_64 native (no emulation)" \
-            "VirtioFS (kernel-level I/O)"
-          __show_performance_info
-
-          __vm_start "$profile" "$cores" "$memory" "$storage" "x86_64" \
-            --vm-type "vz" \
-            --mount-type "virtiofs"
-          ;;
-
-        "arm64")
-          __show_runtime_info \
-            "Virtualization.framework (Apple native)" \
-            "ARM64 native + x86_64 via Rosetta 2" \
-            "VirtioFS (kernel-level I/O)" \
-            "Rosetta 2:      Enabled (x86_64 containers supported)"
-          __show_performance_info "Multi-Arch:     ARM64 + x86_64 simultaneously"
-
-          __vm_start "$profile" "$cores" "$memory" "$storage" "aarch64" \
-            --vm-type "vz" \
-            --vz-rosetta \
-            --mount-type "virtiofs"
-          ;;
-      esac
-      ;;
-
-    "Linux")
-      __show_runtime_info \
-        "QEMU with KVM acceleration" \
-        "x86_64 native" \
-        "9p (best for Linux)"
-      __show_performance_info "KVM:            Hardware acceleration enabled"
-
-      __vm_start "$profile" "$cores" "$memory" "$storage" "x86_64" \
-        --vm-type "qemu" \
-        --mount-type "9p"
-      ;;
-  esac
 }
 
-function colima-stop() {
-  local profile="${1:-default}"
-
-  __show_header "Colima VM" "Stop"
-  echo "Profile:         ${profile}"
-  echo ""
-
-  __confirm_operation "Do you want to stop this VM?" || return 1
-
-  command colima stop --profile "${profile}"
-}
-
-function colima-purge() {
-  local profile="${1:-default}"
-  local disks_dir="$HOME/.colima/_lima/_disks"
-  local lima_dir="$HOME/.colima/_lima"
-
-  __show_header "Colima VM" "Purge (WARNING: Destructive Operation)"
-  echo "Profile:         ${profile}"
-  echo ""
-  echo "This operation will:"
-  echo "  - Stop all Docker containers"
-  echo "  - Remove all Docker images, volumes, and networks"
-  echo "  - Stop the Colima VM"
-  echo "  - Delete the Colima VM and all its data"
-  echo "  - Clean orphan disks and cached assets"
-  echo ""
-  echo "WARNING: This action cannot be undone!"
-  echo ""
-
-  __confirm_operation "Are you sure you want to continue?" || return 1
-
-  __docker_purge_context "${profile}"
-  command colima stop --profile "${profile}" --force 2>/dev/null || true
-  command colima delete --profile "${profile}" --force 2>/dev/null || true
-
-  # Clean orphan disks
-  local listing
-  if ! listing="$(command colima list 2>/dev/null)"; then
-    __log_warning "colima list failed, so orphan disks are left in place"
-    command colima prune --all --force
-    return 0
-  fi
-
-  local -a active=()
-  while read -r name _; do
-    [[ -n "$name" && "$name" != "PROFILE" ]] && active+=("$name")
-  done <<<"$listing"
-
-  for dir in "$disks_dir"/colima*(/N); do
-    local disk="${dir:t}"
-    local p
-    p=$([[ "$disk" == "colima" ]] && echo "default" || echo "${disk#colima-}")
-    if (( ! ${active[(Ie)$p]} )); then
-      echo "Removing orphan: $disk"
-
-      rm -rf "${dir:?}" "${lima_dir:?}/${disk:?}"
-    fi
-  done
-
-  command colima prune --all --force
-}
-
-################################################################################
-# Docker purge
-################################################################################
-function docker-purge() {
-  local profile="${1:-default}"
-
-  __confirm_operation "Remove every container, image, volume and build cache in the ${profile} profile?" || return 1
-  __docker_purge_context "${profile}"
-}
-
-function __docker_purge_context() {
-  local profile="${1:-default}"
-  local context
-  context="$([[ "${profile}" = "default" ]] && echo "colima" || echo "colima-${profile}")"
-
-  local -a container_ids=()
-  while IFS= read -r cid; do
-    [ -n "$cid" ] && container_ids+=("$cid")
-  done < <(DOCKER_CONTEXT="${context}" command docker ps -aq 2>/dev/null)
-  if [ "${#container_ids[@]}" -gt 0 ]; then
-    DOCKER_CONTEXT="${context}" command docker stop "${container_ids[@]}" 2>/dev/null || true
-  fi
-
-  DOCKER_CONTEXT="${context}" command docker system prune -af --volumes --filter "label!=keep" 2>/dev/null || true
-  DOCKER_CONTEXT="${context}" command docker builder prune -af 2>/dev/null || true
-}
-
-################################################################################
-# Containerized services
-#
-# Each service has a custom init (unique Docker config) and standard
-# lifecycle functions (start, stop, purge, terminal) that delegate
-# to the shared __docker_container_* helpers.
-################################################################################
-
-# --- Mongo ---
 function mongo-init() {
-  mkdir -p "$HOME/Docker/Mongo"
-  __docker_run_detached "mongo" \
-    --env "MONGO_INITDB_ROOT_USERNAME=mongo" \
-    --env "MONGO_INITDB_ROOT_PASSWORD=mongo" \
-    --mount "type=bind,source=$HOME/Docker/Mongo,target=/external" \
-    --volume "mongo-data:/data/db" \
-    --volume "mongo-config:/data/configdb" \
-    --publish "127.0.0.1:27017:27017" \
+  __docker_run_detached mongo \
+    --env MONGO_INITDB_ROOT_USERNAME=mongo --env MONGO_INITDB_ROOT_PASSWORD=mongo \
+    --volume mongo-data:/data/db --volume mongo-config:/data/configdb \
+    --publish 127.0.0.1:27017:27017 \
     --health-cmd "mongosh --eval 'db.adminCommand({ping: 1})' --quiet" \
     --health-interval 30s --health-timeout 10s --health-retries 3 \
     mongo:latest
 }
-mongo-start()    { __docker_container_start "mongo"; }
-mongo-stop()     { __docker_container_stop "mongo"; }
-mongo-purge()    { __docker_container_purge "mongo"; }
-mongo-terminal() { __docker_container_terminal "mongo"; }
 
-# --- Postgres ---
 function postgres-init() {
-  mkdir -p "$HOME/Docker/Postgres"
-  __docker_run_detached "postgres" \
-    --env "POSTGRES_USER=postgres" \
-    --env "POSTGRES_PASSWORD=postgres" \
-    --mount "type=bind,source=$HOME/Docker/Postgres,target=/external" \
-    --volume "postgres-data:/var/lib/postgresql/data" \
-    --publish "127.0.0.1:5432:5432" \
+  __docker_run_detached postgres \
+    --env POSTGRES_USER=postgres --env POSTGRES_PASSWORD=postgres \
+    --volume postgres-data:/var/lib/postgresql/data \
+    --publish 127.0.0.1:5432:5432 \
     --health-cmd "pg_isready -U postgres" \
     --health-interval 30s --health-timeout 10s --health-retries 3 \
     postgres:alpine
 }
-postgres-start()    { __docker_container_start "postgres"; }
-postgres-stop()     { __docker_container_stop "postgres"; }
-postgres-purge()    { __docker_container_purge "postgres"; }
-postgres-terminal() { __docker_container_terminal "postgres"; }
 
-# --- Redis ---
 function redis-init() {
-  mkdir -p "$HOME/Docker/Redis"
-  __docker_run_detached "redis" \
-    --mount "type=bind,source=$HOME/Docker/Redis,target=/external" \
-    --volume "redis-data:/data" \
-    --publish "127.0.0.1:6379:6379" \
-    --health-cmd "redis-cli ping" \
-    --health-interval 30s --health-timeout 10s --health-retries 3 \
-    redis:alpine \
-    redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+  __docker_run_detached redis \
+    --volume redis-data:/data --publish 127.0.0.1:6379:6379 \
+    --health-cmd "redis-cli ping" --health-interval 30s --health-timeout 10s --health-retries 3 \
+    redis:alpine redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 }
-redis-start()    { __docker_container_start "redis"; }
-redis-stop()     { __docker_container_stop "redis"; }
-redis-purge()    { __docker_container_purge "redis"; }
-redis-terminal() { __docker_container_terminal "redis"; }
 
-# --- Valkey ---
 function valkey-init() {
-  mkdir -p "$HOME/Docker/Valkey"
-  __docker_run_detached "valkey" \
-    --mount "type=bind,source=$HOME/Docker/Valkey,target=/external" \
-    --volume "valkey-data:/data" \
-    --publish "127.0.0.1:7000:7000" \
-    --health-cmd "valkey-cli -p 7000 ping" \
-    --health-interval 30s --health-timeout 10s --health-retries 3 \
-    valkey/valkey:alpine \
-    valkey-server --port 7000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+  __docker_run_detached valkey \
+    --volume valkey-data:/data --publish 127.0.0.1:7000:7000 \
+    --health-cmd "valkey-cli -p 7000 ping" --health-interval 30s --health-timeout 10s --health-retries 3 \
+    valkey/valkey:alpine valkey-server --port 7000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 }
-valkey-start()    { __docker_container_start "valkey"; }
-valkey-stop()     { __docker_container_stop "valkey"; }
-valkey-purge()    { __docker_container_purge "valkey"; }
-valkey-terminal() { __docker_container_terminal "valkey"; }
 
-# --- Redict ---
 function redict-init() {
-  mkdir -p "$HOME/Docker/Redict"
-  __docker_run_detached "redict" \
-    --mount "type=bind,source=$HOME/Docker/Redict,target=/external" \
-    --volume "redict-data:/data" \
-    --publish "127.0.0.1:6379:6379" \
-    --health-cmd "redict-cli ping" \
-    --health-interval 30s --health-timeout 10s --health-retries 3 \
-    registry.redict.io/redict:alpine \
-    redict-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+  __docker_run_detached redict \
+    --volume redict-data:/data --publish 127.0.0.1:6379:6379 \
+    --health-cmd "redict-cli ping" --health-interval 30s --health-timeout 10s --health-retries 3 \
+    registry.redict.io/redict:alpine redict-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 }
-redict-start()    { __docker_container_start "redict"; }
-redict-stop()     { __docker_container_stop "redict"; }
-redict-purge()    { __docker_container_purge "redict"; }
-redict-terminal() { __docker_container_terminal "redict"; }
 
-# --- Ubuntu ---
 function ubuntu-init() {
-  mkdir -p "$HOME/Docker/Ubuntu"
-  __docker_run_detached "ubuntu" \
-    --mount "type=bind,source=$HOME/Docker/Ubuntu,target=/external" \
-    --volume "ubuntu-data:/data" \
-    ubuntu:24.04
+  __docker_run_detached ubuntu --volume ubuntu-data:/data ubuntu:24.04
 }
-ubuntu-start()    { __docker_container_start "ubuntu"; }
-ubuntu-stop()     { __docker_container_stop "ubuntu"; }
-ubuntu-purge()    { __docker_container_purge "ubuntu"; }
-ubuntu-terminal() { __docker_container_terminal "ubuntu" "/bin/bash"; }
 
-################################################################################
-# Interactive container pickers (fzf)
-################################################################################
-if command -v fzf > /dev/null && command -v docker > /dev/null; then
+function __colima_help() {
+  cat <<'HELP'
+colima-start - start a Colima VM sized from this machine, with Docker inside
+
+usage:
+  colima-start [options] [profile]    start the VM, profile default by default
+  colima-start help                   print this page
+
+options:
+  --cores <n>      CPUs, default half the machine's, between 2 and 4
+  --memory <gib>   memory, default half the machine's, between 2 and 8
+  --storage <gib>  disk, default a quarter of the system disk, between 8 and 64
+
+notes:
+  On Apple Silicon it uses Apple's Virtualization.framework with Rosetta 2
+  for x86_64 images; on Intel Macs, the same framework; on Linux, QEMU with
+  KVM. Home is mounted read-write and DNS is 1.1.1.1 and 8.8.8.8.
+  colima-stop [profile] stops it; colima-purge [profile] deletes it and
+  every image, volume and container in it.
+
+examples:
+  colima-start
+  colima-start --cores 4 --memory 8 work
+HELP
+}
+
+function __colima_vm_args() {
+  case "$(uname -s)/$(uname -m)" in
+    Darwin/arm64) arch="aarch64" vm_args=(--vm-type vz --vz-rosetta --mount-type virtiofs) ;;
+    Darwin/x86_64) arch="x86_64" vm_args=(--vm-type vz --mount-type virtiofs) ;;
+    Linux/*) arch="x86_64" vm_args=(--vm-type qemu --mount-type 9p) ;;
+  esac
+}
+
+function colima-start() {
+  local profile="default" cores="" memory="" storage="" arch
+  local -a vm_args
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      help | -h | --help) __colima_help; return 0 ;;
+      --cores | --memory | --storage)
+        [ $# -ge 2 ] || { __usage_error colima-start "option '$1' needs a value"; return 1; }
+        case "$1" in --cores) cores="$2" ;; --memory) memory="$2" ;; --storage) storage="$2" ;; esac
+        shift
+        ;;
+      -*) __usage_error colima-start "unknown option '$1'"; return 1 ;;
+      *) profile="$1" ;;
+    esac
+    shift
+  done
+  __colima_vm_args
+  : "${cores:=$(__calculate_vm_cores)}" "${memory:=$(__calculate_vm_memory)}" "${storage:=$(__calculate_vm_storage)}"
+  __confirm_yes colima-start "Start the ${profile} VM with ${cores} CPUs, ${memory} GiB of memory and a ${storage} GiB disk?" || return 1
+  __ensure_docker_compose_plugin
+  command colima start --profile "$profile" --cpu "$cores" --memory "$memory" --disk "$storage" \
+    --runtime docker --arch "$arch" --mount "$HOME:w" --mount-inotify --dns 1.1.1.1 --dns 8.8.8.8 \
+    --network-address --activate --env DOCKER_BUILDKIT=1 --env COMPOSE_DOCKER_CLI_BUILD=1 \
+    --env BUILDKIT_INLINE_CACHE=1 "${vm_args[@]}"
+}
+
+function colima-stop() {
+  command colima stop --profile "${1:-default}"
+}
+
+function __docker_purge_context() {
+  local profile="${1:-default}"
+  local context="colima-${profile}"
+  local ids
+
+  [ "$profile" = default ] && context="colima"
+  ids="$(DOCKER_CONTEXT="$context" command docker ps -aq)"
+  [ -n "$ids" ] && printf '%s\n' "$ids" | DOCKER_CONTEXT="$context" xargs docker stop
+  DOCKER_CONTEXT="$context" command docker system prune -af --volumes --filter "label!=keep"
+  DOCKER_CONTEXT="$context" command docker builder prune -af
+}
+
+function docker-purge() {
+  local profile="${1:-default}"
+  case "$profile" in
+    help | -h | --help)
+      __say "docker-purge [profile] removes every container, image, volume and build cache in a Colima profile."
+      return 0
+      ;;
+  esac
+  __confirm_typed docker-purge "$profile" "remove everything Docker holds in it" || return 1
+  __docker_purge_context "$profile"
+}
+
+function __colima_remove_orphans() {
+  setopt local_options null_glob
+  local disks_dir="$HOME/.colima/_lima/_disks"
+  local listing dir disk profile
+
+  listing="$(command colima list)" || {
+    __warn colima-purge "colima list failed, so orphan disks are left in place."
+    return 0
+  }
+  for dir in "$disks_dir"/colima*/; do
+    dir="${dir%/}"
+    disk="${dir##*/}"
+    profile="${disk#colima-}"
+    [ "$disk" = colima ] && profile="default"
+    printf '%s\n' "$listing" | awk 'NR > 1 {print $1}' | grep -Fqx "$profile" && continue
+    rm -rf "${dir:?}" "${HOME:?}/.colima/_lima/${disk:?}"
+  done
+}
+
+function colima-purge() {
+  local profile="${1:-default}"
+  case "$profile" in
+    help | -h | --help)
+      __say "colima-purge [profile] deletes a Colima VM with every image, volume and container in it."
+      return 0
+      ;;
+  esac
+  __confirm_typed colima-purge "$profile" "delete the VM and everything in it" || return 1
+  __docker_purge_context "$profile"
+  command colima stop --profile "$profile" --force
+  command colima delete --profile "$profile" --force
+  __colima_remove_orphans
+  command colima prune --all --force
+}
+
+if command -v fzf >/dev/null && command -v docker >/dev/null; then
   function __docker_pick_container() {
-    command docker ps --format '{{.ID}} {{.Names}} {{.Image}}' \
-      | fzf "$@" \
-      | awk '{ print $1 }'
+    command docker ps --format '{{.ID}} {{.Names}} {{.Image}}' | fzf "$@" | awk '{ print $1 }'
   }
 
-  # Exec into a running container, preferring bash, falling back to sh
   function fde() {
     local cid
-    cid="$(__docker_pick_container --header='[docker:exec]')"
+    cid="$(__docker_pick_container --header='open a shell in a container')"
     [ -n "$cid" ] || return
-    command docker exec -it "$cid" \
-      sh -c 'if command -v bash > /dev/null 2>&1; then exec bash; else exec sh; fi'
+    command docker exec -it "$cid" sh -c 'if command -v bash >/dev/null 2>&1; then exec bash; else exec sh; fi'
   }
 
-  # Follow logs of a running container
   function fdl() {
     local cid
-    cid="$(__docker_pick_container --header='[docker:logs]')"
+    cid="$(__docker_pick_container --header='follow the logs of a container')"
     [ -n "$cid" ] || return
     command docker logs -f --tail 200 "$cid"
   }
 
-  # Stop one or more running containers
   function fds() {
     local cids
-    cids="$(__docker_pick_container -m --header='[docker:stop]')"
+    cids="$(__docker_pick_container -m --header='stop containers')"
     [ -n "$cids" ] || return
-    echo "$cids" | xargs command docker stop
+    printf '%s\n' "$cids" | xargs docker stop
   }
 fi
+
+__docker_define_services

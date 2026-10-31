@@ -1,452 +1,314 @@
 #!/usr/bin/env bash
 
-################################################################################
-# Clean and sort a FAT device
-################################################################################
-function fat_sort() {
-  if ! __cmd_exists fatsort; then
-    __log_error "fatsort is not installed."
-    return 1
-  fi
+__DISK_LINUX_MOUNT="/tmp/fat_sort_$$"
+__DISK_WAIT_DELAYS="0.05 0.1 0.2 0.4 0.8 1.6 3.2 3.2"
 
-  __fat_sort_mount_point() {
-    local partition="$1"
+function __fat_sort_help() {
+  cat <<'HELP'
+fat_sort - remove junk files from a FAT volume, then sort its directories
 
-    case "$(uname)" in
-      Darwin)
-        diskutil info "$partition" 2>/dev/null | awk -F': +' '/Mount Point/ {print $2}'
-        ;;
-      Linux)
-        command findmnt -n -o TARGET "$partition" 2>/dev/null
-        ;;
-    esac
-  }
+usage:
+  fat_sort <device|volume>    clean and sort the FAT partition behind it
+  fat_sort help               print this page
 
-  __fat_sort_find_partition() {
-    local device="$1"
+notes:
+  A whole disk, a partition or a mounted volume are all accepted; a whole
+  disk uses its first FAT or exFAT partition. Before anything is removed,
+  it asks you to type the partition name.
+  It removes macOS, Windows, NAS and Linux metadata, unmounts the
+  partition, then runs fatsort, which needs root.
 
-    case "$(uname)" in
-      Darwin)
-        if [[ "$device" =~ s[0-9]+$ ]]; then
-          echo "$device"
-          return 0
-        fi
-
-        local partition
-        partition=$(diskutil list "$device" 2>/dev/null | grep -iE "DOS_FAT|Windows_FAT|Microsoft Basic Data" | awk '{print $NF}' | head -1)
-
-        if [ -n "$partition" ]; then
-          echo "/dev/$partition"
-          return 0
-        fi
-
-        __log_error "No FAT partition found on $device"
-        return 1
-        ;;
-      Linux)
-        if [ "$(lsblk -dnro TYPE "$device" 2>/dev/null)" = "part" ]; then
-          echo "$device"
-          return 0
-        fi
-
-        local name
-        name=$(lsblk -nro NAME,FSTYPE "$device" 2>/dev/null | awk '$2 ~ /^(vfat|exfat|msdos)$/ { print $1; exit }')
-
-        if [ -n "$name" ]; then
-          echo "/dev/$name"
-          return 0
-        fi
-
-        __log_error "No FAT partition found on $device"
-        return 1
-        ;;
-    esac
-  }
-
-  __fat_sort_require_fat() {
-    local partition="$1"
-    local fs_type=""
-
-    case "$(uname)" in
-      Darwin) fs_type=$(diskutil info "$partition" 2>/dev/null | awk -F': +' '/Type \(Bundle\)/ {print $2}') ;;
-      Linux) fs_type=$(lsblk -dnro FSTYPE "$partition" 2>/dev/null) ;;
-    esac
-
-    case "$fs_type" in
-      msdos | vfat | exfat)
-        return 0
-        ;;
-    esac
-
-    __log_error "Refusing: $partition is ${fs_type:-of unknown type}, not FAT or exFAT"
-    return 1
-  }
-
-  __fat_sort_ensure_mounted() {
-    local partition="$1"
-    local mount_point
-
-    mount_point=$(__fat_sort_mount_point "$partition")
-    if [ -n "$mount_point" ]; then
-      echo "$mount_point"
-      return 0
-    fi
-
-    __log_info "Mounting $partition..."
-
-    case "$(uname)" in
-      Darwin)
-        if diskutil mount "$partition" >/dev/null 2>&1; then
-          mount_point=$(__fat_sort_mount_point "$partition")
-          if [ -n "$mount_point" ]; then
-            echo "$mount_point"
-            return 0
-          fi
-        fi
-        ;;
-      Linux)
-        mount_point="/tmp/fatsort_$$"
-        mkdir -p "$mount_point"
-        if sudo mount "$partition" "$mount_point" 2>/dev/null; then
-          echo "$mount_point"
-          return 0
-        fi
-        rmdir "$mount_point" 2>/dev/null
-        ;;
-    esac
-
-    return 1
-  }
-
-  __fat_sort_unmount() {
-    local partition="$1"
-
-    case "$(uname)" in
-      Darwin)
-        diskutil unmount force "$partition" >/dev/null 2>&1
-        local attempts=0
-        while [ -n "$(__fat_sort_mount_point "$partition")" ] && [ "$attempts" -lt 10 ]; do
-          sleep 1
-          attempts=$((attempts + 1))
-        done
-        if [ -n "$(__fat_sort_mount_point "$partition")" ]; then
-          __log_error "Failed to unmount $partition after ${attempts}s"
-          return 1
-        fi
-        ;;
-      Linux)
-        sudo umount "$partition" 2>/dev/null
-        local mount_point="/tmp/fatsort_$$"
-        [ -d "$mount_point" ] && rmdir "$mount_point" 2>/dev/null
-        ;;
-    esac
-  }
-
-  __fat_sort_clean() {
-    local mount_point="$1"
-    local total=0
-
-    __log_info "Cleaning temporary files..."
-
-    if [ "$(uname)" = "Darwin" ]; then
-      sudo mdutil -X "$mount_point" >/dev/null 2>&1
-    fi
-
-    local patterns=()
-    local macos_pattern
-    while IFS= read -r macos_pattern; do
-      patterns+=("$macos_pattern")
-    done < <(__macos_metadata_patterns)
-
-    # shellcheck disable=SC2016
-    patterns+=(
-      # macOS fsck recovery
-      "FSCK*.REC"
-      # macOS HFS+ wrapper artifacts
-      ".hotfiles.btree"
-      ".journal"
-      ".journal_info_block"
-      # Mac OS 9 / Classic
-      $'Icon\r'
-      "Network Trash Folder"
-      "Temporary Items"
-      "TheFindByContentFolder"
-      "TheVolumeSettingsFolder"
-      # Windows (Vista+)
-      '$RECYCLE.BIN'
-      "Desktop.ini"
-      "Thumbs.db"
-      "ehthumbs.db"
-      "ehthumbs_vista.db"
-      # Windows (2000/XP)
-      "RECYCLER"
-      # Windows (95/98/ME)
-      "RECYCLED"
-      # Windows shared
-      "System Volume Information"
-      "autorun.inf"
-      # Windows Search / sync markers
-      "IndexerVolumeGuid"
-      "WPSettings.dat"
-      # Windows dump logs
-      "DumpStack.log"
-      "DumpStack.log.tmp"
-      # CHKDSK recovered fragments
-      'FOUND.[0-9][0-9][0-9]'
-      # Office lock/temp files
-      '~$*'
-      ".~lock.*"
-      # Synology NAS
-      "@eaDir"
-      "#recycle"
-      # QNAP NAS
-      "@Recycle"
-      ".@__thumb"
-      # Dropbox
-      ".dropbox"
-      ".dropbox.attr"
-      # Linux
-      ".directory"
-      ".Trash-*"
-    )
-
-    local count
-    for pattern in "${patterns[@]}"; do
-      count=$(command find "$mount_point" -iname "$pattern" 2>/dev/null | command wc -l | tr -d ' ')
-
-      if [ "$count" -gt 0 ]; then
-        command find "$mount_point" -iname "$pattern" -exec rm -rf {} + 2>/dev/null
-        total=$((total + count))
-        __log_info "  Removed: $pattern ($count)"
-      fi
-    done
-
-    if [ "$total" -gt 0 ]; then
-      __log_success "Cleaned $total items"
-    else
-      __log_info "No junk files found"
-    fi
-  }
-
-  local input="$1"
-
-  if [ -z "$input" ]; then
-    __log_error "No device specified"
-    echo ""
-    __log_info "Usage: fat_sort <device|mount_point>"
-    __log_info "       fat_sort /dev/disk4       (macOS, whole disk)"
-    __log_info "       fat_sort /dev/disk4s1     (macOS, partition)"
-    __log_info "       fat_sort /dev/sdb1        (Linux, partition)"
-    __log_info "       fat_sort /Volumes/EZFLASH (macOS, mount point)"
-    __log_info "       fat_sort /mnt/usb         (Linux, mount point)"
-    return 1
-  fi
-
-  local device
-  if [ -b "$input" ] || [ -c "$input" ]; then
-    device="$input"
-  elif [ -d "$input" ]; then
-    case "$(uname)" in
-      Darwin) device=$(diskutil info "$input" 2>/dev/null | awk -F': +' '/Device Node/ {print $2}') ;;
-      Linux)  device=$(command findmnt -n -o SOURCE "$input" 2>/dev/null) ;;
-    esac
-    if [ -z "$device" ]; then
-      __log_error "No device found for mount point: $input"
-      return 1
-    fi
-  else
-    __log_error "Not a device or mount point: $input"
-    return 1
-  fi
-
-  local partition
-  partition=$(__fat_sort_find_partition "$device") || return 1
-  __fat_sort_require_fat "$partition" || return 1
-  __log_info "Partition: $partition"
-
-  local mount_point
-  mount_point=$(__fat_sort_ensure_mounted "$partition")
-  if [ -z "$mount_point" ]; then
-    __log_error "Failed to mount $partition"
-    return 1
-  fi
-
-  __log_info "Mounted at: $mount_point"
-  __fat_sort_clean "$mount_point"
-
-  sync
-  __log_info "Unmounting..."
-  if ! __fat_sort_unmount "$partition"; then
-    return 1
-  fi
-
-  __log_info "Sorting..."
-  if sudo fatsort -c -o d "$partition" >/dev/null; then
-    __log_success "Device sorted: $partition"
-  else
-    __log_error "Failed to sort: $partition"
-    return 1
-  fi
+examples:
+  fat_sort /dev/disk4
+  fat_sort /Volumes/EZFLASH
+  fat_sort /dev/sdb1
+HELP
 }
 
-################################################################################
-# Stop macOS writing its metadata onto an external volume
-################################################################################
-function disk_quiet() {
-  __dq_usage() {
-    __log_info "Usage: disk_quiet <device|mount_point>"
-    __log_info "       disk_quiet /Volumes/ZIP100    (mount point)"
-    __log_info "       disk_quiet /dev/disk8s1       (partition)"
-    __log_info "       disk_quiet /dev/disk8         (whole disk)"
-    __log_info "       NO_LOG=y disk_quiet <...>     (also write .fseventsd/no_log)"
-    __log_info "       EJECT=y  disk_quiet <...>     (eject when finished)"
-  }
+function __disk_quiet_help() {
+  cat <<'HELP'
+disk_quiet - stop macOS writing its metadata onto an external volume
 
-  __dq_mount_point() {
-    diskutil info "$1" 2>/dev/null | awk -F': +' '/Mount Point/ {print $2}'
-  }
+usage:
+  disk_quiet [options] <device|volume>    quiet one removable volume
+  disk_quiet help                         print this page
 
-  __dq_resolve() {
-    local input="$1"
-    local mount_point
+options:
+  --no-log     also write .fseventsd/no_log on the volume
+  --eject      eject the volume when finished
 
-    if [ -d "$input" ] && [ ! -b "$input" ] && [ ! -c "$input" ]; then
-      echo "$input"
-      return 0
-    fi
+notes:
+  macOS only, and only for removable or external volumes. It tells Finder
+  to stop writing .DS_Store to USB and network volumes, turns Spotlight
+  off for the volume, and removes the metadata already there.
 
-    mount_point=$(__dq_mount_point "$input")
-    if [ -n "$mount_point" ]; then
-      echo "$mount_point"
-      return 0
-    fi
+examples:
+  disk_quiet /Volumes/ZIP100
+  disk_quiet --eject /dev/disk8
+HELP
+}
 
-    local partition
-    partition=$(diskutil list "$input" 2>/dev/null |
-      grep -iE "DOS_FAT|Windows_FAT|Microsoft Basic Data|ExFAT|Apple_HFS|Apple_APFS" |
-      awk '{print $NF}' | head -1)
-    [ -z "$partition" ] && return 1
+function __disk_junk_patterns() {
+  __macos_metadata_patterns
+  # shellcheck disable=SC2016
+  printf '%s\n' "FSCK*.REC" ".hotfiles.btree" ".journal" ".journal_info_block" \
+    $'Icon\r' "Network Trash Folder" "Temporary Items" "TheFindByContentFolder" \
+    "TheVolumeSettingsFolder" '$RECYCLE.BIN' "Desktop.ini" "Thumbs.db" "ehthumbs.db" \
+    "ehthumbs_vista.db" "RECYCLER" "RECYCLED" "System Volume Information" "autorun.inf" \
+    "IndexerVolumeGuid" "WPSettings.dat" "DumpStack.log" "DumpStack.log.tmp" \
+    'FOUND.[0-9][0-9][0-9]' '~$*' ".~lock.*" "@eaDir" "#recycle" "@Recycle" \
+    ".@__thumb" ".dropbox" ".dropbox.attr" ".directory" ".Trash-*"
+}
 
-    mount_point=$(__dq_mount_point "/dev/$partition")
-    if [ -z "$mount_point" ]; then
-      diskutil mount "/dev/$partition" >/dev/null 2>&1 || return 1
-      mount_point=$(__dq_mount_point "/dev/$partition")
-    fi
+function __disk_remove_matching() {
+  local mount_point="$1"
+  local pattern
 
-    [ -z "$mount_point" ] && return 1
-    echo "$mount_point"
-  }
+  while IFS= read -r pattern; do
+    command find "$mount_point" -iname "$pattern" -exec rm -rf {} +
+  done
+}
 
-  __dq_is_removable_volume() {
-    local mount_point="$1"
-    local info
+function __disk_mount_point() {
+  case "$(uname)" in
+    Darwin) diskutil info "$1" 2>/dev/null | awk -F': +' '/Mount Point/ {print $2}' ;;
+    Linux) command findmnt -n -o TARGET "$1" ;;
+  esac
+}
 
-    if [ -z "$mount_point" ] || [ ! -d "$mount_point" ]; then
-      __log_error "Not a mounted volume: ${mount_point:-<empty>}"
-      return 1
-    fi
+function __disk_device_for() {
+  local name="$1"
+  local input="$2"
+  local device=""
 
-    info=$(diskutil info "$mount_point" 2>/dev/null)
-    if [ -z "$info" ]; then
-      __log_error "Refusing: $mount_point is not a volume"
-      return 1
-    fi
-
-    if echo "$info" | grep -qE "Removable Media: +Removable" ||
-      echo "$info" | grep -qE "Device Location: +External"; then
-      return 0
-    fi
-
-    __log_error "Refusing: $mount_point is not a removable or external volume"
+  if [ -b "$input" ] || [ -c "$input" ]; then
+    printf '%s\n' "$input"
+    return 0
+  fi
+  if [ -d "$input" ]; then
+    case "$(uname)" in
+      Darwin) device="$(diskutil info "$input" 2>/dev/null | awk -F': +' '/Device Node/ {print $2}')" ;;
+      Linux) device="$(command findmnt -n -o SOURCE "$input")" ;;
+    esac
+  fi
+  if [ -z "$device" ]; then
+    __error "$name" "${input} is not a device or a mounted volume."
     return 1
-  }
+  fi
+  printf '%s\n' "$device"
+}
 
-  __dq_remove_metadata() {
-    local mount_point="$1"
-    local patterns=()
-    local pattern count total=0
+function __disk_fat_partition() {
+  local device="$1"
 
-    while IFS= read -r pattern; do
-      patterns+=("$pattern")
-    done < <(__macos_metadata_patterns)
-
-    for pattern in "${patterns[@]}"; do
-      count=$(command find "$mount_point" -iname "$pattern" 2>/dev/null | command wc -l | tr -d ' ')
-
-      if [ "$count" -gt 0 ]; then
-        command find "$mount_point" -iname "$pattern" -exec rm -rf {} + 2>/dev/null
-        total=$((total + count))
-        __log_info "  Removed: $pattern ($count)"
+  case "$(uname)" in
+    Darwin)
+      if [[ "$device" =~ s[0-9]+$ ]]; then
+        printf '%s\n' "$device"
+        return 0
       fi
-    done
+      diskutil list "$device" | grep -iE "DOS_FAT|Windows_FAT|Microsoft Basic Data" | awk 'NR == 1 {print "/dev/" $NF}'
+      ;;
+    Linux)
+      if [ "$(lsblk -dnro TYPE "$device")" = "part" ]; then
+        printf '%s\n' "$device"
+        return 0
+      fi
+      lsblk -nro NAME,FSTYPE "$device" | awk '$2 ~ /^(vfat|exfat|msdos)$/ { print "/dev/" $1; exit }'
+      ;;
+  esac
+}
 
-    if [ "$total" -gt 0 ]; then
-      __log_success "Removed $total item(s)"
-    else
-      __log_info "Nothing to remove"
-    fi
-  }
+function __disk_require_fat() {
+  local partition="$1"
+  local fs_type=""
 
-  local input="$1"
-
-  if [ "$(uname)" != "Darwin" ]; then
-    __log_error "disk_quiet applies to macOS only"
-    return 1
-  fi
-
-  if [ -z "$input" ]; then
-    __log_error "No device specified"
-    __dq_usage
-    return 1
-  fi
-
-  local mount_point
-  mount_point=$(__dq_resolve "$input")
-  if [ -z "$mount_point" ]; then
-    __log_error "No mounted volume found for: $input"
-    return 1
-  fi
-
-  __dq_is_removable_volume "$mount_point" || return 1
-  __log_info "Volume: $mount_point"
-
-  if __macos_no_ds_store_on_foreign_volumes; then
-    __log_success "Finder will not write .DS_Store to USB or network volumes"
-  else
-    __log_warning "Could not set the Finder defaults"
-  fi
-
-  __log_info "Disabling Spotlight for this volume..."
-  if sudo mdutil -i off -d "$mount_point" >/dev/null 2>&1; then
-    __log_success "Spotlight disabled"
-  else
-    __log_warning "Could not disable Spotlight (volume may be read-only)"
-  fi
-
-  sudo mdutil -X "$mount_point" >/dev/null 2>&1
-
-  __log_info "Removing macOS metadata..."
-  __dq_remove_metadata "$mount_point"
-
-  if [ "${NO_LOG}" = "y" ]; then
-    __log_info "Writing .fseventsd/no_log..."
-    if mkdir -p "$mount_point/.fseventsd" 2>/dev/null &&
-      : >"$mount_point/.fseventsd/no_log" 2>/dev/null; then
-      __log_success "FSEvents will not log on this volume"
-    else
-      __log_warning "Could not write .fseventsd/no_log"
-    fi
-  fi
-
-  sync
-
-  if [ "${EJECT}" = "y" ]; then
-    __log_info "Ejecting..."
-    if sudo diskutil eject "$mount_point" >/dev/null 2>&1; then
-      __log_success "Ejected, safe to remove"
-    else
-      __log_error "Failed to eject"
+  case "$(uname)" in
+    Darwin) fs_type="$(diskutil info "$partition" | awk -F': +' '/Type \(Bundle\)/ {print $2}')" ;;
+    Linux) fs_type="$(lsblk -dnro FSTYPE "$partition")" ;;
+  esac
+  case "$fs_type" in
+    msdos | vfat | exfat) return 0 ;;
+    *)
+      __stop fat_sort "${partition} is ${fs_type:-of an unknown type}, not FAT or exFAT"
       return 1
-    fi
+      ;;
+  esac
+}
+
+function __disk_ensure_mounted() {
+  local partition="$1"
+  local mount_point
+
+  mount_point="$(__disk_mount_point "$partition")"
+  if [ -z "$mount_point" ]; then
+    case "$(uname)" in
+      Darwin) diskutil mount "$partition" >&2 && mount_point="$(__disk_mount_point "$partition")" ;;
+      Linux) mkdir -p "$__DISK_LINUX_MOUNT" && sudo mount "$partition" "$__DISK_LINUX_MOUNT" && mount_point="$__DISK_LINUX_MOUNT" ;;
+    esac
   fi
+  [ -n "$mount_point" ] || return 1
+  printf '%s\n' "$mount_point"
+}
+
+function __disk_unmount() {
+  local partition="$1"
+  local delay
+
+  case "$(uname)" in
+    Linux)
+      sudo umount "$partition" || return 1
+      [ -d "$__DISK_LINUX_MOUNT" ] && rmdir "$__DISK_LINUX_MOUNT"
+      return 0
+      ;;
+  esac
+  diskutil unmount force "$partition"
+  for delay in ${=__DISK_WAIT_DELAYS}; do
+    [ -z "$(__disk_mount_point "$partition")" ] && return 0
+    sleep "$delay"
+  done
+  [ -z "$(__disk_mount_point "$partition")" ]
+}
+
+function __disk_confirm() {
+  local name="$1"
+  local partition="$2"
+  local action="$3"
+  local short="${partition##*/}"
+  local answer
+
+  if [ ! -t 0 ]; then
+    __stop "$name" "no terminal to confirm on"
+    return 1
+  fi
+  printf 'Type %s to %s, or anything else to stop: ' "$short" "$action" >&2
+  read -r answer
+  [ "$answer" = "$short" ] && return 0
+  __stop "$name" "nothing was changed"
+  return 1
+}
+
+function __fat_sort_target() {
+  local input="$1"
+  local device partition
+
+  device="$(__disk_device_for fat_sort "$input")" || return 1
+  partition="$(__disk_fat_partition "$device")"
+  if [ -z "$partition" ]; then
+    __error fat_sort "no FAT partition found on ${device}."
+    return 1
+  fi
+  __disk_require_fat "$partition" || return 1
+  printf '%s\n' "$partition"
+}
+
+function fat_sort() {
+  case "${1:-}" in
+    help | -h | --help) __fat_sort_help; return 0 ;;
+    "") __usage_error fat_sort "no device given"; return 1 ;;
+    -*) __usage_error fat_sort "unknown option '$1'"; return 1 ;;
+  esac
+  if ! __cmd_exists fatsort; then
+    __error fat_sort "fatsort is not installed."
+    return 1
+  fi
+
+  local partition mount_point
+  partition="$(__fat_sort_target "$1")" || return 1
+  mount_point="$(__disk_ensure_mounted "$partition")" || {
+    __error fat_sort "could not mount ${partition}."
+    return 1
+  }
+  __disk_confirm fat_sort "$partition" "remove the junk files in ${mount_point}, then sort it" || return 1
+
+  __disk_junk_patterns | __disk_remove_matching "$mount_point"
+  sync
+  __disk_unmount "$partition" || {
+    __error fat_sort "could not unmount ${partition}."
+    return 1
+  }
+  sudo fatsort -c -o d "$partition" || {
+    __error fat_sort "fatsort failed on ${partition}."
+    return 1
+  }
+}
+
+function __disk_quiet_volume() {
+  local input="$1"
+  local mount_point partition
+
+  if [ -d "$input" ] && [ ! -b "$input" ] && [ ! -c "$input" ]; then
+    printf '%s\n' "$input"
+    return 0
+  fi
+  mount_point="$(__disk_mount_point "$input")"
+  if [ -z "$mount_point" ]; then
+    partition="$(diskutil list "$input" |
+      grep -iE "DOS_FAT|Windows_FAT|Microsoft Basic Data|ExFAT|Apple_HFS|Apple_APFS" |
+      awk 'NR == 1 {print "/dev/" $NF}')"
+    [ -n "$partition" ] || return 1
+    mount_point="$(__disk_mount_point "$partition")"
+    [ -n "$mount_point" ] || { diskutil mount "$partition" >&2 && mount_point="$(__disk_mount_point "$partition")"; }
+  fi
+  [ -n "$mount_point" ] || return 1
+  printf '%s\n' "$mount_point"
+}
+
+function __disk_quiet_require_removable() {
+  local mount_point="$1"
+  local info
+
+  info="$(diskutil info "$mount_point" 2>/dev/null)"
+  if [ -z "$info" ]; then
+    __stop disk_quiet "${mount_point} is not a volume"
+    return 1
+  fi
+  if printf '%s\n' "$info" | grep -qE "Removable Media: +Removable|Device Location: +External"; then
+    return 0
+  fi
+  __stop disk_quiet "${mount_point} is not a removable or external volume"
+  return 1
+}
+
+function __disk_quiet_apply() {
+  local mount_point="$1"
+  local no_log="$2"
+
+  __macos_no_ds_store_on_foreign_volumes || __warn disk_quiet "could not set the Finder defaults."
+  sudo mdutil -i off -d "$mount_point" || __warn disk_quiet "could not turn Spotlight off; the volume may be read-only."
+  sudo mdutil -X "$mount_point"
+  __macos_metadata_patterns | __disk_remove_matching "$mount_point"
+  if [ "$no_log" = 1 ] && ! { mkdir -p "$mount_point/.fseventsd" && : >"$mount_point/.fseventsd/no_log"; }; then
+    __warn disk_quiet "could not write .fseventsd/no_log."
+  fi
+  sync
+}
+
+function disk_quiet() {
+  local no_log=0 eject=0 input="" mount_point
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      help | -h | --help) __disk_quiet_help; return 0 ;;
+      --no-log) no_log=1 ;;
+      --eject) eject=1 ;;
+      --) shift; input="${1:-}"; break ;;
+      -*) __usage_error disk_quiet "unknown option '$1'"; return 1 ;;
+      *) input="$1" ;;
+    esac
+    shift
+  done
+  if [ "$(uname)" != "Darwin" ]; then
+    __error disk_quiet "this command is for macOS only."
+    return 1
+  fi
+  [ -n "$input" ] || { __usage_error disk_quiet "no device given"; return 1; }
+  mount_point="$(__disk_quiet_volume "$input")" || {
+    __error disk_quiet "no mounted volume found for ${input}."
+    return 1
+  }
+  __disk_quiet_require_removable "$mount_point" || return 1
+  __disk_quiet_apply "$mount_point" "$no_log"
+  [ "$eject" = 1 ] || return 0
+  sudo diskutil eject "$mount_point" || { __error disk_quiet "could not eject ${mount_point}."; return 1; }
 }

@@ -1,211 +1,218 @@
 #!/usr/bin/env bash
 
-################################################################################
-# Individual update steps
-################################################################################
-function __f5_update_dotfiles() {
-  __log_info "Updating dotfiles..."
+__F5_KEEPALIVE_INTERVAL=60
+__F5_KEEPALIVE_ROUNDS=720
+__F5_BREWFILE="$HOME/.dotfiles/Brewfile"
+__F5_UVFILE="$HOME/.dotfiles/Uvfile"
 
-  if [ ! -d "$HOME/.dotfiles/.git" ]; then
-    __log_info "Dotfiles not a git repository"
-    return
-  fi
+function __f5_help() {
+  cat <<'HELP'
+f5 - update the dotfiles, plugins, runtimes and every package
 
-  if git -C "$HOME/.dotfiles" pull --quiet >/dev/null 2>&1 && \
-     git -C "$HOME/.dotfiles" fetch --prune --quiet >/dev/null 2>&1; then
-    if git -C "$HOME/.dotfiles" submodule update --init --remote --recursive --quiet; then
-      __log_success "Dotfiles and submodules updated"
-    else
-      __log_success "Dotfiles updated (submodules had issues)"
-    fi
-  else
-    __log_warning "Failed to update dotfiles"
-  fi
+usage:
+  f5            run every update step
+  f5 doctor     list the tools f5 uses and whether each one is installed
+  f5 help       print this page
+
+notes:
+  f5 asks for the root password once, before the first step, and keeps
+  root alive until it returns. When it returns, for any reason, sudo
+  forgets the password, so the next sudo asks again.
+  Only the tools' own output is printed. f5 returns 1 when any step failed.
+  A step whose tool is not installed is skipped; f5 doctor lists them.
+  The new shell configuration loads in a new shell: run exec zsh.
+  On macOS, brew bundle cleanup removes anything not in the Brewfile.
+
+examples:
+  f5
+  f5 doctor
+HELP
 }
 
-function __f5_update_aws() {
-  if [ ! -d "$HOME/.aws/.git" ]; then
-    __log_warning "No AWS configuration repository found"
-    return
-  fi
+function __f5_doctor_row() {
+  local tool="$1"
+  local note="$2"
+  local found
 
-  __log_info "Updating AWS configuration..."
-
-  if git -C "$HOME/.aws" pull --quiet >/dev/null 2>&1 && \
-     git -C "$HOME/.aws" fetch --prune --quiet >/dev/null 2>&1; then
-    __log_success "AWS configuration updated"
-  else
-    __log_warning "Failed to update AWS configuration"
+  if found="$(command -v "$tool")"; then
+    printf '%-18s %-8s %s\n' "$tool" ok "$found"
+    return 0
   fi
+  printf '%-18s %-8s %s\n' "$tool" missing "$note"
+  return 1
 }
 
-function __f5_update_claude() {
-  if [ ! -d "$HOME/.claude/.git" ]; then
-    __log_warning "No Claude engineering rules repository found"
-    return
-  fi
+function __f5_doctor() {
+  local tool result=0
 
-  __log_info "Updating Claude engineering rules..."
-
-  if git -C "$HOME/.claude" pull --quiet >/dev/null 2>&1 && \
-     git -C "$HOME/.claude" fetch --prune --quiet >/dev/null 2>&1; then
-    __log_success "Claude engineering rules updated"
-  else
-    __log_warning "Failed to update Claude engineering rules"
-  fi
-}
-
-function __f5_update_vim() {
-  if ! __cmd_exists vim; then
-    __log_info "Vim not installed"
-    return
-  fi
-
-  __log_info "Updating Vim plugins..."
-
-  if vim -es -N -u "$HOME/.vimrc" -i NONE \
-    -c "PlugUpgrade" -c "PlugUpdate --sync" -c "CocUpdateSync" -c "PlugClean!" -c "qa!" \
-    < /dev/null > /dev/null 2>&1; then
-    __log_success "Vim plugins updated"
-  else
-    __log_warning "Failed to update Vim plugins"
-  fi
-}
-
-function __f5_update_neovim() {
-  if ! __cmd_exists nvim; then
-    __log_info "Neovim not installed"
-    return
-  fi
-
-  __log_info "Updating Neovim plugins..."
-
-  local nvim_count=0
-  local nvim_errors=0
-
-  for task in "Lazy! sync" "TSUpdateSync" "MasonUpdate"; do
-    if nvim --headless "+${task}" +qa > /dev/null 2>&1; then
-      ((nvim_count++))
-    else
-      ((nvim_errors++))
-    fi
+  for tool in git sudo curl; do
+    __f5_doctor_row "$tool" "required" || result=1
   done
-
-  if [ "$nvim_errors" -gt 0 ]; then
-    __log_warning "Updated $nvim_count Neovim tasks ($nvim_errors failed)"
-  else
-    __log_success "Updated $nvim_count Neovim tasks"
-  fi
+  for tool in vim nvim tmux mise uv python3 tldr npm pnpm yarn go; do
+    __f5_doctor_row "$tool" "its step is skipped"
+  done
+  case "$(uname)" in
+    Darwin) set -- brew mas jq pod xcrun ;;
+    Linux) set -- apt dkms cargo flatpak fc-cache sha512sum ;;
+  esac
+  for tool in "$@"; do
+    __f5_doctor_row "$tool" "its step is skipped"
+  done
+  return "$result"
 }
 
-function __f5_update_tool_data() {
-  __log_info "Updating tool plugins and caches..."
+function __f5_keepalive() {
+  local parent="$1"
+  local rounds=0
 
-  local data_count=0
-  local data_skipped=0
-  local -a failed_tools=()
+  while [ "$rounds" -lt "$__F5_KEEPALIVE_ROUNDS" ] && kill -0 "$parent" 2>/dev/null; do
+    sleep "$__F5_KEEPALIVE_INTERVAL"
+    sudo -n -v 2>/dev/null || return 0
+    rounds=$((rounds + 1))
+  done
+}
 
-  if __cmd_exists tldr; then
-    if tldr --update > /dev/null 2>&1; then
-      ((data_count++))
-    else
-      failed_tools+=("tldr")
-    fi
-  else
-    ((data_skipped++))
+function __f5_sudo_begin() {
+  sudo -v || return 1
+  __F5_KEEPALIVE_PID="$( (__f5_keepalive "$$" >/dev/null 2>&1 & echo $!))"
+}
+
+function __f5_sudo_end() {
+  if [ -n "${__F5_KEEPALIVE_PID:-}" ]; then
+    kill "$__F5_KEEPALIVE_PID" 2>/dev/null
+    unset __F5_KEEPALIVE_PID
   fi
+  sudo -k
+}
 
-  if [ "${#failed_tools[@]}" -gt 0 ]; then
-    __log_warning "Updated $data_count tool caches ($data_skipped not installed), failed: ${failed_tools[*]}"
-  else
-    __log_success "Updated $data_count tool caches ($data_skipped not installed)"
-  fi
+function __f5_step() {
+  "$@" || __f5_failed=1
+  return 0
+}
+
+function __f5_step_if() {
+  local tool="$1"
+  shift
+  __cmd_exists "$tool" || return 0
+  __f5_step "$@"
+}
+
+function __f5_git_pull() {
+  git -C "$1" pull --prune --verbose
+}
+
+function __f5_git_update() {
+  local dir="$1"
+
+  __f5_git_pull "$dir" || return
+  [ -f "$dir/.gitmodules" ] || return 0
+  git -C "$dir" submodule update --init --remote --recursive
+}
+
+function __f5_update_repos() {
+  local dir
+
+  for dir in "$HOME/.dotfiles" "$HOME/.aws" "$HOME/.claude"; do
+    [ -d "$dir/.git" ] || continue
+    __f5_step __f5_git_update "$dir"
+  done
 }
 
 function __f5_update_plugins() {
-  __log_info "Updating Zsh and Tmux plugins..."
+  setopt local_options null_glob
+  local dir
 
-  local plugin_count=0
-  local plugin_errors=0
-
-  for dir in \
-    "$HOME/.oh-my-zsh" \
-    "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ \
-    "$HOME/.dotfiles/tmux/plugins/"*/; do
-
-    [ ! -d "$dir/.git" ] && continue
-    [[ "$dir" == "$HOME/.dotfiles/tmux/plugins/tpm/" ]] && continue
-
-    if git -C "$dir" pull --quiet >/dev/null 2>&1 && \
-       git -C "$dir" fetch --prune --quiet >/dev/null 2>&1; then
-      ((plugin_count++))
-    else
-      ((plugin_errors++))
-    fi
+  for dir in "$HOME/.oh-my-zsh" "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ "$HOME/.dotfiles/tmux/plugins"/*/; do
+    dir="${dir%/}"
+    [ -d "$dir/.git" ] || continue
+    [ "$dir" = "$HOME/.dotfiles/tmux/plugins/tpm" ] && continue
+    __f5_step __f5_git_pull "$dir"
   done
-
-  if [ "$plugin_errors" -gt 0 ]; then
-    __log_warning "Updated $plugin_count plugins ($plugin_errors failed)"
-  else
-    __log_success "Updated $plugin_count plugins"
-  fi
 }
 
-function __f5_update_mise() {
-  if ! __cmd_exists mise; then
-    __log_info "mise not installed"
-    return
-  fi
+function __f5_update_editors() {
+  __f5_step_if vim vim -es -N -u "$HOME/.vimrc" -i NONE \
+    -c "PlugUpgrade" -c "PlugUpdate --sync" -c "CocUpdateSync" \
+    -c 'try | PlugClean! | catch /^Vim\%((\a\+)\)\=:E16:/ | endtry' -c "qa!" </dev/null
+  __f5_step_if nvim nvim --headless "+Lazy! sync" +qa
+  __f5_step_if nvim nvim --headless +TSUpdateSync +qa
+  __f5_step_if nvim nvim --headless +MasonUpdate +qa
+}
 
-  __log_info "Updating mise runtimes..."
+function __f5_update_runtimes() {
+  __f5_step_if tldr tldr --update
+  __f5_step_if mise mise upgrade --yes
+  __f5_step_if mise mise prune --yes
+}
 
-  local upgrade_ok=true
-  local prune_ok=true
+function __f5_strip_tap_quarantine() {
+  local apps app apppath
 
-  mise upgrade --yes >/dev/null 2>&1 || upgrade_ok=false
-  mise prune --yes >/dev/null 2>&1 || prune_ok=false
+  apps="$(brew info --cask --json=v2 --installed |
+    jq -r '.casks[] | select(.tap == "gufranco/tap") | .artifacts[].app[]? // empty')" || return
+  while IFS= read -r app; do
+    [ -n "$app" ] || continue
+    apppath="/Applications/${app##*/}"
+    [ -e "$apppath" ] || continue
+    xattr -p com.apple.quarantine "$apppath" >/dev/null 2>&1 || continue
+    xattr -dr com.apple.quarantine "$apppath" || return
+  done <<<"$apps"
+}
 
-  if $upgrade_ok && $prune_ok; then
-    __log_success "mise runtimes updated"
-  else
-    __log_warning "mise runtimes updated with warnings"
-  fi
+function __f5_update_macos() {
+  __f5_step brew update
+  __f5_step brew bundle --file "$__F5_BREWFILE"
+  __f5_step brew bundle cleanup --force --zap --file "$__F5_BREWFILE"
+  __f5_step brew upgrade --greedy
+  __f5_step_if jq __f5_strip_tap_quarantine
+  __f5_step_if mas sudo mas update
+  __f5_step __macos_post_install_cleanup
+}
+
+function __f5_has_controller_modules() {
+  __cmd_exists dkms && dkms status | grep -qiE 'xpadneo|xone'
+}
+
+function __f5_update_linux() {
+  __f5_step sudo apt update
+  __f5_step sudo apt dist-upgrade -y
+  __f5_step sudo apt autoremove -y
+  __f5_step sudo apt clean
+  __f5_has_controller_modules && __f5_step sudo dkms autoinstall
+  __f5_step_if cargo cargo install --locked difftastic
+  [ -d "$HOME/.local/share/fonts/NerdFonts" ] && __f5_step __f5_update_nerd_fonts
+  __f5_step_if flatpak flatpak update -y --noninteractive
+  [ -d "$HOME/.steam/steam/compatibilitytools.d" ] && __f5_step __f5_update_proton_ge
+  return 0
+}
+
+function __f5_update_nerd_fonts() {
+  local fonts_dir="$HOME/.local/share/fonts/NerdFonts"
+  local base="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
+  local font result=0
+
+  for font in FiraCode FiraMono Hack JetBrainsMono UbuntuMono Ubuntu UbuntuSans; do
+    curl -fsSL --connect-timeout 10 --max-time 120 "${base}/${font}.tar.xz" |
+      tar -xJf - -C "$fonts_dir" || result=1
+  done
+  __cmd_exists fc-cache && fc-cache -f "$fonts_dir"
+  return "$result"
 }
 
 function __f5_update_proton_ge() {
   local proton_dir="$HOME/.steam/steam/compatibilitytools.d"
-  if [ ! -d "$proton_dir" ]; then
-    __log_info "GE-Proton not set up"
-    return
-  fi
+  local latest arch asset
 
-  __log_info "Updating GE-Proton..."
+  latest="$(curl -fsSL --connect-timeout 10 --max-time 30 \
+    https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest |
+    grep '"tag_name"' | cut -d '"' -f 4)"
+  [ -n "$latest" ] || return 1
 
-  local latest
-  latest=$(curl -sL --connect-timeout 10 --max-time 30 \
-    https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest \
-    | grep tag_name | cut -d '"' -f 4)
-
-  if [ -z "$latest" ]; then
-    __log_warning "Could not check GE-Proton version"
-    return
-  fi
-
-  local arch
   arch="$(uname -m)"
   [ "$arch" = "arm64" ] && arch="aarch64"
-  local asset="${latest}-${arch}"
-
-  if [ -d "$proton_dir/$asset" ] || [ -d "$proton_dir/$latest" ]; then
-    __log_success "GE-Proton ${latest} (up to date)"
-    return
-  fi
-
-  if __f5_install_proton_ge "$proton_dir" "$latest" "$asset"; then
-    __log_success "GE-Proton updated to ${latest}"
-  else
-    __log_warning "GE-Proton ${latest} download or checksum failed"
-  fi
+  asset="${latest}-${arch}"
+  [ -d "$proton_dir/$asset" ] || [ -d "$proton_dir/$latest" ] && return 0
+  __f5_install_proton_ge "$proton_dir" "$latest" "$asset"
 }
 
 function __f5_install_proton_ge() {
@@ -213,420 +220,129 @@ function __f5_install_proton_ge() {
   local tag="$2"
   local asset="$3"
   local base="https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${tag}"
-  local work
-  work="$(mktemp -d)" || return 1
+  local work result=1
 
-  local result=1
-  if curl -fsSL --connect-timeout 10 --max-time 900 -o "$work/$asset.tar.gz" "$base/$asset.tar.gz" &&
+  work="$(mktemp -d)" || return 1
+  if curl -fSL --connect-timeout 10 --max-time 900 -o "$work/$asset.tar.gz" "$base/$asset.tar.gz" &&
     curl -fsSL --connect-timeout 10 --max-time 30 -o "$work/$asset.sha512sum" "$base/$asset.sha512sum" &&
-    (cd "$work" && sha512sum -c --status "$asset.sha512sum") &&
+    (cd "$work" && sha512sum -c "$asset.sha512sum") &&
     tar -xzf "$work/$asset.tar.gz" -C "$proton_dir"; then
     result=0
   fi
-
   rm -rf "${work:?}"
   return "$result"
 }
 
-function __f5_update_gaming_dkms() {
-  if ! __cmd_exists dkms; then
-    return
-  fi
-
-  if ! dkms status 2>/dev/null | grep -qiE 'xpadneo|xone'; then
-    return
-  fi
-
-  __log_info "Rebuilding controller kernel modules..."
-
-  if sudo dkms autoinstall >/dev/null 2>&1; then
-    __log_success "Controller modules rebuilt"
-  else
-    __log_warning "Controller module rebuild had warnings"
-  fi
+function __f5_uvfile_names() {
+  local line
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      "" | \#*) continue ;;
+      *) printf '%s\n' "${line%%\[*}" ;;
+    esac
+  done <"$__F5_UVFILE"
 }
 
-function __f5_update_linux() {
-  __log_info "Updating Linux packages..."
-
-  if ! sudo apt update -qq >/dev/null 2>&1; then
-    __log_error "Failed to update Linux package lists"
-    return
-  fi
-
-  local failed=0
-  sudo apt dist-upgrade -y -qq >/dev/null 2>&1 || failed=$((failed + 1))
-  sudo apt autoremove -y -qq >/dev/null 2>&1 || failed=$((failed + 1))
-  sudo apt clean >/dev/null 2>&1 || true
-
-  if [ "$failed" -eq 0 ]; then
-    __log_success "Linux packages updated"
-  else
-    __log_warning "Linux packages updated with ${failed} failed step(s); run sudo apt dist-upgrade to see why"
-  fi
+function __f5_uv_installed() {
+  uv tool list 2>/dev/null | awk '/^[^-[:space:]]/ {print $1}'
 }
 
-function __f5_update_standalone_tools() {
-  # Difftastic (not in Ubuntu repos, installed via cargo)
-  if ! __cmd_exists cargo; then
-    return
-  fi
+function __f5_sync_uv_tools() {
+  local wanted installed line result=0
 
-  __log_info "Updating standalone tools..."
-
-  if cargo install --locked difftastic >/dev/null 2>&1; then
-    __log_success "Standalone tools updated (difftastic)"
-  else
-    __log_warning "Failed to update difftastic"
-  fi
-}
-
-function __f5_update_nerd_fonts() {
-  local fonts_dir="$HOME/.local/share/fonts/NerdFonts"
-  if [ ! -d "$fonts_dir" ]; then
-    __log_info "Nerd Fonts not set up"
-    return
-  fi
-
-  __log_info "Updating Nerd Fonts..."
-
-  local fonts=(FiraCode FiraMono Hack JetBrainsMono UbuntuMono Ubuntu UbuntuSans)
-  local updated=0
-  local failed=0
-
-  for font in "${fonts[@]}"; do
-    if curl -fsSL --connect-timeout 10 --max-time 120 \
-      "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz" \
-      | tar -xJf - -C "$fonts_dir" 2>/dev/null; then
-      updated=$((updated + 1))
-    else
-      failed=$((failed + 1))
-    fi
-  done
-
-  if __cmd_exists fc-cache; then
-    fc-cache -f "$fonts_dir" 2>/dev/null || true
-  fi
-
-  if [ "$failed" -eq 0 ]; then
-    __log_success "Nerd Fonts updated ($updated fonts)"
-  else
-    __log_warning "Nerd Fonts updated ($updated ok, $failed failed)"
-  fi
-}
-
-function __f5_update_flatpak() {
-  if ! __cmd_exists flatpak; then
-    return
-  fi
-
-  if ! flatpak list 2>/dev/null | grep -q .; then
-    return
-  fi
-
-  __log_info "Updating Flatpak apps..."
-
-  if flatpak update -y --noninteractive >/dev/null 2>&1; then
-    __log_success "Flatpak apps updated"
-  else
-    __log_warning "Flatpak update had warnings"
-  fi
-}
-
-function __f5_strip_tap_quarantine() {
-  __cmd_exists jq || return
-
-  local apps
-  apps=$(brew info --cask --json=v2 --installed 2>/dev/null |
-    jq -r '.casks[] | select(.tap == "gufranco/tap") | .artifacts[].app[]? // empty')
-  [ -n "$apps" ] || return
-
-  __log_info "Removing tap apps from quarantine..."
-
-  local app apppath name stripped=0
-  while IFS= read -r app; do
-    [ -n "$app" ] || continue
-    apppath="/Applications/$app"
-    [ -e "$apppath" ] || continue
-    xattr -p com.apple.quarantine "$apppath" >/dev/null 2>&1 || continue
-    xattr -dr com.apple.quarantine "$apppath" 2>/dev/null
-    name=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$apppath/Contents/Info.plist" 2>/dev/null)
-    __log_success "Released ${name:-${app%.app}} from quarantine"
-    stripped=$((stripped + 1))
-  done <<<"$apps"
-
-  [ "$stripped" -eq 0 ] && __log_info "No tap apps under quarantine"
-}
-
-function __f5_update_macos() {
-  __log_info "Updating macOS packages..."
-
-  local macos_errors=0
-
-  if brew update >/dev/null 2>&1; then
-    brew bundle --file "$HOME/.dotfiles/Brewfile" >/dev/null 2>&1 || ((macos_errors++))
-    brew bundle cleanup --force --zap --file "$HOME/.dotfiles/Brewfile" >/dev/null 2>&1 || true
-    brew upgrade --greedy >/dev/null 2>&1 || ((macos_errors++))
-    brew cleanup -s >/dev/null 2>&1 || true
-    __f5_strip_tap_quarantine
-  else
-    ((macos_errors++))
-  fi
-
-  if __cmd_exists mas; then
-    mas upgrade >/dev/null 2>&1 || ((macos_errors++))
-  fi
-
-  __macos_post_install_cleanup
-
-  if [ "$macos_errors" -gt 0 ]; then
-    __log_warning "macOS packages updated with $macos_errors failure(s)"
-  else
-    __log_success "macOS packages updated"
-  fi
+  wanted="$(__f5_uvfile_names)"
+  installed="$(__f5_uv_installed)"
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in "" | \#*) continue ;; esac
+    printf '%s\n' "$installed" | grep -Fqx "${line%%\[*}" && continue
+    uv tool install "$line" || result=1
+  done <"$__F5_UVFILE"
+  uv tool upgrade --all || result=1
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    printf '%s\n' "$wanted" | grep -Fqx "$line" || uv tool uninstall "$line" || result=1
+  done <<<"$installed"
+  return "$result"
 }
 
 function __f5_update_python() {
-  local uvfile="$HOME/.dotfiles/Uvfile"
+  __cmd_exists uv || return 0
+  [ -f "$__F5_UVFILE" ] && __f5_step __f5_sync_uv_tools
+  __f5_step_if python3 uv pip install --system --python python3 --upgrade pdbp ipdb
+}
 
-  if ! __cmd_exists uv; then
-    __log_info "uv not installed, skipping CLI tools"
-    return
-  fi
+function __f5_clean_brew() {
+  local cache
+  cache="$(brew --cache)" || return
+  brew cleanup -s --prune=all || return
+  command rm -rf "${cache:?}"
+}
 
-  if [ ! -f "$uvfile" ]; then
-    __log_info "Uvfile not found"
-    return
-  fi
-
-  __log_info "Updating uv tools..."
-
-  local installed_count=0
-  local skip_count=0
-  while IFS= read -r pkg || [ -n "$pkg" ]; do
-    [[ -z "$pkg" || "$pkg" == \#* ]] && continue
-    local pkg_name="${pkg%%\[*}"
-    if uv tool list 2>/dev/null | awk '/^[^-[:space:]]/ {print $1}' | grep -Fqx "$pkg_name"; then
-      skip_count=$((skip_count + 1))
-    elif uv tool install "$pkg" --quiet 2>/dev/null; then
-      installed_count=$((installed_count + 1))
-    else
-      __log_warning "Failed to install uv tool: $pkg"
-    fi
-  done < "$uvfile"
-
-  uv tool upgrade --all --quiet 2>/dev/null || __log_warning "uv tool upgrade had failures"
-
-  local removed_count=0
-  while IFS= read -r installed_pkg; do
-    [[ -z "$installed_pkg" ]] && continue
-    local found=false
-    while IFS= read -r line || [ -n "$line" ]; do
-      [[ -z "$line" || "$line" == \#* ]] && continue
-      [[ "${line%%\[*}" == "$installed_pkg" ]] && found=true && break
-    done < "$uvfile"
-    if ! $found; then
-      if uv tool uninstall "$installed_pkg" --quiet 2>/dev/null; then
-        removed_count=$((removed_count + 1))
-      fi
-    fi
-  done < <(uv tool list 2>/dev/null | awk '/^[^-[:space:]]/ {print $1}')
-
-  __log_success "uv tools updated (installed: $installed_count, removed: $removed_count, up-to-date: $skip_count)"
-
-  if __cmd_exists python3; then
-    if python3 -m pip install --user --upgrade --quiet pdbp ipdb >/dev/null 2>&1; then
-      __log_success "Python debuggers up to date"
-    else
-      __log_info "Python debuggers not updated; breakpoint() falls back to stdlib pdb"
-    fi
-  fi
+function __f5_clean_uv() {
+  pgrep -x uv >/dev/null && return 0
+  UV_LOCK_TIMEOUT=15 uv cache prune
 }
 
 function __f5_clean_caches() {
-  __log_info "Reclaiming cache space..."
-
-  local clean_count=0
-  local -a failed_stores=()
-
-  if __cmd_exists brew; then
-    local brew_cache
-    brew_cache="$(brew --cache 2>/dev/null)"
-    if brew cleanup -s --prune=all >/dev/null 2>&1; then
-      [ -n "$brew_cache" ] && command rm -rf "${brew_cache:?}" 2>/dev/null
-      ((clean_count++))
-    else
-      failed_stores+=("brew")
-    fi
-  fi
-
-  if __cmd_exists npm; then
-    if npm cache clean --force >/dev/null 2>&1; then
-      ((clean_count++))
-    else
-      failed_stores+=("npm")
-    fi
-  fi
-
-  if __cmd_exists pnpm; then
-    if pnpm store prune >/dev/null 2>&1; then
-      ((clean_count++))
-    else
-      failed_stores+=("pnpm")
-    fi
-  fi
-
-  if __cmd_exists yarn; then
-    if yarn cache clean >/dev/null 2>&1; then
-      ((clean_count++))
-    else
-      failed_stores+=("yarn")
-    fi
-  fi
-
-  if __cmd_exists uv; then
-    if UV_LOCK_TIMEOUT=15 uv cache prune >/dev/null 2>&1; then
-      ((clean_count++))
-    elif pgrep -x uv >/dev/null 2>&1; then
-      __log_info "Skipped the uv cache: a running uv process holds it"
-    else
-      failed_stores+=("uv")
-    fi
-  fi
-
-  if __cmd_exists go; then
-    if go clean -cache >/dev/null 2>&1; then
-      ((clean_count++))
-    else
-      failed_stores+=("go")
-    fi
-  fi
-
-  if [ "$(uname)" = "Darwin" ]; then
-    if __cmd_exists pod; then
-      if pod cache clean --all >/dev/null 2>&1; then
-        ((clean_count++))
-      else
-        failed_stores+=("cocoapods")
-      fi
-    fi
-
-    local derived="$HOME/Library/Developer/Xcode/DerivedData"
-    if [ -d "$derived" ]; then
-      if command rm -rf "${derived:?}" 2>/dev/null; then
-        ((clean_count++))
-      else
-        failed_stores+=("DerivedData")
-      fi
-    fi
-
-    if __cmd_exists xcrun; then
-      if xcrun simctl delete unavailable >/dev/null 2>&1; then
-        ((clean_count++))
-      else
-        failed_stores+=("simulators")
-      fi
-    fi
-  fi
-
-  if [ "${#failed_stores[@]}" -gt 0 ]; then
-    __log_warning "Cleaned $clean_count cache stores, failed: ${failed_stores[*]}"
-  else
-    __log_success "Cleaned $clean_count cache stores"
-  fi
+  __f5_step_if brew __f5_clean_brew
+  __f5_step_if npm npm cache verify
+  __f5_step_if pnpm pnpm store prune
+  __f5_step_if yarn yarn cache clean
+  __f5_step_if uv __f5_clean_uv
+  __f5_step_if go go clean -cache
+  [ "$(uname)" = "Darwin" ] || return 0
+  __f5_step_if pod pod cache clean --all
+  [ -d "$HOME/Library/Developer/Xcode/DerivedData" ] &&
+    __f5_step command rm -rf "$HOME/Library/Developer/Xcode/DerivedData"
+  __f5_step_if xcrun xcrun simctl delete unavailable
 }
 
-function __f5_reload_configs() {
-  __log_info "Reloading configurations..."
-
-  if __cmd_exists tmux && [ -n "$TMUX" ]; then
-    if tmux source-file ~/.dotfiles/tmux/.tmux.conf; then
-      __log_success "Tmux config reloaded"
-    else
-      __log_warning "Tmux reload failed"
-    fi
-  else
-    __log_info "Not in tmux session"
-  fi
-
-  # Clear eval cache so tools re-initialize with fresh output
-  command rm -rf "${__EVAL_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/zsh/eval-cache}" 2>/dev/null
-
-  # Guard prevents tmux auto-start and token re-init during re-source
-  export __F5_RELOADING=1
-  # shellcheck disable=SC1091
-  if source "$HOME/.dotfiles/zsh/.zshrc"; then
-    __log_success "Zsh config reloaded"
-  else
-    __log_warning "Zsh reload failed"
-  fi
-  unset __F5_RELOADING
+function __f5_reload() {
+  command rm -rf "${__EVAL_CACHE_DIR:?}"
+  [ -n "${TMUX:-}" ] || return 0
+  __f5_step_if tmux tmux source-file "$HOME/.dotfiles/tmux/.tmux.conf"
 }
 
-function __f5_show_summary() {
-  local f5_end f5_total f5_mins f5_secs
+function __f5_run() {
+  setopt local_options local_traps
+  local __f5_failed=0
 
-  f5_end=$(date +%s)
-  f5_total=$((f5_end - SCRIPT_START_TIME))
-  f5_mins=$((f5_total / 60))
-  f5_secs=$((f5_total % 60))
+  __f5_sudo_begin || {
+    __stop f5 "root access was not granted"
+    return 1
+  }
+  trap '__f5_sudo_end' EXIT
+  # shellcheck disable=SC2329
+  TRAPINT() { __f5_sudo_end; return $((128 + $1)); }
+  # shellcheck disable=SC2329
+  TRAPTERM() { __f5_sudo_end; return $((128 + $1)); }
 
-  local issues="${__LOG_ISSUE_COUNT:-0}"
-
-  echo ""
-  if [ "$issues" -eq 0 ]; then
-    __log_success "==============================================================="
-    __log_success "Update completed successfully!"
-    __log_success "==============================================================="
-  else
-    __log_warning "==============================================================="
-    __log_warning "Update finished with ${issues} warning(s) or error(s), see above"
-    __log_warning "==============================================================="
-  fi
-  echo ""
-  __log_info "Total time: ${f5_mins}m ${f5_secs}s"
-  echo ""
-}
-
-################################################################################
-# Main entry point
-################################################################################
-function f5() {
-  SCRIPT_START_TIME=$(date +%s)
-  export SCRIPT_START_TIME
-  __LOG_ISSUE_COUNT=0
-
-  echo ""
-  __log_info "==============================================================="
-  __log_info "System Update (F5)"
-  __log_info "==============================================================="
-  echo ""
-
-  __f5_update_dotfiles
-  __f5_update_aws
-  __f5_update_claude
-  __f5_update_vim
-  __f5_update_neovim
+  __f5_update_repos
   __f5_update_plugins
-  __f5_update_tool_data
-  __f5_update_mise
-
+  __f5_update_editors
+  __f5_update_runtimes
   case "$(uname)" in
-    "Linux")
-      __f5_update_linux
-      __f5_update_gaming_dkms
-      __f5_update_standalone_tools
-      __f5_update_nerd_fonts
-      __f5_update_flatpak
-      __f5_update_proton_ge
-      ;;
-    "Darwin") __f5_update_macos ;;
+    Darwin) __f5_update_macos ;;
+    Linux) __f5_update_linux ;;
   esac
-
   __f5_update_python
-
   __f5_clean_caches
+  __f5_reload
+  return "$__f5_failed"
+}
 
-  __f5_reload_configs
-  __f5_show_summary
+function f5() {
+  case "${1:-}" in
+    "") __f5_run ;;
+    help | -h | --help) __f5_help ;;
+    doctor) __f5_doctor ;;
+    -*)
+      __usage_error f5 "unknown option '$1'"
+      return 1
+      ;;
+    *)
+      __usage_error f5 "unknown command '$1'"
+      return 1
+      ;;
+  esac
 }

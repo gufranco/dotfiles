@@ -1,88 +1,12 @@
 #!/usr/bin/env bash
 
-################################################################################
-# General aliases
-################################################################################
 __alias_if_exists mkdir mkdir "command mkdir -p -v"
 __alias_if_exists neomutt mutt "command neomutt"
 __alias_if_exists tty-clock tty-clock "command tty-clock -Dcs"
 __alias_if_exists find findf "command find . -type f -name"
 __alias_if_exists find findd "command find . -type d -name"
-
-################################################################################
-# Broot with CWD sync
-################################################################################
-if command -v broot > /dev/null; then
-  function b() {
-    local outcmd
-    outcmd=$(mktemp "${TMPDIR:-/tmp}/broot-out.XXXXXX")
-    if command broot --outcmd "$outcmd" "$@"; then
-      local cmd
-      cmd=$(<"$outcmd")
-      rm -f "$outcmd"
-      [ -n "$cmd" ] && eval "$cmd"
-    else
-      rm -f "$outcmd"
-    fi
-  }
-fi
-
-################################################################################
-# Lazygit (Ctrl+g from shell)
-################################################################################
-if command -v lazygit > /dev/null; then
-  # shellcheck disable=SC2034
-  __lazygit_widget() { BUFFER="lazygit"; zle accept-line; }
-  zle -N __lazygit_widget
-  bindkey '^g' __lazygit_widget
-fi
-
-################################################################################
-# OpenCode with LM Studio auto-start
-################################################################################
-if command -v opencode > /dev/null && command -v lms > /dev/null; then
-  function oc() {
-    if ! curl -sf http://127.0.0.1:1234/v1/models > /dev/null 2>&1; then
-      lms server start > /dev/null 2>&1
-    fi
-    command opencode "$@"
-  }
-fi
-
-################################################################################
-# Claude Code with auto-continue monitor
-################################################################################
-if command -v claude > /dev/null; then
-  function claude() {
-    setopt LOCAL_OPTIONS NO_MONITOR
-    local monitor_pid=""
-    if [[ -n "${TMUX_PANE:-}" ]]; then
-      local script="$HOME/.claude/scripts/auto-continue.sh"
-      if [[ -x "$script" ]]; then
-        "$script" "$TMUX_PANE" &>/dev/null &
-        monitor_pid=$!
-        disown "$monitor_pid" 2>/dev/null
-        __log_success "Auto-continue monitor started (PID $monitor_pid)"
-      fi
-    fi
-    command claude "$@"
-    if [[ -n "$monitor_pid" ]] && kill -0 "$monitor_pid" 2>/dev/null; then
-      kill "$monitor_pid" 2>/dev/null
-      wait "$monitor_pid" 2>/dev/null
-      __log_info "Auto-continue monitor stopped"
-    fi
-  }
-fi
-
-################################################################################
-# Modern tool replacements
-################################################################################
 __alias_if_exists bat cat "command bat"
 __alias_if_exists btm top "command btm"
-
-################################################################################
-# Tool shortcuts
-################################################################################
 __alias_if_exists task t "command task"
 __alias_if_exists broot br "command broot"
 __alias_if_exists ranger ra "command ranger"
@@ -90,18 +14,7 @@ __alias_if_exists newsboat news "command newsboat"
 __alias_if_exists tig tg "command tig"
 __alias_if_exists navi nv "command navi"
 __alias_if_exists goaccess goa "command goaccess"
-if command -v asciinema > /dev/null; then
-  function rec() {
-    local file="${1:-"${HOME}/Documents/asciinema/$(date +%Y%m%d-%H%M%S).cast"}"
-    mkdir -p "$(dirname "$file")"
-    command asciinema record "$file"
-  }
-fi
-
-################################################################################
-# Debugging shortcuts
-################################################################################
-# Python: drop into pdb on an existing script without editing it.
+__alias_if_exists trrntzip torrentzip "command trrntzip"
 __alias_if_exists python3 pdbg "python3 -m pdb"
 __alias_if_exists node ni "node inspect"
 __alias_if_exists node nib "node --inspect-brk"
@@ -109,7 +22,7 @@ __alias_if_exists node niw "node --inspect-wait"
 __alias_if_exists node nw "node --watch"
 __alias_if_exists node jsr "node $HOME/.dotfiles/nodejs/repl-init.mjs"
 
-if command ls --color=auto / > /dev/null 2>&1; then
+if command ls --color=auto / >/dev/null 2>&1; then
   alias ls="command ls --color=auto"
   alias la="command ls -lAF --color=auto"
   alias ll="command ls -lF --color=auto"
@@ -119,11 +32,62 @@ else
   alias ll="command ls -lF -G"
 fi
 
-################################################################################
-# System specific aliases
-################################################################################
+if command -v broot >/dev/null; then
+  function b() {
+    local outcmd cmd
+    outcmd=$(mktemp "${TMPDIR:-/tmp}/broot-out.XXXXXX")
+    if command broot --outcmd "$outcmd" "$@"; then
+      cmd=$(<"$outcmd")
+      rm -f "$outcmd"
+      [ -n "$cmd" ] && eval "$cmd"
+    else
+      rm -f "$outcmd"
+    fi
+  }
+fi
+
+if command -v lazygit >/dev/null; then
+  # shellcheck disable=SC2034
+  __lazygit_widget() { BUFFER="lazygit"; zle accept-line; }
+  zle -N __lazygit_widget
+  bindkey '^g' __lazygit_widget
+fi
+
+if command -v opencode >/dev/null && command -v lms >/dev/null; then
+  function oc() {
+    curl -sf http://127.0.0.1:1234/v1/models >/dev/null 2>&1 || lms server start
+    command opencode "$@"
+  }
+fi
+
+if command -v claude >/dev/null; then
+  function claude() {
+    setopt LOCAL_OPTIONS NO_MONITOR
+    local monitor_pid=""
+    local script="$HOME/.claude/scripts/auto-continue.sh"
+    if [[ -n "${TMUX_PANE:-}" && -x "$script" ]]; then
+      "$script" "$TMUX_PANE" &>/dev/null &
+      monitor_pid=$!
+      disown "$monitor_pid" 2>/dev/null
+    fi
+    command claude "$@"
+    if [[ -n "$monitor_pid" ]] && kill -0 "$monitor_pid" 2>/dev/null; then
+      kill "$monitor_pid" 2>/dev/null
+      wait "$monitor_pid" 2>/dev/null
+    fi
+  }
+fi
+
+if command -v asciinema >/dev/null; then
+  function rec() {
+    local file="${1:-"${HOME}/Documents/asciinema/$(date +%Y%m%d-%H%M%S).cast"}"
+    mkdir -p "$(dirname "$file")"
+    command asciinema record "$file"
+  }
+fi
+
 case "$(uname)" in
-  "Linux")
+  Linux)
     __alias_if_exists grep grep "command grep --color"
     __alias_if_exists find findx "command find . -type f -executable"
     __alias_if_exists time time "command time -v"
@@ -131,105 +95,83 @@ case "$(uname)" in
     __alias_if_exists xdg-open open "command xdg-open"
     __alias_if_exists gnome-screensaver-command afk "command gnome-screensaver-command --lock"
     __alias_if_exists google-chrome chrome "/opt/google/chrome/google-chrome"
-
-    # Clipboard (macOS-style commands)
     __alias_if_exists xclip pbcopy "command xclip -selection clipboard"
     __alias_if_exists xclip pbpaste "command xclip -selection clipboard -o"
-    if ! command -v xclip > /dev/null; then
+    if ! command -v xclip >/dev/null; then
       __alias_if_exists xsel pbcopy "command xsel --clipboard --input"
       __alias_if_exists xsel pbpaste "command xsel --clipboard --output"
     fi
     ;;
-
-  "Darwin")
-    # GNU tools (preferred) or BSD fallback
-    if command grep --version > /dev/null 2>&1; then
+  Darwin)
+    if command grep --version >/dev/null 2>&1; then
       alias grep="command grep --color"
     else
       alias grep="command grep -G"
     fi
-
-    if command find --version > /dev/null 2>&1; then
+    if command find --version >/dev/null 2>&1; then
       alias findx="command find . -type f -executable"
     else
       alias findx="command find . -type f -perm +111"
     fi
-
-    # GNU-specific tools (only if available)
-    command time --version > /dev/null 2>&1 && alias time="command time -v"
-    command which --version > /dev/null 2>&1 && alias which="command which -a"
-
-    # BSD compatibility (create aliases for missing commands)
-    command -v md5sum > /dev/null || alias md5sum="command md5"
-    command -v sha1sum > /dev/null || alias sha1sum="command shasum"
-    command -v sha256sum > /dev/null || alias sha256sum="command shasum -a 256"
-    command -v sha512sum > /dev/null || alias sha512sum="command shasum -a 512"
-
-    # readlink fallback
-    if ! readlink -f / > /dev/null 2>&1; then
+    command time --version >/dev/null 2>&1 && alias time="command time -v"
+    command which --version >/dev/null 2>&1 && alias which="command which -a"
+    command -v md5sum >/dev/null || alias md5sum="command md5"
+    command -v sha1sum >/dev/null || alias sha1sum="command shasum"
+    command -v sha256sum >/dev/null || alias sha256sum="command shasum -a 256"
+    command -v sha512sum >/dev/null || alias sha512sum="command shasum -a 512"
+    if ! readlink -f / >/dev/null 2>&1; then
       __alias_if_exists realpath readlink "command realpath"
-      command -v realpath > /dev/null || __alias_if_exists greadlink readlink "command greadlink"
+      command -v realpath >/dev/null || __alias_if_exists greadlink readlink "command greadlink"
     fi
-
-    # macOS-specific tool replacements
     __alias_if_exists tokei stats "command tokei"
     __alias_if_exists gping ping "command gping"
     ;;
 esac
 
-################################################################################
-# Interactive fzf helpers
-################################################################################
-if command -v fzf > /dev/null; then
-  # Kill a process picked from the process list (default signal SIGKILL)
+if command -v fzf >/dev/null; then
   function fkill() {
     local pids
-    pids="$(command ps -ef | sed 1d | fzf -m --header='[kill:process]' | awk '{ print $2 }')"
+    pids="$(command ps -ef | sed 1d | fzf -m --header='kill a process' | awk '{ print $2 }')"
     [ -n "$pids" ] || return
     echo "$pids" | xargs kill -"${1:-9}"
   }
 
-  # Kill the process listening on a picked TCP port (default signal SIGKILL)
   function portkill() {
     local pids
-    pids="$(command lsof -Pwni tcp | sed 1d | fzf -m --header='[kill:port]' | awk '{ print $2 }')"
+    pids="$(command lsof -Pwni tcp | sed 1d | fzf -m --header='kill what listens on a port' | awk '{ print $2 }')"
     [ -n "$pids" ] || return
     echo "$pids" | xargs kill -"${1:-9}"
   }
 
-  # Checkout a git branch or tag picked from the full list
   function fco() {
-    command git rev-parse HEAD > /dev/null 2>&1 || return
+    command git rev-parse HEAD >/dev/null 2>&1 || return
     local tags branches target
     tags="$(command git tag | awk '{ print "tag\t" $1 }')"
-    branches="$(command git branch --all \
-      | command grep -v HEAD \
-      | sed 's/.* //; s#remotes/[^/]*/##' \
-      | sort -u \
-      | awk '{ print "branch\t" $1 }')"
-    target="$( (echo "$tags"; echo "$branches") \
-      | sed '/^$/d' \
-      | fzf --no-hscroll --reverse +m -d '\t' -n 2)"
+    branches="$(command git branch --all |
+      command grep -v HEAD |
+      sed 's/.* //; s#remotes/[^/]*/##' |
+      sort -u |
+      awk '{ print "branch\t" $1 }')"
+    target="$( (
+      echo "$tags"
+      echo "$branches"
+    ) | sed '/^$/d' | fzf --no-hscroll --reverse +m -d '\t' -n 2)"
     [ -n "$target" ] || return
     command git checkout "$(echo "$target" | awk '{ print $2 }')"
   }
 
-  # Connect to an ssh host picked from ~/.ssh/config (wildcards excluded)
   function fssh() {
     local host
-    host="$(command grep -w '^Host' "$HOME/.dotfiles/ssh/config" 2>/dev/null \
-      | awk '{ print $2 }' \
-      | command grep -v '[*?]' \
-      | fzf --header='[ssh]')"
+    host="$(command grep -w '^Host' "$HOME/.dotfiles/ssh/config" 2>/dev/null |
+      awk '{ print $2 }' |
+      command grep -v '[*?]' |
+      fzf --header='ssh to a host')"
     [ -n "$host" ] || return
     command ssh "$host"
   }
 fi
 
-################################################################################
-# cheat.sh lookup
-################################################################################
-if command -v curl > /dev/null; then
+if command -v curl >/dev/null; then
   function cheat() {
     command curl -s "cheat.sh/$1"
   }

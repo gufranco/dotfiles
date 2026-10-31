@@ -1,236 +1,159 @@
 #!/usr/bin/env bash
-#
-# sync_games - Sync game library from Myrient and Internet Archive via rclone.
 
-################################################################################
-# Common rclone sync wrapper
-################################################################################
-__sync_collection() {
-  local folder="$1"
-  local url="$2"
-  local current="$3"
-  local total="$4"
-  local label="${5:-$folder}"
-  shift 5
+__SYNC_GAMES_EXCLUDE="*.{torrent,xml,sqlite,png,jpg,jpeg,gif,bmp,nfo,diz,txt,md,pdf,html,htm}"
 
-  mkdir -p "./$folder/"
-  __log_info "[$current/$total] $label"
+__SYNC_GAMES_COLLECTIONS=(
+  "BIOS|2019_11_25_redump_bios"
+  "BIOS|Atari7800Mergedbios"
+  "BIOS|batov39"
+  "BIOS|bios_batocera"
+  "BIOS|bios-files"
+  "BIOS|verifiedbiosfiles"
+  "BIOS|RetroarchSystemFiles/Retroarch-System/"
+  "Dreamcast|BleemcastShindouGo"
+  "Dreamcast|dreamcast-vcd-player-hk-echelon-cdi"
+  "Dreamcast|DreamcastSelfBoot"
+  "Dreamcast|sega_dreamcast"
+  "Dreamcast|18.Wheeler.American.Pro.TruckerRDC"
+  "Dreamcast|20230908_20230908_2300"
+  "Dreamcast|3CBRC4RDC.7z"
+  "Dreamcast|almstcmpltdrmcst"
+  "Dreamcast|ange-wish-j-by-yzb"
+  "Dreamcast|cdi-bomberman-online-us-rdc.-7z"
+  "Dreamcast|cdi-power-stone-2-pal-rdc.-7z"
+  "Dreamcast|cdi-psychic-force-2012-us-rdc.-7z"
+  "Dreamcast|DCCM_CDI_SEGA_DREAMCAST"
+  "Dreamcast|dcrespo"
+  "Dreamcast|dreamcast_cdi_gdi_hack_proto"
+  "Dreamcast|echelon-cdi-archive"
+  "Dreamcast|jetradio-j-hack-by-yzb"
+  "Dreamcast|kalisto-cdi-archive"
+  "Dreamcast|metripolis-street-racer-self-boot-dreamcast"
+  "Dreamcast|misc-dreamcast-scene-releases"
+  "Dreamcast|phantasy-star-online-v2-usa-dc-echelon"
+  "Dreamcast|quake-iii-arena-paradox-gdi.-7z"
+  "Dreamcast|RDC-NEO4ALL-dreamcast-releases"
+  "Dreamcast|sega-smashpack-volume-1-us-echelon"
+  "Dreamcast|skies-of-arcadia-u-full-beta-2-by-yzb.-7z"
+  "Dreamcast|sonic-adventure-2-usa-dc-echelon"
+  "Dreamcast|sonic-adventure-2-usa-dc-fixed-echelon.-7z"
+  "Dreamcast|SuperStreetFighterIIXForMatchingServiceJapanEnglish.TranslatedRDC"
+  "Dreamcast|utopia-dreamcast-archive"
+  "Dreamcast|xdp-dreams-limited-edition-r5-all-dc-moonlight"
+  "Dreamcast|yzb-dreamcast-cdi-archive"
+  "Scene|ultimate-sega-genesis-scene-collection"
+  "Scene|SNESSceneArchive"
+  "Nintendo SNES|sfc-speedhacks"
+  "Nintendo SNES|super-famicom-enhanced-colors"
+  "Nintendo SNES|myrient-snes-preservation"
+  "PC|2020_03_22_DOOM"
+  "PC|Descent_1994_Interplay_"
+  "PC|Duke3DAE"
+  "PC|HERETIC_201905"
+  "PC|Hexen.wad"
+  "PC|quake_pak_202306"
+  "PC|wad-collection-the-ultimate-doom-doom-ii-final-doom-heretic-hexen-hexen-deathkin"
+  "PC|wolfenstein-3d"
+  "ROM Hacks|rom-hack-patch-archive"
+  "ROM Hacks|romhacking.net-20240801"
+  "Sega Mega CD|sega_mega-cd_sega-cd"
+  "Sega Mega Drive|mdplus_collection_22_04_16"
+  "Sega Saturn|2024-sega-saturn-hearto-1g1r-collection"
+  "Sega Saturn|sega_saturn"
+  "SNK Neo Geo|neo-geo-aes-romset"
+  "SNK Neo Geo|Neo-geoRomCollectionByGhostware"
+  "SNK Neo Geo|neogeoaesmvscomplete"
+  "SNK Neo Geo|ric64s-neosd-rom-archive"
+  "SNK Neo Geo|snk_neo_geo"
+)
 
-  if rclone sync \
-    --progress \
-    --ignore-case \
-    --multi-thread-streams=4 \
-    --size-only \
-    --delete-excluded \
-    --backup-dir "./.sync-games-trash/$(date +%Y-%m-%d)/$folder" \
-    --retries 3 \
-    --retries-sleep 10s \
-    --low-level-retries 10 \
-    "$@" \
-    "$url" \
-    "./$folder/"; then
-    __log_success "Completed: $label"
-  else
-    __log_warning "Failed: $label"
-  fi
+__SYNC_GAMES_PAUSED=(
+  "Multi-System|htgdb-gamepacks"
+  "Multi-System|rom_scene_collection"
+  "Multi-System|desktop_20240424"
+  "Multi-System|pkmn_collection"
+  "Multi-System|hearto-1g1r-collection/hearto_1g1r_collection"
+  "Multi-System|proper1g1r-collection"
+  "Multi-System|retroachievements-1g1r"
+  "Multi-System|stirlitz-1g1r-perfect-collection"
+  "Multi-System|ProjectPhoenix"
+  "Multi-System|Artefacts-from-Myrient"
+  "Multi-System|myrient-backup-misc-1"
+  "Multi-System|myrient-cross-system-preservation"
+  "Multi-System|NINRMX360M"
+  "NEC PC Engine CD|2024-nec-pc-engine-cd-turbografx-cd-hearto-1g1r-collection"
+  "Nintendo 3DS|3ds-main-encrypted"
+  "Nintendo 3DS|3ds-main-encrypted-p2"
+  "Nintendo 3DS|myrient-3ds-preservation"
+  "Nintendo 64|myrient-n64-preservation"
+  "Nintendo DS|2024-nintendo-ds-hearto-1g1r-collection"
+  "Nintendo DS|ndsdecryptednointromyrientbackup"
+  "Nintendo DS|myrient-nds-preservation"
+  "Nintendo Game Boy|gb-myrient-mirror-2026"
+  "Nintendo Game Boy Advance|myrient-gba-preservation"
+  "Nintendo Wii U|myrient-wiiu-dev-hdd"
+)
+
+function __sync_games_help() {
+  cat <<'HELP'
+sync_games - mirror the game library from the Internet Archive and OSSC firmware
+
+usage:
+  sync_games         sync into the current directory
+  sync_games help    print this page
+
+notes:
+  Each collection goes to "Internet Archive/<system>/<item>" under the
+  current directory, and the OSSC firmware to OSSC. rclone deletes local
+  files the source no longer has, after moving them into
+  .sync-games-trash/<date>/, and prints its own progress.
+  Collections that are paused, and not synced:
+HELP
+  printf '    %s\n' "${__SYNC_GAMES_PAUSED[@]}"
 }
 
-################################################################################
-# Sync game library
-################################################################################
+function __sync_games_rclone() {
+  local folder="$1"
+  shift
+  mkdir -p "./$folder/"
+  rclone sync --progress --ignore-case --size-only --delete-excluded \
+    --backup-dir "./.sync-games-trash/$(date +%Y-%m-%d)/$folder" \
+    --retries 3 --retries-sleep 10s --low-level-retries 10 \
+    "$@" "./$folder/"
+}
+
+function __sync_games_archive() {
+  local failed=0 entry system item
+
+  for entry in "${__SYNC_GAMES_COLLECTIONS[@]}"; do
+    system="${entry%%|*}"
+    item="${entry#*|}"
+    __sync_games_rclone "Internet Archive/$system/$item" --multi-thread-streams=4 \
+      --exclude "$__SYNC_GAMES_EXCLUDE" ":internetarchive:$item/" || {
+      __warn sync_games "${system}/${item} did not sync."
+      failed=$((failed + 1))
+    }
+  done
+  return "$failed"
+}
+
 function sync_games() {
+  local failed=0
+
+  case "${1:-}" in
+    help | -h | --help) __sync_games_help; return 0 ;;
+    "") ;;
+    *) __usage_error sync_games "unknown argument '$1'"; return 1 ;;
+  esac
   if ! __cmd_exists rclone; then
-    __log_error "rclone is not installed."
+    __error sync_games "rclone is not installed."
     return 1
   fi
-
-  __sync_internet_archive() {
-    local group="Internet Archive"
-
-    local collections=(
-      "BIOS|2019_11_25_redump_bios"
-      "BIOS|Atari7800Mergedbios"
-      "BIOS|batov39"
-      "BIOS|bios_batocera"
-      "BIOS|bios-files"
-      "BIOS|verifiedbiosfiles"
-      "BIOS|RetroarchSystemFiles/Retroarch-System/"
-
-      "Dreamcast|BleemcastShindouGo"
-      "Dreamcast|dreamcast-vcd-player-hk-echelon-cdi"
-      "Dreamcast|DreamcastSelfBoot"
-      "Dreamcast|sega_dreamcast"
-      "Dreamcast|18.Wheeler.American.Pro.TruckerRDC"
-      "Dreamcast|20230908_20230908_2300"
-      "Dreamcast|3CBRC4RDC.7z"
-      "Dreamcast|almstcmpltdrmcst"
-      "Dreamcast|ange-wish-j-by-yzb"
-      "Dreamcast|cdi-bomberman-online-us-rdc.-7z"
-      "Dreamcast|cdi-power-stone-2-pal-rdc.-7z"
-      "Dreamcast|cdi-psychic-force-2012-us-rdc.-7z"
-      "Dreamcast|DCCM_CDI_SEGA_DREAMCAST"
-      "Dreamcast|dcrespo"
-      "Dreamcast|dreamcast_cdi_gdi_hack_proto"
-      "Dreamcast|echelon-cdi-archive"
-      "Dreamcast|jetradio-j-hack-by-yzb"
-      "Dreamcast|kalisto-cdi-archive"
-      "Dreamcast|metripolis-street-racer-self-boot-dreamcast"
-      "Dreamcast|misc-dreamcast-scene-releases"
-      "Dreamcast|phantasy-star-online-v2-usa-dc-echelon"
-      "Dreamcast|quake-iii-arena-paradox-gdi.-7z"
-      "Dreamcast|RDC-NEO4ALL-dreamcast-releases"
-      "Dreamcast|sega-smashpack-volume-1-us-echelon"
-      "Dreamcast|skies-of-arcadia-u-full-beta-2-by-yzb.-7z"
-      "Dreamcast|sonic-adventure-2-usa-dc-echelon"
-      "Dreamcast|sonic-adventure-2-usa-dc-fixed-echelon.-7z"
-      "Dreamcast|SuperStreetFighterIIXForMatchingServiceJapanEnglish.TranslatedRDC"
-      "Dreamcast|utopia-dreamcast-archive"
-      "Dreamcast|xdp-dreams-limited-edition-r5-all-dc-moonlight"
-      "Dreamcast|yzb-dreamcast-cdi-archive"
-
-      "Scene|ultimate-sega-genesis-scene-collection"
-      "Scene|SNESSceneArchive"
-
-      # "Multi-System|htgdb-gamepacks"
-      # "Multi-System|rom_scene_collection"
-      # "Multi-System|desktop_20240424"
-      # "Multi-System|pkmn_collection"
-      # "Multi-System|hearto-1g1r-collection/hearto_1g1r_collection"
-      # "Multi-System|proper1g1r-collection"
-      # "Multi-System|retroachievements-1g1r"
-      # "Multi-System|stirlitz-1g1r-perfect-collection"
-      # "Multi-System|ProjectPhoenix"
-      # "Multi-System|Artefacts-from-Myrient"
-      # "Multi-System|myrient-backup-misc-1"
-      # "Multi-System|myrient-cross-system-preservation"
-      # "Multi-System|NINRMX360M"
-
-      # "NEC PC Engine CD|2024-nec-pc-engine-cd-turbografx-cd-hearto-1g1r-collection"
-
-      # "Nintendo 3DS|3ds-main-encrypted"
-      # "Nintendo 3DS|3ds-main-encrypted-p2"
-      # "Nintendo 3DS|myrient-3ds-preservation"
-
-      # "Nintendo 64|myrient-n64-preservation"
-
-      # "Nintendo DS|2024-nintendo-ds-hearto-1g1r-collection"
-      # "Nintendo DS|ndsdecryptednointromyrientbackup"
-      # "Nintendo DS|myrient-nds-preservation"
-
-      # "Nintendo Game Boy|gb-myrient-mirror-2026"
-
-      # "Nintendo Game Boy Advance|myrient-gba-preservation"
-
-      "Nintendo SNES|sfc-speedhacks"
-      "Nintendo SNES|super-famicom-enhanced-colors"
-      "Nintendo SNES|myrient-snes-preservation"
-
-      # "Nintendo Wii U|myrient-wiiu-dev-hdd"
-
-      "PC|2020_03_22_DOOM"
-      "PC|Descent_1994_Interplay_"
-      "PC|Duke3DAE"
-      "PC|HERETIC_201905"
-      "PC|Hexen.wad"
-      "PC|quake_pak_202306"
-      "PC|wad-collection-the-ultimate-doom-doom-ii-final-doom-heretic-hexen-hexen-deathkin"
-      "PC|wolfenstein-3d"
-
-      "ROM Hacks|rom-hack-patch-archive"
-      "ROM Hacks|romhacking.net-20240801"
-
-      "Sega Mega CD|sega_mega-cd_sega-cd"
-
-      "Sega Mega Drive|mdplus_collection_22_04_16"
-
-      "Sega Saturn|2024-sega-saturn-hearto-1g1r-collection"
-      "Sega Saturn|sega_saturn"
-
-      "SNK Neo Geo|neo-geo-aes-romset"
-      "SNK Neo Geo|Neo-geoRomCollectionByGhostware"
-      "SNK Neo Geo|neogeoaesmvscomplete"
-      "SNK Neo Geo|ric64s-neosd-rom-archive"
-      "SNK Neo Geo|snk_neo_geo"
-    )
-
-    local total=${#collections[@]}
-    local current=0
-
-    echo ""
-    __log_info "==============================================================="
-    __log_info "Syncing $group ($total collections)"
-    __log_info "==============================================================="
-    echo ""
-
-    local entry context item
-    for entry in "${collections[@]}"; do
-      context="${entry%%|*}"
-      item="${entry#*|}"
-
-      if [ "$context" = "$entry" ]; then
-        __log_warning "Skipping malformed entry (missing context): $entry"
-        continue
-      fi
-
-      ((current++))
-      __sync_collection \
-        "$group/$context/$item" \
-        ":internetarchive:$item/" \
-        "$current" "$total" "$context/$item" \
-        --exclude "*.{torrent,xml,sqlite,png,jpg,jpeg,gif,bmp,nfo,diz,txt,md,pdf,html,htm}"
-    done
-
-    echo ""
-    __log_success "$group sync completed ($total collections)"
-    echo ""
+  __sync_games_rclone OSSC --multi-thread-streams=0 --exclude "*.{jic,txt}" \
+    --http-url "http://www.infocult.com/m/ossc/fw/v1-series/" ":http:" || {
+    __warn sync_games "the OSSC firmware did not sync."
+    failed=1
   }
-
-  __sync_ossc() {
-    local folder="OSSC"
-
-    echo ""
-    __log_info "==============================================================="
-    __log_info "Syncing $folder (firmware)"
-    __log_info "==============================================================="
-    echo ""
-
-    mkdir -p "./$folder/"
-    __log_info "Downloading OSSC firmware..."
-
-    if rclone sync \
-      --progress \
-      --ignore-case \
-      --multi-thread-streams=0 \
-      --size-only \
-      --delete-excluded \
-      --backup-dir "./.sync-games-trash/$(date +%Y-%m-%d)/$folder" \
-      --retries 3 \
-      --retries-sleep 10s \
-      --low-level-retries 10 \
-      --exclude "*.{jic,txt}" \
-      --http-url "http://www.infocult.com/m/ossc/fw/v1-series/" \
-      ":http:" \
-      "./$folder"; then
-      __log_success "OSSC firmware sync completed"
-    else
-      __log_warning "OSSC firmware sync failed"
-    fi
-
-    echo ""
-  }
-
-  echo ""
-  __log_info "================================================================"
-  __log_info "  GAME LIBRARY SYNC - Starting"
-  __log_info "================================================================"
-  echo ""
-
-  __sync_ossc
-  __sync_internet_archive
-
-  echo ""
-  __log_success "================================================================"
-  __log_success "  GAME LIBRARY SYNC - Completed"
-  __log_success "================================================================"
-  echo ""
+  __sync_games_archive || failed=1
+  [ "$failed" -eq 0 ]
 }

@@ -1,209 +1,80 @@
 #!/usr/bin/env bash
-#
-# Core shared helpers used across multiple files and by install.sh.
-# Only genuinely shared functions belong here. Domain-specific helpers
-# live next to their consumers (f5, disk, infrastructure, etc.).
 
-################################################################################
-# Logging
-################################################################################
-function __log_with_time() {
-  local prefix="$1"
-  shift
+__DOTFILES_WIDTH=80
 
-  if [ -n "${SCRIPT_START_TIME:-}" ]; then
-    local elapsed=$(($(date +%s) - SCRIPT_START_TIME))
-    local mins=$((elapsed / 60))
-    local secs=$((elapsed % 60))
-    echo -e "${prefix} [$(printf '%02d:%02d' "$mins" "$secs")] $*"
+function __wrap() {
+  local fd="$1"
+  local text="$2"
+
+  if [ -t "$fd" ] && [ "${#text}" -gt "$__DOTFILES_WIDTH" ]; then
+    printf '%s\n' "$text" | command awk -v width="$__DOTFILES_WIDTH" '
+      {
+        line = ""
+        count = split($0, words, " ")
+        for (i = 1; i <= count; i++) {
+          if (line == "") { line = words[i] }
+          else if (length(line) + 1 + length(words[i]) <= width) { line = line " " words[i] }
+          else { print line; line = words[i] }
+        }
+        print line
+      }' >&"$fd"
   else
-    echo -e "${prefix} $*"
+    printf '%s\n' "$text" >&"$fd"
   fi
 }
 
-function __log_info() {
-  __log_with_time "\033[0;34m[INFO]\033[0m" "$@"
+function __say() {
+  __wrap 1 "$*"
 }
 
-function __log_success() {
-  __log_with_time "\033[0;32m[✓]\033[0m" "$@"
+function __warn() {
+  local name="$1"
+  shift
+  __wrap 2 "${name}: warning: $*"
 }
 
-function __log_warning() {
-  __LOG_ISSUE_COUNT=$((${__LOG_ISSUE_COUNT:-0} + 1))
-  __log_with_time "\033[0;33m[!]\033[0m" "$@"
+function __error() {
+  local name="$1"
+  shift
+  __wrap 2 "${name}: $*"
 }
 
-function __log_error() {
-  __LOG_ISSUE_COUNT=$((${__LOG_ISSUE_COUNT:-0} + 1))
-  __log_with_time "\033[0;31m[✗]\033[0m" "$@"
+function __stop() {
+  local name="$1"
+  shift
+  __wrap 2 "${name}: stopped: $*."
 }
 
-################################################################################
-# System checks
-################################################################################
+function __usage_error() {
+  local name="$1"
+  shift
+  __wrap 2 "${name}: $*. run '${name} help' for usage."
+}
+
 function __cmd_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
-function __pkg_installed() {
-  dpkg -l "$1" 2>/dev/null | grep -q "^ii"
-}
-
-function __snap_installed() {
-  snap list "$1" >/dev/null 2>&1
-}
-
-################################################################################
-# File operations
-################################################################################
 function __safe_link() {
   local src="$1"
   local dst="$2"
+  local backup
 
   if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
-    __log_info "Link OK: $dst"
     return 0
   fi
 
   if [ -L "$dst" ]; then
     rm -f "$dst"
   elif [ -e "$dst" ]; then
-    local backup
     backup="${dst}.backup.$(date +%Y%m%d%H%M%S)"
     mv "$dst" "$backup"
-    __log_warning "Backed up: $dst -> $backup"
   fi
 
   mkdir -p "$(dirname "$dst")"
   ln -s "$src" "$dst"
-  __log_success "Linked: $dst -> $(basename "$src")"
 }
 
-function __git_sync() {
-  local url="$1"
-  local target="$2"
-  local repo_name
-  repo_name=$(basename "$target")
-
-  if [ -d "$target/.git" ]; then
-    if git -C "$target" pull --quiet --no-edit >/dev/null 2>&1; then
-      __log_success "Updated: $repo_name"
-      return 0
-    else
-      __log_warning "Failed to update: $repo_name"
-      return 1
-    fi
-  else
-    rm -rf "$target"
-    if git clone --quiet "$url" "$target" >/dev/null 2>&1; then
-      __log_success "Cloned: $repo_name"
-      return 0
-    else
-      __log_error "Failed to clone: $repo_name"
-      return 1
-    fi
-  fi
-}
-
-################################################################################
-# Package management (used by install.sh)
-################################################################################
-function __apt_install_if_missing() {
-  local package="$1"
-  __pkg_installed "$package" || sudo apt install -y -qq "$package"
-}
-
-function __apt_add_key_and_repo() {
-  local key_url="$1"
-  local key_file="$2"
-  local repo_line="$3"
-  local repo_file="$4"
-  local package="${5:-}"
-
-  if [ ! -f "$key_file" ]; then
-    sudo mkdir -p "$(dirname "$key_file")" 2>/dev/null || true
-    if ! curl -fsSL --connect-timeout 10 --max-time 30 "$key_url" | sudo gpg --dearmor --yes -o "$key_file" 2>/dev/null; then
-      __log_warning "Failed to download GPG key: $key_url"
-      return 1
-    fi
-  fi
-
-  if [ ! -f "$repo_file" ]; then
-    echo "$repo_line" | sudo tee "$repo_file" >/dev/null
-    sudo apt update -qq
-  fi
-
-  if [ -n "$package" ] && ! __pkg_installed "$package"; then
-    sudo apt install -y -qq "$package"
-  fi
-}
-
-function __github_latest_tag() {
-  local token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
-  local -a auth=()
-  [ -n "$token" ] && auth=(-H "Authorization: Bearer $token")
-
-  curl -fsSL --connect-timeout 10 --max-time 30 "${auth[@]}" \
-    "https://api.github.com/repos/$1/releases/latest" \
-    | grep '"tag_name"' | cut -d '"' -f 4
-}
-
-function __apt_install_deb_url() {
-  local url="$1"
-  local tmpdir result package
-  tmpdir="$(mktemp -d)" || return 1
-  if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/package.deb"; then
-    sudo apt install -y -qq "$tmpdir/package.deb"
-    result=$?
-    if [ "$result" -ne 0 ]; then
-      package="$(dpkg-deb -f "$tmpdir/package.deb" Package 2>/dev/null)"
-      if [ -n "$package" ]; then
-        sudo dpkg --purge --force-depends "$package" >/dev/null 2>&1 || true
-      fi
-    fi
-  else
-    result=1
-  fi
-  rm -rf "$tmpdir"
-  return "$result"
-}
-
-function __install_tarball_binary() {
-  local url="$1"
-  local binary="$2"
-  local tmpdir result
-  local extracted
-  tmpdir="$(mktemp -d)" || return 1
-  if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/archive.tar.gz" \
-    && tar -xzf "$tmpdir/archive.tar.gz" -C "$tmpdir"; then
-    extracted="$(find "$tmpdir" -type f -name "$binary" -print -quit 2>/dev/null)"
-    if [ -n "$extracted" ]; then
-      sudo install -m 755 "$extracted" "/usr/local/bin/$binary"
-      result=$?
-    else
-      result=1
-    fi
-  else
-    result=1
-  fi
-  rm -rf "$tmpdir"
-  return "$result"
-}
-
-function __brew_install_if_missing() {
-  local package="$1"
-  brew list "$package" >/dev/null 2>&1 || brew install "$package"
-}
-
-function __brew_install_cask_if_missing() {
-  local cask="$1"
-  brew list --cask "$cask" >/dev/null 2>&1 || brew install --cask "$cask"
-}
-
-################################################################################
-# PATH management
-################################################################################
 function __add_to_path() {
   local p=":$PATH:"
   p="${p//:$1:/:}"
@@ -232,7 +103,6 @@ function __setup_homebrew() {
   export HOMEBREW_PREFIX="$prefix"
   export HOMEBREW_CELLAR="$prefix/Cellar"
   export HOMEBREW_REPOSITORY="$prefix"
-  [ "$prefix" = "/opt/homebrew" ] && export HOMEBREW_REPOSITORY="/opt/homebrew"
   [ "$prefix" = "/usr/local" ] && export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
   export HOMEBREW_SHELLENV_PREFIX="$prefix"
   __add_to_path "$prefix/bin"
@@ -245,10 +115,6 @@ function __setup_homebrew() {
   fi
 }
 
-################################################################################
-# Metadata macOS writes onto any volume it mounts read-write
-# (used by fat_sort and disk_quiet)
-################################################################################
 function __macos_metadata_patterns() {
   cat <<'PATTERNS'
 .DS_Store
@@ -271,10 +137,6 @@ __MACOSX
 PATTERNS
 }
 
-################################################################################
-# Stop Finder writing .DS_Store to removable and network volumes
-# (used by install.sh and disk_quiet)
-################################################################################
 function __macos_no_ds_store_on_foreign_volumes() {
   [ "$(uname)" = "Darwin" ] || return 0
 
@@ -286,35 +148,26 @@ function __macos_no_ds_store_on_foreign_volumes() {
     fi
   done
 
-  [ "$changed" -eq 1 ] && killall Finder 2>/dev/null
+  [ "$changed" -eq 1 ] && killall Finder
   return 0
 }
 
-################################################################################
-# macOS post-install cleanup (used by install.sh and f5)
-################################################################################
 function __macos_post_install_cleanup() {
   if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
-    __log_info "Cleaning Launchpad cache..."
-    if sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} +; then
-      killall Dock || true
-      __log_success "Launchpad cache cleaned"
-    fi
+    sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} + && killall Dock
   fi
-
-  __log_info "Refreshing Spotlight index..."
-  mdimport /Applications ~/Applications 2>/dev/null
-  __log_success "Spotlight index refreshed"
+  local dir
+  for dir in /Applications "$HOME/Applications"; do
+    [ -d "$dir" ] && mdimport "$dir"
+  done
+  return 0
 }
 
-################################################################################
-# Alias helper
-################################################################################
 function __alias_if_exists() {
   local cmd="$1"
   local alias_name="$2"
   local alias_value="$3"
 
   # shellcheck disable=SC2139
-  command -v "$cmd" > /dev/null && alias "$alias_name"="$alias_value"
+  command -v "$cmd" >/dev/null && alias "$alias_name"="$alias_value"
 }

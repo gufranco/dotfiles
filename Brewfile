@@ -35,7 +35,6 @@ brew 'direnv'
 brew 'gum'
 brew 'navi'
 brew 'tealdeer'
-brew 'thefuck'
 brew 'tmux'
 brew 'tmuxp'
 brew 'zsh'
@@ -95,7 +94,6 @@ brew 'zlib'
 ################################################################################
 brew 'ast-grep'
 brew 'broot'
-# brew 'eza'
 brew 'fd'
 brew 'fzf'
 brew 'midnight-commander'
@@ -329,7 +327,6 @@ brew 'rtk'
 ################################################################################
 # macOS System
 ################################################################################
-brew 'kanata'
 brew 'mas'
 
 ################################################################################

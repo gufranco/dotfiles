@@ -109,16 +109,7 @@ __alias_if_exists node niw "node --inspect-wait"
 __alias_if_exists node nw "node --watch"
 __alias_if_exists node jsr "node $HOME/.dotfiles/nodejs/repl-init.mjs"
 
-################################################################################
-# eza / ls
-################################################################################
-if command -v eza > /dev/null; then
-  alias ls="command eza --icons=auto --group-directories-first"
-  alias la="command eza --icons=auto --group-directories-first -la --git"
-  alias ll="command eza --icons=auto --group-directories-first -l --git"
-  alias lt="command eza --icons=auto --group-directories-first --tree --level=2"
-  alias lta="command eza --icons=auto --group-directories-first --tree --level=2 -a"
-elif command ls --color=auto / > /dev/null 2>&1; then
+if command ls --color=auto / > /dev/null 2>&1; then
   alias ls="command ls --color=auto"
   alias la="command ls -lAF --color=auto"
   alias ll="command ls -lF --color=auto"

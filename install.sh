@@ -269,7 +269,7 @@ case "$(uname)" in
       fzf universal-ctags broot
 
       # Shell & Terminal
-      direnv tealdeer tmuxp gum thefuck
+      direnv tealdeer tmuxp gum
 
       # Editors
       neovim
@@ -383,21 +383,6 @@ case "$(uname)" in
       log_success "Bat installed"
     else
       log_skip "Bat already installed"
-    fi
-
-    ############################################################################
-    # eza (ls replacement)
-    ############################################################################
-    if ! cmd_exists eza; then
-      log_info "Installing eza..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq eza
-      log_success "eza installed"
-    else
-      log_skip "eza already installed"
     fi
 
     ############################################################################
@@ -1424,12 +1409,6 @@ safe_link "$HOME/.dotfiles/bat/catppuccin/themes" "$HOME/.config/bat/themes"
 if cmd_exists bat; then bat cache --build >/dev/null 2>&1 || true; fi
 
 ############################################################################
-# eza
-############################################################################
-log_info "Setting up eza..."
-safe_link "$HOME/.dotfiles/eza" "$HOME/.config/eza"
-
-############################################################################
 # cmus
 ############################################################################
 log_info "Setting up cmus..."
@@ -1518,13 +1497,6 @@ if [ "$(uname)" = "Darwin" ]; then
 fi
 
 ############################################################################
-# Kanata
-############################################################################
-log_info "Setting up Kanata..."
-mkdir -p "$HOME/.config/kanata"
-safe_link "$HOME/.dotfiles/kanata/kanata.kbd" "$HOME/.config/kanata/kanata.kbd"
-
-############################################################################
 # OpenCode
 ############################################################################
 log_info "Setting up OpenCode..."
@@ -1544,13 +1516,6 @@ log_info "Setting up direnv..."
 mkdir -p "$HOME/.config/direnv"
 safe_link "$HOME/.dotfiles/direnv/direnvrc" "$HOME/.config/direnv/direnvrc"
 safe_link "$HOME/.dotfiles/direnv/direnv.toml" "$HOME/.config/direnv/direnv.toml"
-
-############################################################################
-# thefuck
-############################################################################
-log_info "Setting up thefuck..."
-mkdir -p "$HOME/.config/thefuck"
-safe_link "$HOME/.dotfiles/thefuck/settings.py" "$HOME/.config/thefuck/settings.py"
 
 ############################################################################
 # tig

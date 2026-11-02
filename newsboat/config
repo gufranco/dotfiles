@@ -31,13 +31,6 @@ browser "open %u"
 html-renderer "w3m -dump -T text/html"
 
 ################################################################################
-# Notifications
-################################################################################
-notify-always no
-notify-format "Newsboat: %n unread articles in %f feeds"
-notify-program "/opt/homebrew/bin/terminal-notifier -title 'Newsboat' -message"
-
-################################################################################
 # Bookmarks
 ################################################################################
 bookmark-cmd "~/.config/newsboat/bookmark.sh"

@@ -1,3 +1,14 @@
+# [2.0.0](https://github.com/gufranco/dotfiles/compare/v1.1.0...v2.0.0) (2026-11-02)
+
+
+* feat!: support macOS only ([8f07dd1](https://github.com/gufranco/dotfiles/commit/8f07dd1f6715572c11f8d73d1b7c8475ede6fab8))
+
+
+### BREAKING CHANGES
+
+* Ubuntu and every other Linux system are no longer
+supported; install.sh exits with an error on them.
+
 # [1.1.0](https://github.com/gufranco/dotfiles/compare/v1.0.1...v1.1.0) (2026-10-31)
 
 

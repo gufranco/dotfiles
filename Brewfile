@@ -49,7 +49,7 @@ brew 'tealdeer'
 ################################################################################
 brew 'bc'
 brew 'coreutils'
-brew 'diffutils'
+brew 'diffutils', link: false
 brew 'ed'
 brew 'findutils'
 brew 'gawk'
@@ -66,7 +66,7 @@ brew 'grep'
 ################################################################################
 brew 'file-formula'
 brew 'man-db'
-brew 'moreutils'
+brew 'moreutils', link: false
 brew 'parallel', link: false
 brew 'patchutils'
 brew 'gufranco/tap/shiwake'

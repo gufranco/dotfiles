@@ -20,6 +20,5 @@ __cached_eval atuin init zsh --disable-up-arrow
 source "$HOME/.dotfiles/zsh/modules/f5"
 source "$HOME/.dotfiles/zsh/modules/sync-games"
 source "$HOME/.dotfiles/zsh/modules/gaming"
-source "$HOME/.dotfiles/zsh/modules/infrastructure"
 
 source "$HOME/.dotfiles/zsh/config/aliases"

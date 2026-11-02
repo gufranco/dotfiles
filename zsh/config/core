@@ -115,28 +115,6 @@ function __setup_homebrew() {
   fi
 }
 
-function __macos_metadata_patterns() {
-  cat <<'PATTERNS'
-.DS_Store
-.AppleDB
-.AppleDesktop
-.AppleDouble
-.apdisk
-.com.apple.timemachine.donotpresent
-.com.apple.timemachine.supported
-.DocumentRevisions-V100
-.fseventsd
-.MobileBackups
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.metadata_never_index
-._*
-__MACOSX
-PATTERNS
-}
-
 function __macos_no_ds_store_on_foreign_volumes() {
   [ "$(uname)" = "Darwin" ] || return 0
 

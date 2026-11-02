@@ -5,62 +5,6 @@ __F5_KEEPALIVE_ROUNDS=720
 __F5_BREWFILE="$HOME/.dotfiles/Brewfile"
 __F5_UVFILE="$HOME/.dotfiles/Uvfile"
 
-function __f5_help() {
-  cat <<'HELP'
-f5 - update the dotfiles, plugins, runtimes and every package
-
-usage:
-  f5            run every update step
-  f5 doctor     list the tools f5 uses and whether each one is installed
-  f5 help       print this page
-
-notes:
-  f5 asks for the root password once, before the first step, and keeps
-  root alive until it returns. When it returns, for any reason, sudo
-  forgets the password, so the next sudo asks again.
-  Only the tools' own output is printed. f5 returns 1 when any step failed.
-  A step whose tool is not installed is skipped; f5 doctor lists them.
-  The new shell configuration loads in a new shell: run exec zsh.
-  On macOS, brew bundle cleanup removes anything not in the Brewfile.
-
-examples:
-  f5
-  f5 doctor
-HELP
-}
-
-function __f5_doctor_row() {
-  local tool="$1"
-  local note="$2"
-  local found
-
-  if found="$(command -v "$tool")"; then
-    printf '%-18s %-8s %s\n' "$tool" ok "$found"
-    return 0
-  fi
-  printf '%-18s %-8s %s\n' "$tool" missing "$note"
-  return 1
-}
-
-function __f5_doctor() {
-  local tool result=0
-
-  for tool in git sudo curl; do
-    __f5_doctor_row "$tool" "required" || result=1
-  done
-  for tool in vim nvim tmux mise uv python3 tldr npm pnpm yarn go; do
-    __f5_doctor_row "$tool" "its step is skipped"
-  done
-  case "$(uname)" in
-    Darwin) set -- brew mas jq pod xcrun ;;
-    Linux) set -- apt dkms cargo flatpak fc-cache sha512sum ;;
-  esac
-  for tool in "$@"; do
-    __f5_doctor_row "$tool" "its step is skipped"
-  done
-  return "$result"
-}
-
 function __f5_keepalive() {
   local parent="$1"
   local rounds=0
@@ -303,7 +247,7 @@ function __f5_reload() {
   __f5_step_if tmux tmux source-file "$HOME/.dotfiles/tmux/.tmux.conf"
 }
 
-function __f5_run() {
+function f5() {
   setopt local_options local_traps
   local __f5_failed=0
 
@@ -329,20 +273,4 @@ function __f5_run() {
   __f5_clean_caches
   __f5_reload
   return "$__f5_failed"
-}
-
-function f5() {
-  case "${1:-}" in
-    "") __f5_run ;;
-    help | -h | --help) __f5_help ;;
-    doctor) __f5_doctor ;;
-    -*)
-      __usage_error f5 "unknown option '$1'"
-      return 1
-      ;;
-    *)
-      __usage_error f5 "unknown command '$1'"
-      return 1
-      ;;
-  esac
 }

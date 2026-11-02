@@ -34,7 +34,6 @@ ssh/control-*
 ################################################################################
 gnupg/*
 !gnupg/keys/
-!gnupg/gpg-agent-linux.conf
 !gnupg/gpg-agent-macos-x86_64.conf
 !gnupg/gpg-agent-macos-arm64.conf
 !gnupg/gpg.conf

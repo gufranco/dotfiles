@@ -69,14 +69,6 @@ else
   errors=$((errors + 1))
 fi
 
-# Platform-specific
-case "$(uname)" in
-  Linux)
-    check "conkyrc" "$HOME/.conkyrc"
-    ;;
-  Darwin)
-    check "k9s-skins" "$HOME/.config/k9s/skins"
-    ;;
-esac
+check "k9s-skins" "$HOME/.config/k9s/skins"
 
 exit $errors

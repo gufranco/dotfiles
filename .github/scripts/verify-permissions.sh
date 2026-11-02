@@ -5,10 +5,7 @@ check_perm() {
   local path="$1" expected="$2"
   local actual
 
-  case "$(uname)" in
-    Linux) actual=$(stat -Lc %a "$path" 2>/dev/null || echo "missing") ;;
-    Darwin) actual=$(stat -Lf %Lp "$path" 2>/dev/null || echo "missing") ;;
-  esac
+  actual=$(stat -Lf %Lp "$path" 2>/dev/null || echo "missing")
 
   if [ "$actual" = "$expected" ]; then
     echo "OK: $path ($actual)"

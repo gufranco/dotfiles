@@ -116,8 +116,6 @@ function __setup_homebrew() {
 }
 
 function __macos_no_ds_store_on_foreign_volumes() {
-  [ "$(uname)" = "Darwin" ] || return 0
-
   local key changed=0
   for key in DSDontWriteUSBStores DSDontWriteNetworkStores; do
     if [ "$(defaults read com.apple.desktopservices "$key" 2>/dev/null)" != "1" ]; then

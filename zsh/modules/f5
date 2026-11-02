@@ -113,70 +113,6 @@ function __f5_update_macos() {
   __f5_step __macos_post_install_cleanup
 }
 
-function __f5_has_controller_modules() {
-  __cmd_exists dkms && dkms status | grep -qiE 'xpadneo|xone'
-}
-
-function __f5_update_linux() {
-  __f5_step sudo apt update
-  __f5_step sudo apt dist-upgrade -y
-  __f5_step sudo apt autoremove -y
-  __f5_step sudo apt clean
-  __f5_has_controller_modules && __f5_step sudo dkms autoinstall
-  __f5_step_if cargo cargo install --locked difftastic
-  [ -d "$HOME/.local/share/fonts/NerdFonts" ] && __f5_step __f5_update_nerd_fonts
-  __f5_step_if flatpak flatpak update -y --noninteractive
-  [ -d "$HOME/.steam/steam/compatibilitytools.d" ] && __f5_step __f5_update_proton_ge
-  return 0
-}
-
-function __f5_update_nerd_fonts() {
-  local fonts_dir="$HOME/.local/share/fonts/NerdFonts"
-  local base="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
-  local font result=0
-
-  for font in FiraCode FiraMono Hack JetBrainsMono UbuntuMono Ubuntu UbuntuSans; do
-    curl -fsSL --connect-timeout 10 --max-time 120 "${base}/${font}.tar.xz" |
-      tar -xJf - -C "$fonts_dir" || result=1
-  done
-  __cmd_exists fc-cache && fc-cache -f "$fonts_dir"
-  return "$result"
-}
-
-function __f5_update_proton_ge() {
-  local proton_dir="$HOME/.steam/steam/compatibilitytools.d"
-  local latest arch asset
-
-  latest="$(curl -fsSL --connect-timeout 10 --max-time 30 \
-    https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest |
-    grep '"tag_name"' | cut -d '"' -f 4)"
-  [ -n "$latest" ] || return 1
-
-  arch="$(uname -m)"
-  [ "$arch" = "arm64" ] && arch="aarch64"
-  asset="${latest}-${arch}"
-  [ -d "$proton_dir/$asset" ] || [ -d "$proton_dir/$latest" ] && return 0
-  __f5_install_proton_ge "$proton_dir" "$latest" "$asset"
-}
-
-function __f5_install_proton_ge() {
-  local proton_dir="$1"
-  local tag="$2"
-  local asset="$3"
-  local base="https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${tag}"
-  local work result=1
-
-  work="$(mktemp -d)" || return 1
-  if curl -fSL --connect-timeout 10 --max-time 900 -o "$work/$asset.tar.gz" "$base/$asset.tar.gz" &&
-    curl -fsSL --connect-timeout 10 --max-time 30 -o "$work/$asset.sha512sum" "$base/$asset.sha512sum" &&
-    (cd "$work" && sha512sum -c "$asset.sha512sum") &&
-    tar -xzf "$work/$asset.tar.gz" -C "$proton_dir"; then
-    result=0
-  fi
-  rm -rf "${work:?}"
-  return "$result"
-}
-
 function __f5_uvfile_names() {
   local line
   while IFS= read -r line || [ -n "$line" ]; do
@@ -234,7 +170,6 @@ function __f5_clean_caches() {
   __f5_step_if yarn yarn cache clean
   __f5_step_if uv __f5_clean_uv
   __f5_step_if go go clean -cache
-  [ "$(uname)" = "Darwin" ] || return 0
   __f5_step_if pod pod cache clean --all
   [ -d "$HOME/Library/Developer/Xcode/DerivedData" ] &&
     __f5_step command rm -rf "$HOME/Library/Developer/Xcode/DerivedData"
@@ -265,10 +200,7 @@ function f5() {
   __f5_update_plugins
   __f5_update_editors
   __f5_update_runtimes
-  case "$(uname)" in
-    Darwin) __f5_update_macos ;;
-    Linux) __f5_update_linux ;;
-  esac
+  __f5_update_macos
   __f5_update_python
   __f5_clean_caches
   __f5_reload

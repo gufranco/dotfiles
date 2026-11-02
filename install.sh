@@ -42,116 +42,6 @@ log_error() { __error install "$@"; }
 cmd_exists() { __cmd_exists "$@"; }
 safe_link() { __safe_link "$@"; }
 
-pkg_installed() {
-  dpkg -l "$1" 2>/dev/null | grep -q "^ii"
-}
-
-snap_installed() {
-  snap list "$1" >/dev/null 2>&1
-}
-
-git_sync() {
-  local url="$1"
-  local target="$2"
-  local repo_name
-  repo_name=$(basename "$target")
-
-  if [ -d "$target/.git" ]; then
-    git -C "$target" pull --no-edit || {
-      log_warning "could not update ${repo_name}"
-      return 1
-    }
-    return 0
-  fi
-
-  rm -rf "${target:?}"
-  git clone "$url" "$target" || {
-    log_error "could not clone ${repo_name}"
-    return 1
-  }
-}
-
-apt_install_if_missing() {
-  local package="$1"
-  pkg_installed "$package" || sudo apt install -y -qq "$package"
-}
-
-apt_add_key_and_repo() {
-  local key_url="$1"
-  local key_file="$2"
-  local repo_line="$3"
-  local repo_file="$4"
-  local package="${5:-}"
-
-  if [ ! -f "$key_file" ]; then
-    sudo mkdir -p "$(dirname "$key_file")" 2>/dev/null || true
-    if ! curl -fsSL --connect-timeout 10 --max-time 30 "$key_url" | sudo gpg --dearmor --yes -o "$key_file" 2>/dev/null; then
-      log_warning "could not download the GPG key ${key_url}"
-      return 1
-    fi
-  fi
-
-  if [ ! -f "$repo_file" ]; then
-    echo "$repo_line" | sudo tee "$repo_file" >/dev/null
-    sudo apt update -qq
-  fi
-
-  if [ -n "$package" ] && ! pkg_installed "$package"; then
-    sudo apt install -y -qq "$package"
-  fi
-}
-
-github_latest_tag() {
-  local token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
-  local -a auth=()
-  [ -n "$token" ] && auth=(-H "Authorization: Bearer $token")
-
-  curl -fsSL --connect-timeout 10 --max-time 30 "${auth[@]}" \
-    "https://api.github.com/repos/$1/releases/latest" |
-    grep '"tag_name"' | cut -d '"' -f 4
-}
-
-apt_install_deb_url() {
-  local url="$1"
-  local tmpdir result package
-  tmpdir="$(mktemp -d)" || return 1
-  if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/package.deb"; then
-    sudo apt install -y -qq "$tmpdir/package.deb"
-    result=$?
-    if [ "$result" -ne 0 ]; then
-      package="$(dpkg-deb -f "$tmpdir/package.deb" Package 2>/dev/null)"
-      if [ -n "$package" ]; then
-        sudo dpkg --purge --force-depends "$package" >/dev/null 2>&1 || true
-      fi
-    fi
-  else
-    result=1
-  fi
-  rm -rf "$tmpdir"
-  return "$result"
-}
-
-install_tarball_binary() {
-  local url="$1"
-  local binary="$2"
-  local tmpdir result extracted
-  tmpdir="$(mktemp -d)" || return 1
-  if curl -fsSL --connect-timeout 10 --max-time 180 "$url" -o "$tmpdir/archive.tar.gz" &&
-    tar -xzf "$tmpdir/archive.tar.gz" -C "$tmpdir"; then
-    extracted="$(find "$tmpdir" -type f -name "$binary" -print -quit 2>/dev/null)"
-    if [ -n "$extracted" ]; then
-      sudo install -m 755 "$extracted" "/usr/local/bin/$binary"
-      result=$?
-    else
-      result=1
-    fi
-  else
-    result=1
-  fi
-  rm -rf "$tmpdir"
-  return "$result"
-}
-
 brew_install_if_missing() {
   brew list "$1" >/dev/null 2>&1 || brew install "$1"
 }
@@ -179,6 +69,11 @@ github_repo_sync() {
     log_success "${label} cloned"
   fi
 }
+
+if [ "$(uname)" != "Darwin" ]; then
+  log_error "these dotfiles support macOS only."
+  exit 1
+fi
 
 ################################################################################
 # Error handling
@@ -209,1077 +104,95 @@ else
   log_info "Running in CI environment - skipping user interaction."
 fi
 
-################################################################################
-# OS-specific installation
-################################################################################
-case "$(uname)" in
-  "Linux")
-    log_info "System: Linux (Ubuntu/Debian)"
-    export DEBIAN_FRONTEND=noninteractive
-    export GIT_TERMINAL_PROMPT=0
-    export NEEDRESTART_MODE=a
-
-    # Preserve non-interactive env vars through sudo so dpkg/debconf never
-    # falls back to the dialog frontend on machines with a TTY
-    sudo mkdir -p /etc/sudoers.d
-    echo 'Defaults env_keep += "DEBIAN_FRONTEND NEEDRESTART_MODE"' | sudo tee /etc/sudoers.d/keep-noninteractive >/dev/null
-    sudo chmod 440 /etc/sudoers.d/keep-noninteractive
-
-    # Force non-interactive dpkg conffile handling (keep existing config files)
-    sudo mkdir -p /etc/apt/apt.conf.d
-    echo 'Dpkg::Options { "--force-confold"; "--force-confdef"; }' | sudo tee /etc/apt/apt.conf.d/99force-conf >/dev/null
-
-    # Suppress needrestart interactive prompts (Ubuntu 22.04+)
-    if [ -f /etc/needrestart/needrestart.conf ]; then
-      sudo sed -i "s/#\$nrconf{restart} = 'i';/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
-    fi
-
-    # Ensure USER is set (not set in bare Docker containers)
-    : "${USER:=$(whoami)}"
-    export USER
-
-    ############################################################################
-    # System update
-    ############################################################################
-    log_info "Updating system..."
-    sudo add-apt-repository -y universe >/dev/null 2>&1 || true
-    sudo apt update -qq
-    sudo apt dist-upgrade -y -qq
-    log_success "System updated"
-
-    ############################################################################
-    # Third-party repositories (latest versions from maintainers)
-    ############################################################################
-    log_info "Adding third-party repositories..."
-    sudo add-apt-repository -y ppa:git-core/ppa >/dev/null 2>&1 || true
-    sudo apt update -qq
-    log_success "Repositories configured"
-
-    ############################################################################
-    # Basic packages
-    ############################################################################
-    log_info "Installing basic packages..."
-    echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
-
-    BASIC_PKGS=(
-      # Build essentials
-      build-essential ca-certificates cmake curl
-      git gnupg software-properties-common autoconf automake libtool gettext
-
-      # Compression
-      exfatprogs p7zip-full unrar unzip zip zlib1g-dev
-
-      # Disk imaging
-      mtools wimtools
-
-      # Shell & Terminal
-      bash tmux snapd trash-cli xsel bc
-
-      # Text & Search
-      vim ripgrep fd-find jq moreutils patchutils urlview
-
-      # Network
-      wget rsync rclone nmap mtr telnet sshpass
-      gnome-keyring ssh-askpass-gnome
-
-      # System monitoring
-      htop lm-sensors
-
-      # Development
-      shellcheck ruby ruby-dev python3-pygments
-
-      # Subtitles
-      subliminal
-
-      # Misc
-      ubuntu-restricted-extras
-    )
-
-    for pkg in "${BASIC_PKGS[@]}"; do
-      apt_install_if_missing "$pkg"
-    done
-
-    log_success "Basic packages installed"
-
-    ############################################################################
-    # Dotfiles repository
-    ############################################################################
-    github_repo_sync "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles" "dotfiles"
-
-    ############################################################################
-    # Zsh
-    ############################################################################
-    log_info "Installing Zsh..."
-    apt_install_if_missing zsh
-
-    if ! grep -q "$(command -v zsh)" /etc/shells 2>/dev/null; then
-      command -v zsh | sudo tee -a /etc/shells >/dev/null
-    fi
-
-    if [ "$SHELL" != "$(command -v zsh)" ]; then
-      sudo chsh "$USER" -s "$(command -v zsh)" 2>/dev/null || true
-      log_success "Shell changed to Zsh"
-    else
-      log_skip "Shell already Zsh"
-    fi
-
-    ############################################################################
-    # Docker
-    ############################################################################
-    if ! cmd_exists docker; then
-      log_info "Installing Docker..."
-      apt_add_key_and_repo \
-        "https://download.docker.com/linux/ubuntu/gpg" \
-        "/etc/apt/keyrings/docker.gpg" \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
-        "/etc/apt/sources.list.d/docker.list" \
-        "docker-ce"
-      log_success "Docker installed"
-    else
-      log_skip "Docker already installed"
-    fi
-
-    if ! groups "$USER" | grep -q docker; then
-      sudo usermod -a -G docker "$USER"
-      log_success "User added to docker group"
-    fi
-
-    ############################################################################
-    # Node.js 24
-    ############################################################################
-    if ! cmd_exists node || [ "$(node --version | cut -d. -f1 | tr -d v)" -lt 24 ]; then
-      log_info "Installing Node.js 24..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq nodejs
-      log_success "Node.js installed"
-    else
-      log_skip "Node.js 24+ already installed"
-    fi
-
-    ############################################################################
-    # Applications
-    ############################################################################
-    APPS=(
-      # File managers & Cloud
-      nautilus-dropbox mc ranger
-
-      # Search & Navigation
-      fzf universal-ctags broot
-
-      # Shell & Terminal
-      direnv tealdeer tmuxp gum
-
-      # Editors
-      neovim
-
-      # Text & Data tools
-      glow yq poppler-utils
-
-      # Email & Web
-      neomutt lynx newsboat
-
-      # Media
-      vlc cmus asciinema ffmpeg fatsort mjpegtools vcdimager
-
-      # Desktop
-      conky-all transmission caffeine flameshot
-
-      # Fonts (base families, Nerd Font variants installed separately below)
-      fonts-hack fonts-firacode fonts-jetbrains-mono fonts-ubuntu
-
-      # Backup
-      restic
-
-      # System monitoring
-      fastfetch btm goaccess
-
-      # Security & Encryption
-      age
-
-      # Dev tools
-      hyperfine tokei tty-clock bear entr bats stress-ng taskwarrior
-      shfmt cosign lnav pgcli git-absorb kubectx pre-commit
-      openjdk-21-jdk libpq-dev
-
-      # Git & Version Control
-      glab lazygit tig
-
-      # Cloud & Infrastructure
-      ansible
-
-      # Penetration Testing
-      hashcat hydra john nikto sqlmap radare2
-    )
-
-    for app in "${APPS[@]}"; do
-      if ! pkg_installed "$app"; then
-        log_info "Installing $app..."
-        sudo apt install -y -qq "$app" 2>/dev/null || log_warning "failed: $app"
-      fi
-    done
-
-    ############################################################################
-    # Nerd Fonts (patched fonts with icons for terminal/editor use)
-    ############################################################################
-    NERD_FONTS=(
-      FiraCode
-      FiraMono
-      Hack
-      JetBrainsMono
-      UbuntuMono
-      Ubuntu
-      UbuntuSans
-    )
-
-    NERD_FONTS_DIR="$HOME/.local/share/fonts/NerdFonts"
-    mkdir -p "$NERD_FONTS_DIR"
-
-    for font in "${NERD_FONTS[@]}"; do
-      if [ -z "$(find "$NERD_FONTS_DIR" -maxdepth 1 -name "${font}NerdFont*" -print -quit 2>/dev/null)" ]; then
-        log_info "Installing $font Nerd Font..."
-        NERD_FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz"
-        if curl -fsSL --connect-timeout 10 --max-time 120 "$NERD_FONT_URL" | tar -xJf - -C "$NERD_FONTS_DIR" 2>/dev/null; then
-          log_success "$font Nerd Font installed"
-        else
-          log_warning "failed to install $font Nerd Font"
-        fi
-      else
-        log_skip "$font Nerd Font already installed"
-      fi
-    done
-
-    # Rebuild font cache
-    if cmd_exists fc-cache; then
-      fc-cache -f "$NERD_FONTS_DIR" 2>/dev/null || true
-    fi
-
-    ############################################################################
-    # GitHub CLI
-    ############################################################################
-    if ! cmd_exists gh; then
-      log_info "Installing GitHub CLI..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli.gpg >/dev/null
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq gh
-      log_success "GitHub CLI installed"
-    else
-      log_skip "GitHub CLI already installed"
-    fi
-
-    ############################################################################
-    # Bat (cat replacement)
-    ############################################################################
-    if ! cmd_exists bat && ! cmd_exists batcat; then
-      log_info "Installing bat..."
-      sudo apt install -y -qq bat 2>/dev/null || true
-      # Ubuntu uses 'batcat' instead of 'bat'
-      if cmd_exists batcat && ! cmd_exists bat; then
-        sudo ln -sf "$(command -v batcat)" /usr/local/bin/bat
-      fi
-      log_success "Bat installed"
-    else
-      log_skip "Bat already installed"
-    fi
-
-    ############################################################################
-    # Delta (git diff)
-    ############################################################################
-    apt_install_if_missing git-delta
-
-    ############################################################################
-    # Zoxide (smart cd)
-    ############################################################################
-    apt_install_if_missing zoxide
-
-    ############################################################################
-    # Atuin (shell history)
-    ############################################################################
-    apt_install_if_missing atuin
-
-    DEB_ARCH="$(dpkg --print-architecture)"
-    case "$DEB_ARCH" in
-      amd64)
-        LAZYDOCKER_ARCH="x86_64"
-        ;;
-      arm64)
-        LAZYDOCKER_ARCH="arm64"
-        ;;
-      *)
-        LAZYDOCKER_ARCH=""
-        ;;
-    esac
-
-    if ! cmd_exists k9s; then
-      log_info "Installing k9s..."
-      K9S_TAG="$(github_latest_tag derailed/k9s || true)"
-      if [ -n "$K9S_TAG" ] && apt_install_deb_url \
-        "https://github.com/derailed/k9s/releases/download/${K9S_TAG}/k9s_linux_${DEB_ARCH}.deb"; then
-        log_success "k9s ${K9S_TAG} installed"
-      else
-        log_warning "k9s install failed"
-      fi
-    else
-      log_skip "k9s already installed"
-    fi
-
-    if ! cmd_exists navi; then
-      log_info "Installing navi..."
-      NAVI_TAG="$(github_latest_tag denisidoro/navi || true)"
-      case "$DEB_ARCH" in
-        amd64) NAVI_TARGET="x86_64-unknown-linux-musl" ;;
-        arm64) NAVI_TARGET="aarch64-unknown-linux-gnu" ;;
-        *) NAVI_TARGET="" ;;
-      esac
-      if [ -n "$NAVI_TAG" ] && [ -n "$NAVI_TARGET" ] && install_tarball_binary \
-        "https://github.com/denisidoro/navi/releases/download/${NAVI_TAG}/navi-${NAVI_TAG}-${NAVI_TARGET}.tar.gz" \
-        navi; then
-        log_success "navi ${NAVI_TAG} installed"
-      else
-        log_warning "navi install failed"
-      fi
-    else
-      log_skip "navi already installed"
-    fi
-
-    if ! cmd_exists lazydocker; then
-      log_info "Installing lazydocker..."
-      LAZYDOCKER_TAG="$(github_latest_tag jesseduffield/lazydocker || true)"
-      if [ -n "$LAZYDOCKER_TAG" ] && [ -n "$LAZYDOCKER_ARCH" ] && install_tarball_binary \
-        "https://github.com/jesseduffield/lazydocker/releases/download/${LAZYDOCKER_TAG}/lazydocker_${LAZYDOCKER_TAG#v}_Linux_${LAZYDOCKER_ARCH}.tar.gz" \
-        lazydocker; then
-        log_success "lazydocker ${LAZYDOCKER_TAG} installed"
-      else
-        log_warning "lazydocker install failed"
-      fi
-    else
-      log_skip "lazydocker already installed"
-    fi
-
-    if ! cmd_exists uv; then
-      log_info "Installing uv..."
-      curl -LsSf --connect-timeout 10 --max-time 120 https://astral.sh/uv/install.sh | sh >/dev/null 2>&1 || true
-      PATH="$HOME/.local/bin:$PATH"
-      if cmd_exists uv; then
-        log_success "uv installed"
-      else
-        log_warning "uv install failed"
-      fi
-    else
-      log_skip "uv already installed"
-    fi
-
-    ############################################################################
-    # Golang
-    ############################################################################
-    if ! cmd_exists go; then
-      log_info "Installing Go..."
-      sudo add-apt-repository -y ppa:longsleep/golang-backports >/dev/null 2>&1 || true
-      sudo apt update -qq
-      sudo apt install -y -qq golang-go
-      log_success "Go installed"
-    else
-      log_skip "Go already installed"
-    fi
-
-    ############################################################################
-    # Rust
-    ############################################################################
-    if ! cmd_exists rustc; then
-      log_info "Installing Rust..."
-      # rustup is in Ubuntu 24.04+ repos; fall back to the shell installer
-      # for environments where the package is unavailable
-      if pkg_installed rustup || sudo apt install -y -qq rustup 2>/dev/null; then
-        true
-      elif ! cmd_exists rustup; then
-        curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 120 https://sh.rustup.rs | sh -s -- -y 2>/dev/null || true
-        # shellcheck source=/dev/null
-        [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
-      fi
-      if cmd_exists rustup; then
-        rustup default stable >/dev/null 2>&1
-        log_success "Rust installed"
-      else
-        log_warning "Rust installation failed"
-      fi
-    else
-      log_skip "Rust already installed"
-    fi
-
-    ############################################################################
-    # Difftastic (Rust-based structural diff, not in Ubuntu repos)
-    ############################################################################
-    if ! cmd_exists difft; then
-      if cmd_exists cargo; then
-        log_info "Installing difftastic..."
-        if cargo install --locked difftastic 2>/dev/null; then
-          log_success "difftastic installed"
-        else
-          log_warning "difftastic install failed"
-        fi
-      else
-        log_skip "difftastic (cargo not available)"
-      fi
-    else
-      log_skip "difftastic already installed"
-    fi
-
-    ############################################################################
-    # mise
-    ############################################################################
-    if ! cmd_exists mise; then
-      log_info "Installing mise..."
-      apt_add_key_and_repo \
-        "https://mise.jdx.dev/gpg-key.pub" \
-        "/etc/apt/keyrings/mise-archive-keyring.gpg" \
-        "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=$(dpkg --print-architecture)] https://mise.jdx.dev/deb stable main" \
-        "/etc/apt/sources.list.d/mise.list" \
-        "mise"
-      log_success "mise installed"
-    else
-      log_skip "mise already installed"
-    fi
-
-    ############################################################################
-    # Desktop apps (apt-based, installed headlessly in CI)
-    ############################################################################
-
-    # Spotify
-    # Uses trusted=yes instead of GPG key verification because Spotify
-    # frequently rotates their signing key (the fingerprint is embedded in
-    # the key URL), which breaks automated installs. The trade-off is that
-    # apt skips signature verification for this repo.
-    if ! pkg_installed spotify-client; then
-      log_info "Installing Spotify..."
-      echo "deb [arch=$(dpkg --print-architecture) trusted=yes] https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq spotify-client
-      log_success "Spotify installed"
-    else
-      log_skip "Spotify already installed"
-    fi
-
-    # Google Chrome
-    if ! pkg_installed google-chrome-stable; then
-      log_info "Installing Google Chrome..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --yes -o /etc/apt/keyrings/google-chrome.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq google-chrome-stable
-      log_success "Chrome installed"
-    else
-      log_skip "Chrome already installed"
-    fi
-
-    # DBeaver
-    if ! pkg_installed dbeaver-ce; then
-      log_info "Installing DBeaver..."
-      sudo add-apt-repository -y ppa:serge-rider/dbeaver-ce >/dev/null 2>&1 || true
-      sudo apt update -qq
-      sudo apt install -y -qq dbeaver-ce
-      log_success "DBeaver installed"
-    else
-      log_skip "DBeaver already installed"
-    fi
-
-    # Visual Studio Code
-    if ! pkg_installed code; then
-      log_info "Installing VS Code..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/visual_studio.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/visual_studio.gpg] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq code
-      log_success "VS Code installed"
-    else
-      log_skip "VS Code already installed"
-    fi
-
-    # Slack (amd64 only)
-    if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-      if ! pkg_installed slack-desktop; then
-        log_info "Installing Slack..."
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL --connect-timeout 10 --max-time 30 https://packagecloud.io/slacktechnologies/slack/gpgkey | sudo gpg --dearmor --yes -o /etc/apt/keyrings/slack.gpg 2>/dev/null || true
-        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/slack.gpg] https://packagecloud.io/slacktechnologies/slack/debian/ jessie main" | sudo tee /etc/apt/sources.list.d/slack.list >/dev/null
-        sudo apt update -qq
-        sudo apt install -y -qq slack-desktop
-        log_success "Slack installed"
-      else
-        log_skip "Slack already installed"
-      fi
-    fi
-
-    # Sublime Text
-    if ! pkg_installed sublime-text; then
-      log_info "Installing Sublime Text..."
-      sudo mkdir -p /etc/apt/keyrings
-      curl -fsSL --connect-timeout 10 --max-time 30 https://download.sublimetext.com/sublimehq-pub.gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/sublimetext.gpg 2>/dev/null || true
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/sublimetext.gpg] https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublimetext.list >/dev/null
-      sudo apt update -qq
-      sudo apt install -y -qq sublime-text
-      log_success "Sublime Text installed"
-    else
-      log_skip "Sublime Text already installed"
-    fi
-
-    # Snap packages (require systemd, skip in CI/containers)
-    # Postman and Discord have no official apt repos
-    if [[ -z "$CI" ]] && cmd_exists snap; then
-      snap_installed postman || {
-        log_info "Installing Postman..."
-        sudo snap install postman 2>/dev/null || true
-      }
-      snap_installed discord || {
-        log_info "Installing Discord..."
-        sudo snap install discord 2>/dev/null || true
-      }
-    else
-      log_skip "Snap packages (CI environment or snapd unavailable)"
-    fi
-
-    if [[ -n "$CI" ]]; then
-      log_skip "OpenLogi skipped in CI, its maintainer scripts require systemd"
-    elif ! cmd_exists openlogi; then
-      log_info "Installing OpenLogi..."
-      OPENLOGI_TAG="$(github_latest_tag AprilNEA/OpenLogi || true)"
-      if [ -n "$OPENLOGI_TAG" ] && apt_install_deb_url \
-        "https://github.com/AprilNEA/OpenLogi/releases/download/${OPENLOGI_TAG}/openlogi-${OPENLOGI_TAG}-linux-${DEB_ARCH}.deb"; then
-        log_success "OpenLogi ${OPENLOGI_TAG} installed"
-      else
-        log_warning "OpenLogi install failed"
-      fi
-    else
-      log_skip "OpenLogi already installed"
-    fi
-
-    if [[ -z "$CI" ]] && cmd_exists openlogi-agent &&
-      systemctl --user show-environment >/dev/null 2>&1; then
-      if systemctl --user is-enabled openlogi-agent.service >/dev/null 2>&1; then
-        log_skip "OpenLogi agent already enabled"
-      else
-        if systemctl --user enable --now openlogi-agent.service >/dev/null 2>&1; then
-          log_success "OpenLogi agent enabled"
-        else
-          log_warning "failed to enable OpenLogi agent"
-        fi
-      fi
-    fi
-
-    ############################################################################
-    # GPG
-    ############################################################################
-    apt_install_if_missing gpg
-    apt_install_if_missing pinentry-curses
-
-    ############################################################################
-    # Nerd Fonts (no apt/snap package available, direct download required)
-    ############################################################################
-    log_info "Installing Nerd Fonts..."
-    LINUX_NERD_FONTS_DIR="$HOME/.local/share/fonts"
-    mkdir -p "$LINUX_NERD_FONTS_DIR"
-
-    for font in Hack JetBrainsMono; do
-      if [ ! -f "$LINUX_NERD_FONTS_DIR/${font}NerdFont-Regular.ttf" ]; then
-        log_info "Installing $font Nerd Font..."
-        NERD_FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz"
-        if curl -fsSL --connect-timeout 10 --max-time 120 "$NERD_FONT_URL" |
-          tar -xJf - -C "$LINUX_NERD_FONTS_DIR" "${font}NerdFont-Regular.ttf"; then
-          log_success "$font Nerd Font installed"
-        else
-          log_warning "failed to install $font Nerd Font"
-        fi
-      else
-        log_skip "$font Nerd Font already installed"
-      fi
-    done
-
-    sudo fc-cache -fv >/dev/null 2>&1
-    log_success "Fonts installed"
-
-    ############################################################################
-    # Conky
-    ############################################################################
-    safe_link "$HOME/.dotfiles/conky/.conkyrc" "$HOME/.conkyrc"
-
-    ############################################################################
-    # GPU drivers and gaming (x86_64 only)
-    ############################################################################
-    if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-      # Enable 32-bit architecture (required for Steam, Proton, and 32-bit drivers)
-      sudo dpkg --add-architecture i386
-      # multiverse provides steam-devices and intel-media-va-driver-non-free
-      sudo add-apt-repository -y multiverse >/dev/null 2>&1 || true
-      sudo apt update -qq
-      sudo apt -y upgrade -qq
-
-      # NVIDIA drivers (latest branch from graphics-drivers PPA)
-      # Prefer the open kernel modules on Turing+ GPUs; ubuntu-drivers marks the
-      # recommended package per GPU, so a Pascal MX correctly stays on the
-      # proprietary variant while a GTX 1650 Ti / Turing MX gets -open.
-      log_info "Installing NVIDIA drivers..."
-      apt_install_if_missing ubuntu-drivers-common
-      sudo add-apt-repository -y ppa:graphics-drivers/ppa >/dev/null 2>&1 || true
-      sudo apt update -qq
-      # `|| true`: with no NVIDIA GPU present (e.g. CI containers) grep matches
-      # nothing and would abort the script under `set -o pipefail`.
-      NVIDIA_RECOMMENDED=$(ubuntu-drivers devices 2>/dev/null |
-        awk '/recommended/ {print $3}' |
-        grep -E '^nvidia-driver-[0-9]+(-open)?$' |
-        sort -V | tail -1 || true)
-      if [ -n "$NVIDIA_RECOMMENDED" ]; then
-        apt_install_if_missing "$NVIDIA_RECOMMENDED"
-        log_success "NVIDIA driver ${NVIDIA_RECOMMENDED} installed"
-      else
-        sudo ubuntu-drivers autoinstall 2>/dev/null || log_warning "NVIDIA auto-install had warnings"
-        log_success "NVIDIA drivers configured (autoinstall fallback)"
-      fi
-
-      # NVIDIA Prime (hybrid GPU switching for laptops with iGPU + dGPU)
-      apt_install_if_missing nvidia-prime
-
-      # Blacklist Nouveau to prevent conflicts with proprietary NVIDIA driver
-      NOUVEAU_BLACKLIST="/etc/modprobe.d/blacklist-nouveau.conf"
-      if [ ! -f "$NOUVEAU_BLACKLIST" ]; then
-        log_info "Blacklisting Nouveau..."
-        printf 'blacklist nouveau\noptions nouveau modeset=0\n' | sudo tee "$NOUVEAU_BLACKLIST" >/dev/null
-        log_success "Nouveau blacklisted"
-      else
-        log_skip "Nouveau already blacklisted"
-      fi
-
-      # NVIDIA DRM modesetting (required for Wayland, PRIME sync, suspend/resume)
-      GRUB_FILE="/etc/default/grub"
-      if [ -f "$GRUB_FILE" ] && ! grep -q "nvidia-drm.modeset=1" "$GRUB_FILE"; then
-        log_info "Enabling NVIDIA DRM modesetting..."
-        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 nvidia-drm.modeset=1"/' "$GRUB_FILE"
-        sudo update-grub 2>/dev/null || log_warning "update-grub had warnings"
-        log_success "NVIDIA DRM modesetting enabled"
-      else
-        log_skip "NVIDIA DRM modesetting already configured"
-      fi
-
-      # NVIDIA power management + suspend/resume hardening
-      # DynamicPowerManagement=0x02: dGPU powers down when idle (saves battery).
-      # PreserveVideoMemoryAllocations=1: prevents VRAM corruption across the
-      # constant suspend/resume cycles of a laptop. Written unconditionally so
-      # existing machines pick up the suspend hardening on re-run.
-      NVIDIA_POWER="/etc/modprobe.d/nvidia-power.conf"
-      log_info "Configuring NVIDIA power management..."
-      sudo tee "$NVIDIA_POWER" >/dev/null <<'NVPOWER'
-options nvidia NVreg_DynamicPowerManagement=0x02 NVreg_PreserveVideoMemoryAllocations=1 NVreg_TemporaryFilePath=/var/tmp
-NVPOWER
-      # Enable the driver's suspend/resume/hibernate units when present.
-      for unit in nvidia-suspend.service nvidia-hibernate.service nvidia-resume.service; do
-        sudo systemctl enable "$unit" >/dev/null 2>&1 || true
-      done
-      log_success "NVIDIA power management configured"
-
-      # Mesa drivers (bleeding edge, includes RADV for AMD iGPU Vulkan)
-      log_info "Installing Mesa drivers..."
-      sudo add-apt-repository -y ppa:oibaf/graphics-drivers >/dev/null 2>&1 || true
-      sudo apt update -qq
-      sudo apt -y upgrade -qq
-      log_success "Mesa drivers configured"
-
-      # Vulkan support (64-bit + 32-bit for both NVIDIA and AMD GPUs)
-      log_info "Installing Vulkan support..."
-      VULKAN_PKGS=(
-        vulkan-tools
-        libvulkan1
-        "libvulkan1:i386"
-        mesa-vulkan-drivers
-        "mesa-vulkan-drivers:i386"
-        "libgl1-mesa-dri:i386"
-      )
-      for pkg in "${VULKAN_PKGS[@]}"; do
-        apt_install_if_missing "$pkg"
-      done
-      log_success "Vulkan support installed"
-
-      # iGPU media/VA-API stack, branched per machine (Intel vs AMD APU).
-      # The NVIDIA dGPU is the render path; the iGPU handles display + decode.
-      log_info "Configuring iGPU media stack..."
-      apt_install_if_missing vainfo || log_warning "vainfo unavailable"
-      if lspci | grep -iE 'VGA|3D|Display' | grep -qi intel; then
-        apt_install_if_missing intel-media-va-driver-non-free || log_warning "intel-media-va-driver-non-free unavailable"
-        apt_install_if_missing intel-gpu-tools || log_warning "intel-gpu-tools unavailable"
-        log_success "Intel iGPU media stack installed"
-      elif lspci | grep -iE 'VGA|3D|Display' | grep -qiE 'amd|ati|radeon'; then
-        apt_install_if_missing mesa-va-drivers || log_warning "mesa-va-drivers unavailable"
-        apt_install_if_missing libva2 || log_warning "libva2 unavailable"
-        log_success "AMD iGPU media stack installed"
-      else
-        log_skip "No Intel/AMD iGPU detected for media stack"
-      fi
-
-      # Kernel parameters for gaming (zram-aware, SteamOS-derived values).
-      # Written unconditionally: these are coupled with zram below, and existing
-      # machines must migrate off the old swappiness=10 / dirty_ratio values.
-      GAMING_SYSCTL="/etc/sysctl.d/99-gaming.conf"
-      log_info "Configuring gaming kernel parameters..."
-      sudo tee "$GAMING_SYSCTL" >/dev/null <<'SYSCTL'
-# Memory map limit for large games (Unity, Unreal Engine)
-vm.max_map_count=2147483642
-
-# High swappiness is correct WITH zram: prefer compressing to RAM over dropping
-# page cache (ratio out of 200 since kernel 5.8). Do not lower this while zram
-# is enabled.
-vm.swappiness=180
-
-# Reclaim a little earlier to avoid allocation-stall latency spikes
-vm.watermark_boost_factor=0
-vm.watermark_scale_factor=125
-
-# zram: no swap readahead batching
-vm.page-cluster=0
-
-# Absolute dirty limits cap writeback latency predictably regardless of RAM
-vm.dirty_bytes=268435456
-vm.dirty_background_bytes=134217728
-
-# Keep a small free headroom to reduce allocation stalls
-vm.min_free_kbytes=262144
-
-# Disable proactive memory compaction (reduces random latency spikes)
-vm.compaction_proactiveness=0
-
-# Disable split-lock mitigation (causes severe perf loss in some Proton games)
-kernel.split_lock_mitigate=0
-SYSCTL
-      sudo sysctl --system >/dev/null 2>&1 || log_warning "some sysctl keys not applied"
-      log_success "Gaming kernel parameters configured"
-
-      # zram swap (compressed RAM), coupled with vm.swappiness=180 above.
-      log_info "Configuring zram swap..."
-      apt_install_if_missing systemd-zram-generator || log_warning "systemd-zram-generator unavailable"
-      sudo mkdir -p /etc/systemd
-      sudo tee /etc/systemd/zram-generator.conf >/dev/null <<'ZRAM'
-[zram0]
-zram-size = min(ram, 8192)
-compression-algorithm = zstd
-ZRAM
-      sudo systemctl daemon-reload >/dev/null 2>&1 || true
-      sudo systemctl start systemd-zram-setup@zram0.service >/dev/null 2>&1 || true
-      log_success "zram swap configured"
-
-      # Raise file descriptor limits (Wine/Proton can exceed default 1024)
-      GAMING_LIMITS="/etc/security/limits.d/99-gaming.conf"
-      if [ ! -f "$GAMING_LIMITS" ]; then
-        log_info "Configuring file descriptor limits..."
-        printf '* soft nofile 1048576\n* hard nofile 1048576\n' | sudo tee "$GAMING_LIMITS" >/dev/null
-        log_success "File descriptor limits configured"
-      else
-        log_skip "File descriptor limits already configured"
-      fi
-
-      # Add user to input group for controller access
-      if ! groups "$USER" | grep -qw input; then
-        sudo usermod -a -G input "$USER"
-        log_success "User added to input group"
-      fi
-
-      # Gaming performance tools + overlays + controller udev rules
-      log_info "Installing gaming tools..."
-      apt_install_if_missing gamemode
-      apt_install_if_missing "libgamemodeauto0:i386"
-      apt_install_if_missing mangohud
-      apt_install_if_missing gamescope
-      apt_install_if_missing protontricks
-      apt_install_if_missing vkbasalt || log_warning "vkbasalt unavailable"
-      apt_install_if_missing goverlay || log_warning "goverlay unavailable"
-      # Controller udev rules ship with Valve's steam-launcher (installed below).
-      # The standalone Ubuntu steam-devices package pulls steam-installer, which
-      # conflicts with steam-launcher and would uninstall it, so do not add it.
-      log_success "Gaming tools installed"
-
-      # XanMod kernel (MAIN, x64v3): fsync/winesync for Proton frame-time
-      # consistency, HZ=500, full preempt. Stock kernel stays as GRUB fallback.
-      if ! pkg_installed linux-xanmod-x64v3; then
-        log_info "Installing XanMod kernel..."
-        sudo mkdir -p /etc/apt/keyrings
-        if curl -fsSL --connect-timeout 10 --max-time 30 https://dl.xanmod.org/archive.key |
-          sudo gpg --dearmor --yes -o /etc/apt/keyrings/xanmod-archive-keyring.gpg 2>/dev/null; then
-          echo "deb [signed-by=/etc/apt/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main" |
-            sudo tee /etc/apt/sources.list.d/xanmod-release.list >/dev/null
-          sudo apt update -qq
-          apt_install_if_missing linux-xanmod-x64v3 || log_warning "XanMod install had warnings"
-          log_success "XanMod kernel installed"
-        else
-          log_warning "could not fetch XanMod key, skipping custom kernel"
-        fi
-      else
-        log_skip "XanMod kernel already installed"
-      fi
-
-      # sched_ext + scx_lavd as the default scheduler (what Valve/CachyOS ship).
-      # sched_ext auto-reverts to EEVDF if the BPF scheduler fails to load.
-      log_info "Configuring scx_lavd scheduler..."
-      if apt-cache show scx-scheds >/dev/null 2>&1; then
-        apt_install_if_missing scx-scheds
-        sudo tee /etc/default/scx >/dev/null <<'SCX'
-SCX_SCHEDULER=scx_lavd
-SCX_FLAGS=""
-SCX
-        sudo systemctl enable --now scx.service >/dev/null 2>&1 ||
-          log_warning "scx.service not enabled (needs XanMod/6.12+ reboot)"
-        log_success "scx_lavd scheduler configured"
-      else
-        log_warning "scx-scheds not available in apt, skipping scheduler"
-      fi
-
-      # earlyoom instead of systemd-oomd: kills the biggest offender before a
-      # multi-second freeze, and protects steam/gamescope/wine.
-      log_info "Configuring earlyoom..."
-      apt_install_if_missing earlyoom || log_warning "earlyoom unavailable"
-      # Numeric-only args: robust in a systemd EnvironmentFile. Kill when RAM
-      # drops below 5% (with zram, swap rarely fills), report hourly.
-      sudo tee /etc/default/earlyoom >/dev/null <<'EARLYOOM'
-EARLYOOM_ARGS="-m 5 -s 100 -r 3600"
-EARLYOOM
-      sudo systemctl disable --now systemd-oomd >/dev/null 2>&1 || true
-      sudo systemctl enable --now earlyoom >/dev/null 2>&1 || true
-      sudo systemctl restart earlyoom >/dev/null 2>&1 || true
-      log_success "earlyoom configured"
-
-      # ananicy-cpp: auto-nice background processes so they never preempt games.
-      if apt-cache show ananicy-cpp >/dev/null 2>&1; then
-        log_info "Installing ananicy-cpp..."
-        apt_install_if_missing ananicy-cpp
-        sudo systemctl enable --now ananicy-cpp >/dev/null 2>&1 || true
-        log_success "ananicy-cpp installed"
-      else
-        log_skip "ananicy-cpp not in apt, skipping"
-      fi
-
-      # I/O scheduler: none for NVMe, mq-deadline for SATA SSD.
-      IOSCHED_RULE="/etc/udev/rules.d/60-ioscheduler-gaming.rules"
-      log_info "Configuring I/O scheduler..."
-      sudo tee "$IOSCHED_RULE" >/dev/null <<'IOSCHED'
-ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none"
-ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="mq-deadline"
-IOSCHED
-      sudo udevadm control --reload >/dev/null 2>&1 || true
-      log_success "I/O scheduler configured"
-
-      # Xbox controller DKMS drivers (Bluetooth + wireless dongle). Guarded and
-      # non-fatal: they build kernel modules and may lag a fresh kernel.
-      apt_install_if_missing dkms || log_warning "dkms unavailable"
-      if ! dkms status 2>/dev/null | grep -qi xpadneo; then
-        log_info "Installing xpadneo (Xbox Bluetooth)..."
-        XPADNEO_DIR="$HOME/.local/src/xpadneo"
-        if git_sync "https://github.com/atar-axis/xpadneo.git" "$XPADNEO_DIR" "xpadneo" &&
-          sudo "$XPADNEO_DIR/install.sh" >/dev/null 2>&1; then
-          log_success "xpadneo installed"
-        else
-          log_warning "xpadneo install skipped (build failed)"
-        fi
-      else
-        log_skip "xpadneo already installed"
-      fi
-      if ! dkms status 2>/dev/null | grep -qi xone; then
-        log_info "Installing xone (Xbox dongle/wired)..."
-        XONE_DIR="$HOME/.local/src/xone"
-        if git_sync "https://github.com/dlundqvist/xone.git" "$XONE_DIR" "xone" &&
-          sudo "$XONE_DIR/install.sh" >/dev/null 2>&1; then
-          sudo xone-get-firmware.sh --skip-disclaimer >/dev/null 2>&1 || true
-          log_success "xone installed"
-        else
-          log_warning "xone install skipped (build failed)"
-        fi
-      else
-        log_skip "xone already installed"
-      fi
-
-      # Gaming config symlinks (single source of truth in the dotfiles repo)
-      log_info "Linking gaming configs..."
-      safe_link "$HOME/.dotfiles/gamemode/gamemode.ini" "$HOME/.config/gamemode.ini"
-      safe_link "$HOME/.dotfiles/mangohud/MangoHud.conf" "$HOME/.config/MangoHud/MangoHud.conf"
-      safe_link "$HOME/.dotfiles/vkbasalt/vkBasalt.conf" "$HOME/.config/vkBasalt/vkBasalt.conf"
-      safe_link "$HOME/.dotfiles/nvidia/99-gaming-nvidia.conf" "$HOME/.config/environment.d/99-gaming-nvidia.conf"
-      mkdir -p "$HOME/.cache/nv"
-      log_success "Gaming configs linked"
-
-      # Steam (from Valve's official repository)
-      if ! pkg_installed steam-launcher; then
-        log_info "Installing Steam..."
-        echo "steam steam/question select I AGREE" | sudo debconf-set-selections
-        echo "steam steam/license note ''" | sudo debconf-set-selections
-        echo "steam steam/purge note ''" | sudo debconf-set-selections
-        apt_add_key_and_repo \
-          "https://repo.steampowered.com/steam/archive/stable/steam.gpg" \
-          "/etc/apt/keyrings/steam.gpg" \
-          "deb [arch=amd64,i386 signed-by=/etc/apt/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam" \
-          "/etc/apt/sources.list.d/steam-stable.list" \
-          "steam-launcher"
-        log_success "Steam installed"
-      else
-        log_skip "Steam already installed"
-      fi
-
-      # ProtonUp-Qt (manages GE-Proton custom builds for better game compatibility)
-      apt_install_if_missing flatpak
-      flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-      if ! flatpak list 2>/dev/null | grep -q "net.davidotek.pupgui2"; then
-        log_info "Installing ProtonUp-Qt..."
-        flatpak install -y --noninteractive flathub net.davidotek.pupgui2 2>/dev/null || log_warning "ProtonUp-Qt install had warnings"
-        log_success "ProtonUp-Qt installed"
-      else
-        log_skip "ProtonUp-Qt already installed"
-      fi
-
-      # Non-Steam launchers (Epic/GOG/Amazon via Heroic, everything else via
-      # Lutris, isolated Windows apps via Bottles). Add their games to Steam as
-      # shortcuts to keep one library.
-      log_info "Installing non-Steam launchers..."
-      GAMING_FLATPAKS=(
-        com.heroicgameslauncher.hgl
-        net.lutris.Lutris
-        com.usebottles.bottles
-      )
-      for app in "${GAMING_FLATPAKS[@]}"; do
-        if ! flatpak list 2>/dev/null | grep -q "$app"; then
-          flatpak install -y --noninteractive flathub "$app" 2>/dev/null ||
-            log_warning "Flatpak install had warnings: $app"
-        fi
-      done
-      log_success "Non-Steam launchers installed"
-
-      # GE-Proton (custom Proton with extra game patches, auto-download latest)
-      PROTON_GE_DIR="$HOME/.steam/steam/compatibilitytools.d"
-      mkdir -p "$PROTON_GE_DIR"
-      if [ -z "$(command ls -A "$PROTON_GE_DIR" 2>/dev/null)" ]; then
-        log_info "Installing latest GE-Proton..."
-        GE_RELEASE=$(curl -sL --connect-timeout 10 --max-time 30 \
-          https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest || true)
-        GE_LATEST=$(printf '%s' "$GE_RELEASE" | grep '"tag_name"' | cut -d '"' -f 4 || true)
-        GE_TARBALLS=$(printf '%s' "$GE_RELEASE" | grep 'browser_download_url' |
-          cut -d '"' -f 4 | grep '\.tar\.gz$' || true)
-        GE_URL=$(printf '%s\n' "$GE_TARBALLS" | grep 'x86_64' | head -1 || true)
-        [ -n "$GE_URL" ] || GE_URL=$(printf '%s\n' "$GE_TARBALLS" | head -1)
-        if [ -n "$GE_URL" ]; then
-          if curl --progress-bar -fLo /tmp/ge-proton.tar.gz \
-            --connect-timeout 10 --max-time 300 "$GE_URL"; then
-            tar -xzf /tmp/ge-proton.tar.gz -C "$PROTON_GE_DIR"
-            log_success "GE-Proton ${GE_LATEST:-latest} installed"
-          else
-            log_warning "GE-Proton download failed: $GE_URL"
-          fi
-          rm -f /tmp/ge-proton.tar.gz
-        else
-          log_warning "could not determine latest GE-Proton download"
-        fi
-      else
-        log_skip "GE-Proton already installed"
-      fi
-    else
-      log_skip "GPU drivers and gaming (not supported on $(dpkg --print-architecture))"
-    fi
-
-    ;;
-
-  "Darwin")
-    log_info "System: macOS ($(uname -m))"
-
-    ############################################################################
-    # Rosetta 2 (Apple Silicon)
-    ############################################################################
-    if [ "$(uname -m)" = "arm64" ] && ! /usr/bin/pgrep oahd >/dev/null 2>&1; then
-      log_info "Installing Rosetta 2..."
-      /usr/sbin/softwareupdate --install-rosetta --agree-to-license 2>/dev/null || true
-      log_success "Rosetta 2 installed"
-    fi
-
-    ############################################################################
-    # Homebrew
-    ############################################################################
-    if ! cmd_exists brew; then
-      log_info "Installing Homebrew..."
-      CI=1 /bin/bash -c "$(curl -fsSL --connect-timeout 10 --max-time 120 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      log_success "Homebrew installed"
-    else
-      log_skip "Homebrew already installed"
-    fi
-
-    case "$(uname -m)" in
-      "arm64") __setup_homebrew "/opt/homebrew" ;;
-      "x86_64") __setup_homebrew "/usr/local" ;;
-    esac
-
-    ############################################################################
-    # Dotfiles repository
-    ############################################################################
-    github_repo_sync "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles" "dotfiles"
-
-    ############################################################################
-    # Homebrew packages
-    ############################################################################
-    log_info "Installing Homebrew packages..."
-    brew update
-    brew trust gufranco/tap || log_warning "could not trust gufranco/tap"
-    brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
-    brew bundle cleanup --force --no-taps --file "$HOME/.dotfiles/Brewfile" || true
-    brew upgrade --greedy --force || log_warning "brew upgrade had failures"
-    brew cleanup -s || true
-
-    while IFS= read -r unlinked_formula; do
-      [ -z "$unlinked_formula" ] && continue
-      log_info "Linking $unlinked_formula..."
-      brew link --overwrite "$unlinked_formula" >/dev/null 2>&1 ||
-        log_warning "could not link $unlinked_formula"
-    done < <(brew bundle check --verbose --file "$HOME/.dotfiles/Brewfile" 2>&1 |
-      awk '/needs to be linked/ {print $3}')
-
-    for llvm_tool in clang-tidy clang-format; do
-      [ -x "$HOMEBREW_PREFIX/opt/llvm/bin/$llvm_tool" ] &&
-        safe_link "$HOMEBREW_PREFIX/opt/llvm/bin/$llvm_tool" "$HOME/.local/bin/$llvm_tool"
-    done
-
-    log_success "Homebrew packages updated"
-
-    ############################################################################
-    # Bash
-    ############################################################################
-    if ! grep -q "$HOMEBREW_PREFIX/bin/bash" /etc/shells 2>/dev/null; then
-      log_info "Adding Homebrew bash to /etc/shells..."
-      echo "$HOMEBREW_PREFIX/bin/bash" | sudo tee -a /etc/shells >/dev/null
-      log_success "Bash added to /etc/shells"
-    fi
-
-    ############################################################################
-    # Zsh
-    ############################################################################
-    if ! grep -q "$HOMEBREW_PREFIX/bin/zsh" /etc/shells 2>/dev/null; then
-      log_info "Adding Homebrew zsh to /etc/shells..."
-      echo "$HOMEBREW_PREFIX/bin/zsh" | sudo tee -a /etc/shells >/dev/null
-      log_success "Zsh added to /etc/shells"
-    fi
-
-    if [ "$SHELL" != "$HOMEBREW_PREFIX/bin/zsh" ]; then
-      chsh -s "$HOMEBREW_PREFIX/bin/zsh" || true
-      log_success "Shell changed to Zsh"
-    else
-      log_skip "Shell already Zsh"
-    fi
-
-    log_info "Disabling .DS_Store on removable and network volumes..."
-    if __macos_no_ds_store_on_foreign_volumes; then
-      log_success "Finder will not write .DS_Store to USB or network volumes"
-    else
-      log_warning "could not set the Finder defaults"
-    fi
-
-    ;;
+log_info "System: macOS ($(uname -m))"
+
+############################################################################
+# Rosetta 2 (Apple Silicon)
+############################################################################
+if [ "$(uname -m)" = "arm64" ] && ! /usr/bin/pgrep oahd >/dev/null 2>&1; then
+  log_info "Installing Rosetta 2..."
+  /usr/sbin/softwareupdate --install-rosetta --agree-to-license 2>/dev/null || true
+  log_success "Rosetta 2 installed"
+fi
+
+############################################################################
+# Homebrew
+############################################################################
+if ! cmd_exists brew; then
+  log_info "Installing Homebrew..."
+  CI=1 /bin/bash -c "$(curl -fsSL --connect-timeout 10 --max-time 120 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  log_success "Homebrew installed"
+else
+  log_skip "Homebrew already installed"
+fi
+
+case "$(uname -m)" in
+  "arm64") __setup_homebrew "/opt/homebrew" ;;
+  "x86_64") __setup_homebrew "/usr/local" ;;
 esac
 
 ############################################################################
-# Universal configurations (Linux + macOS)
+# Dotfiles repository
 ############################################################################
+github_repo_sync "https://github.com/gufranco/dotfiles.git" "$HOME/.dotfiles" "dotfiles"
+
+############################################################################
+# Homebrew packages
+############################################################################
+log_info "Installing Homebrew packages..."
+brew update
+brew trust gufranco/tap || log_warning "could not trust gufranco/tap"
+brew bundle --file "$HOME/.dotfiles/Brewfile" || log_warning "Brewfile sync had failures"
+brew bundle cleanup --force --no-taps --file "$HOME/.dotfiles/Brewfile" || true
+brew upgrade --greedy --force || log_warning "brew upgrade had failures"
+brew cleanup -s || true
+
+while IFS= read -r unlinked_formula; do
+  [ -z "$unlinked_formula" ] && continue
+  log_info "Linking $unlinked_formula..."
+  brew link --overwrite "$unlinked_formula" >/dev/null 2>&1 ||
+    log_warning "could not link $unlinked_formula"
+done < <(brew bundle check --verbose --file "$HOME/.dotfiles/Brewfile" 2>&1 |
+  awk '/needs to be linked/ {print $3}')
+
+for llvm_tool in clang-tidy clang-format; do
+  [ -x "$HOMEBREW_PREFIX/opt/llvm/bin/$llvm_tool" ] &&
+    safe_link "$HOMEBREW_PREFIX/opt/llvm/bin/$llvm_tool" "$HOME/.local/bin/$llvm_tool"
+done
+
+log_success "Homebrew packages updated"
+
+############################################################################
+# Bash
+############################################################################
+if ! grep -q "$HOMEBREW_PREFIX/bin/bash" /etc/shells 2>/dev/null; then
+  log_info "Adding Homebrew bash to /etc/shells..."
+  echo "$HOMEBREW_PREFIX/bin/bash" | sudo tee -a /etc/shells >/dev/null
+  log_success "Bash added to /etc/shells"
+fi
+
+############################################################################
+# Zsh
+############################################################################
+if ! grep -q "$HOMEBREW_PREFIX/bin/zsh" /etc/shells 2>/dev/null; then
+  log_info "Adding Homebrew zsh to /etc/shells..."
+  echo "$HOMEBREW_PREFIX/bin/zsh" | sudo tee -a /etc/shells >/dev/null
+  log_success "Zsh added to /etc/shells"
+fi
+
+if [ "$SHELL" != "$HOMEBREW_PREFIX/bin/zsh" ]; then
+  chsh -s "$HOMEBREW_PREFIX/bin/zsh" || true
+  log_success "Shell changed to Zsh"
+else
+  log_skip "Shell already Zsh"
+fi
+
+log_info "Disabling .DS_Store on removable and network volumes..."
+if __macos_no_ds_store_on_foreign_volumes; then
+  log_success "Finder will not write .DS_Store to USB or network volumes"
+else
+  log_warning "could not set the Finder defaults"
+fi
 
 ############################################################################
 # Python (debugger + REPL)
@@ -1414,14 +327,7 @@ safe_link "$HOME/.dotfiles/gnupg" "$HOME/.gnupg"
 chmod 700 "$HOME/.gnupg" 2>/dev/null || log_warning "failed to set gnupg permissions"
 chmod 400 "$HOME/.gnupg/keys/"* 2>/dev/null || true
 
-case "$(uname)" in
-  "Linux")
-    safe_link "$HOME/.dotfiles/gnupg/gpg-agent-linux.conf" "$HOME/.gnupg/gpg-agent.conf"
-    ;;
-  "Darwin")
-    safe_link "$HOME/.dotfiles/gnupg/gpg-agent-macos-$(uname -m).conf" "$HOME/.gnupg/gpg-agent.conf"
-    ;;
-esac
+safe_link "$HOME/.dotfiles/gnupg/gpg-agent-macos-$(uname -m).conf" "$HOME/.gnupg/gpg-agent.conf"
 
 # Import GPG keys (idempotent - import is safe to repeat)
 for key in "$HOME/.gnupg/keys/"*.pgp; do
@@ -1500,10 +406,8 @@ safe_link "$HOME/.dotfiles/telnet/.telnetrc" "$HOME/.telnetrc"
 ############################################################################
 log_info "Setting up Ghostty..."
 safe_link "$HOME/.dotfiles/ghostty" "$HOME/.config/ghostty"
-if [ "$(uname)" = "Darwin" ]; then
-  mkdir -p "$HOME/Library/Application Support/com.mitchellh.ghostty"
-  safe_link "$HOME/.config/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
-fi
+mkdir -p "$HOME/Library/Application Support/com.mitchellh.ghostty"
+safe_link "$HOME/.config/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
 
 ############################################################################
 # Bat
@@ -1573,10 +477,8 @@ safe_link "$HOME/.dotfiles/bottom/bottom.toml" "$HOME/.config/bottom/bottom.toml
 log_info "Setting up Lazygit..."
 mkdir -p "$HOME/.config/lazygit"
 safe_link "$HOME/.dotfiles/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
-if [ "$(uname)" = "Darwin" ]; then
-  mkdir -p "$HOME/Library/Application Support/lazygit"
-  safe_link "$HOME/.dotfiles/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
-fi
+mkdir -p "$HOME/Library/Application Support/lazygit"
+safe_link "$HOME/.dotfiles/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
 
 ############################################################################
 # Lazydocker
@@ -1584,10 +486,8 @@ fi
 log_info "Setting up Lazydocker..."
 mkdir -p "$HOME/.config/lazydocker"
 safe_link "$HOME/.dotfiles/lazydocker/config.yml" "$HOME/.config/lazydocker/config.yml"
-if [ "$(uname)" = "Darwin" ]; then
-  mkdir -p "$HOME/Library/Application Support/jesseduffield/lazydocker"
-  safe_link "$HOME/.dotfiles/lazydocker/config.yml" "$HOME/Library/Application Support/jesseduffield/lazydocker/config.yml"
-fi
+mkdir -p "$HOME/Library/Application Support/jesseduffield/lazydocker"
+safe_link "$HOME/.dotfiles/lazydocker/config.yml" "$HOME/Library/Application Support/jesseduffield/lazydocker/config.yml"
 
 ############################################################################
 # K9s
@@ -1596,11 +496,9 @@ log_info "Setting up K9s..."
 mkdir -p "$HOME/.config/k9s"
 safe_link "$HOME/.dotfiles/k9s/config.yml" "$HOME/.config/k9s/config.yml"
 safe_link "$HOME/.dotfiles/k9s/catppuccin/dist" "$HOME/.config/k9s/skins"
-if [ "$(uname)" = "Darwin" ]; then
-  mkdir -p "$HOME/Library/Application Support/k9s"
-  safe_link "$HOME/.dotfiles/k9s/config.yml" "$HOME/Library/Application Support/k9s/config.yml"
-  safe_link "$HOME/.dotfiles/k9s/catppuccin/dist" "$HOME/Library/Application Support/k9s/skins"
-fi
+mkdir -p "$HOME/Library/Application Support/k9s"
+safe_link "$HOME/.dotfiles/k9s/config.yml" "$HOME/Library/Application Support/k9s/config.yml"
+safe_link "$HOME/.dotfiles/k9s/catppuccin/dist" "$HOME/Library/Application Support/k9s/skins"
 
 ############################################################################
 # OpenCode
@@ -1681,37 +579,18 @@ safe_link "$HOME/.dotfiles/goaccess/goaccess.conf" "$HOME/.config/goaccess/goacc
 ############################################################################
 github_repo_sync "https://github.com/gufranco/claude-engineering-rules.git" "$HOME/.claude" "Claude engineering rules"
 
-if [ "$(uname)" = "Linux" ]; then
-  for own_tool in fusho jimaku kakikomi kiyome shiwake yakitsuke; do
-    github_repo_sync "https://github.com/gufranco/${own_tool}.git" "$HOME/.local/src/${own_tool}" "${own_tool}"
-    if make -C "$HOME/.local/src/${own_tool}" install PREFIX="$HOME/.local" >/dev/null; then
-      log_success "${own_tool} installed"
-    else
-      log_warning "${own_tool} install failed"
-    fi
-  done
-fi
-
 ############################################################################
 # Cleanup
 ############################################################################
 log_info "Cleaning up..."
-case "$(uname)" in
-  "Linux")
-    sudo apt autoremove -y -qq 2>/dev/null || true
-    sudo apt clean 2>/dev/null || true
-    ;;
-  "Darwin")
-    brew cleanup -s 2>/dev/null || true
+brew cleanup -s 2>/dev/null || true
 
-    __macos_post_install_cleanup
+__macos_post_install_cleanup
 
-    # TRIM
-    if [ "$(system_profiler SPSerialATADataType 2>/dev/null | grep 'TRIM Support' | awk '{print $3}')" = "Yes" ]; then
-      log_warning "TRIM is supported. To enable, run: sudo trimforce enable"
-    fi
-    ;;
-esac
+# TRIM
+if [ "$(system_profiler SPSerialATADataType 2>/dev/null | grep 'TRIM Support' | awk '{print $3}')" = "Yes" ]; then
+  log_warning "TRIM is supported. To enable, run: sudo trimforce enable"
+fi
 
 ################################################################################
 # Finish
@@ -1723,7 +602,4 @@ TOTAL_MINS=$((TOTAL_ELAPSED / 60))
 TOTAL_SECS=$((TOTAL_ELAPSED % 60))
 
 log_info "Some changes take effect only after a reboot."
-if [ "$(uname)" = "Linux" ] && [ "$(dpkg --print-architecture 2>/dev/null)" = "amd64" ]; then
-  log_info "Reboot for the GPU and gaming changes, then run gaming-check."
-fi
 log_success "Installed in ${TOTAL_MINS}m${TOTAL_SECS}s."

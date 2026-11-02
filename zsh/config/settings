@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 
-if [ "$(uname)" = "Darwin" ]; then
-  export ZSH_DISABLE_COMPFIX=true
-  export HOMEBREW_NO_ANALYTICS=true
-  export HOMEBREW_NO_ENV_HINTS=true
-  export HOMEBREW_NO_AUTO_UPDATE=true
-  export HOMEBREW_NO_ASK=true
-fi
+export ZSH_DISABLE_COMPFIX=true
+export HOMEBREW_NO_ANALYTICS=true
+export HOMEBREW_NO_ENV_HINTS=true
+export HOMEBREW_NO_AUTO_UPDATE=true
+export HOMEBREW_NO_ASK=true
 
 setopt EXTENDED_HISTORY
 setopt INC_APPEND_HISTORY
@@ -99,27 +97,7 @@ export ZSH_COMPDUMP="${ZSH_CACHE_DIR:-$HOME/.cache}/.zcompdump-${HOST}-${ZSH_VER
 
 zstyle :omz:plugins:ssh-agent identities id_ed25519_personal id_ed25519_onyx
 
-function __ssh_agent_linux() {
-  local runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-  local socket helper
-
-  for socket in "$runtime/gcr/ssh" "$runtime/keyring/ssh"; do
-    [ -S "$socket" ] || continue
-    export SSH_AUTH_SOCK="$socket"
-    zstyle :omz:plugins:ssh-agent agent-forwarding yes
-    break
-  done
-  for helper in ksshaskpass /usr/lib/ssh/x11-ssh-askpass ssh-askpass; do
-    command -v "$helper" >/dev/null 2>&1 || continue
-    zstyle :omz:plugins:ssh-agent helper "$helper"
-    break
-  done
-}
-
-case "$(uname)" in
-  Darwin) zstyle :omz:plugins:ssh-agent ssh-add-args --apple-use-keychain ;;
-  Linux) __ssh_agent_linux ;;
-esac
+zstyle :omz:plugins:ssh-agent ssh-add-args --apple-use-keychain
 
 export plugins=(
   gpg-agent

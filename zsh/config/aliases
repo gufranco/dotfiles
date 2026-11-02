@@ -59,47 +59,28 @@ if command -v opencode >/dev/null && command -v lms >/dev/null; then
   }
 fi
 
-case "$(uname)" in
-  Linux)
-    __alias_if_exists grep grep "command grep --color"
-    __alias_if_exists find findx "command find . -type f -executable"
-    __alias_if_exists time time "command time -v"
-    __alias_if_exists which which "command which -a"
-    __alias_if_exists xdg-open open "command xdg-open"
-    __alias_if_exists gnome-screensaver-command afk "command gnome-screensaver-command --lock"
-    __alias_if_exists google-chrome chrome "/opt/google/chrome/google-chrome"
-    __alias_if_exists xclip pbcopy "command xclip -selection clipboard"
-    __alias_if_exists xclip pbpaste "command xclip -selection clipboard -o"
-    if ! command -v xclip >/dev/null; then
-      __alias_if_exists xsel pbcopy "command xsel --clipboard --input"
-      __alias_if_exists xsel pbpaste "command xsel --clipboard --output"
-    fi
-    ;;
-  Darwin)
-    if command grep --version >/dev/null 2>&1; then
-      alias grep="command grep --color"
-    else
-      alias grep="command grep -G"
-    fi
-    if command find --version >/dev/null 2>&1; then
-      alias findx="command find . -type f -executable"
-    else
-      alias findx="command find . -type f -perm +111"
-    fi
-    command time --version >/dev/null 2>&1 && alias time="command time -v"
-    command which --version >/dev/null 2>&1 && alias which="command which -a"
-    command -v md5sum >/dev/null || alias md5sum="command md5"
-    command -v sha1sum >/dev/null || alias sha1sum="command shasum"
-    command -v sha256sum >/dev/null || alias sha256sum="command shasum -a 256"
-    command -v sha512sum >/dev/null || alias sha512sum="command shasum -a 512"
-    if ! readlink -f / >/dev/null 2>&1; then
-      __alias_if_exists realpath readlink "command realpath"
-      command -v realpath >/dev/null || __alias_if_exists greadlink readlink "command greadlink"
-    fi
-    __alias_if_exists tokei stats "command tokei"
-    __alias_if_exists gping ping "command gping"
-    ;;
-esac
+if command grep --version >/dev/null 2>&1; then
+  alias grep="command grep --color"
+else
+  alias grep="command grep -G"
+fi
+if command find --version >/dev/null 2>&1; then
+  alias findx="command find . -type f -executable"
+else
+  alias findx="command find . -type f -perm +111"
+fi
+command time --version >/dev/null 2>&1 && alias time="command time -v"
+command which --version >/dev/null 2>&1 && alias which="command which -a"
+command -v md5sum >/dev/null || alias md5sum="command md5"
+command -v sha1sum >/dev/null || alias sha1sum="command shasum"
+command -v sha256sum >/dev/null || alias sha256sum="command shasum -a 256"
+command -v sha512sum >/dev/null || alias sha512sum="command shasum -a 512"
+if ! readlink -f / >/dev/null 2>&1; then
+  __alias_if_exists realpath readlink "command realpath"
+  command -v realpath >/dev/null || __alias_if_exists greadlink readlink "command greadlink"
+fi
+__alias_if_exists tokei stats "command tokei"
+__alias_if_exists gping ping "command gping"
 
 if command -v fzf >/dev/null; then
   function fkill() {

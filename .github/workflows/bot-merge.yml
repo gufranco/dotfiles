@@ -1,0 +1,72 @@
+---
+name: bot-merge
+
+on:
+  workflow_run:
+    workflows: ["Install", "Lint"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bot-merge-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    name: merge a green bot pull request
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'pull_request'
+      && endsWith(github.event.workflow_run.actor.login, '[bot]')
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43  # v2.22.3
+        with:
+          egress-policy: audit
+      - name: Merge the pull request once every check on its commit passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          WORKFLOW_FILES: >-
+            .github/workflows/install.yml
+            .github/workflows/lint.yml
+        run: |
+          set -euo pipefail
+          number="$(gh pr list --repo "${REPO}" --head "${BRANCH}" --state open \
+            --json number,author,headRefOid \
+            -q "[.[] | select(.author.is_bot and .headRefOid == \"${HEAD_SHA}\")]
+              | .[0].number // empty")"
+          if [ -z "${number}" ]; then
+            echo "no open bot pull request at ${HEAD_SHA} on ${BRANCH}"
+            exit 0
+          fi
+          waiting="$(gh pr view "${number}" --repo "${REPO}" \
+            --json statusCheckRollup \
+            -q '[.statusCheckRollup[] | (.conclusion // .state // "PENDING")]
+              | map(select(. != "SUCCESS" and . != "SKIPPED" and . != "NEUTRAL"))
+              | length')"
+          if [ "${waiting}" != "0" ]; then
+            echo "${waiting} check(s) on ${HEAD_SHA} are not green yet"
+            exit 0
+          fi
+          title="$(gh pr view "${number}" --repo "${REPO}" --json title -q .title)"
+          gh pr merge "${number}" --repo "${REPO}" --squash \
+            --match-head-commit "${HEAD_SHA}" \
+            --subject "${title} (#${number})" \
+            --body "Bot update, merged after every check passed on ${HEAD_SHA}."
+          for workflow in ${WORKFLOW_FILES}; do
+            if ! gh workflow run "${workflow}" --repo "${REPO}" \
+              --ref "${DEFAULT_BRANCH}"; then
+              echo "${workflow} has no on-demand trigger; the next push runs it"
+            fi
+          done

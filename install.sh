@@ -1677,13 +1677,6 @@ mkdir -p "$HOME/.config/goaccess"
 safe_link "$HOME/.dotfiles/goaccess/goaccess.conf" "$HOME/.config/goaccess/goaccess.conf"
 
 ############################################################################
-# Taskwarrior
-############################################################################
-log_info "Setting up Taskwarrior..."
-mkdir -p "$HOME/.local/share/task"
-safe_link "$HOME/.dotfiles/taskwarrior/taskrc" "$HOME/.taskrc"
-
-############################################################################
 # Claude Code
 ############################################################################
 github_repo_sync "https://github.com/gufranco/claude-engineering-rules.git" "$HOME/.claude" "Claude engineering rules"

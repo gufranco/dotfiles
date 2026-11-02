@@ -69,7 +69,6 @@ brew 'man-db'
 brew 'moreutils'
 brew 'parallel', link: false
 brew 'patchutils'
-brew 'qrencode'
 brew 'gufranco/tap/shiwake'
 brew 'tty-clock'
 brew 'util-linux'
@@ -89,11 +88,9 @@ cask 'keka'
 ################################################################################
 # Disks, Filesystems & Disc Images
 ################################################################################
-brew 'fatsort'
 brew 'gufranco/tap/kakikomi'
+brew 'gufranco/tap/katazuke'
 brew 'gufranco/tap/kiyome'
-brew 'mtools'
-brew 'wimlib'
 brew 'xorriso'
 
 ################################################################################
@@ -135,7 +132,6 @@ brew 'yq'
 brew 'pandoc'
 brew 'poppler'
 brew 'tectonic'
-brew 'tesseract'
 
 ################################################################################
 # Git
@@ -205,8 +201,8 @@ brew 'colima'
 brew 'ctop'
 brew 'dive'
 brew 'docker'
-brew 'docker-compose'
 brew 'docker-credential-helper'
+brew 'gufranco/tap/kiban'
 brew 'lazydocker'
 brew 'lima-additional-guestagents'
 
@@ -246,7 +242,6 @@ brew 'supabase'
 ################################################################################
 # Secrets & Encryption
 ################################################################################
-brew 'age'
 brew 'doppler'
 brew 'gufranco/tap/fusho'
 brew 'gnupg'
@@ -435,7 +430,6 @@ brew 'potrace'
 # Video & Subtitles
 ################################################################################
 brew 'ffmpeg'
-brew 'ffmpeg-full'
 brew 'gufranco/tap/jimaku'
 brew 'gufranco/tap/yakitsuke'
 
@@ -449,9 +443,7 @@ brew 'cmus'
 # Local AI Inference
 ################################################################################
 brew 'apfel' if architecture == 'arm64'
-brew 'llama.cpp'
 brew 'ollama'
-brew 'whisper.cpp'
 
 ################################################################################
 # AI Coding CLIs
@@ -474,6 +466,7 @@ brew 'sdcc'
 ################################################################################
 brew 'gufranco/tap/anypatch'
 brew 'gufranco/tap/fdstoolkit'
+brew 'gufranco/tap/kirisute'
 brew 'gufranco/tap/maeyomi'
 brew 'gufranco/tap/maxcso'
 brew 'ucon64'

@@ -1,3 +1,18 @@
+# [2.1.0](https://github.com/gufranco/dotfiles/compare/v2.0.0...v2.1.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* find the Aseprite app through HOMEBREW_PREFIX ([48849f8](https://github.com/gufranco/dotfiles/commit/48849f87470160e51f9685c5e52f7a113806a87c))
+* keep openjdk@21 unlinked ([cafdab0](https://github.com/gufranco/dotfiles/commit/cafdab0221782ec70add34e3fcfbd0da36b20e01))
+* list fs-uae-launcher before the emulator ([78864a9](https://github.com/gufranco/dotfiles/commit/78864a97736e3c744dfe34c69f5172250022d249))
+
+
+### Features
+
+* draw the kodougu tools in catppuccin-mocha ([5e4413b](https://github.com/gufranco/dotfiles/commit/5e4413b2dc6eafe8c10c814f353ca6599a54120d))
+* install vhs, nazuke and the SN76489 synth ([87d1dd3](https://github.com/gufranco/dotfiles/commit/87d1dd323d896c713de8f35ef802989c7daecf56))
+
 # [2.0.0](https://github.com/gufranco/dotfiles/compare/v1.1.0...v2.0.0) (2026-11-02)
 
 

@@ -78,6 +78,7 @@ jobs:
         run: |
           brew untap aws/tap 2>/dev/null || true
           brew untap hashicorp/tap 2>/dev/null || true
+          brew untap azure/bicep 2>/dev/null || true
           sudo rm -f /usr/local/bin/aws /usr/local/bin/aws_completer /usr/local/bin/pod 2>/dev/null || true
 
       - name: Use this checkout as ~/.dotfiles

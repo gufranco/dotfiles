@@ -43,6 +43,7 @@ brew 'direnv'
 brew 'gum'
 brew 'navi'
 brew 'tealdeer'
+brew 'vhs'
 
 ################################################################################
 # GNU Core Utilities
@@ -69,6 +70,7 @@ brew 'man-db'
 brew 'moreutils', link: false
 brew 'parallel', link: false
 brew 'patchutils'
+brew 'gufranco/tap/nazuke'
 brew 'gufranco/tap/shiwake'
 brew 'tty-clock'
 brew 'util-linux'
@@ -646,6 +648,7 @@ cask 'gufranco/tap/sunvox'
 ################################################################################
 # Synthesizers
 ################################################################################
+cask 'gufranco/tap/socalabs-sn76489'
 cask 'surge-xt'
 cask 'vcv-rack'
 

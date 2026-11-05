@@ -604,7 +604,7 @@ cask 'gufranco/tap/lazpaint' if architecture == 'x86_64'
 ################################################################################
 # Pixel Art & Sprites
 ################################################################################
-brew 'gufranco/tap/aseprite', postinstall: '{ [ ! -L /Applications/Aseprite.app ] || rm /Applications/Aseprite.app; } && rsync -a --delete "$(brew --prefix)/opt/aseprite/Aseprite.app/" /Applications/Aseprite.app/'
+brew 'gufranco/tap/aseprite', postinstall: '{ [ ! -L /Applications/Aseprite.app ] || rm /Applications/Aseprite.app; } && rsync -a --delete "${HOMEBREW_PREFIX:?}/opt/aseprite/Aseprite.app/" /Applications/Aseprite.app/'
 cask 'gufranco/tap/libresprite'
 cask 'gufranco/tap/pikopixel' if architecture == 'x86_64'
 cask 'gufranco/tap/pixelorama'

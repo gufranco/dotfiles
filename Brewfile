@@ -287,7 +287,7 @@ brew 'clojure/tools/clojure'
 brew 'dart-sdk'
 brew 'go', link: true
 brew 'node', link: true
-brew 'openjdk@21'
+brew 'openjdk@21', link: false
 brew 'python', link: true
 brew 'ruby', link: true
 brew 'rust', link: true

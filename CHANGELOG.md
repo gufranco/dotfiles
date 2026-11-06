@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/gufranco/dotfiles/compare/v2.1.0...v2.2.0) (2026-11-06)
+
+
+### Features
+
+* **brew:** add arduino ide and processing casks ([a48c575](https://github.com/gufranco/dotfiles/commit/a48c575479bb97c43f0c567748651a469a7d2578))
+
 # [2.1.0](https://github.com/gufranco/dotfiles/compare/v2.0.0...v2.1.0) (2026-11-05)
 
 

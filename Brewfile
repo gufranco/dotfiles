@@ -615,7 +615,9 @@ cask 'gufranco/tap/pixelorama'
 # Electronics & Microcontrollers
 ################################################################################
 brew 'arduino-cli'
+cask 'arduino-ide'
 cask 'kicad'
+cask 'processing'
 
 ################################################################################
 # Video Editing & Recording

@@ -94,6 +94,7 @@ brew 'gufranco/tap/enban'
 brew 'gufranco/tap/kakikomi'
 brew 'gufranco/tap/katazuke'
 brew 'gufranco/tap/kiyome'
+brew 'gufranco/tap/nisemono'
 brew 'xorriso'
 
 ################################################################################

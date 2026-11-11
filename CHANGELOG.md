@@ -1,3 +1,11 @@
+# [2.3.0](https://github.com/gufranco/dotfiles/compare/v2.2.0...v2.3.0) (2026-11-11)
+
+
+### Features
+
+* **brew:** add enban ([7588d71](https://github.com/gufranco/dotfiles/commit/7588d71af033059aec0478d7e93c0a2700299b68))
+* **brew:** add nisemono ([8abec6c](https://github.com/gufranco/dotfiles/commit/8abec6c42dd8432f20702301f52315c932cb823d))
+
 # [2.2.0](https://github.com/gufranco/dotfiles/compare/v2.1.0...v2.2.0) (2026-11-06)
 
 

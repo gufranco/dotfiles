@@ -90,6 +90,7 @@ cask 'keka'
 ################################################################################
 # Disks, Filesystems & Disc Images
 ################################################################################
+brew 'gufranco/tap/enban'
 brew 'gufranco/tap/kakikomi'
 brew 'gufranco/tap/katazuke'
 brew 'gufranco/tap/kiyome'

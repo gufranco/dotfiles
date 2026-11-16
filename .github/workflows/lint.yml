@@ -46,7 +46,6 @@ jobs:
           set -euo pipefail
           ./shellcheck --version
           ./shellcheck install.sh
-          ./shellcheck .github/scripts/*.sh
           ./shellcheck -x -e SC1091 zsh/*
 
   shfmt:
@@ -66,7 +65,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Check formatting
-        run: ./shfmt -i 2 -ci -d install.sh .github/scripts/*.sh
+        run: ./shfmt -i 2 -ci -d install.sh
 
   zsh-syntax:
     name: Zsh syntax

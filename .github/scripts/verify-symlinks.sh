@@ -56,10 +56,6 @@ check "bat-config" "$HOME/.config/bat/config"
 check "bat-themes" "$HOME/.config/bat/themes"
 check "cmus" "$HOME/.config/cmus/rc"
 check "gh" "$HOME/.config/gh/config.yml"
-check "tealdeer" "$HOME/.config/tealdeer/config.toml"
-check "bottom" "$HOME/.config/bottom/bottom.toml"
-check "lazygit" "$HOME/.config/lazygit/config.yml"
-check "lazydocker" "$HOME/.config/lazydocker/config.yml"
 check "k9s" "$HOME/.config/k9s/config.yml"
 
 if [ -f "$HOME/.config/glab-cli/config.yml" ] && [ ! -L "$HOME/.config/glab-cli/config.yml" ]; then

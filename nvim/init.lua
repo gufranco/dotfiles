@@ -176,13 +176,6 @@ require("lazy").setup({
     },
   },
 
-  {
-    "kdheepak/lazygit.nvim",
-    cmd = { "LazyGit", "LazyGitCurrentFile", "LazyGitFilter", "LazyGitFilterCurrentFile" },
-    dependencies = { "nvim-lua/plenary.nvim" },
-    keys = { { "<C-g>", "<cmd>LazyGit<cr>", desc = "Open lazygit" } },
-  },
-
   { "tpope/vim-fugitive" },
   { "tpope/vim-surround" },
   { "tpope/vim-repeat" },

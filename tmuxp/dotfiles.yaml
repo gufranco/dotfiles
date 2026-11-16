@@ -13,7 +13,3 @@ windows:
   - window_name: shell
     panes:
       - shell_command: ""
-
-  - window_name: git
-    panes:
-      - shell_command: lazygit

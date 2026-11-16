@@ -41,8 +41,6 @@ brew 'asciinema'
 brew 'atuin'
 brew 'direnv'
 brew 'gum'
-brew 'navi'
-brew 'tealdeer'
 brew 'vhs'
 
 ################################################################################
@@ -100,10 +98,8 @@ brew 'xorriso'
 ################################################################################
 # File Navigation & Search
 ################################################################################
-brew 'broot'
 brew 'fd'
 brew 'fzf'
-brew 'midnight-commander'
 brew 'ranger'
 brew 'ripgrep'
 brew 'zoxide'
@@ -148,7 +144,6 @@ brew 'git-crypt'
 brew 'git-delta'
 brew 'git-extras'
 brew 'git-filter-repo'
-brew 'lazygit'
 brew 'tig'
 
 ################################################################################
@@ -207,7 +202,6 @@ brew 'dive'
 brew 'docker'
 brew 'docker-credential-helper'
 brew 'gufranco/tap/kiban'
-brew 'lazydocker'
 brew 'lima-additional-guestagents'
 
 ################################################################################
@@ -288,7 +282,6 @@ brew 'radare2'
 ################################################################################
 brew 'oven-sh/bun/bun', link: true
 brew 'clojure/tools/clojure'
-brew 'dart-sdk'
 brew 'go', link: true
 brew 'node', link: true
 brew 'openjdk@21', link: false
@@ -301,7 +294,6 @@ brew 'rust', link: true
 ################################################################################
 brew 'cocoapods'
 brew 'conan'
-brew 'fvm'
 brew 'mise'
 brew 'pnpm'
 brew 'uv'
@@ -355,7 +347,6 @@ brew 'golangci-lint'
 brew 'luacheck'
 brew 'pmd'
 brew 'pyright'
-brew 'rubocop'
 brew 'swiftlint'
 brew 'vint'
 
@@ -389,7 +380,6 @@ brew 'entr'
 brew 'mkcert'
 brew 'pre-commit'
 brew 'pygments'
-brew 'tokei'
 brew 'universal-ctags'
 brew 'watchman'
 brew 'xcodes'
@@ -397,7 +387,6 @@ brew 'xcodes'
 ################################################################################
 # System Monitoring
 ################################################################################
-brew 'bottom'
 brew 'fastfetch'
 brew 'htop'
 brew 'macmon' if architecture == 'arm64'

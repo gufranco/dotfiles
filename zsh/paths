@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+# Keep only the first copy of each folder, so a prepend moves it to the front
+typeset -U PATH MANPATH
+
+################################################################################
+# Language toolchains
+################################################################################
+# Node.js
+export PNPM_HOME="$HOME/Library/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+export PATH="$PNPM_HOME/bin:$PATH"
+
+# Go
+export GOPATH="$HOME/go"
+export PATH="$GOPATH/bin:$PATH"
+
+# Rust
+export PATH="$HOME/.cargo/bin:$PATH"
+
+export PATH="$PATH:$HOME/.local/bin"
+
+################################################################################
+# Homebrew
+################################################################################
+if [ "$(uname -m)" = "arm64" ]; then
+  export HOMEBREW_PREFIX="/opt/homebrew"
+  export HOMEBREW_REPOSITORY="/opt/homebrew"
+else
+  export HOMEBREW_PREFIX="/usr/local"
+  export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+fi
+
+export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
+export PATH="$HOMEBREW_PREFIX/sbin:$HOMEBREW_PREFIX/bin:$PATH"
+export MANPATH="$HOMEBREW_PREFIX/share/man:$MANPATH"
+export INFOPATH="$HOMEBREW_PREFIX/share/info:"
+
+################################################################################
+# Homebrew packages
+################################################################################
+[ -d "$HOME/.lmstudio/bin" ] && export PATH="$HOME/.lmstudio/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/curl/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/libpq/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/openssl/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/neomutt/libexec/neomutt:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/ruby/bin:$PATH"
+
+################################################################################
+# Development environments
+################################################################################
+export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk@21"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$ANDROID_HOME/platform-tools:$PATH"
+export PATH="$ANDROID_HOME/emulator:$PATH"
+
+################################################################################
+# GNU utilities (replacing BSD versions)
+################################################################################
+# parallel, moreutils and diffutils are not linked into Homebrew's bin (see the
+# Brewfile), so their opt folders are the only way they reach PATH
+export PATH="$HOMEBREW_PREFIX/opt/bc/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/gawk/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/gnu-sed/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/findutils/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/grep/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/make/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/gnu-tar/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/diffutils/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/gpatch/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/gnu-time/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/gnu-which/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/gnu-units/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/gnu-indent/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/ed/libexec/gnubin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/cpio/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/m4/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/bison/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/util-linux/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/ncurses/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/libiconv/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/whois/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/file-formula/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/man-db/libexec/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/zip/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/unzip/bin:$PATH"
+export PATH="$PATH:$HOMEBREW_PREFIX/opt/util-linux/sbin"
+export PATH="$HOMEBREW_PREFIX/opt/moreutils/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/parallel/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/patchutils/bin:$PATH"

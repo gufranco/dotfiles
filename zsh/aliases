@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+################################################################################
+# General aliases
+################################################################################
+command -v mkdir >/dev/null && alias mkdir="command mkdir -p -v"
+command -v neomutt >/dev/null && alias mutt="command neomutt"
+command -v tty-clock >/dev/null && alias tty-clock="command tty-clock -Dcs"
+command -v find >/dev/null && alias findf="command find . -type f -name"
+command -v find >/dev/null && alias findd="command find . -type d -name"
+command -v bat >/dev/null && alias cat="command bat"
+command -v ranger >/dev/null && alias ra="command ranger"
+command -v newsboat >/dev/null && alias news="command newsboat"
+command -v tig >/dev/null && alias tg="command tig"
+command -v goaccess >/dev/null && alias goa="command goaccess"
+command -v trrntzip >/dev/null && alias torrentzip="command trrntzip"
+
+################################################################################
+# ls
+################################################################################
+if command ls --color=auto / >/dev/null 2>&1; then
+  alias ls="command ls --color=auto"
+  alias la="command ls -lAF --color=auto"
+  alias ll="command ls -lF --color=auto"
+else
+  alias ls="command ls -G"
+  alias la="command ls -lAF -G"
+  alias ll="command ls -lF -G"
+fi
+
+################################################################################
+# GNU tools (preferred) or BSD fallback
+################################################################################
+if command grep --version >/dev/null 2>&1; then
+  alias grep="command grep --color"
+else
+  alias grep="command grep -G"
+fi
+
+if command find --version >/dev/null 2>&1; then
+  alias findx="command find . -type f -executable"
+else
+  alias findx="command find . -type f -perm +111"
+fi
+
+command time --version >/dev/null 2>&1 && alias time="command time -v"
+command which --version >/dev/null 2>&1 && alias which="command which -a"
+
+# BSD compatibility (create aliases for missing commands)
+command -v md5sum >/dev/null || alias md5sum="command md5"
+command -v sha1sum >/dev/null || alias sha1sum="command shasum"
+command -v sha256sum >/dev/null || alias sha256sum="command shasum -a 256"
+command -v sha512sum >/dev/null || alias sha512sum="command shasum -a 512"
+
+# readlink fallback
+if ! readlink -f / >/dev/null 2>&1; then
+  command -v realpath >/dev/null && alias readlink="command realpath"
+  command -v realpath >/dev/null || { command -v greadlink >/dev/null && alias readlink="command greadlink"; }
+fi
+
+# Modern tool replacements
+command -v gping >/dev/null && alias ping="command gping"

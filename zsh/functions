@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Update and upgrade everything (f5)
+################################################################################
+function f5() {
+  setopt local_options local_traps null_glob
+  local failed=0 dir apps app apppath cache
+
+  # Sudo
+  local keepalive_pid keepalive_interval=60 keepalive_rounds=720
+  sudo -v || {
+    echo "f5: stopped: root access was not granted." >&2
+    return 1
+  }
+  keepalive_pid="$( (
+    rounds=0
+    while [ "$rounds" -lt "$keepalive_rounds" ] && kill -0 "$$" 2>/dev/null; do
+      sleep "$keepalive_interval"
+      sudo -n -v 2>/dev/null || exit 0
+      rounds=$((rounds + 1))
+    done
+  ) >/dev/null 2>&1 & echo $!)"
+  # The EXIT trap runs after the locals are gone, so it is built with their values
+  # shellcheck disable=SC2064
+  trap "kill $keepalive_pid 2>/dev/null; sudo -k" EXIT
+  # Trap handlers, not helpers: local_traps removes them when f5 returns
+  # shellcheck disable=SC2329
+  TRAPINT() { kill "$keepalive_pid" 2>/dev/null; sudo -k; return $((128 + $1)); }
+  # shellcheck disable=SC2329
+  TRAPTERM() { kill "$keepalive_pid" 2>/dev/null; sudo -k; return $((128 + $1)); }
+
+  # Git repositories
+  for dir in "$HOME/.dotfiles" "$HOME/.aws" "$HOME/.claude"; do
+    [ -d "$dir/.git" ] || continue
+    git -C "$dir" pull --prune --verbose || { ((failed++)); continue; }
+    [ -f "$dir/.gitmodules" ] || continue
+    git -C "$dir" submodule update --init --remote --recursive || ((failed++))
+  done
+
+  # Shell and tmux plugins
+  for dir in "$HOME/.oh-my-zsh" "$HOME/.oh-my-zsh/custom"/{themes,plugins}/*/ "$HOME/.dotfiles/tmux/plugins"/*/; do
+    dir="${dir%/}"
+    [ -d "$dir/.git" ] || continue
+    [ "$dir" = "$HOME/.dotfiles/tmux/plugins/tpm" ] && continue
+    git -C "$dir" pull --prune --verbose || ((failed++))
+  done
+
+  # Editors
+  command -v vim >/dev/null && {
+    vim -es -N -u "$HOME/.vimrc" -i NONE \
+      -c "PlugUpgrade" -c "PlugUpdate --sync" -c "CocUpdateSync" \
+      -c 'try | PlugClean! | catch /^Vim\%((\a\+)\)\=:E16:/ | endtry' -c "qa!" </dev/null || ((failed++))
+  }
+  if command -v nvim >/dev/null; then
+    nvim --headless "+Lazy! sync" +qa || ((failed++))
+    nvim --headless +TSUpdateSync +qa || ((failed++))
+    nvim --headless +MasonUpdate +qa || ((failed++))
+  fi
+
+  # Homebrew
+  local brewfile="$HOME/.dotfiles/Brewfile"
+  brew update || ((failed++))
+  brew bundle --file "$brewfile" || ((failed++))
+  brew bundle cleanup --force --zap --file "$brewfile" || ((failed++))
+  brew upgrade --greedy || ((failed++))
+  cache="$(brew --cache)" || ((failed++))
+  brew cleanup -s --prune=all || ((failed++))
+  [ -n "$cache" ] && { command rm -rf "${cache:?}" || ((failed++)); }
+
+  # macOS apps
+  if command -v jq >/dev/null; then
+    apps="$(brew info --cask --json=v2 --installed |
+      jq -r '.casks[] | select(.tap == "gufranco/tap") | .artifacts[].app[]? // empty')" || ((failed++))
+    while IFS= read -r app; do
+      [ -n "$app" ] || continue
+      apppath="/Applications/${app##*/}"
+      [ -e "$apppath" ] || continue
+      xattr -p com.apple.quarantine "$apppath" >/dev/null 2>&1 || continue
+      xattr -dr com.apple.quarantine "$apppath" || ((failed++))
+    done <<<"$apps"
+  fi
+  command -v mas >/dev/null && { sudo mas update || ((failed++)); }
+  if [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 26 ]; then
+    sudo find /private/var/folders/ -type d -name com.apple.dock.launchpad -exec rm -rf {} + && killall Dock
+  fi
+  for dir in /Applications "$HOME/Applications"; do
+    [ -d "$dir" ] && mdimport "$dir"
+  done
+
+  # Runtimes and tools
+  if command -v mise >/dev/null; then
+    mise upgrade --yes || ((failed++))
+    mise prune --yes || ((failed++))
+  fi
+  command -v uv >/dev/null && command -v python3 >/dev/null && {
+    uv pip install --system --break-system-packages --python python3 --upgrade pdbp ipdb || ((failed++))
+  }
+
+  # Package manager caches
+  command -v npm >/dev/null && { npm cache verify || ((failed++)); }
+  command -v pnpm >/dev/null && { pnpm store prune || ((failed++)); }
+  command -v yarn >/dev/null && { yarn cache clean || ((failed++)); }
+  command -v uv >/dev/null && ! pgrep -x uv >/dev/null && { UV_LOCK_TIMEOUT=15 uv cache prune || ((failed++)); }
+  command -v go >/dev/null && { go clean -cache || ((failed++)); }
+  command -v pod >/dev/null && { pod cache clean --all || ((failed++)); }
+
+  # Xcode
+  [ -d "$HOME/Library/Developer/Xcode/DerivedData" ] &&
+    { command rm -rf "$HOME/Library/Developer/Xcode/DerivedData" || ((failed++)); }
+  command -v xcrun >/dev/null && { xcrun simctl delete unavailable || ((failed++)); }
+
+  # Shell and tmux reload
+  command rm -rf "${__EVAL_CACHE_DIR:?}"
+  [ -n "${TMUX:-}" ] && command -v tmux >/dev/null &&
+    { tmux source-file "$HOME/.dotfiles/tmux/.tmux.conf" || ((failed++)); }
+
+  [ "$failed" -eq 0 ]
+}

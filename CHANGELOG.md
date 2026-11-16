@@ -1,3 +1,16 @@
+# [2.4.0](https://github.com/gufranco/dotfiles/compare/v2.3.0...v2.4.0) (2026-11-16)
+
+
+### Bug Fixes
+
+* **zsh:** start tmux only from a real terminal ([2db7a61](https://github.com/gufranco/dotfiles/commit/2db7a61099a38dc60f952c2aab728766c17669a1))
+
+
+### Features
+
+* **brew:** add iina and keycastr, steam on intel ([0975cce](https://github.com/gufranco/dotfiles/commit/0975cce5205ac72f6a9727642b31be76a9111e3d))
+* **mise:** keep runtimes per project only ([f878bbd](https://github.com/gufranco/dotfiles/commit/f878bbd302a0ce8e5fc3003d9882d2d2b1d50e0b))
+
 # [2.3.0](https://github.com/gufranco/dotfiles/compare/v2.2.0...v2.3.0) (2026-11-11)
 
 

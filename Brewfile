@@ -3,11 +3,9 @@
 ################################################################################
 # System specifications
 ################################################################################
-architecture = `uname -m`.strip
-cpu = `sysctl -n machdep.cpu.brand_string`.strip
-model = `sysctl -n hw.model`.strip
-serial = `ioreg -rd1 -c IOPlatformExpertDevice | awk -F'"' '/IOPlatformSerialNumber/ {print $4}'`.strip
-storage = (((`diskutil info /dev/disk0 | awk -F'[()]' '/Disk Size/ {sub(/ Bytes/, "", $2); print $2}'`.strip.to_i / 1073741824) + 255) / 256) * 256
+model = Utils.safe_popen_read('sysctl', '-n', 'hw.model').strip
+disk_bytes = Utils.safe_popen_read('diskutil', 'info', '/dev/disk0')[/\((\d+) Bytes\)/, 1].to_i
+storage = ((disk_bytes / 1_073_741_824) + 255) / 256 * 256
 
 ################################################################################
 # Homebrew taps
@@ -389,8 +387,8 @@ brew 'xcodes'
 ################################################################################
 brew 'fastfetch'
 brew 'htop'
-brew 'macmon' if architecture == 'arm64'
-brew 'osx-cpu-temp' if architecture == 'x86_64'
+brew 'macmon' if Hardware::CPU.arm?
+brew 'osx-cpu-temp' if Hardware::CPU.intel?
 
 ################################################################################
 # Log Analysis
@@ -434,7 +432,7 @@ brew 'cmus'
 ################################################################################
 # Local AI Inference
 ################################################################################
-brew 'apfel' if architecture == 'arm64'
+brew 'apfel' if Hardware::CPU.arm?
 brew 'ollama'
 
 ################################################################################
@@ -448,8 +446,8 @@ brew 'rtk'
 ################################################################################
 brew 'cc65'
 brew 'gufranco/tap/marsdev'
-brew 'dciabrin/ngdevkit/ngdevkit', args: architecture == 'arm64' ? ['force-bottle'] : []
-brew 'dciabrin/ngdevkit/ngdevkit-toolchain', args: architecture == 'arm64' ? ['force-bottle'] : []
+brew 'dciabrin/ngdevkit/ngdevkit', args: Hardware::CPU.arm? ? ['force-bottle'] : []
+brew 'dciabrin/ngdevkit/ngdevkit-toolchain', args: Hardware::CPU.arm? ? ['force-bottle'] : []
 brew 'rgbds'
 brew 'sdcc'
 
@@ -482,7 +480,7 @@ cask 'visual-studio-code'
 ################################################################################
 cask 'chatgpt'
 cask 'claude'
-cask 'lm-studio' if architecture == 'arm64'
+cask 'lm-studio' if Hardware::CPU.arm?
 
 ################################################################################
 # AI Coding Agents
@@ -553,7 +551,7 @@ cask 'shottr'
 # System Monitoring
 ################################################################################
 cask 'coconutbattery'
-cask 'mx-power-gadget' if architecture == 'arm64'
+cask 'mx-power-gadget' if Hardware::CPU.arm?
 cask 'stats'
 
 ################################################################################
@@ -592,14 +590,14 @@ cask 'inkscape'
 ################################################################################
 cask 'gimp'
 cask 'krita'
-cask 'gufranco/tap/lazpaint' if architecture == 'x86_64'
+cask 'gufranco/tap/lazpaint' if Hardware::CPU.intel?
 
 ################################################################################
 # Pixel Art & Sprites
 ################################################################################
 brew 'gufranco/tap/aseprite', postinstall: '{ [ ! -L /Applications/Aseprite.app ] || rm /Applications/Aseprite.app; } && rsync -a --delete "${HOMEBREW_PREFIX:?}/opt/aseprite/Aseprite.app/" /Applications/Aseprite.app/'
 cask 'gufranco/tap/libresprite'
-cask 'gufranco/tap/pikopixel' if architecture == 'x86_64'
+cask 'gufranco/tap/pikopixel' if Hardware::CPU.intel?
 cask 'gufranco/tap/pixelorama'
 
 ################################################################################
@@ -628,7 +626,7 @@ cask 'vlc'
 # DAWs & Audio Editors
 ################################################################################
 cask 'audacity'
-cask 'gufranco/tap/lmms' if architecture == 'x86_64'
+cask 'gufranco/tap/lmms' if Hardware::CPU.intel?
 cask 'midi-monitor'
 cask 'reaper'
 
@@ -686,10 +684,10 @@ cask 'snes9x'
 ################################################################################
 # Emulators - Sony
 ################################################################################
-cask 'pcsx2' if architecture == 'x86_64'
+cask 'pcsx2' if Hardware::CPU.intel?
 cask 'ppsspp-emulator'
 cask 'gufranco/tap/rpcs3'
-cask 'gufranco/tap/shadps4' if architecture == 'x86_64'
+cask 'gufranco/tap/shadps4' if Hardware::CPU.intel?
 cask 'gufranco/tap/vita3k'
 
 ################################################################################
@@ -709,7 +707,7 @@ cask 'steam'
 # Virtualization
 ################################################################################
 cask 'crossover'
-cask 'parallels' if architecture == 'arm64'
+cask 'parallels' if Hardware::CPU.arm?
 cask 'utm'
 
 ################################################################################
@@ -804,7 +802,7 @@ unless ENV['CI']
   mas 'MIDI Connect', id: 6_476_070_288
   mas 'Magnet', id: 441_258_766
 
-  if architecture == 'arm64' && storage >= 2048
+  if Hardware::CPU.arm? && storage >= 2048
     mas 'Cyberpunk 2077', id: 6_633_429_424
     mas 'Death Stranding', id: 6_449_748_961
     mas 'Resident Evil 2', id: 1_640_632_432
@@ -819,10 +817,10 @@ end
 ################################################################################
 # Unsupported systems
 #
-# Macbook Pro 13 Mid 2012:  C02J332HDV30
-# Macbook Retina 12 2017:   C02TW09THH29
+# Macbook Pro 13 Mid 2012:  MacBookPro9,2
+# Macbook Retina 12 2017:   MacBook10,1
 ################################################################################
-if ['C02J332HDV30', 'C02TW09THH29'].include?(serial)
+if ['MacBookPro9,2', 'MacBook10,1'].include?(model)
   # cask 'opencore-patcher'
   cask 'aldente'
   cask 'gufranco/tap/opencore-patcher@beta'

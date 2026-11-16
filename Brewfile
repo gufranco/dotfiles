@@ -612,6 +612,7 @@ cask 'processing'
 # Video Editing & Recording
 ################################################################################
 cask 'handbrake-app'
+cask 'keycastr'
 cask 'losslesscut'
 cask 'obs'
 
@@ -619,6 +620,7 @@ cask 'obs'
 # Media Players
 ################################################################################
 cask 'foobar2000'
+cask 'iina'
 cask 'spotify'
 cask 'vlc'
 
@@ -701,7 +703,7 @@ cask 'xemu'
 # Games
 ################################################################################
 cask 'scummvm-app'
-cask 'steam'
+cask 'steam' if Hardware::CPU.intel?
 
 ################################################################################
 # Virtualization

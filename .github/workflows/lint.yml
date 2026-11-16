@@ -81,7 +81,7 @@ jobs:
         run: |
           set -euo pipefail
           errors=0
-          for f in zsh/*; do
+          for f in zsh/.zshrc zsh/*; do
             [ -f "$f" ] || continue
             if zsh -n "$f" 2>&1; then
               echo "OK: $f"

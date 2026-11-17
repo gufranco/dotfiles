@@ -626,8 +626,12 @@ cask 'vlc'
 # DAWs & Audio Editors
 ################################################################################
 cask 'audacity'
+cask 'ableton-live-suite'
 cask 'gufranco/tap/lmms' if Hardware::CPU.intel?
 cask 'midi-monitor'
+cask 'gufranco/tap/m-vave-cubesuite' if Hardware::CPU.intel?
+cask 'gufranco/tap/m-vave-m-upgrade'
+cask 'gufranco/tap/m-vave-midi-suite'
 cask 'reaper'
 
 ################################################################################
@@ -799,7 +803,8 @@ end
 unless ENV['CI']
   mas 'Xcode', id: 497_799_835
   mas 'Amphetamine', id: 937_984_704
-  mas 'MIDI Connect', id: 6_476_070_288
+  mas 'Conji', id: 1_515_014_813
+  mas 'GarageBand', id: 682_658_836
   mas 'Magnet', id: 441_258_766
 
   if Hardware::CPU.arm? && storage >= 2048

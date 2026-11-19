@@ -22,6 +22,7 @@ source "$ZSH/oh-my-zsh.sh"
 
 # Silence the async worker teardown noise the prompt prints. Wrap only once,
 # or a second load makes the wrapper call itself
+# shellcheck disable=SC2154
 if typeset -f async_stop_worker >/dev/null 2>&1 &&
   [[ "${functions[async_stop_worker]}" != *__async_stop_worker_upstream* ]]; then
   functions -c async_stop_worker __async_stop_worker_upstream

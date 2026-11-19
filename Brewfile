@@ -381,7 +381,6 @@ brew 'pre-commit'
 brew 'pygments'
 brew 'universal-ctags'
 brew 'watchman'
-brew 'xcodes'
 
 ################################################################################
 # System Monitoring
@@ -465,20 +464,17 @@ brew 'ucon64'
 # Terminals
 ################################################################################
 cask 'ghostty'
-cask 'iterm2'
 
 ################################################################################
 # Code Editors & IDEs
 ################################################################################
 cask 'android-studio'
-cask 'devin-desktop'
 cask 'sublime-text'
 cask 'visual-studio-code'
 
 ################################################################################
 # AI Assistants
 ################################################################################
-cask 'chatgpt'
 cask 'claude'
 cask 'lm-studio' if Hardware::CPU.arm?
 
@@ -486,8 +482,6 @@ cask 'lm-studio' if Hardware::CPU.arm?
 # AI Coding Agents
 ################################################################################
 cask 'claude-code@latest'
-cask 'coderabbit'
-cask 'codex'
 
 ################################################################################
 # Database Clients
@@ -515,15 +509,12 @@ cask 'google-chrome'
 ################################################################################
 cask 'ngrok'
 cask 'nordvpn'
-cask 'tailscale-app'
 cask 'tunnelblick'
 
 ################################################################################
 # Communication
 ################################################################################
 cask 'discord'
-cask 'keybase'
-cask 'signal'
 cask 'slack'
 
 ################################################################################
@@ -582,7 +573,6 @@ cask 'transmission'
 # Design & Vector
 ################################################################################
 cask 'figma'
-cask 'inkscape'
 
 ################################################################################
 # Image Editing & Painting
@@ -604,8 +594,6 @@ cask 'gufranco/tap/pixelorama'
 ################################################################################
 brew 'arduino-cli'
 cask 'arduino-ide'
-cask 'kicad'
-cask 'processing'
 
 ################################################################################
 # Video Editing & Recording
@@ -649,12 +637,6 @@ cask 'surge-xt'
 cask 'vcv-rack'
 
 ################################################################################
-# Notation & Live Coding
-################################################################################
-cask 'musescore'
-cask 'sonic-pi'
-
-################################################################################
 # Game Engines
 ################################################################################
 cask 'defold'
@@ -696,24 +678,11 @@ cask 'gufranco/tap/shadps4' if Hardware::CPU.intel?
 cask 'gufranco/tap/vita3k'
 
 ################################################################################
-# Emulators - Computers & Xbox
-################################################################################
-cask 'fs-uae-launcher'
-cask 'fs-uae-emulator'
-cask 'xemu'
-
-################################################################################
-# Games
-################################################################################
-cask 'scummvm-app'
-cask 'steam' if Hardware::CPU.intel?
-
-################################################################################
 # Virtualization
 ################################################################################
-cask 'crossover'
-cask 'parallels' if Hardware::CPU.arm?
-cask 'utm'
+# cask 'crossover'
+# cask 'parallels' if Hardware::CPU.arm?
+# cask 'utm'
 
 ################################################################################
 # Fonts
@@ -726,78 +695,6 @@ cask 'font-ubuntu-mono-nerd-font'
 cask 'font-ubuntu-nerd-font'
 cask 'font-ubuntu-sans-nerd-font'
 
-if storage >= 512
-  cask 'font-0xproto-nerd-font'
-  cask 'font-3270-nerd-font'
-  cask 'font-adwaita-mono-nerd-font'
-  cask 'font-agave-nerd-font'
-  cask 'font-anonymice-nerd-font'
-  cask 'font-arimo-nerd-font'
-  cask 'font-atkynson-mono-nerd-font'
-  cask 'font-aurulent-sans-mono-nerd-font'
-  cask 'font-bigblue-terminal-nerd-font'
-  cask 'font-bitstream-vera-sans-mono-nerd-font'
-  cask 'font-blex-mono-nerd-font'
-  cask 'font-caskaydia-cove-nerd-font'
-  cask 'font-caskaydia-mono-nerd-font'
-  cask 'font-code-new-roman-nerd-font'
-  cask 'font-comic-shanns-mono-nerd-font'
-  cask 'font-commit-mono-nerd-font'
-  cask 'font-cousine-nerd-font'
-  cask 'font-d2coding-nerd-font'
-  cask 'font-daddy-time-mono-nerd-font'
-  cask 'font-dejavu-sans-mono-nerd-font'
-  cask 'font-departure-mono-nerd-font'
-  cask 'font-droid-sans-mono-nerd-font'
-  cask 'font-envy-code-r-nerd-font'
-  cask 'font-fantasque-sans-mono-nerd-font'
-  cask 'font-geist'
-  cask 'font-geist-mono'
-  cask 'font-geist-mono-nerd-font'
-  cask 'font-go-mono-nerd-font'
-  cask 'font-gohufont-nerd-font'
-  cask 'font-hasklug-nerd-font'
-  cask 'font-heavy-data-nerd-font'
-  cask 'font-hurmit-nerd-font'
-  cask 'font-im-writing-nerd-font'
-  cask 'font-inconsolata'
-  cask 'font-inconsolata-go-nerd-font'
-  cask 'font-inconsolata-lgc-nerd-font'
-  cask 'font-inconsolata-nerd-font'
-  cask 'font-inter'
-  cask 'font-intone-mono-nerd-font'
-  cask 'font-iosevka-nerd-font'
-  cask 'font-iosevka-term-nerd-font'
-  cask 'font-iosevka-term-slab-nerd-font'
-  cask 'font-lekton-nerd-font'
-  cask 'font-liberation-nerd-font'
-  cask 'font-lilex-nerd-font'
-  cask 'font-m+-nerd-font'
-  cask 'font-martian-mono-nerd-font'
-  cask 'font-meslo-lg-nerd-font'
-  cask 'font-monaspice-nerd-font'
-  cask 'font-monocraft-nerd-font'
-  cask 'font-monofur-nerd-font'
-  cask 'font-monoid-nerd-font'
-  cask 'font-mononoki-nerd-font'
-  cask 'font-noto-nerd-font'
-  cask 'font-opendyslexic-nerd-font'
-  cask 'font-overpass-nerd-font'
-  cask 'font-profont-nerd-font'
-  cask 'font-proggy-clean-tt-nerd-font'
-  cask 'font-recursive-mono-nerd-font'
-  cask 'font-roboto-mono-nerd-font'
-  cask 'font-sauce-code-pro-nerd-font'
-  cask 'font-sf-mono-nerd-font-ligaturized'
-  cask 'font-shure-tech-mono-nerd-font'
-  cask 'font-space-mono-nerd-font'
-  cask 'font-symbols-only-nerd-font'
-  cask 'font-terminess-ttf-nerd-font'
-  cask 'font-tinos-nerd-font'
-  cask 'font-victor-mono-nerd-font'
-  cask 'font-zed-mono-nerd-font'
-end
-
 ################################################################################
 # App Store (skip in CI - no authenticated App Store session)
 ################################################################################
@@ -805,7 +702,7 @@ unless ENV['CI']
   mas 'Xcode', id: 497_799_835
   mas 'Amphetamine', id: 937_984_704
   mas 'Conji', id: 1_515_014_813
-  mas 'GarageBand', id: 682_658_836
+  # mas 'GarageBand', id: 682_658_836
   mas 'Magnet', id: 441_258_766
 
   if Hardware::CPU.arm? && storage >= 2048

@@ -375,6 +375,7 @@ brew 'toxiproxy'
 ################################################################################
 brew 'act'
 brew 'entr'
+brew 'fswatch'
 brew 'mkcert'
 brew 'pre-commit'
 brew 'pygments'

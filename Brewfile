@@ -625,13 +625,13 @@ cask 'vlc'
 ################################################################################
 # DAWs & Audio Editors
 ################################################################################
-cask 'audacity'
 cask 'ableton-live-suite'
+cask 'audacity'
 cask 'gufranco/tap/lmms' if Hardware::CPU.intel?
-cask 'midi-monitor'
 cask 'gufranco/tap/m-vave-cubesuite' if Hardware::CPU.intel?
 cask 'gufranco/tap/m-vave-m-upgrade'
 cask 'gufranco/tap/m-vave-midi-suite'
+cask 'midi-monitor'
 cask 'reaper'
 
 ################################################################################

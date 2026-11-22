@@ -14,6 +14,7 @@ tap 'bjarneo/cliamp', trusted: true
 tap 'browsh-org/browsh', trusted: true
 tap 'clojure/tools', trusted: true
 tap 'dciabrin/ngdevkit', trusted: true
+tap 'drhelius/geardome', trusted: true
 tap 'gufranco/tap', trusted: true
 tap 'hashicorp/tap', trusted: true
 tap 'oven-sh/bun', trusted: true
@@ -656,6 +657,11 @@ cask 'tiled'
 brew 'mame'
 brew 'mednafen'
 cask 'ares-emulator'
+cask 'drhelius/geardome/gearcoleco'
+cask 'drhelius/geardome/geargrafx'
+cask 'drhelius/geardome/gearlynx'
+cask 'drhelius/geardome/gearsystem'
+cask 'drhelius/geardome/geartowns'
 cask 'gufranco/tap/mesen'
 cask 'retroarch-metal'
 
@@ -665,6 +671,7 @@ cask 'retroarch-metal'
 brew 'gufranco/tap/zsnes'
 cask 'gufranco/tap/azahar'
 cask 'dolphin'
+cask 'drhelius/geardome/gearboy'
 cask 'mgba-app'
 cask 'snes9x'
 

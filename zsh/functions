@@ -117,3 +117,19 @@ function f5() {
 
   [ "$failed" -eq 0 ]
 }
+
+################################################################################
+# Claude Code on the work account (claude-work)
+################################################################################
+# One-time setup, and again when the one-year token expires. Approve in the
+# browser as the work account, then paste the printed token at the prompt:
+#   claude setup-token && security add-generic-password -U -a "$USER" -s claude-work-oauth-token -w
+function claude-work() {
+  local token
+  # An empty token would fall back to the personal login without a word
+  { token="$(command security find-generic-password -s claude-work-oauth-token -w 2>/dev/null)" && [ -n "$token" ]; } || {
+    echo "claude-work: stopped: no token in the Keychain item claude-work-oauth-token." >&2
+    return 1
+  }
+  CLAUDE_CODE_OAUTH_TOKEN="$token" command claude "$@"
+}

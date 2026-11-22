@@ -1,3 +1,18 @@
+# [2.5.0](https://github.com/gufranco/dotfiles/compare/v2.4.0...v2.5.0) (2026-11-22)
+
+
+### Bug Fixes
+
+* **zsh:** silence shellcheck on the functions map ([15215c5](https://github.com/gufranco/dotfiles/commit/15215c51e5d671b3442e95442690e004c664340f))
+
+
+### Features
+
+* **brew:** add fswatch ([94fed91](https://github.com/gufranco/dotfiles/commit/94fed91c63e5162753aec3d78e4a0cc1217e0824))
+* **brew:** add music apps, swap midi connect ([013dbb0](https://github.com/gufranco/dotfiles/commit/013dbb0332c64d9131bbc5b23ae30791cc4d3ef4))
+* **brew:** add the geardome emulators ([fefd89c](https://github.com/gufranco/dotfiles/commit/fefd89c9aade5b5ee8d4493b764bb3fb75075e94))
+* **zsh:** add claude-work for the work account ([1042a7a](https://github.com/gufranco/dotfiles/commit/1042a7a7418c5c3d41a0394eea1f5d3f091c3222))
+
 # [2.4.0](https://github.com/gufranco/dotfiles/compare/v2.3.0...v2.4.0) (2026-11-16)
 
 

@@ -346,6 +346,7 @@ brew 'golangci-lint'
 brew 'luacheck'
 brew 'pmd'
 brew 'pyright'
+brew 'rubocop'
 brew 'swiftlint'
 brew 'vint'
 

@@ -1,3 +1,10 @@
+# [2.6.0](https://github.com/gufranco/dotfiles/compare/v2.5.0...v2.6.0) (2026-11-28)
+
+
+### Features
+
+* **brew:** add rubocop ([beca85d](https://github.com/gufranco/dotfiles/commit/beca85d2530429b6c6c8289e2a26573e8e1d0bd8))
+
 # [2.5.0](https://github.com/gufranco/dotfiles/compare/v2.4.0...v2.5.0) (2026-11-22)
 
 
